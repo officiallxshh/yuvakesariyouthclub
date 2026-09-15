@@ -1,0 +1,9 @@
+{
+  "name": "yuvakesari-youth-club",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "description": "Yuvakesari Youth Club membership and admin website with SQLite storage."
+}
