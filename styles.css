@@ -336,3 +336,12 @@ section.reveal{content-visibility:auto;contain-intrinsic-size:700px;}
 .hero-image picture,.hero-image picture img{display:block!important;width:100%!important;height:100%!important;}
 .hero-image picture img{object-fit:cover!important;object-position:center center!important;}
 @media(max-width:760px){.hero-image picture img{object-position:center center!important;}}
+
+
+/* V22 FINAL HERO FIX - actual image element, no CSS background dependency */
+.hero-image{position:absolute!important;inset:0!important;z-index:0!important;overflow:hidden!important;background:#071318!important;transform:none!important;}
+.hero-image picture{display:block!important;width:100%!important;height:100%!important;}
+.hero-image picture img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;}
+@media(max-width:760px){.hero-image picture img{object-position:center center!important;}}
+.hero-shade{z-index:1!important;}
+.hero-content,.hero-quote,.hero-stats,.scroll-mark{z-index:2!important;}

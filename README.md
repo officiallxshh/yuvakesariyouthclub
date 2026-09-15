@@ -56,3 +56,10 @@ V18: membership submissions explicitly start as PENDING. The success dialog show
 - Lion logo uses a cropped lion-only symbol from the user-provided emblem.
 - Native `<picture>` + eager high-priority hero loading; no JS swapping.
 - WebP plus JPEG/PNG fallbacks for resilient loading.
+
+
+V22 IMAGE FIX
+- Hero uses exact supplied desktop/mobile PNGs converted to local JPEG/WebP.
+- Native <picture> selects mobile vs desktop without JavaScript.
+- Final CSS disables all previous hero background-image overrides.
+- Assets are local and bundled in the ZIP.
