@@ -1,16 +1,21 @@
 # Yuvakesari Youth Club — GitHub Pages
 
-Premium static website for Yuvakesari Youth Club, Subrahmanya.
+## Upload
+Upload the **contents of this folder** to the root of your GitHub repository:
 
-## Deploy on GitHub Pages
-1. Create a public repository named `yuvakesariyouthclub`.
-2. Upload the contents of this folder to the repository root.
-3. Open **Settings → Pages**.
-4. Choose **Deploy from a branch → main → / (root)**.
-5. Save.
+- `index.html`
+- `styles.css`
+- `app.js`
+- `assets/`
 
-## Admin demo
-IDs: `lxshhisadmin`, `lxshhisboss`
-Passwords: same as the respective ID.
+Do not add another `yyc_github_final` folder inside the repository.
 
-This static build uses browser localStorage for admin/member data. A shared multi-device database requires Firebase or Supabase.
+## GitHub Pages
+Repository → Settings → Pages → **Deploy from a branch** → `main` → `/ (root)` → Save.
+
+## Admin login
+- `lxshhisadmin` / `lxshhisadmin`
+- `lxshhisboss` / `lxshhisboss`
+
+## Important
+This GitHub Pages version is client-side. Member/admin data is stored in the browser with localStorage. It is not a shared server database.
