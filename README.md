@@ -44,3 +44,6 @@ Repository → Settings → Pages → Deploy from a branch → `main` → `/ (ro
 
 ## Data note
 Member/admin data is browser-local in this static GitHub Pages version. Shared multi-device registrations require a real backend such as Firebase or Supabase.
+
+### Homepage culture circles
+The homepage intentionally has no left-side culture panel and no right-side information boxes. Three local PNG culture circles are used on the right: Panjurli/Bhuta Kola, Yakshagana, and Aati Kalenja.
