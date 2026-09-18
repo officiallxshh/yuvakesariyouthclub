@@ -87,3 +87,24 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;bac
 .storage-table{overflow:auto}.storage-row{display:grid;grid-template-columns:1.45fr 1fr .9fr;min-width:520px;border-bottom:1px solid rgba(255,255,255,.05)}.storage-row:last-child{border-bottom:0}.storage-row>div{padding:11px 13px;color:#b8bcb8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.storage-head>div{color:#777f7d!important;font-size:8px!important;text-transform:uppercase;letter-spacing:.12em}.storage-empty{padding:20px;color:#777f7d;font-size:11px;text-align:center}
 .storage-loading,.storage-error{min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px dashed rgba(237,193,105,.15);border-radius:18px;color:#909793;text-align:center}.storage-loading strong,.storage-error strong{color:#ded0b6;font-size:13px}.storage-loading span,.storage-error span{font-size:10px}.storage-spinner{width:28px;height:28px;border:2px solid rgba(237,193,105,.18);border-top-color:#dcb56b;border-radius:50%;animation:yycspin .8s linear infinite;margin-bottom:3px}@keyframes yycspin{to{transform:rotate(360deg)}}
 @media(max-width:800px){.storage-top{align-items:flex-start;flex-direction:column}.storage-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:540px){.storage-stats{grid-template-columns:1fr 1fr}.storage-meta{width:100%;flex-wrap:wrap}.storage-section-head h3{font-size:18px}}
+
+/* Premium centered admin control center */
+.modal-shell:has(.admin-shell){width:min(1240px,96vw);max-height:94vh;margin:3vh auto;padding:24px;border-radius:28px;background:linear-gradient(145deg,rgba(10,16,22,.98),rgba(5,9,13,.99));border-color:rgba(238,194,106,.2);box-shadow:0 50px 150px rgba(0,0,0,.72)}
+.modal-shell:has(.admin-shell) .modal-close{z-index:5}
+.admin-shell{width:100%;min-height:0;display:block}
+.admin-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:4px 4px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.admin-header .modal-title{font-size:40px;line-height:1}
+.admin-header .modal-kicker{margin-bottom:4px}
+.admin-header .mini-btn{min-width:82px}
+.admin-tabs{position:sticky;top:-24px;z-index:3;display:flex;flex-wrap:wrap;gap:8px;margin:0 -2px 20px;padding:16px 2px 13px;background:linear-gradient(180deg,#0a1015 78%,rgba(10,16,21,0));border-bottom:1px solid rgba(255,255,255,.06)}
+.admin-tab{padding:10px 15px;border-radius:12px;font-weight:600;letter-spacing:.02em}
+.admin-workspace{max-height:68vh;overflow:auto;padding:0 3px 6px 1px;scrollbar-width:thin}
+.admin-workspace::-webkit-scrollbar{width:7px}.admin-workspace::-webkit-scrollbar-thumb{background:rgba(215,174,102,.22);border-radius:99px}
+.admin-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;max-width:1180px;margin:0 auto}
+.admin-stats>div{min-height:94px;display:flex;flex-direction:column;justify-content:center;padding:18px 17px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.admin-stats>div.pending-stat{border-color:rgba(215,174,102,.24);background:linear-gradient(145deg,rgba(215,174,102,.10),rgba(255,255,255,.018))}
+.admin-top{max-width:1180px;margin:0 auto 16px}.admin-card-list,.admin-grid-2{max-width:1180px;margin-left:auto;margin-right:auto}
+.notice{max-width:1180px;margin-left:auto;margin-right:auto}
+.storage-top,.storage-stats,.storage-section{max-width:1180px;margin-left:auto;margin-right:auto}
+@media(max-width:900px){.modal-shell:has(.admin-shell){width:96vw;margin:2vh auto;padding:18px}.admin-tabs{top:-18px}.admin-workspace{max-height:76vh}.admin-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.modal-shell:has(.admin-shell){width:97vw;padding:15px;border-radius:20px}.admin-header{padding-bottom:16px}.admin-header .modal-title{font-size:30px}.admin-tabs{top:-15px;overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;padding-bottom:11px}.admin-tab{flex:0 0 auto}.admin-workspace{max-height:78vh}.admin-stats{grid-template-columns:1fr 1fr}}
