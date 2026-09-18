@@ -53,3 +53,6 @@ The top navigation highlight now follows the section that was clicked. The Home 
 
 
 Latest fix: exact slogan is “ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩”; below-hero sections now have persistent dark/gold visual backgrounds and static fallback cards so content is visible even before JavaScript renders dynamic data.
+
+
+Latest hero-label correction: “YUVAKESARI YOUTH CLUB” is shown above “SUBRAHMANYA · KUKKE REGION · KARNATAKA” in the hero kicker.
