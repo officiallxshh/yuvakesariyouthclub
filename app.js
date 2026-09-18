@@ -7,7 +7,7 @@ const DEFAULTS={
  gallery:[{id:'gallery-1',title:'Dharma Daiva · Tulunadu',src:'assets/dharma-daiva.webp'},{id:'gallery-2',title:'Aati Kalenja · Tulunadu',src:'assets/aati-kalenja.webp'},{id:'gallery-3',title:'Yakshagana · Coastal Art',src:'assets/yakshagana.webp'}],
  pendingMembers:[],pendingUpdates:[],pendingGallery:[],
  socials:{instagram:'https://www.instagram.com/yuvakesari__kukke/',whatsapp:'https://chat.whatsapp.com/FW4v1bvUKYW4DDgTcKTYFL?s=sw&p=a&mlu=4&ilr=4',x:'',facebook:''},
- settings:{clubName:'YUVAKESARI YOUTH CLUB',location:'SUBRAHMANYA · KARNATAKA',slogan:'ಧರ್ಮೋ ರಕ್ಷಿತ ರಕ್ಷಿತಃ 🚩'}
+ settings:{clubName:'YUVAKESARI YOUTH CLUB',location:'SUBRAHMANYA · KARNATAKA',slogan:'ಧರ್ಮೋ ರಕ್ಷಿತ ರಕ್ಷಿತಃ🚩'}
 };
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const deep=o=>JSON.parse(JSON.stringify(o));
