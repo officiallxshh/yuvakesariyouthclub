@@ -52,4 +52,4 @@ Latest hero refresh: Dharma Daiva, Aati Kalenja and Yakshagana assets are bundle
 The top navigation highlight now follows the section that was clicked. The Home tab is no longer permanently highlighted; clicking Tulunad Glimpse, Leaders, Updates, Gallery, or Join moves the gold underline to that tab and keeps it there until another navigation item is selected. Hash changes are also synchronized.
 
 
-Latest fix: exact slogan is “ಧರ್ಮೋ ರಕ್ಷಿತ ರಕ್ಷಿತಃ🚩”; below-hero sections now have persistent dark/gold visual backgrounds and static fallback cards so content is visible even before JavaScript renders dynamic data.
+Latest fix: exact slogan is “ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩”; below-hero sections now have persistent dark/gold visual backgrounds and static fallback cards so content is visible even before JavaScript renders dynamic data.
