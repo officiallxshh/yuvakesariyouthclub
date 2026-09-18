@@ -1,4 +1,4 @@
-const CACHE='yyc-v10-admin-login-fix';
+const CACHE='yyc-v11-js-syntax-fix';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
