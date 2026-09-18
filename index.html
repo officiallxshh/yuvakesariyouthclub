@@ -8,7 +8,7 @@
 <title>Yuvakesari Youth Club | Subrahmanya</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Noto+Serif+Kannada:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Serif+Kannada:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hero-tulunad.webp" fetchpriority="high">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,12 +20,12 @@
     <span class="brand-type"><b>YUVAKESARI</b><small>YOUTH CLUB</small></span>
   </a>
   <nav class="desktop-nav" aria-label="Primary">
-    <a href="#home" class="active"><span class="nav-icon">⌂</span>Home</a>
-    <a href="#glimpse"><span class="nav-icon">◈</span>Tulunad Glimpse</a>
-    <a href="#leaders"><span class="nav-icon">♛</span>Leaders</a>
-    <a href="#updates"><span class="nav-icon">▤</span>Updates</a>
-    <a href="#gallery"><span class="nav-icon">▧</span>Gallery</a>
-    <a href="#join"><span class="nav-icon">✦</span>Join</a>
+    <a href="#home" class="nav-link"><span class="nav-icon">⌂</span>Home</a>
+    <a href="#glimpse" class="nav-link"><span class="nav-icon">◈</span>Tulunad Glimpse</a>
+    <a href="#leaders" class="nav-link"><span class="nav-icon">♛</span>Leaders</a>
+    <a href="#updates" class="nav-link"><span class="nav-icon">▤</span>Updates</a>
+    <a href="#gallery" class="nav-link"><span class="nav-icon">▧</span>Gallery</a>
+    <a href="#join" class="nav-link"><span class="nav-icon">✦</span>Join</a>
     <button class="nav-admin" id="adminOpenBtn"><span>⌑</span> Admin Login</button>
   </nav>
   <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-expanded="false"><i></i><i></i><i></i></button>
@@ -45,82 +45,80 @@
   <div class="hero-photo"></div>
   <div class="hero-vignette"></div>
   <div class="hero-glow"></div>
-  <div class="hero-line left"></div><div class="hero-line right"></div>
+  <div class="hero-grid-line line-a"></div><div class="hero-grid-line line-b"></div>
 
-  <div class="hero-center reveal">
-    <div class="location-chip"><span class="pin">●</span> SUBRAHMANYA · KUKKE REGION · KARNATAKA</div>
+  <div class="hero-main reveal">
+    <div class="hero-kicker"><span></span> SUBRAHMANYA · KUKKE REGION · KARNATAKA <span></span></div>
     <img class="hero-logo" src="assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club emblem" loading="eager" decoding="async">
     <div class="brand-lockup">
       <h1>YUVAKESARI</h1>
       <div class="lockup-line"><i></i><span>YOUTH CLUB</span><i></i></div>
     </div>
     <div class="slogan">ಧರ್ಮೋ ರಕ್ಷಿತ ರಕ್ಷಿತಃ <span>🚩</span></div>
-    <div class="gold-quote">Together for a Better <strong>Tomorrow</strong></div>
+    <div class="gold-quote"><span>Together for a Better</span><strong>Tomorrow</strong></div>
     <div class="social-row" id="heroSocial" aria-label="Social links"></div>
-    <div class="president-wrap">
-      <span></span><div><b>AHWIN Y</b><small>PRESIDENT · YUVAKESARI YOUTH CLUB · SUBRAHMANYA</small></div><span></span>
-    </div>
+    <div class="president-wrap"><span></span><div><b>AHWIN Y</b><small>PRESIDENT · YUVAKESARI YOUTH CLUB · SUBRAHMANYA</small></div><span></span></div>
     <div class="hero-actions"><a class="btn gold" href="#join">BECOME A MEMBER <span>↗</span></a><a class="btn glass" href="#glimpse">EXPLORE YYC <span>→</span></a></div>
   </div>
 
-  <aside class="right-panel culture-circles-panel reveal" aria-label="Tulunad culture highlights">
-    <div class="culture-side-kicker"><span></span><b>TULUNADU</b><span></span></div>
-    <div class="culture-side-title">CULTURE<br><em>IN MOTION</em></div>
-    <div class="right-visuals culture-visuals">
-      <figure class="culture-circle panjurli-circle">
-        <img src="assets/panjurli-panjurli.png" alt="Panjurli Bhuta Kola" loading="eager" decoding="async">
-        <figcaption><b>PANJURLI</b><small>BHOOTA KOLA</small></figcaption>
-      </figure>
-      <figure class="culture-circle yakshagana-circle">
-        <img src="assets/yakshagana.png" alt="Yakshagana cultural performance" loading="eager" decoding="async">
-        <figcaption><b>YAKSHAGANA</b><small>COASTAL ART</small></figcaption>
-      </figure>
-      <figure class="culture-circle aati-circle">
-        <img src="assets/aati-kalenja.png" alt="Aati Kalenja folk tradition" loading="eager" decoding="async">
-        <figcaption><b>AATI KALENJA</b><small>TULUNAD TRADITION</small></figcaption>
-      </figure>
+  <aside class="culture-panel reveal" aria-label="Tulunad culture highlights">
+    <div class="culture-overline"><span>CULTURE</span><em>IN MOTION</em></div>
+    <p class="culture-copy">Living traditions, artistic expression and community spirit — reflected through the cultural identity of Tulunadu.</p>
+    <div class="culture-orbs">
+      <a class="culture-orb orb-dharma" href="#glimpse">
+        <span class="orb-ring"></span><span class="orb-image"><img src="assets/dharma-daiva.webp" alt="Dharma Daiva" loading="eager" decoding="async"></span>
+        <span class="orb-caption"><b>DHARMA DAIVA</b><small>Faith · Protection</small></span>
+      </a>
+      <a class="culture-orb orb-aati" href="#glimpse">
+        <span class="orb-ring"></span><span class="orb-image"><img src="assets/aati-kalenja.webp" alt="Aati Kalenja" loading="eager" decoding="async"></span>
+        <span class="orb-caption"><b>AATI KALENJA</b><small>Season · Tradition</small></span>
+      </a>
+      <a class="culture-orb orb-yak" href="#glimpse">
+        <span class="orb-ring"></span><span class="orb-image"><img src="assets/yakshagana.webp" alt="Yakshagana" loading="eager" decoding="async"></span>
+        <span class="orb-caption"><b>YAKSHAGANA</b><small>Coastal Art</small></span>
+      </a>
     </div>
-    <div class="culture-side-foot">ROOTED IN TRADITION · DRIVEN BY YOUTH</div>
+    <div class="culture-rule"></div>
+    <div class="culture-foot"><span>ROOTED IN HERITAGE</span><span>DRIVEN BY YOUTH</span></div>
   </aside>
 
   <div class="hero-bottom">
     <div class="bottom-rail"><span>✦</span><b>Youth</b><i></i><b>Service</b><i></i><b>Unity</b><i></i><b>Culture</b></div>
-    
     <a class="scroll-cue" href="#glimpse"><span class="scroll-icon">◉</span>SCROLL DOWN<span class="arrow">⌄</span></a>
-    <div class="hashtag">#Tulunad <em>Culture</em></div>
+    <div class="hashtag">#Tulunad <em>Glimpse</em></div>
   </div>
 </section>
 
-<section class="section glimpse-section" id="glimpse">
+<section class="section glimpse-section type-serif" id="glimpse">
   <div class="section-kicker">01 / TULUNADU GLIMPSE</div>
   <div class="section-head reveal"><div><h2>Nature. Culture.<br><span>Identity.</span></h2></div><p>Subrahmanya sits within a landscape of Western Ghats greenery, temple-town heritage, rivers, local food culture and community traditions.</p></div>
   <div class="glimpse-grid">
     <figure class="glimpse-feature reveal"><img src="assets/hero-tulunad.webp" alt="Subrahmanya landscape" loading="lazy"><figcaption><b>SUBRAHMANYA</b><span>Western Ghats · River landscape</span></figcaption></figure>
-    <figure class="glimpse-card reveal"><img src="assets/river-circle.webp" alt="River landscape" loading="lazy"><figcaption><b>RIVER LIFE</b><span>Nature · Flow · Community</span></figcaption></figure>
-    <figure class="glimpse-card reveal"><img src="assets/temple-circle.webp" alt="Temple" loading="lazy"><figcaption><b>TEMPLE HERITAGE</b><span>Faith · Culture · Heritage</span></figcaption></figure>
-    <figure class="glimpse-card reveal"><img src="assets/bhoota-kola.webp" alt="Bhuta Kola" loading="lazy"><figcaption><b>BHUTA KOLA</b><span>Tradition · Identity · Pride</span></figcaption></figure>
+    <figure class="glimpse-card reveal culture-card-dharma"><img src="assets/dharma-daiva.webp" alt="Dharma Daiva" loading="lazy"><figcaption><b>DHARMA DAIVA</b><span>Faith · Protection · Tradition</span></figcaption></figure>
+    <figure class="glimpse-card reveal culture-card-aati"><img src="assets/aati-kalenja.webp" alt="Aati Kalenja" loading="lazy"><figcaption><b>AATI KALENJA</b><span>Season · Tradition · Tulu Nadu</span></figcaption></figure>
+    <figure class="glimpse-card reveal culture-card-yak"><img src="assets/yakshagana.webp" alt="Yakshagana" loading="lazy"><figcaption><b>YAKSHAGANA</b><span>Coastal Art · Story · Heritage</span></figcaption></figure>
   </div>
 </section>
 
-<section class="section" id="leaders">
+<section class="section type-editorial" id="leaders">
   <div class="section-kicker">02 / LEADERSHIP</div>
   <div class="section-head tight reveal"><div><h2>People behind the movement.</h2><p>Leadership profiles and photos are managed from the admin panel.</p></div><span class="counter" id="leaderCount">01</span></div>
   <div class="card-grid" id="leadersGrid"></div>
 </section>
 
-<section class="section dark-band" id="updates">
+<section class="section dark-band type-modern" id="updates">
   <div class="section-kicker">03 / LIVE BOARD</div>
   <div class="section-head tight reveal"><div><h2>Updates & announcements.</h2><p>Latest approved news from Yuvakesari Youth Club.</p></div><button class="link-btn" id="submitUpdateBtn">Submit update +</button></div>
   <div class="updates-list" id="updatesGrid"></div>
 </section>
 
-<section class="section" id="gallery">
+<section class="section type-gallery" id="gallery">
   <div class="section-kicker">04 / GALLERY</div>
   <div class="section-head tight reveal"><div><h2>Moments that move us.</h2><p>Community photos, programmes and youth activities.</p></div><button class="link-btn" id="submitGalleryBtn">Submit gallery item +</button></div>
   <div class="gallery-grid" id="galleryGrid"></div>
 </section>
 
-<section class="section join-section" id="join">
+<section class="section join-section type-editorial" id="join">
   <div class="join-card reveal"><div><div class="section-kicker">05 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
 </section>
 </main>

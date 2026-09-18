@@ -45,5 +45,8 @@ Repository → Settings → Pages → Deploy from a branch → `main` → `/ (ro
 ## Data note
 Member/admin data is browser-local in this static GitHub Pages version. Shared multi-device registrations require a real backend such as Firebase or Supabase.
 
-### Homepage culture circles
-The homepage intentionally has no left-side culture panel and no right-side information boxes. Three local PNG culture circles are used on the right: Panjurli/Bhuta Kola, Yakshagana, and Aati Kalenja.
+
+Latest hero refresh: Dharma Daiva, Aati Kalenja and Yakshagana assets are bundled locally as optimized 768px WebP files and cached by sw.js.
+
+## Navigation active-state fix
+The top navigation highlight now follows the section that was clicked. The Home tab is no longer permanently highlighted; clicking Tulunad Glimpse, Leaders, Updates, Gallery, or Join moves the gold underline to that tab and keeps it there until another navigation item is selected. Hash changes are also synchronized.

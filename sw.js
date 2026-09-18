@@ -1,11 +1,10 @@
-const CACHE='yyc-v7';
+const CACHE='yyc-v8';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
-  './assets/bhoota-kola.webp','./assets/river-circle.webp','./assets/temple-circle.webp',
+  './assets/bhoota-kola.webp','./assets/dharma-daiva.webp','./assets/aati-kalenja.webp','./assets/yakshagana.webp','./assets/river-circle.webp','./assets/temple-circle.webp',
   './assets/glimpse-river.webp','./assets/glimpse-temple.webp','./assets/glimpse-hills.webp',
-  './assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png',
-  './assets/panjurli-panjurli.png','./assets/yakshagana.png','./assets/aati-kalenja.png'
+  './assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png'
 ];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

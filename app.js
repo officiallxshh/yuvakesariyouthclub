@@ -4,7 +4,7 @@ const ADMIN={lxshhadmin:'yyclxshhboss'};
 const DEFAULTS={
  leaders:[{id:'leader-1',name:'AHWIN Y',role:'PRESIDENT',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo:'',scale:1,posX:50,posY:50}],
  members:[],updates:[{id:'update-1',title:'Welcome to Yuvakesari Youth Club',body:'Youth energy, community spirit and meaningful action — together from Subrahmanya.',date:new Date().toISOString().slice(0,10)}],
- gallery:[{id:'gallery-1',title:'Tulunadu · Subrahmanya',src:'assets/hero-tulunad.webp'},{id:'gallery-2',title:'Bhuta Kola · Tulunadu',src:'assets/bhoota-kola.webp'}],
+ gallery:[{id:'gallery-1',title:'Dharma Daiva · Tulunadu',src:'assets/dharma-daiva.webp'},{id:'gallery-2',title:'Aati Kalenja · Tulunadu',src:'assets/aati-kalenja.webp'},{id:'gallery-3',title:'Yakshagana · Coastal Art',src:'assets/yakshagana.webp'}],
  pendingMembers:[],pendingUpdates:[],pendingGallery:[],
  socials:{instagram:'https://www.instagram.com/yuvakesari__kukke/',whatsapp:'https://chat.whatsapp.com/FW4v1bvUKYW4DDgTcKTYFL?s=sw&p=a&mlu=4&ilr=4',x:'',facebook:''},
  settings:{clubName:'YUVAKESARI YOUTH CLUB',location:'SUBRAHMANYA · KARNATAKA',slogan:'ಧರ್ಮೋ ರಕ್ಷಿತ ರಕ್ಷಿತಃ 🚩'}
@@ -24,6 +24,23 @@ function closeModal(){if(!modalOpen)return;$('#modal').classList.remove('open');
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2500)}
 function fileData(file,max=1200){return new Promise((res,rej)=>{if(!file)return res('');const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const scale=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.82))};img.onerror=rej;img.src=reader.result};reader.onerror=rej;reader.readAsDataURL(file)})}
 function nav(){ $('#year').textContent=new Date().getFullYear(); $('#heroSocial').innerHTML=socialHTML(true); $('#footerSocial').innerHTML=socialHTML(false)}
+function setActiveNav(id){
+  const target=id || (location.hash ? location.hash.slice(1) : 'home');
+  $$('.desktop-nav .nav-link, #mobilePanel .nav-link').forEach(link=>{
+    const href=(link.getAttribute('href')||'').replace(/^#/,'');
+    link.classList.toggle('active', href===target);
+    link.setAttribute('aria-current', href===target ? 'page' : 'false');
+  });
+}
+function bindNavState(){
+  const links=$$('.desktop-nav .nav-link, #mobilePanel .nav-link');
+  links.forEach(link=>link.addEventListener('click',()=>{
+    const target=(link.getAttribute('href')||'').replace(/^#/,'') || 'home';
+    setActiveNav(target);
+  }));
+  window.addEventListener('hashchange',()=>setActiveNav());
+  setActiveNav();
+}
 function socialHTML(hero){const s=db.socials;const arr=[];if(s.whatsapp)arr.push(`<a class="social-link" data-social="whatsapp" aria-label="WhatsApp" href="${esc(s.whatsapp)}" target="_blank" rel="noopener"><img src="assets/social-whatsapp.png" alt="WhatsApp" width="32" height="32" loading="eager"></a>`);if(s.instagram)arr.push(`<a class="social-link" data-social="instagram" aria-label="Instagram" href="${esc(s.instagram)}" target="_blank" rel="noopener"><img src="assets/social-instagram.png" alt="Instagram" width="32" height="32" loading="eager"></a>`);if(s.x)arr.push(`<a class="social-link" data-social="x" aria-label="X" href="${esc(s.x)}" target="_blank" rel="noopener"><img src="assets/social-x.png" alt="X" width="32" height="32" loading="eager"></a>`);if(s.facebook)arr.push(`<a class="social-link" data-social="facebook" aria-label="Facebook" href="${esc(s.facebook)}" target="_blank" rel="noopener"><img src="assets/social-facebook.png" alt="Facebook" width="32" height="32" loading="eager"></a>`);if(!arr.length)arr.push(`<span style="color:#888;font-size:11px">Social links will appear here.</span>`);return arr.join('')}
 function renderSite(){nav();$('#leaderCount').textContent=String(db.leaders.length).padStart(2,'0');$('#leadersGrid').innerHTML=db.leaders.length?db.leaders.map((l,i)=>`<article class="leader-card reveal visible"><div class="leader-photo">${l.photo?`<img src="${l.photo}" alt="${esc(l.name)}" style="transform:scale(${Number(l.scale)||1});object-position:${Number(l.posX??50)}% ${Number(l.posY??50)}%">`:'<span class="photo-placeholder">✦</span>'}</div><div class="leader-info"><strong>${esc(l.name)}</strong><small>${esc(l.role)}</small><div class="micro">${esc(l.line||'')}</div></div></article>`).join(''):'<div class="empty">Leadership profiles will appear here.</div>';
 $('#updatesGrid').innerHTML=db.updates.length?db.updates.map(u=>`<article class="update-card reveal visible"><time>${esc(fmtDate(u.date))}</time><div><h3>${esc(u.title)}</h3><p>${esc(u.body)}</p></div><span></span></article>`).join(''):'<div class="empty">No updates published yet.</div>';
@@ -58,7 +75,7 @@ function approvePendingUpdate(i){db.updates.unshift(db.pendingUpdates.splice(i,1
 function exportBackup(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='yuvakesari-youth-club-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)}
 function setup(){
  $('#adminOpenBtn').addEventListener('click',login);$('#adminOpenMobile').addEventListener('click',()=>{closeMobile();login()});$('#footerAdminBtn').addEventListener('click',login);$('#memberRegisterBtn').addEventListener('click',()=>memberForm(false));$('#submitUpdateBtn').addEventListener('click',submitUpdate);$('#submitGalleryBtn').addEventListener('click',submitGallery);
- $('#menuBtn').addEventListener('click',()=>{$('#mobilePanel').classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',$('#mobilePanel').classList.contains('open'))});$$('#mobilePanel a').forEach(a=>a.addEventListener('click',closeMobile));$$('[data-close]').forEach(x=>x.addEventListener('click',closeModal));document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobile()}});observeReveals();renderSite();
+ $('#menuBtn').addEventListener('click',()=>{$('#mobilePanel').classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',$('#mobilePanel').classList.contains('open'))});$$('#mobilePanel a').forEach(a=>a.addEventListener('click',closeMobile));bindNavState();$$('[data-close]').forEach(x=>x.addEventListener('click',closeModal));document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobile()}});observeReveals();renderSite();
 }
 function closeMobile(){$('#mobilePanel').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false')}
 function observeReveals(){const io='IntersectionObserver'in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.08}):null;if(io)$$('.reveal').forEach(el=>io.observe(el));else $$('.reveal').forEach(el=>el.classList.add('visible'))}
