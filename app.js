@@ -201,7 +201,7 @@ function adminPanel(tab){
   getAdmin().then(function(d){
     if(!d) return;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2></div><button class="mini-btn" id="adminLogout">Logout</button></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div></div>');
@@ -265,6 +265,49 @@ function renderAdminTab(tab,d){
     $$('[data-du]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-du'),p_action:'deny'},'Update denied');});});
     $$('[data-ag]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-ag'),p_action:'approve'},'Gallery published');});});
     $$('[data-dg]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-dg'),p_action:'deny'},'Gallery denied');});});
+    return;
+  }
+  if(tab==='storage'){
+    a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading live data…</strong><span>Reading the YYC database</span></div>';
+    rpc('admin_storage_summary',{p_token:adminToken}).then(function(s){
+      if(!s.ok) throw new Error(s.error||'Unable to load storage');
+      var c=s.counts||{};
+      var cards=[
+        ['members','Members',c.members||0,'👥'],
+        ['approved_members','Approved',c.approved_members||0,'✓'],
+        ['pending_members','Pending',c.pending_members||0,'⏳'],
+        ['leaders','Leaders',c.leaders||0,'♛'],
+        ['announcements','Announcements',c.announcements||0,'▤'],
+        ['gallery','Gallery',c.gallery||0,'▧'],
+        ['events','Events',c.events||0,'◷'],
+        ['volunteers','Volunteers',c.volunteers||0,'✦']
+      ];
+      function rows(arr,cols){
+        if(!arr || !arr.length) return '<div class="storage-empty">No records yet.</div>';
+        return '<div class="storage-table"><div class="storage-row storage-head">'+cols.map(function(x){return '<div>'+x[0]+'</div>';}).join('')+'</div>'+
+          arr.map(function(row){
+            return '<div class="storage-row">'+cols.map(function(x){
+              var v=row[x[1]];
+              if(x[1]==='approved') v=v?'Approved':'Pending';
+              if(x[1]==='status' && !v) v='published';
+              if(x[1]==='event_date' || x[1]==='published_at' || x[1]==='created_at') v=v?new Date(v).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';
+              return '<div title="'+esc(v==null?'':v)+'">'+esc(v==null||v===''?'-':v)+'</div>';
+            }).join('')+'</div>';
+          }).join('')+'</div>';
+      }
+      a.innerHTML='<div class="storage-top"><div><div class="modal-kicker">LIVE DATABASE</div><h2 class="modal-title">Data Storage</h2><p class="modal-sub">Live counts and records from the YYC Supabase database.</p></div><div class="storage-meta"><span>Updated</span><b>'+esc(new Date(s.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+'</b><button class="mini-btn gold" id="storageRefresh">↻ Refresh</button></div></div>'+
+        '<div class="storage-stats">'+cards.map(function(x){return '<div class="storage-stat"><i>'+x[3]+'</i><div><b>'+x[2]+'</b><span>'+x[1]+'</span></div></div>';}).join('')+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Members</h3><span>'+((s.members||[]).length)+' shown</span></div>'+rows(s.members,[['Name','name'],['Role Number','role_number'],['Status','status']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Leaders</h3><span>'+((s.leaders||[]).length)+' shown</span></div>'+rows(s.leaders,[['Name','name'],['Role','role'],['Created','created_at']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Announcements</h3><span>'+((s.announcements||[]).length)+' shown</span></div>'+rows(s.announcements,[['Title','title'],['Status','status'],['Published','published_at']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Gallery</h3><span>'+((s.gallery||[]).length)+' shown</span></div>'+rows(s.gallery,[['Title','title'],['Caption','caption'],['Status','status']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Events</h3><span>'+((s.events||[]).length)+' shown</span></div>'+rows(s.events,[['Title','title'],['Date','event_date'],['Location','location']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>Volunteers</h3><span>'+((s.volunteers||[]).length)+' shown</span></div>'+rows(s.volunteers,[['Name','name'],['Area','area'],['Approved','approved']])+'</div>';
+      $('#storageRefresh').addEventListener('click',function(){adminPanel('storage');});
+    }).catch(function(e){
+      a.innerHTML='<div class="storage-error"><strong>Could not load live storage.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="storageRetry">Retry</button></div>';
+      $('#storageRetry').addEventListener('click',function(){adminPanel('storage');});
+    });
     return;
   }
   if(tab==='settings'){
