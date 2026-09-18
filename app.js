@@ -1,84 +1,333 @@
 'use strict';
-const STORE='yyc_site_v4';
-const ADMIN={lxshhadmin:'yyclxshhboss'};
-const DEFAULTS={
- leaders:[{id:'leader-1',name:'AHWIN Y',role:'PRESIDENT',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo:'',scale:1,posX:50,posY:50}],
- members:[],updates:[{id:'update-1',title:'Welcome to Yuvakesari Youth Club',body:'Youth energy, community spirit and meaningful action — together from Subrahmanya.',date:new Date().toISOString().slice(0,10)}],
- gallery:[{id:'gallery-1',title:'Dharma Daiva · Tulunadu',src:'assets/dharma-daiva.webp'},{id:'gallery-2',title:'Aati Kalenja · Tulunadu',src:'assets/aati-kalenja.webp'},{id:'gallery-3',title:'Yakshagana · Coastal Art',src:'assets/yakshagana.webp'}],
- pendingMembers:[],pendingUpdates:[],pendingGallery:[],
- socials:{instagram:'https://www.instagram.com/yuvakesari__kukke/',whatsapp:'https://chat.whatsapp.com/FW4v1bvUKYW4DDgTcKTYFL?s=sw&p=a&mlu=4&ilr=4',x:'',facebook:''},
- settings:{clubName:'YUVAKESARI YOUTH CLUB',location:'SUBRAHMANYA · KARNATAKA',slogan:'ಧರ್ಮೋ ರಕ್ಷति ರಕ್ಷಿತಃ 🚩'}
+
+var YYC_CONFIG = {
+  supabaseUrl: 'https://vrllozfzheikjbhxvpkx.supabase.co',
+  supabaseKey: 'sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt'
 };
-const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-const deep=o=>JSON.parse(JSON.stringify(o));
-function load(){try{const d=JSON.parse(localStorage.getItem(STORE));return mergeDefaults(d)}catch{ return deep(DEFAULTS)}}
-function mergeDefaults(d){const out=deep(DEFAULTS);if(!d||typeof d!=='object')return out;for(const k of Object.keys(out)){if(Array.isArray(out[k]))out[k]=Array.isArray(d[k])?d[k]:out[k];else if(out[k]&&typeof out[k]==='object')out[k]=Object.assign(out[k],d[k]||{});else if(d[k]!=null)out[k]=d[k]}return out}
-let db=load(), modalOpen=false,currentAdmin=null;
-function save(){localStorage.setItem(STORE,JSON.stringify(db));renderSite()}
-function esc(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function id(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)}
-function today(){return new Date().toISOString().slice(0,10)}
-function fmtDate(v){if(!v)return '';const d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
-function openModal(html){$('#modalContent').innerHTML=html;$('#modal').classList.add('open');$('#modal').setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modalOpen=true}
-function closeModal(){if(!modalOpen)return;$('#modal').classList.remove('open');$('#modal').setAttribute('aria-hidden','true');document.body.style.overflow='';modalOpen=false}
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2500)}
-function fileData(file,max=1200){return new Promise((res,rej)=>{if(!file)return res('');const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const scale=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.82))};img.onerror=rej;img.src=reader.result};reader.onerror=rej;reader.readAsDataURL(file)})}
-function nav(){ $('#year').textContent=new Date().getFullYear(); $('#heroSocial').innerHTML=socialHTML(true); $('#footerSocial').innerHTML=socialHTML(false)}
-function setActiveNav(id){
-  const target=id || (location.hash ? location.hash.slice(1) : 'home');
-  $$('.desktop-nav .nav-link, #mobilePanel .nav-link').forEach(link=>{
-    const href=(link.getAttribute('href')||'').replace(/^#/,'');
-    link.classList.toggle('active', href===target);
-    link.setAttribute('aria-current', href===target ? 'page' : 'false');
+
+var sb = window.supabase.createClient(YYC_CONFIG.supabaseUrl, YYC_CONFIG.supabaseKey);
+var ADMIN_TOKEN_KEY = 'yyc_admin_session_v1';
+var MEMBER_TOKEN_KEY = 'yyc_member_session_v1';
+var adminToken = sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+var memberToken = localStorage.getItem(MEMBER_TOKEN_KEY) || '';
+var publicData = null;
+var adminData = null;
+
+var $ = function(s){ return document.querySelector(s); };
+var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+function esc(v){
+  return String(v == null ? '' : v).replace(/[&<>'"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
   });
 }
-function bindNavState(){
-  const links=$$('.desktop-nav .nav-link, #mobilePanel .nav-link');
-  links.forEach(link=>link.addEventListener('click',()=>{
-    const target=(link.getAttribute('href')||'').replace(/^#/,'') || 'home';
-    setActiveNav(target);
-  }));
-  window.addEventListener('hashchange',()=>setActiveNav());
-  setActiveNav();
+function toast(msg){
+  var t=$('#toast'); if(!t) return;
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window.__yycToast);
+  window.__yycToast=setTimeout(function(){t.classList.remove('show');},2600);
 }
-function socialHTML(hero){const s=db.socials;const arr=[];if(s.whatsapp)arr.push(`<a class="social-link" data-social="whatsapp" aria-label="WhatsApp" href="${esc(s.whatsapp)}" target="_blank" rel="noopener"><img src="assets/social-whatsapp.png" alt="WhatsApp" width="32" height="32" loading="eager"></a>`);if(s.instagram)arr.push(`<a class="social-link" data-social="instagram" aria-label="Instagram" href="${esc(s.instagram)}" target="_blank" rel="noopener"><img src="assets/social-instagram.png" alt="Instagram" width="32" height="32" loading="eager"></a>`);if(s.x)arr.push(`<a class="social-link" data-social="x" aria-label="X" href="${esc(s.x)}" target="_blank" rel="noopener"><img src="assets/social-x.png" alt="X" width="32" height="32" loading="eager"></a>`);if(s.facebook)arr.push(`<a class="social-link" data-social="facebook" aria-label="Facebook" href="${esc(s.facebook)}" target="_blank" rel="noopener"><img src="assets/social-facebook.png" alt="Facebook" width="32" height="32" loading="eager"></a>`);if(!arr.length)arr.push(`<span style="color:#888;font-size:11px">Social links will appear here.</span>`);return arr.join('')}
-function renderSite(){nav();$('#leaderCount').textContent=String(db.leaders.length).padStart(2,'0');$('#leadersGrid').innerHTML=db.leaders.length?db.leaders.map((l,i)=>`<article class="leader-card reveal visible"><div class="leader-photo">${l.photo?`<img src="${l.photo}" alt="${esc(l.name)}" style="transform:scale(${Number(l.scale)||1});object-position:${Number(l.posX??50)}% ${Number(l.posY??50)}%">`:'<span class="photo-placeholder">✦</span>'}</div><div class="leader-info"><strong>${esc(l.name)}</strong><small>${esc(l.role)}</small><div class="micro">${esc(l.line||'')}</div></div></article>`).join(''):'<div class="empty">Leadership profiles will appear here.</div>';
-$('#updatesGrid').innerHTML=db.updates.length?db.updates.map(u=>`<article class="update-card reveal visible"><time>${esc(fmtDate(u.date))}</time><div><h3>${esc(u.title)}</h3><p>${esc(u.body)}</p></div><span></span></article>`).join(''):'<div class="empty">No updates published yet.</div>';
-$('#galleryGrid').innerHTML=db.gallery.length?db.gallery.map(g=>`<figure class="gallery-card reveal visible"><img src="${esc(g.src)}" alt="${esc(g.title)}"><figcaption>${esc(g.title)}</figcaption></figure>`).join(''):'<div class="empty">No gallery items published yet.</div>';
+function openModal(html){
+  $('#modalContent').innerHTML=html;
+  $('#modal').classList.add('open');
+  $('#modal').setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
 }
-function login(){openModal(`<div class="login-wrap"><img src="assets/yyc-logo-clean.webp" style="width:76px;height:76px;border-radius:50%;object-fit:cover" alt="YYC"><div class="section-kicker" style="margin-top:20px">PRIVATE MANAGEMENT</div><h2 class="modal-title" id="modalTitle">YYC Admin Access</h2><p class="modal-sub">Manage members, leaders, updates, gallery, approvals and social links.</p><form id="loginForm"><div class="form-grid"><div class="field full"><label>Admin ID</label><input id="aid" autocomplete="username" placeholder="lxshhadmin" required></div><div class="field full"><label>Password</label><input id="apass" type="password" autocomplete="current-password" required></div></div><div class="form-actions"><button class="btn gold" type="submit">Enter Admin ↗</button></div></form><p class="security">GitHub Pages mode stores data in this browser. The login is a front-end demo gate, not server-side security.</p></div>`);$('#loginForm').addEventListener('submit',e=>{e.preventDefault();const u=$('#aid').value.trim().toLowerCase(),p=$('#apass').value;if(ADMIN[u]===p){currentAdmin=u;adminPanel()}else toast('Invalid admin ID or password')})}
-function adminPanel(){renderAdmin('overview')}
-function renderAdmin(tab){const tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['settings','Settings']];openModal(`<div class="admin-shell"><aside class="admin-side">${tabs.map(([idn,label])=>`<button class="${tab===idn?'active':''}" data-tab="${idn}">${label}</button>`).join('')}<button id="adminLogout">Log out</button></aside><div class="admin-main" id="adminMain"></div></div>`);$('#adminLogout').addEventListener('click',()=>{currentAdmin=null;closeModal();toast('Logged out')});$$('[data-tab]').forEach(b=>b.addEventListener('click',()=>renderAdmin(b.dataset.tab)));adminView(tab)}
-function adminView(tab){const a=$('#adminMain');const approved=db.members.filter(x=>x.status==='approved').length,pending=db.members.filter(x=>x.status==='pending').length||db.pendingMembers.length; if(tab==='overview'){a.innerHTML=`<div class="admin-top"><h2>Admin overview</h2><button class="mini-btn gold" id="backupBtn">Export backup</button></div><div class="stats"><div class="stat"><b>${approved}</b><span>Approved members</span></div><div class="stat"><b>${pending}</b><span>Pending approvals</span></div><div class="stat"><b>${db.leaders.length}</b><span>Leaders</span></div><div class="stat"><b>${db.updates.length}</b><span>Published updates</span></div></div><div class="notice" style="margin-top:16px">Signed in as <strong>${esc(currentAdmin)}</strong>. Use Approvals to review new member, update and gallery submissions.</div>`;$('#backupBtn').addEventListener('click',exportBackup);return}
-if(tab==='members'){a.innerHTML=`<div class="admin-top"><h2>Members</h2><button class="mini-btn gold" id="addMember">+ Add member</button></div><div class="admin-table"><div class="admin-row" style="color:#8c939e;font-size:10px;text-transform:uppercase;letter-spacing:.12em"><div>Name</div><div>Status</div><div>Actions</div></div>${db.members.length?db.members.map((m,i)=>`<div class="admin-row"><div><strong>${esc(m.name)}</strong><div style="color:#8c939e;font-size:11px">${esc(m.roleNumber||'No role number')} · ${esc(m.phone||'')}</div></div><div style="font-size:11px;color:${m.status==='approved'?'#d7ae66':m.status==='pending'?'#fff':'#8c939e'}">${esc(m.status)}</div><div class="admin-actions"><button class="mini-btn" onclick="YYC.viewMember(${i})">View card</button>${m.status==='pending'?`<button class="mini-btn gold" onclick="YYC.approveMember(${i})">Approve</button><button class="mini-btn" onclick="YYC.denyMember(${i})">Deny</button>`:''}<button class="mini-btn" onclick="YYC.removeMember(${i})">Remove</button></div></div>`).join(''):'<div class="empty" style="margin:14px">No member records yet.</div>'}</div>`;$('#addMember').addEventListener('click',()=>memberForm(true));return}
-if(tab==='leaders'){a.innerHTML=`<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeader">+ Add leader</button></div><div class="admin-card-list">${db.leaders.length?db.leaders.map((l,i)=>`<div class="approval-card"><div class="meta"><strong>${esc(l.name)}</strong><small>${esc(l.role)} · ${esc(l.line||'')}</small></div><div class="admin-actions"><button class="mini-btn" onclick="YYC.editLeader(${i})">Edit</button><button class="mini-btn" onclick="YYC.removeLeader(${i})">Remove</button></div></div>`).join(''):'<div class="empty">No leaders.</div>'}</div>`;$('#addLeader').addEventListener('click',()=>leaderForm());return}
-if(tab==='updates'){a.innerHTML=`<div class="admin-top"><h2>Updates</h2><button class="mini-btn gold" id="addUpdate">+ Add update</button></div><div class="admin-card-list">${db.updates.length?db.updates.map((u,i)=>`<div class="approval-card"><div class="meta"><strong>${esc(u.title)}</strong><small>${esc(fmtDate(u.date))} · ${esc(u.body.slice(0,90))}${u.body.length>90?'…':''}</small></div><div class="admin-actions"><button class="mini-btn" onclick="YYC.editUpdate(${i})">Edit</button><button class="mini-btn" onclick="YYC.removeUpdate(${i})">Delete</button></div></div>`).join(''):'<div class="empty">No updates.</div>'}</div>`;$('#addUpdate').addEventListener('click',()=>updateForm());return}
-if(tab==='gallery'){a.innerHTML=`<div class="admin-top"><h2>Gallery</h2><button class="mini-btn gold" id="addGallery">+ Add photo</button></div><div class="gallery-grid" style="grid-template-columns:repeat(2,1fr)">${db.gallery.length?db.gallery.map((g,i)=>`<figure class="gallery-card" style="min-height:260px"><img src="${esc(g.src)}"><figcaption>${esc(g.title)} <button class="mini-btn" style="margin-left:8px" onclick="YYC.removeGallery(${i})">Delete</button></figcaption></figure>`).join(''):'<div class="empty">No gallery.</div>'}</div>`;$('#addGallery').addEventListener('click',()=>galleryForm());return}
-if(tab==='approvals'){const has=db.pendingMembers.length+db.pendingUpdates.length+db.pendingGallery.length;if(!has){a.innerHTML=`<div class="admin-top"><h2>Approvals</h2></div><div class="empty">No pending submissions.</div>`;return}a.innerHTML=`<div class="admin-top"><h2>Approvals</h2></div><div class="admin-card-list">${db.pendingMembers.map((m,i)=>`<div class="approval-card"><div class="meta"><strong>${esc(m.name)} · Member</strong><small>${esc(m.phone||'')} · ${esc(m.email||'')}</small></div><div class="admin-actions"><button class="mini-btn gold" onclick="YYC.approvePendingMember(${i})">Approve</button><button class="mini-btn" onclick="YYC.denyPendingMember(${i})">Deny</button></div></div>`).join('')}${db.pendingUpdates.map((u,i)=>`<div class="approval-card"><div class="meta"><strong>${esc(u.title)} · Update</strong><small>${esc(u.body)}</small></div><div class="admin-actions"><button class="mini-btn gold" onclick="YYC.approvePendingUpdate(${i})">Publish</button><button class="mini-btn" onclick="YYC.denyPendingUpdate(${i})">Deny</button></div></div>`).join('')}${db.pendingGallery.map((g,i)=>`<div class="approval-card"><div class="meta"><strong>${esc(g.title)} · Gallery</strong><small>Photo submission</small></div><div class="admin-actions"><button class="mini-btn gold" onclick="YYC.approvePendingGallery(${i})">Publish</button><button class="mini-btn" onclick="YYC.denyPendingGallery(${i})">Deny</button></div></div>`).join('')}</div>`;return}
-if(tab==='settings'){const s=db.socials;a.innerHTML=`<div class="admin-top"><h2>Settings</h2></div><form id="settingsForm"><div class="form-grid"><div class="field"><label>Club name</label><input id="setName" value="${esc(db.settings.clubName)}"></div><div class="field"><label>Location</label><input id="setLoc" value="${esc(db.settings.location)}"></div><div class="field full"><label>Slogan</label><input id="setSlogan" value="${esc(db.settings.slogan)}"></div><div class="field"><label>Instagram URL</label><input id="setInsta" value="${esc(s.instagram)}"></div><div class="field"><label>WhatsApp URL</label><input id="setWhats" value="${esc(s.whatsapp)}"></div><div class="field"><label>X URL</label><input id="setX" value="${esc(s.x)}" placeholder="https://x.com/..."></div><div class="field"><label>Facebook URL</label><input id="setFb" value="${esc(s.facebook)}" placeholder="https://facebook.com/..."></div></div><div class="form-actions"><button class="btn gold">Save site settings</button></div></form>`;$('#settingsForm').addEventListener('submit',e=>{e.preventDefault();db.settings.clubName=$('#setName').value.trim();db.settings.location=$('#setLoc').value.trim();db.settings.slogan=$('#setSlogan').value.trim();db.socials={instagram:$('#setInsta').value.trim(),whatsapp:$('#setWhats').value.trim(),x:$('#setX').value.trim(),facebook:$('#setFb').value.trim()};save();toast('Settings saved');adminPanel()});return}}
-function cropEditor(prefix,obj){return `<div class="crop-editor"><div class="crop-preview"><img id="${prefix}Preview" src="${obj.photo||'assets/yyc-logo-clean.webp'}" style="object-position:${obj.posX}% ${obj.posY}%;transform:scale(${obj.scale})" alt="preview"></div><div class="crop-controls"><div class="range-row"><label>Zoom</label><input id="${prefix}Scale" type="range" min="1" max="2.5" step="0.01" value="${obj.scale}"><output id="${prefix}ScaleOut">${obj.scale.toFixed(2)}×</output></div><div class="range-row"><label>Left/Right</label><input id="${prefix}X" type="range" min="0" max="100" step="1" value="${obj.posX}"><output id="${prefix}XOut">${obj.posX}%</output></div><div class="range-row"><label>Up/Down</label><input id="${prefix}Y" type="range" min="0" max="100" step="1" value="${obj.posY}"><output id="${prefix}YOut">${obj.posY}%</output></div><div class="notice">Adjust the photo before saving. The same framing will be used on the public profile or membership card.</div></div></div>`}
-function wireCrop(prefix,obj,fileId){const upd=()=>{obj.scale=+$('#'+prefix+'Scale').value;obj.posX=+$('#'+prefix+'X').value;obj.posY=+$('#'+prefix+'Y').value;$('#'+prefix+'Preview').style.transform=`scale(${obj.scale})`;$('#'+prefix+'Preview').style.objectPosition=`${obj.posX}% ${obj.posY}%`;$('#'+prefix+'ScaleOut').value='';$('#'+prefix+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';$('#'+prefix+'XOut').textContent=obj.posX+'%';$('#'+prefix+'YOut').textContent=obj.posY+'%'};['Scale','X','Y'].forEach(k=>$('#'+prefix+k).addEventListener('input',upd));$('#'+fileId).addEventListener('change',async()=>{const data=await fileData($('#'+fileId).files[0]);if(data){obj.photo=data;$('#'+prefix+'Preview').src=data}})}
-function leaderForm(index=null){const l=index==null?{id:id(),name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo:'',scale:1,posX:50,posY:50}:deep(db.leaders[index]);openModal(`<h2 class="modal-title">${index==null?'Add':'Edit'} leader</h2><form id="leaderForm"><div class="form-grid"><div class="field"><label>Name</label><input id="ln" value="${esc(l.name)}" required></div><div class="field"><label>Role</label><input id="lr" value="${esc(l.role)}" required></div><div class="field full"><label>Club line</label><input id="ll" value="${esc(l.line)}"></div><div class="field full"><label>Photo</label><input id="lf" type="file" accept="image/*"></div></div>${cropEditor('l',l,'lf')}<div class="form-actions"><button class="btn gold">Save leader</button></div></form>`);wireCrop('l',l,'lf');$('#leaderForm').addEventListener('submit',e=>{e.preventDefault();l.name=$('#ln').value.trim();l.role=$('#lr').value.trim();l.line=$('#ll').value.trim();if(index==null)db.leaders.push(l);else db.leaders[index]=l;save();toast('Leader saved');adminPanel()})}
-function memberForm(adminCreate=false){const m={id:id(),name:'',dob:'',phone:'',email:'',role:'Member',club:'Yuvakesari Youth Club',photo:'',scale:1,posX:50,posY:50,status:adminCreate?'approved':'pending',roleNumber:''};openModal(`<h2 class="modal-title">Member registration</h2><p class="modal-sub">${adminCreate?'Create an approved member directly.':'Submit your details for admin review. Approved members receive a unique role number and digital membership card.'}</p><form id="memberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="mn" required></div><div class="field"><label>Date of birth</label><input id="md" type="date" required></div><div class="field"><label>Phone</label><input id="mp" required></div><div class="field"><label>Email</label><input id="me" type="email"></div><div class="field"><label>Preferred role</label><input id="mr" value="Member"></div><div class="field"><label>Club name</label><input id="mc" value="Yuvakesari Youth Club"></div><div class="field full"><label>Photo</label><input id="mf" type="file" accept="image/*" required></div></div>${cropEditor('m',m,'mf')}<div class="form-actions"><button class="btn gold">${adminCreate?'Create member':'Submit application'}</button></div></form>`);wireCrop('m',m,'mf');$('#memberForm').addEventListener('submit',async e=>{e.preventDefault();m.name=$('#mn').value.trim();m.dob=$('#md').value;m.phone=$('#mp').value.trim();m.email=$('#me').value.trim();m.role=$('#mr').value.trim();m.club=$('#mc').value.trim();if(!m.photo)return toast('Choose a photo');if(adminCreate){m.roleNumber=nextRole();m.status='approved';db.members.push(m)}else{m.status='pending';db.pendingMembers.push(m)}save();closeModal();toast(adminCreate?'Member created':'Application sent for admin review')})}
-function nextRole(){const nums=db.members.concat(db.pendingMembers).map(m=>String(m.roleNumber||'')).map(x=>parseInt(x.split('-').pop(),10)).filter(Number.isFinite);return `YYC-${new Date().getFullYear()}-${String((Math.max(0,...nums)+1)).padStart(4,'0')}`}
-function updateForm(index=null){const u=index==null?{id:id(),title:'',body:'',date:today()}:deep(db.updates[index]);openModal(`<h2 class="modal-title">${index==null?'Add':'Edit'} update</h2><form id="updateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="ut" value="${esc(u.title)}" required></div><div class="field"><label>Date</label><input id="ud" type="date" value="${esc(u.date)}" required></div><div class="field full"><label>Message</label><textarea id="ub" required>${esc(u.body)}</textarea></div></div><div class="form-actions"><button class="btn gold">Save update</button></div></form>`);$('#updateForm').addEventListener('submit',e=>{e.preventDefault();u.title=$('#ut').value.trim();u.date=$('#ud').value;u.body=$('#ub').value.trim();if(index==null)db.updates.unshift(u);else db.updates[index]=u;save();toast('Update saved');adminPanel()})}
-function galleryForm(){const g={id:id(),title:'',src:''};openModal(`<h2 class="modal-title">Add gallery photo</h2><form id="galleryForm"><div class="form-grid"><div class="field full"><label>Caption</label><input id="gt" required></div><div class="field full"><label>Image</label><input id="gf" type="file" accept="image/*" required></div></div><div class="crop-preview" style="width:100%;height:250px"><img id="gPreview" src="assets/yyc-logo-clean.webp" alt="preview"></div><div class="form-actions"><button class="btn gold">Publish photo</button></div></form>`);$('#gf').addEventListener('change',async()=>{g.src=await fileData($('#gf').files[0]);if(g.src)$('#gPreview').src=g.src});$('#galleryForm').addEventListener('submit',e=>{e.preventDefault();if(!g.src)return toast('Choose an image');g.title=$('#gt').value.trim();db.gallery.unshift(g);save();toast('Gallery photo published');adminPanel()})}
-function editLeader(i){leaderForm(i)}function editUpdate(i){updateForm(i)}function removeLeader(i){if(confirm('Remove this leader?')){db.leaders.splice(i,1);save();toast('Leader removed');adminPanel()}}function removeUpdate(i){if(confirm('Delete this update?')){db.updates.splice(i,1);save();toast('Update deleted');adminPanel()}}function removeGallery(i){if(confirm('Delete this gallery photo?')){db.gallery.splice(i,1);save();toast('Gallery photo deleted');adminPanel()}}function removeMember(i){if(confirm('Remove this member record?')){db.members.splice(i,1);save();toast('Member removed');adminPanel()}}
-function approveMember(i){const m=db.members[i];m.status='approved';if(!m.roleNumber)m.roleNumber=nextRole();save();toast('Member approved');adminPanel('members')}
-function denyMember(i){db.members[i].status='denied';save();toast('Member denied');adminPanel('members')}
-function viewMember(i){const m=db.members[i];openModal(`<div class="section-kicker">DIGITAL MEMBERSHIP CARD</div><div class="membership" style="margin-top:15px"><div class="membership-photo"><img src="${esc(m.photo)}" alt="${esc(m.name)}" style="transform:scale(${m.scale||1});object-position:${m.posX||50}% ${m.posY||50}%"></div><div><div class="section-kicker">YUVAKESARI YOUTH CLUB</div><h3>${esc(m.name)}</h3><div class="role-num">${esc(m.roleNumber||'PENDING APPROVAL')}</div><div style="color:#a8adb7;margin-top:7px">${esc(m.role||'Member')} · ${esc(m.club||'')}</div></div></div><div class="form-actions"><button class="btn outline" id="closeCard">Close</button></div>`);$('#closeCard').addEventListener('click',closeModal)}
-function approvePendingMember(i){const m=db.pendingMembers.splice(i,1)[0];m.status='approved';m.roleNumber=nextRole();db.members.push(m);save();toast('Member approved and role number assigned');adminPanel('approvals')}
-function denyPendingMember(i){db.pendingMembers.splice(i,1);save();toast('Member application denied');adminPanel('approvals')}
-function submitUpdate(){const u={id:id(),title:'',body:'',date:today()};openModal(`<h2 class="modal-title">Submit an update</h2><p class="modal-sub">Your update will go to admin approval.</p><form id="submitUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="sut" required></div><div class="field"><label>Date</label><input id="sud" type="date" value="${today()}"></div><div class="field full"><label>Message</label><textarea id="sub" required></textarea></div></div><div class="form-actions"><button class="btn gold">Send for approval</button></div></form>`);$('#submitUpdateForm').addEventListener('submit',e=>{e.preventDefault();u.title=$('#sut').value.trim();u.body=$('#sub').value.trim();u.date=$('#sud').value;db.pendingUpdates.unshift(u);save();closeModal();toast('Update sent to admin approval queue')})}
-function submitGallery(){const g={id:id(),title:'',src:''};openModal(`<h2 class="modal-title">Submit gallery item</h2><p class="modal-sub">Your photo will go to admin approval.</p><form id="submitGalleryForm"><div class="form-grid"><div class="field full"><label>Caption</label><input id="sgt" required></div><div class="field full"><label>Photo</label><input id="sgf" type="file" accept="image/*" required></div></div><div class="crop-preview" style="width:100%;height:250px"><img id="sgPreview" src="assets/yyc-logo-clean.webp"></div><div class="form-actions"><button class="btn gold">Send for approval</button></div></form>`);$('#sgf').addEventListener('change',async()=>{g.src=await fileData($('#sgf').files[0]);if(g.src)$('#sgPreview').src=g.src});$('#submitGalleryForm').addEventListener('submit',e=>{e.preventDefault();if(!g.src)return toast('Choose a photo');g.title=$('#sgt').value.trim();db.pendingGallery.unshift(g);save();closeModal();toast('Gallery item sent for admin approval')})}
-function approvePendingUpdate(i){db.updates.unshift(db.pendingUpdates.splice(i,1)[0]);save();toast('Update published');adminPanel('approvals')}function denyPendingUpdate(i){db.pendingUpdates.splice(i,1);save();toast('Update denied');adminPanel('approvals')}function approvePendingGallery(i){db.gallery.unshift(db.pendingGallery.splice(i,1)[0]);save();toast('Gallery photo published');adminPanel('approvals')}function denyPendingGallery(i){db.pendingGallery.splice(i,1);save();toast('Gallery submission denied');adminPanel('approvals')}
-function exportBackup(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='yuvakesari-youth-club-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)}
-function setup(){
- $('#adminOpenBtn').addEventListener('click',login);$('#adminOpenMobile').addEventListener('click',()=>{closeMobile();login()});$('#footerAdminBtn').addEventListener('click',login);$('#memberRegisterBtn').addEventListener('click',()=>memberForm(false));$('#submitUpdateBtn').addEventListener('click',submitUpdate);$('#submitGalleryBtn').addEventListener('click',submitGallery);
- $('#menuBtn').addEventListener('click',()=>{$('#mobilePanel').classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',$('#mobilePanel').classList.contains('open'))});$$('#mobilePanel a').forEach(a=>a.addEventListener('click',closeMobile));bindNavState();$$('[data-close]').forEach(x=>x.addEventListener('click',closeModal));document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobile()}});observeReveals();renderSite();
+function closeModal(){
+  $('#modal').classList.remove('open');
+  $('#modal').setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
 }
-function closeMobile(){$('#mobilePanel').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false')}
-function observeReveals(){const io='IntersectionObserver'in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.08}):null;if(io)$$('.reveal').forEach(el=>io.observe(el));else $$('.reveal').forEach(el=>el.classList.add('visible'))}
-window.YYC={viewMember,approveMember,denyMember,removeMember,editLeader,removeLeader,editUpdate,removeUpdate,removeGallery,approvePendingMember,denyPendingMember,approvePendingUpdate,denyPendingUpdate,approvePendingGallery,denyPendingGallery};
-setup();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(v){
+  if(!v) return '';
+  var d=new Date(v+'T00:00:00');
+  return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+async function rpc(name,args){
+  var res=await sb.rpc(name,args || {});
+  if(res.error) throw new Error(res.error.message || 'Database request failed');
+  return res.data;
+}
+function readFile(file,maxSide){
+  return new Promise(function(resolve,reject){
+    if(!file){resolve('');return;}
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var scale=Math.min(1,maxSide/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(img.width*scale));
+        c.height=Math.max(1,Math.round(img.height*scale));
+        var ctx=c.getContext('2d');
+        ctx.drawImage(img,0,0,c.width,c.height);
+        resolve(c.toDataURL('image/jpeg',0.76));
+      };
+      img.onerror=reject;
+      img.src=r.result;
+    };
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+function imageEditor(id,photo,scale,x,y){
+  return '<div class="yyc-photo-editor"><div class="yyc-photo-preview"><img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview"></div><div class="yyc-photo-controls"><label>Zoom <input id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'"></label><output id="'+id+'ScaleOut">'+(scale||1).toFixed(2)+'×</output><label>Left / Right <input id="'+id+'X" type="range" min="0" max="100" value="'+(x==null?50:x)+'"></label><output id="'+id+'XOut">'+(x==null?50:x)+'%</output><label>Up / Down <input id="'+id+'Y" type="range" min="0" max="100" value="'+(y==null?50:y)+'"></label><output id="'+id+'YOut">'+(y==null?50:y)+'%</output></div></div>';
+}
+function wireEditor(id,obj,fileInput){
+  function draw(){
+    obj.scale=Number($('#'+id+'Scale').value); obj.x=Number($('#'+id+'X').value); obj.y=Number($('#'+id+'Y').value);
+    var im=$('#'+id+'Preview'); im.style.transform='scale('+obj.scale+')'; im.style.objectPosition=obj.x+'% '+obj.y+'%';
+    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×'; $('#'+id+'XOut').textContent=obj.x+'%'; $('#'+id+'YOut').textContent=obj.y+'%';
+  }
+  ['Scale','X','Y'].forEach(function(k){ $('#'+id+k).addEventListener('input',draw); });
+  $('#'+fileInput).addEventListener('change',async function(){
+    var d=await readFile(this.files[0],520); if(!d) return;
+    obj.photo=d; $('#'+id+'Preview').src=d;
+  });
+}
+function socialHTML(){
+  var s=(publicData && publicData.settings) || {};
+  var arr=[];
+  if(s.whatsapp) arr.push('<a class="social-link" href="'+esc(s.whatsapp)+'" target="_blank" rel="noopener"><img src="assets/social-whatsapp.png" alt="WhatsApp" width="30" height="30"></a>');
+  if(s.instagram) arr.push('<a class="social-link" href="'+esc(s.instagram)+'" target="_blank" rel="noopener"><img src="assets/social-instagram.png" alt="Instagram" width="30" height="30"></a>');
+  if(s.x_url) arr.push('<a class="social-link" href="'+esc(s.x_url)+'" target="_blank" rel="noopener"><img src="assets/social-x.png" alt="X" width="30" height="30"></a>');
+  if(s.facebook) arr.push('<a class="social-link" href="'+esc(s.facebook)+'" target="_blank" rel="noopener"><img src="assets/social-facebook.png" alt="Facebook" width="30" height="30"></a>');
+  return arr.join('');
+}
+function renderPublic(){
+  if(!publicData) return;
+  var s=publicData.settings || {};
+  var slogan=$('.slogan'); if(slogan) slogan.innerHTML=esc(s.slogan || 'ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩').replace('🚩','<span>🚩</span>');
+  var locs=$$('.brand-type small'); locs.forEach(function(el){el.textContent='YOUTH CLUB';});
+  var hs=$('#heroSocial'); if(hs) hs.innerHTML=socialHTML();
+  var fs=$('#footerSocial'); if(fs) fs.innerHTML=socialHTML();
+  if($('#leaderCount')) $('#leaderCount').textContent=String((publicData.leaders||[]).length).padStart(2,'0');
+  var lg=$('#leadersGrid');
+  if(lg){
+    lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
+      var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'" style="transform:scale('+(l.photo_scale||1)+');object-position:'+(l.photo_pos_x==null?50:l.photo_pos_x)+'% '+(l.photo_pos_y==null?50:l.photo_pos_y)+'%">' : '<span class="photo-placeholder">✦</span>';
+      return '<article class="leader-card reveal visible"><div class="leader-photo">'+img+'</div><div class="leader-info"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></article>';
+    }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
+  }
+  var ug=$('#updatesGrid');
+  if(ug){
+    var ups=publicData.updates||[];
+    ug.innerHTML=ups.length ? ups.map(function(u){return '<article class="update-card reveal visible"><time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';}).join('') : '<div class="empty">No updates published yet.</div>';
+  }
+  var gg=$('#galleryGrid');
+  if(gg){
+    var gs=publicData.gallery||[];
+    gg.innerHTML=gs.length ? gs.map(function(g){return '<figure class="gallery-card reveal visible"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';}).join('') : '<div class="empty">No gallery items published yet.</div>';
+  }
+}
+async function loadPublic(){
+  try{ publicData=await rpc('public_site_data',{}); renderPublic(); }
+  catch(e){ toast('Public data is loading from the backup design.'); }
+}
+function activeNav(){
+  var target=location.hash ? location.hash.slice(1) : 'home';
+  $$('.desktop-nav .nav-link').forEach(function(a){var h=(a.getAttribute('href')||'').slice(1);a.classList.toggle('active',h===target);});
+}
+function bindNavigation(){
+  $$('.desktop-nav .nav-link').forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,20);});});
+  window.addEventListener('hashchange',activeNav); activeNav();
+}
+
+function memberRegister(){
+  var obj={photo:'',scale:1,x:50,y:50};
+  openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. After approval you can log in and receive your digital membership card.</p><form id="memberRegisterForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="rName" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" required></div><div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div><div class="field full"><label>Member photo</label><input id="rPhoto" type="file" accept="image/*" required></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
+  wireEditor('regPhoto',obj,'rPhoto');
+  $('#memberRegisterForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    try{
+      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
+      if(!obj.photo){toast('Please choose a photo');return;}
+      var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
+      if(!r.ok) throw new Error(r.error||'Registration failed');
+      closeModal(); toast('Application submitted — wait for admin approval');
+    }catch(err){toast(err.message);}
+  });
+}
+function memberLogin(){
+  openModal('<div class="modal-kicker">MEMBER ACCESS</div><h2 class="modal-title">Member Login</h2><p class="modal-sub">Use your registered email or phone after admin approval.</p><form id="memberLoginForm"><div class="field"><label>Email or phone</label><input id="mIdent" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="mPass" type="password" required></div><div class="form-actions"><button class="btn gold">LOGIN <span>→</span></button><button type="button" class="btn outline" id="openRegisterFromLogin">NEW MEMBER</button></div></form>');
+  $('#openRegisterFromLogin').addEventListener('click',memberRegister);
+  $('#memberLoginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    try{
+      var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
+      if(!r.ok) throw new Error(r.error||'Login failed');
+      memberToken=r.token; localStorage.setItem(MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
+    }catch(err){toast(err.message);}
+  });
+}
+function memberDashboard(memberArg){
+  var m=memberArg;
+  if(!m){
+    if(!memberToken){memberLogin();return;}
+    rpc('member_me',{p_token:memberToken}).then(function(r){if(!r.ok){localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';memberLogin();return;}memberDashboard(r.member);}).catch(function(){memberLogin();});
+    return;
+  }
+  var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(m.role_number||'');
+  openModal('<div class="member-dashboard"><div class="modal-kicker">MEMBER DASHBOARD</div><div class="member-dashboard-head"><div><h2 class="modal-title">Welcome, '+esc(m.name)+'</h2><p class="modal-sub">Your membership has been approved.</p></div><button class="mini-btn" id="memberLogout">Logout</button></div><div id="yycDigitalCard" class="yyc-digital-card"><div class="id-head"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><small>YUVAKESARI YOUTH CLUB</small><b>SUBRAHMANYA · KARNATAKA</b></div><span>MEMBER</span></div><div class="id-body"><div class="id-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name)+'" style="transform:scale('+(m.photo_scale||1)+');object-position:'+(m.photo_pos_x==null?50:m.photo_pos_x)+'% '+(m.photo_pos_y==null?50:m.photo_pos_y)+'%"></div><div class="id-details"><div class="id-name">'+esc(m.name)+'</div><div class="id-role">'+esc(m.role_number||'YYC MEMBER')+'</div><div class="id-grid"><span>DOB<strong>'+esc(m.dob||'-')+'</strong></span><span>PHONE<strong>'+esc(m.phone||'-')+'</strong></span><span>EMAIL<strong>'+esc(m.email||'-')+'</strong></span><span>CLUB<strong>'+esc(m.club_name||'Yuvakesari Youth Club')+'</strong></span></div></div><div class="id-qr" id="memberQr"></div></div><div class="id-footer"><span>ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</span><small>Scan QR to verify membership</small></div></div><div class="form-actions"><button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button><button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button><button class="btn outline" id="memberSubmitGallery">SUBMIT PHOTO</button></div><p class="verify-link">'+esc(verifyUrl)+'</p></div>');
+  if(window.QRCode && m.role_number) new QRCode($('#memberQr'),{text:verifyUrl,width:86,height:86,colorDark:'#0b0d10',colorLight:'#f5f1e7'});
+  $('#memberLogout').addEventListener('click',async function(){try{await rpc('member_logout',{p_token:memberToken});}catch(e){} localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';closeModal();toast('Logged out');});
+  $('#downloadCard').addEventListener('click',async function(){if(!window.html2canvas){window.print();return;}var canvas=await html2canvas($('#yycDigitalCard'),{backgroundColor:'#0b0d10',scale:2,useCORS:true});var a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=(m.role_number||'yyc-member-card')+'.png';a.click();});
+  $('#memberSubmitUpdate').addEventListener('click',function(){submitUpdate(true);});
+  $('#memberSubmitGallery').addEventListener('click',function(){submitGallery(true);});
+}
+function submitUpdate(auth){
+  if(auth===true && !memberToken){memberLogin();return;}
+  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit an Update</h2><p class="modal-sub">Your submission will remain hidden until an admin approves it.</p><form id="submitUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="suTitle" required></div><div class="field"><label>Date</label><input id="suDate" type="date" value="'+today()+'"></div><div class="field full"><label>Message</label><textarea id="suBody" required></textarea></div></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
+  $('#submitUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('member_submit_update',{p_token:memberToken,p_payload:{title:$('#suTitle').value.trim(),body:$('#suBody').value.trim(),event_date:$('#suDate').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update sent to admin approval');}catch(err){toast(err.message);}});
+}
+function submitGallery(auth){
+  if(auth===true && !memberToken){memberLogin();return;}
+  var obj={photo:''};
+  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit Gallery Photo</h2><p class="modal-sub">Admin approval is required before publishing.</p><form id="submitGalleryForm"><div class="field"><label>Caption</label><input id="sgTitle" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="sgFile" type="file" accept="image/*" required></div><div class="crop-preview yyc-simple-preview"><img id="sgPrev" src="assets/yyc-logo-clean.webp" alt="preview"></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
+  $('#sgFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],760);if(obj.photo)$('#sgPrev').src=obj.photo;});
+  $('#submitGalleryForm').addEventListener('submit',async function(e){e.preventDefault();if(!obj.photo){toast('Choose a photo');return;}try{var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{title:$('#sgTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery item sent to admin');}catch(err){toast(err.message);}});
+}
+
+function adminLogin(){
+  openModal('<div class="modal-kicker">PRIVATE MANAGEMENT</div><h2 class="modal-title">YYC Admin Access</h2><p class="modal-sub">Secure club management dashboard.</p><form id="adminLoginForm"><div class="field"><label>Admin ID</label><input id="aUser" autocomplete="username" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="aPass" type="password" autocomplete="current-password" required></div><div class="form-actions"><button class="btn gold">ENTER ADMIN</button></div></form>');
+  $('#adminLoginForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});if(!r.ok)throw new Error(r.error||'Invalid credentials');adminToken=r.token;sessionStorage.setItem(ADMIN_TOKEN_KEY,adminToken);closeModal();adminPanel();}catch(err){toast(err.message);}});
+}
+async function getAdmin(){
+  if(!adminToken){adminLogin();return null;}
+  try{adminData=await rpc('admin_dashboard',{p_token:adminToken});if(!adminData.ok){sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';toast('Admin session expired');adminLogin();return null;}return adminData;}catch(e){toast(e.message);return null;}
+}
+function adminPanel(tab){
+  getAdmin().then(function(d){
+    if(!d) return;
+    tab=tab||'overview';
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['settings','Settings']];
+    var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
+    var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
+    openModal('<div class="admin-shell"><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2></div><button class="mini-btn" id="adminLogout">Logout</button></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div></div>');
+    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
+    $$('.admin-tab').forEach(function(b){b.addEventListener('click',function(){adminPanel(this.getAttribute('data-tab'));});});
+    renderAdminTab(tab,d);
+  });
+}
+function renderAdminTab(tab,d){
+  var a=$('#adminWorkspace'); if(!a) return;
+  if(tab==='overview'){
+    var pm=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length;
+    var pu=(d.pending_updates||[]).length, pg=(d.pending_gallery||[]).length;
+    a.innerHTML='<div class="admin-stats"><div><b>'+((d.members||[]).length)+'</b><span>Members</span></div><div><b>'+((d.leaders||[]).length)+'</b><span>Leaders</span></div><div><b>'+((d.updates||[]).filter(function(x){return x.status==='published';}).length)+'</b><span>Updates</span></div><div><b>'+((d.gallery||[]).length)+'</b><span>Gallery</span></div><div class="pending-stat"><b>'+(pm+pu+pg)+'</b><span>Pending approvals</span></div></div><div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
+    return;
+  }
+  if(tab==='members'){
+    var members=d.members||[];
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Remove</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
+    $$('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m) memberDashboard(m);});});
+    $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
+    $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
+    $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
+    return;
+  }
+  if(tab==='leaders'){
+    var ls=d.leaders||[];
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+'</small><small>'+esc(l.line||'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
+    $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
+    $$('[data-edit-leader]').forEach(function(b){b.addEventListener('click',function(){adminLeaderForm(b.getAttribute('data-edit-leader'));});});
+    $$('[data-del-leader]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete this leader?')) await adminAction('admin_delete_leader',{p_id:b.getAttribute('data-del-leader')},'Leader deleted');});});
+    return;
+  }
+  if(tab==='updates'){
+    var ups=d.updates||[];
+    a.innerHTML='<div class="admin-top"><h2>Updates</h2><button class="mini-btn gold" id="addUpdateBtn">+ Add update</button></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+'</small></div><div class="admin-actions"><button class="mini-btn" data-del-update="'+u.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
+    $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
+    $$('[data-del-update]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
+    return;
+  }
+  if(tab==='gallery'){
+    var gs=d.gallery||[];
+    a.innerHTML='<div class="admin-top"><h2>Gallery</h2><button class="mini-btn gold" id="addGalleryBtn">+ Add photo</button></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'"><figcaption>'+esc(g.title)+' <button class="mini-btn" data-del-gallery="'+g.id+'">Delete</button></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
+    $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
+    $$('[data-del-gallery]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
+    return;
+  }
+  if(tab==='approvals'){
+    var pendingMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';});
+    var pUpdates=d.pending_updates||[], pGallery=d.pending_gallery||[];
+    a.innerHTML='<div class="admin-top"><h2>Approval Queue</h2><span class="approval-count">'+(pendingMembers.length+pUpdates.length+pGallery.length)+' pending</span></div>'+(
+      pendingMembers.concat(pUpdates.map(function(x){x.__kind='update';return x;}),pGallery.map(function(x){x.__kind='gallery';return x;})).length
+      ? '<div class="admin-card-list">'+pendingMembers.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+' · MEMBER</strong><small>'+esc(m.email||'')+' · '+esc(m.phone||'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-am="'+m.id+'">Approve</button><button class="mini-btn" data-dm="'+m.id+'">Deny</button></div></div>';}).join('')+
+      pUpdates.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+' · UPDATE</strong><small>'+esc(u.body)+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-au="'+u.id+'">Publish</button><button class="mini-btn" data-du="'+u.id+'">Deny</button></div></div>';}).join('')+
+      pGallery.map(function(g){return '<div class="approval-card"><div class="meta"><strong>'+esc(g.title)+' · GALLERY</strong><small>Photo submission</small></div><div class="admin-actions"><button class="mini-btn gold" data-ag="'+g.id+'">Publish</button><button class="mini-btn" data-dg="'+g.id+'">Deny</button></div></div>').join('')
+      +'</div>' : '<div class="empty">No pending submissions.</div>');
+    $$('[data-am]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-am'),p_action:'approve'},'Member approved and ID assigned');});});
+    $$('[data-dm]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-dm'),p_action:'deny'},'Member denied');});});
+    $$('[data-au]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-au'),p_action:'approve'},'Update published');});});
+    $$('[data-du]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-du'),p_action:'deny'},'Update denied');});});
+    $$('[data-ag]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-ag'),p_action:'approve'},'Gallery published');});});
+    $$('[data-dg]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-dg'),p_action:'deny'},'Gallery denied');});});
+    return;
+  }
+  if(tab==='settings'){
+    var s=d.settings||{};
+    a.innerHTML='<div class="admin-top"><h2>Site Settings</h2></div><form id="settingsForm"><div class="form-grid"><div class="field"><label>Club name</label><input id="setClub" value="'+esc(s.club_name||'YUVAKESARI YOUTH CLUB')+'"></div><div class="field"><label>Location</label><input id="setLoc" value="'+esc(s.location||'SUBRAHMANYA · KARNATAKA')+'"></div><div class="field full"><label>Slogan</label><input id="setSlogan" value="'+esc(s.slogan||'ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩')+'"></div><div class="field"><label>Instagram</label><input id="setInsta" value="'+esc(s.instagram||'')+'"></div><div class="field"><label>WhatsApp</label><input id="setWhats" value="'+esc(s.whatsapp||'')+'"></div><div class="field"><label>X</label><input id="setX" value="'+esc(s.x_url||'')+'"></div><div class="field"><label>Facebook</label><input id="setFb" value="'+esc(s.facebook||'')+'"></div></div><div class="form-actions"><button class="btn gold">SAVE SETTINGS</button></div></form>';
+    $('#settingsForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_save_settings',{p_token:adminToken,p_payload:{club_name:$('#setClub').value.trim(),location:$('#setLoc').value.trim(),slogan:$('#setSlogan').value.trim(),instagram:$('#setInsta').value.trim(),whatsapp:$('#setWhats').value.trim(),x_url:$('#setX').value.trim(),facebook:$('#setFb').value.trim()}});if(!r.ok)throw new Error(r.error||'Failed');toast('Settings saved');loadPublic();adminPanel('settings');}catch(err){toast(err.message);}});
+  }
+}
+async function adminAction(name,args,msg){
+  try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel();}catch(e){toast(e.message);}
+}
+function adminMemberForm(id){
+  var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
+  var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
+  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
+  wireEditor('adminM',obj,'amFile');
+  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
+}
+function adminLeaderForm(id){
+  var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
+  var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
+  openModal('<div class="modal-kicker">ADMIN · LEADERS</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2><form id="adminLeaderForm"><div class="form-grid"><div class="field"><label>Name</label><input id="alName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Role</label><input id="alRole" value="'+esc(existing.role||'')+'" required></div><div class="field full"><label>Line</label><input id="alLine" value="'+esc(existing.line||'')+'"></div><div class="field full"><label>Photo</label><input id="alFile" type="file" accept="image/*"></div></div>'+imageEditor('adminL',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE LEADER</button></div></form>');
+  wireEditor('adminL',obj,'alFile');
+  $('#adminLeaderForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_leader',{p_token:adminToken,p_id:id,p_payload:{name:$('#alName').value.trim(),role:$('#alRole').value.trim(),line:$('#alLine').value.trim(),photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,sort_order:existing.sort_order||0}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Leader saved');adminPanel('leaders');}catch(err){toast(err.message);}});
+}
+function adminUpdateForm(id){
+  var existing=(adminData.updates||[]).find(function(u){return u.id===id;}) || {title:'',body:'',event_date:today(),image_url:''};
+  openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
+  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){toast(err.message);}});
+}
+function adminGalleryForm(id){
+  var existing=(adminData.gallery||[]).find(function(g){return g.id===id;}) || {title:'',src:'',caption:''};
+  var obj={photo:existing.src||''};
+  openModal('<div class="modal-kicker">ADMIN · GALLERY</div><h2 class="modal-title">Publish Gallery Photo</h2><form id="adminGalleryForm"><div class="field"><label>Caption</label><input id="agTitle" value="'+esc(existing.title)+'" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="agFile" type="file" accept="image/*"></div><div class="crop-preview yyc-simple-preview"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div><div class="form-actions"><button class="btn gold">PUBLISH PHOTO</button></div></form>');
+  $('#agFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],860);if(obj.photo)$('#agPrev').src=obj.photo;});
+  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!obj.photo)throw new Error('Photo is required');var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){toast(err.message);}});
+}
+async function verifyFromUrl(){
+  var role=new URLSearchParams(location.search).get('verify');
+  if(!role) return;
+  try{var r=await rpc('public_member_verify',{p_role_number:role});if(!r.ok)throw new Error(r.error||'Member not found');
+    var m=r.member||{};
+    openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Verified YYC Member</h2><div class="verify-card"><div class="id-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name)+'"></div><div><h3>'+esc(m.name)+'</h3><p>'+esc(m.role_number)+'</p><small>'+esc(m.club_name||'Yuvakesari Youth Club')+'</small></div></div><div class="notice">This membership record is marked approved in the YYC database.</div>');
+  }catch(e){openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');}
+}
+function bindUI(){
+  if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
+  if($('#memberLoginMobile')) $('#memberLoginMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();memberLogin();});
+  if($('#adminOpenBtn')) $('#adminOpenBtn').addEventListener('click',adminLogin);
+  if($('#adminOpenMobile')) $('#adminOpenMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();adminLogin();});
+  if($('#footerAdminBtn')) $('#footerAdminBtn').addEventListener('click',adminLogin);
+  if($('#memberRegisterBtn')) $('#memberRegisterBtn').addEventListener('click',memberRegister);
+  if($('#submitUpdateBtn')) $('#submitUpdateBtn').addEventListener('click',function(){submitUpdate(false);});
+  if($('#submitGalleryBtn')) $('#submitGalleryBtn').addEventListener('click',function(){submitGallery(false);});
+  $$('[data-close]').forEach(function(x){x.addEventListener('click',closeModal);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+  bindNavigation();
+}
+window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,adminLogin:adminLogin,adminPanel:adminPanel};
+document.addEventListener('DOMContentLoaded',function(){
+  bindUI();
+  loadPublic();
+  verifyFromUrl();
+  if($('#year')) $('#year').textContent=new Date().getFullYear();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+});
