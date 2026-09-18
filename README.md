@@ -56,3 +56,7 @@ Latest fix: exact slogan is “ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷ�
 
 
 Latest hero-label correction: “YUVAKESARI YOUTH CLUB” is shown above “SUBRAHMANYA · KUKKE REGION · KARNATAKA” in the hero kicker.
+
+
+## Real backend
+Supabase project: `Yuvakesari Youth Club` (Asia South). Member registration, approval, login, sessions, digital cards, QR verification, leaders, updates, gallery and site settings use the hosted database. The frontend uses the Supabase publishable key; no secret/service-role key is included in GitHub.
