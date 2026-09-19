@@ -1,4 +1,4 @@
-const CACHE='yyc-v13-digital-id-card';
+const CACHE='yyc-v14-temple-feature';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
