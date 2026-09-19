@@ -1,4 +1,4 @@
-const CACHE='yyc-v15-temple-image';
+const CACHE='yyc-v16-local-temple-image';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
