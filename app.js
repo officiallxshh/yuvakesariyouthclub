@@ -49,6 +49,8 @@ async function rpc(name,args){
   if(res.error) throw new Error(res.error.message || 'Database request failed');
   return res.data;
 }
+function loadScript(src){return new Promise(function(resolve,reject){if(document.querySelector('script[data-yyc-src="'+src+'"]')){var existing=document.querySelector('script[data-yyc-src="'+src+'"]');if(existing.dataset.loaded==='1')return resolve();existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}var s=document.createElement('script');s.src=src;s.async=true;s.dataset.yycSrc=src;s.onload=function(){s.dataset.loaded='1';resolve();};s.onerror=reject;document.head.appendChild(s);});}
+
 function readFile(file,maxSide){
   return new Promise(function(resolve,reject){
     if(!file){resolve('');return;}
@@ -227,7 +229,7 @@ function memberDashboard(memberArg){
     '</div>'
   );
 
-  if(window.QRCode && m.role_number){
+  loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){ if(!window.QRCode || !m.role_number) return;
     new QRCode($('#memberQr'),{
       text:verifyUrl,
       width:108,
@@ -236,7 +238,7 @@ function memberDashboard(memberArg){
       colorLight:'#ffffff',
       correctLevel:QRCode.CorrectLevel.H
     });
-  }
+  }).catch(function(){});
 
   $('#memberLogout').addEventListener('click',async function(){
     try{await rpc('member_logout',{p_token:memberToken});}catch(e){}
@@ -247,6 +249,9 @@ function memberDashboard(memberArg){
   });
 
   $('#downloadCard').addEventListener('click',async function(){
+    try{
+      await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+    }catch(e){window.print();return;}
     if(!window.html2canvas){window.print();return;}
     var canvas=await html2canvas($('#yycDigitalCard'),{
       backgroundColor:'#071016',
@@ -483,5 +488,5 @@ document.addEventListener('DOMContentLoaded',function(){
   loadPublic();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
-  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=22',{updateViaCache:'none'}).then(function(r){r.update();}).catch(function(){});}
+  if('serviceWorker' in navigator){setTimeout(function(){navigator.serviceWorker.register('./sw.js?v=23',{updateViaCache:'none'}).catch(function(){});},1200);}
 });
