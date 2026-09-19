@@ -483,5 +483,5 @@ document.addEventListener('DOMContentLoaded',function(){
   loadPublic();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=19',{updateViaCache:'none'}).then(function(r){r.update();}).catch(function(){});}
 });
