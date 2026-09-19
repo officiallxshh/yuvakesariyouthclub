@@ -488,5 +488,5 @@ document.addEventListener('DOMContentLoaded',function(){
   loadPublic();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
-  if('serviceWorker' in navigator){setTimeout(function(){navigator.serviceWorker.register('./sw.js?v=23',{updateViaCache:'none'}).catch(function(){});},1200);}
+  if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){if(!rs.length)return Promise.resolve();return Promise.all(rs.map(function(r){return r.unregister();})).then(function(){if(!sessionStorage.getItem('yyc_sw_clean_v1')){sessionStorage.setItem('yyc_sw_clean_v1','1');location.reload();}});}).catch(function(){});}
 });
