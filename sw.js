@@ -1,9 +1,10 @@
-const CACHE='yyc-v16-local-temple-image';
+const CACHE='yyc-v17-generated-subrahmanya';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
   './assets/bhoota-kola.webp','./assets/dharma-daiva.webp','./assets/aati-kalenja.webp','./assets/yakshagana.webp','./assets/river-circle.webp','./assets/temple-circle.webp',
   './assets/glimpse-river.webp','./assets/glimpse-temple.webp','./assets/glimpse-hills.webp',
+  './assets/subrahmanya-generated.webp',
   './assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png'
 ];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting())));
