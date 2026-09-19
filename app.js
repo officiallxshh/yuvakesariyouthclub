@@ -136,12 +136,12 @@ function bindNavigation(){
 
 function memberRegister(){
   var obj={photo:'',scale:1,x:50,y:50};
-  openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. After approval you can log in and receive your digital membership card.</p><form id="memberRegisterForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="rName" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" required></div><div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div><div class="field full"><label>Member photo</label><input id="rPhoto" type="file" accept="image/*" required></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
+  openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. After approval you can log in and receive your digital membership card.</p><form id="memberRegisterForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="rName" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" required></div><div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div><div class="field full"><label>Position</label><input id="rPosition" value="MEMBER" placeholder="MEMBER / VOLUNTEER / COORDINATOR"></div><div class="field full"><label>Member photo</label><input id="rPhoto" type="file" accept="image/*" required></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
   wireEditor('regPhoto',obj,'rPhoto');
   $('#memberRegisterForm').addEventListener('submit',async function(e){
     e.preventDefault();
     try{
-      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
+      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
       if(!obj.photo){toast('Please choose a photo');return;}
       var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
       if(!r.ok) throw new Error(r.error||'Registration failed');
@@ -165,17 +165,105 @@ function memberDashboard(memberArg){
   var m=memberArg;
   if(!m){
     if(!memberToken){memberLogin();return;}
-    rpc('member_me',{p_token:memberToken}).then(function(r){if(!r.ok){localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';memberLogin();return;}memberDashboard(r.member);}).catch(function(){memberLogin();});
+    rpc('member_me',{p_token:memberToken}).then(function(r){
+      if(!r.ok){localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';memberLogin();return;}
+      memberDashboard(r.member);
+    }).catch(function(){memberLogin();});
     return;
   }
+
   var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(m.role_number||'');
-  openModal('<div class="member-dashboard"><div class="modal-kicker">MEMBER DASHBOARD</div><div class="member-dashboard-head"><div><h2 class="modal-title">Welcome, '+esc(m.name)+'</h2><p class="modal-sub">Your membership has been approved.</p></div><button class="mini-btn" id="memberLogout">Logout</button></div><div id="yycDigitalCard" class="yyc-digital-card"><div class="id-head"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><small>YUVAKESARI YOUTH CLUB</small><b>SUBRAHMANYA · KARNATAKA</b></div><span>MEMBER</span></div><div class="id-body"><div class="id-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name)+'" style="transform:scale('+(m.photo_scale||1)+');object-position:'+(m.photo_pos_x==null?50:m.photo_pos_x)+'% '+(m.photo_pos_y==null?50:m.photo_pos_y)+'%"></div><div class="id-details"><div class="id-name">'+esc(m.name)+'</div><div class="id-role">'+esc(m.role_number||'YYC MEMBER')+'</div><div class="id-grid"><span>DOB<strong>'+esc(m.dob||'-')+'</strong></span><span>PHONE<strong>'+esc(m.phone||'-')+'</strong></span><span>EMAIL<strong>'+esc(m.email||'-')+'</strong></span><span>CLUB<strong>'+esc(m.club_name||'Yuvakesari Youth Club')+'</strong></span></div></div><div class="id-qr" id="memberQr"></div></div><div class="id-footer"><span>ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</span><small>Scan QR to verify membership</small></div></div><div class="form-actions"><button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button><button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button><button class="btn outline" id="memberSubmitGallery">SUBMIT PHOTO</button></div><p class="verify-link">'+esc(verifyUrl)+'</p></div>');
-  if(window.QRCode && m.role_number) new QRCode($('#memberQr'),{text:verifyUrl,width:86,height:86,colorDark:'#0b0d10',colorLight:'#f5f1e7'});
-  $('#memberLogout').addEventListener('click',async function(){try{await rpc('member_logout',{p_token:memberToken});}catch(e){} localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';closeModal();toast('Logged out');});
-  $('#downloadCard').addEventListener('click',async function(){if(!window.html2canvas){window.print();return;}var canvas=await html2canvas($('#yycDigitalCard'),{backgroundColor:'#0b0d10',scale:2,useCORS:true});var a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=(m.role_number||'yyc-member-card')+'.png';a.click();});
+  var role=esc(m.role_number||'YYC-2026-0000');
+  var name=esc(m.name||'Member');
+  var position=esc(m.position||'MEMBER');
+  var phone=esc(m.phone||'Not provided');
+  var email=esc(m.email||'Not provided');
+  var photo=esc(m.photo_url||'assets/yyc-logo-clean.webp');
+  var photoStyle='transform:scale('+(m.photo_scale||1)+');object-position:'+(m.photo_pos_x==null?50:m.photo_pos_x)+'% '+(m.photo_pos_y==null?50:m.photo_pos_y)+'%';
+
+  openModal(
+    '<div class="member-dashboard premium-member-dashboard">'+
+      '<div class="member-dashboard-head">'+
+        '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Your card is linked to your unique YYC role number.</p></div>'+
+        '<button class="mini-btn" id="memberLogout">Logout</button>'+
+      '</div>'+
+      '<div id="yycDigitalCard" class="yyc-id-card">'+
+        '<div class="id-card-top">'+
+          '<div class="id-card-brand">'+
+            '<img src="assets/yyc-logo-clean.webp" alt="YYC logo">'+
+            '<div><strong>YUVAKESARI YOUTH CLUB</strong><span>SUBRAHMANYA · KARNATAKA</span></div>'+
+          '</div>'+
+          '<div class="id-card-motto">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</div>'+
+        '</div>'+
+        '<div class="id-card-title-row">'+
+          '<div><b>YUVAKESARI</b><span>YOUTH CLUB</span></div>'+
+          '<span class="id-card-edition">OFFICIAL MEMBER ID</span>'+
+        '</div>'+
+        '<div class="id-card-main">'+
+          '<div class="id-photo-frame"><img src="'+photo+'" alt="'+name+'" style="'+photoStyle+'"></div>'+
+          '<div class="id-card-info">'+
+            '<div class="id-member-name">'+name+'</div>'+
+            '<div class="id-member-position">'+position+'</div>'+
+            '<div class="id-info-lines">'+
+              '<div><small>MEMBER ID</small><strong>'+role+'</strong></div>'+
+              '<div><small>PHONE</small><strong>'+phone+'</strong></div>'+
+              '<div><small>EMAIL</small><strong>'+email+'</strong></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="id-qr-block"><div id="memberQr" class="id-qr"></div><span>SCAN TO VERIFY</span></div>'+
+        '</div>'+
+        '<div class="id-card-bottom">'+
+          '<div class="verified-badge"><b>✓</b><span>VERIFIED MEMBER</span></div>'+
+          '<div class="id-sign"><strong>Yuvakesari Youth Club</strong><span>SUBRAHMANYA</span></div>'+
+          '<div class="id-card-note">Tulu Nadu · Service · Unity · Culture</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="form-actions member-card-actions">'+
+        '<button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button>'+
+        '<button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button>'+
+        '<button class="btn outline" id="memberSubmitGallery">SUBMIT PHOTO</button>'+
+      '</div>'+
+      '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
+    '</div>'
+  );
+
+  if(window.QRCode && m.role_number){
+    new QRCode($('#memberQr'),{
+      text:verifyUrl,
+      width:108,
+      height:108,
+      colorDark:'#0b1014',
+      colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.H
+    });
+  }
+
+  $('#memberLogout').addEventListener('click',async function(){
+    try{await rpc('member_logout',{p_token:memberToken});}catch(e){}
+    localStorage.removeItem(MEMBER_TOKEN_KEY);
+    memberToken='';
+    closeModal();
+    toast('Member logged out');
+  });
+
+  $('#downloadCard').addEventListener('click',async function(){
+    if(!window.html2canvas){window.print();return;}
+    var canvas=await html2canvas($('#yycDigitalCard'),{
+      backgroundColor:'#071016',
+      scale:2,
+      useCORS:true,
+      logging:false
+    });
+    var a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download=(m.role_number||'yyc-member-card')+'.png';
+    a.click();
+  });
+
   $('#memberSubmitUpdate').addEventListener('click',function(){submitUpdate(true);});
   $('#memberSubmitGallery').addEventListener('click',function(){submitGallery(true);});
 }
+
 function submitUpdate(auth){
   if(auth===true && !memberToken){memberLogin();return;}
   openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit an Update</h2><p class="modal-sub">Your submission will remain hidden until an admin approves it.</p><form id="submitUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="suTitle" required></div><div class="field"><label>Date</label><input id="suDate" type="date" value="'+today()+'"></div><div class="field full"><label>Message</label><textarea id="suBody" required></textarea></div></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
@@ -320,11 +408,11 @@ async function adminAction(name,args,msg){
   try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel();}catch(e){toast(e.message);}
 }
 function adminMemberForm(id){
-  var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
+  var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
-  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
+  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
-  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
+  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
 }
 function adminLeaderForm(id){
   var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
@@ -348,10 +436,33 @@ function adminGalleryForm(id){
 async function verifyFromUrl(){
   var role=new URLSearchParams(location.search).get('verify');
   if(!role) return;
-  try{var r=await rpc('public_member_verify',{p_role_number:role});if(!r.ok)throw new Error(r.error||'Member not found');
+  try{
+    var r=await rpc('public_member_verify',{p_role_number:role});
+    if(!r.ok) throw new Error(r.error||'Member not found');
     var m=r.member||{};
-    openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Verified YYC Member</h2><div class="verify-card"><div class="id-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name)+'"></div><div><h3>'+esc(m.name)+'</h3><p>'+esc(m.role_number)+'</p><small>'+esc(m.club_name||'Yuvakesari Youth Club')+'</small></div></div><div class="notice">This membership record is marked approved in the YYC database.</div>');
-  }catch(e){openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');}
+    var photo=esc(m.photo_url||'assets/yyc-logo-clean.webp');
+    var photoStyle='transform:scale('+(m.photo_scale||1)+' );object-position:'+(m.photo_pos_x==null?50:m.photo_pos_x)+'% '+(m.photo_pos_y==null?50:m.photo_pos_y)+'%';
+    openModal(
+      '<div class="verify-profile premium-verify-profile">'+
+        '<div class="verify-hero">'+
+          '<div><div class="modal-kicker">LIVE QR VERIFICATION</div><h2 class="modal-title">Verified YYC Member</h2><p class="modal-sub">This profile was opened directly from the member QR code.</p></div>'+
+          '<span class="verify-pill">✓ VERIFIED</span>'+
+        '</div>'+
+        '<div class="verify-profile-card">'+
+          '<div class="verify-photo"><img src="'+photo+'" alt="'+esc(m.name||'Member')+'" style="'+photoStyle+'"></div>'+
+          '<div class="verify-details">'+
+            '<div class="verify-member-name">'+esc(m.name||'Member')+'</div>'+
+            '<div class="verify-member-role">'+esc(m.position||'MEMBER')+'</div>'+
+            '<div class="verify-role-number">'+esc(m.role_number||role.toUpperCase())+'</div>'+
+            '<div class="verify-meta"><span>CLUB<strong>'+esc(m.club_name||'Yuvakesari Youth Club')+'</strong></span><span>STATUS<strong>APPROVED</strong></span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="notice verify-notice">✓ Membership is approved in the YYC database. Role number matches the member record.</div>'+
+      '</div>'
+    );
+  }catch(e){
+    openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');
+  }
 }
 function bindUI(){
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
