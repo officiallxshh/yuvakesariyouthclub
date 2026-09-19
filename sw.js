@@ -1,4 +1,4 @@
-const CACHE='yyc-v17-generated-subrahmanya';
+const CACHE='yyc-v18-embedded-temple';
 const ASSETS=[
   './','./index.html','./styles.css','./app.js',
   './assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp',
