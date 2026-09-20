@@ -321,7 +321,7 @@ function leaderDashboard(leaderArg){
   openModal(
     '<div class="leader-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">LEADER IDENTITY</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">Your leadership identity is linked to your unique YYC leader number.</p></div>'+
+        '<div><div class="modal-kicker">LEADER ACCESS · READ ONLY</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">View your verified leader profile and digital ID. Leader accounts have no editing, posting, approval or administrative permissions.</p></div>'+
         '<button class="mini-btn" id="leaderLogout">Logout</button>'+
       '</div>'+
       '<div id="yycLeaderCard" class="yyc-id-card leader-id-card">'+
