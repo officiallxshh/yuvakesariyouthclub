@@ -292,31 +292,27 @@ function memberLogin(){
 function yycMemberIdCardHTML(m,kind){
   var isLeader=kind==='leader';
   var roleRaw=m.role_number||(isLeader?'YYC-L-2026-0000':'YYC-2026-0000');
-  var nameRaw=m.name||(isLeader?'Leader':'Member');
-  var positionRaw=m.position||m.role||(isLeader?'LEADER':'MEMBER');
-  var phoneRaw=m.phone||'Not provided';
-  var emailRaw=m.email||'Not provided';
-  var photo=m.photo_url||'assets/yyc-logo-clean.webp';
+  var phoneRaw=m.phone||'';
+  var emailRaw=m.email||'';
+  var photo=m.photo_url||'';
   var sx=Math.max(1,Math.min(2.4,Number(m.photo_scale)||1));
   var px=Math.max(0,Math.min(100,m.photo_pos_x==null?50:Number(m.photo_pos_x)));
   var py=Math.max(0,Math.min(100,m.photo_pos_y==null?50:Number(m.photo_pos_y)));
-  var tx=((px-50)/50)*8*sx;
-  var ty=((py-50)/50)*8*sx;
-  var nameSize=nameRaw.length>28?6.1:(nameRaw.length>22?7.0:(nameRaw.length>17?8.0:9.3));
-  var posSize=positionRaw.length>22?4.0:(positionRaw.length>16?4.6:5.1);
-  var emailSize=emailRaw.length>27?3.15:(emailRaw.length>21?3.55:4.0);
-  var typeLabel=isLeader?'LEADER':'MEMBER';
-  return '<div id="yycDigitalCard" class="yyc-template-id-card" role="img" aria-label="Yuvakesari Youth Club '+typeLabel.toLowerCase()+' identity card">'+
-    '<div class="yyc-template-photo"><img src="'+esc(photo)+'" alt="'+esc(nameRaw)+'" style="transform:translate3d('+tx.toFixed(2)+'%,'+ty.toFixed(2)+'%,0) scale('+sx.toFixed(2)+')"></div>'+
-    '<div class="yyc-template-name-mask"><div class="yyc-template-name" style="font-size:'+nameSize+'cqw">'+esc(nameRaw)+'</div></div>'+
-    '<div class="yyc-template-position-mask"><div class="yyc-template-position" style="font-size:'+posSize+'cqw">'+esc(positionRaw)+'</div></div>'+
+  var tx=((px-50)/50)*15*sx;
+  var ty=((py-50)/50)*15*sx;
+  var photoTag=photo
+    ? '<img src="'+esc(photo)+'" alt="Photo" style="transform:translate3d('+tx.toFixed(2)+'%,'+ty.toFixed(2)+'%,0) scale('+sx.toFixed(2)+')">'
+    : '';
+  var emailSize=emailRaw.length>30?3.25:(emailRaw.length>23?3.65:4.05);
+  var typeLabel=isLeader?'leader':'member';
+  return '<div id="yycDigitalCard" class="yyc-template-id-card" role="img" aria-label="Yuvakesari Youth Club '+typeLabel+' identity card">'+
+    '<div class="yyc-template-photo">'+photoTag+'</div>'+
     '<div class="yyc-template-data-mask yyc-template-id-mask"><div class="yyc-template-value">'+esc(roleRaw)+'</div></div>'+
     '<div class="yyc-template-data-mask yyc-template-phone-mask"><div class="yyc-template-value">'+esc(phoneRaw)+'</div></div>'+
     '<div class="yyc-template-data-mask yyc-template-email-mask"><div class="yyc-template-value" style="font-size:'+emailSize+'cqw">'+esc(emailRaw)+'</div></div>'+
     '<div class="yyc-template-qr-mask"><div id="memberQr" class="yyc-template-qr"></div></div>'+
   '</div>';
 }
-
 function memberDashboard(memberArg){
   var m=memberArg;
   if(!m){
