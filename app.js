@@ -289,10 +289,11 @@ function memberLogin(){
     }catch(err){toast(err.message);}
   });
 }
-function yycMemberIdCardHTML(m){
-  var roleRaw=m.role_number||'YYC-2026-0000';
-  var nameRaw=m.name||'Member';
-  var positionRaw=m.position||'MEMBER';
+function yycMemberIdCardHTML(m,kind){
+  var isLeader=kind==='leader';
+  var roleRaw=m.role_number||(isLeader?'YYC-L-2026-0000':'YYC-2026-0000');
+  var nameRaw=m.name||(isLeader?'Leader':'Member');
+  var positionRaw=m.position||m.role||(isLeader?'LEADER':'MEMBER');
   var phoneRaw=m.phone||'Not provided';
   var emailRaw=m.email||'Not provided';
   var photo=m.photo_url||'assets/yyc-logo-clean.webp';
@@ -304,7 +305,8 @@ function yycMemberIdCardHTML(m){
   var nameSize=nameRaw.length>28?6.1:(nameRaw.length>22?7.0:(nameRaw.length>17?8.0:9.3));
   var posSize=positionRaw.length>22?4.0:(positionRaw.length>16?4.6:5.1);
   var emailSize=emailRaw.length>27?3.15:(emailRaw.length>21?3.55:4.0);
-  return '<div id="yycDigitalCard" class="yyc-template-id-card" role="img" aria-label="Yuvakesari Youth Club membership card">'+
+  var typeLabel=isLeader?'LEADER':'MEMBER';
+  return '<div id="yycDigitalCard" class="yyc-template-id-card" role="img" aria-label="Yuvakesari Youth Club '+typeLabel.toLowerCase()+' identity card">'+
     '<div class="yyc-template-photo"><img src="'+esc(photo)+'" alt="'+esc(nameRaw)+'" style="transform:translate3d('+tx.toFixed(2)+'%,'+ty.toFixed(2)+'%,0) scale('+sx.toFixed(2)+')"></div>'+
     '<div class="yyc-template-name-mask"><div class="yyc-template-name" style="font-size:'+nameSize+'cqw">'+esc(nameRaw)+'</div></div>'+
     '<div class="yyc-template-position-mask"><div class="yyc-template-position" style="font-size:'+posSize+'cqw">'+esc(positionRaw)+'</div></div>'+
@@ -429,60 +431,48 @@ function leaderDashboard(leaderArg){
   }
   var l=leaderArg;
   var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(l.role_number||'');
-  var role=esc(l.role_number||'YYC-L-2026-000');
   var name=esc(l.name||'Leader');
-  var position=esc(l.role||'LEADER');
-  var phone=esc(l.phone||'Not provided');
-  var email=esc(l.email||'Not provided');
-  var photo=esc(l.photo_url||'assets/yyc-logo-clean.webp');
-  var photoStyle='transform:scale('+(l.photo_scale||1)+');object-position:'+(l.photo_pos_x==null?50:l.photo_pos_x)+'% '+(l.photo_pos_y==null?50:l.photo_pos_y)+'%';
 
   openModal(
     '<div class="leader-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">LEADER ACCESS · READ ONLY</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">View your verified leader profile and digital ID. Leader accounts have no editing, posting, approval or administrative permissions.</p></div>'+
-        '<button class="mini-btn" id="leaderLogout">Logout</button>'+
+        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">The same official YYC card design is used for leader identity verification.</p></div>'+
+        (l.__adminView?'':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
       '</div>'+
-      '<div id="yycLeaderCard" class="yyc-id-card leader-id-card">'+
-        '<div class="id-card-top">'+
-          '<div class="id-card-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC logo"><div><strong>YUVAKESARI YOUTH CLUB</strong><span>SUBRAHMANYA · KARNATAKA</span></div></div>'+
-          '<div class="id-card-motto">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</div>'+
-        '</div>'+
-        '<div class="id-card-title-row"><div><b>YUVAKESARI</b><span>YOUTH CLUB</span></div><span class="id-card-edition">OFFICIAL LEADER ID</span></div>'+
-        '<div class="id-card-main">'+
-          '<div class="id-photo-frame"><img src="'+photo+'" alt="'+name+'" style="'+photoStyle+'"></div>'+
-          '<div class="id-card-info"><div class="id-member-name">'+name+'</div><div class="id-member-position">'+position+'</div><div class="id-info-lines">'+
-            '<div><small>LEADER ID</small><strong>'+role+'</strong></div>'+
-            '<div><small>PHONE</small><strong>'+phone+'</strong></div>'+
-            '<div><small>EMAIL</small><strong>'+email+'</strong></div>'+
-          '</div></div>'+
-          '<div class="id-qr-block"><div id="leaderQr" class="id-qr"></div><span>SCAN TO VERIFY</span></div>'+
-        '</div>'+
-        '<div class="id-card-bottom"><div class="verified-badge leader-verified-badge"><b>♛</b><span>VERIFIED LEADER</span></div><div class="id-sign"><strong>'+name+'</strong><span>'+position+'</span></div><div class="id-card-note">Tulu Nadu · Service · Unity · Culture</div></div>'+
-      '</div>'+
-      '<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD LEADER ID</button></div>'+
+      yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
+      (l.__adminView?'':'<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD LEADER ID</button></div>')+
+      (l.__adminView?'<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD ID CARD</button></div>':'')+
       '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
     '</div>'
   );
 
   loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
     if(!window.QRCode || !l.role_number) return;
-    new QRCode($('#leaderQr'),{text:verifyUrl,width:108,height:108,colorDark:'#0b1014',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    new QRCode($('#memberQr'),{
+      text:verifyUrl,
+      width:108,
+      height:108,
+      colorDark:'#0b1014',
+      colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.H
+    });
   }).catch(function(){});
 
-  $('#leaderLogout').addEventListener('click',async function(){
-    try{await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
-    localStorage.removeItem(LEADER_TOKEN_KEY);
-    leaderToken='';
-    closeModal();
-    toast('Leader logged out');
-  });
+  if(!l.__adminView){
+    $('#leaderLogout').addEventListener('click',async function(){
+      try{await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
+      localStorage.removeItem(LEADER_TOKEN_KEY);
+      leaderToken='';
+      closeModal();
+      toast('Leader logged out');
+    });
+  }
 
   $('#downloadLeaderCard').addEventListener('click',async function(){
     try{await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');}
     catch(e){window.print();return;}
     if(!window.html2canvas){window.print();return;}
-    var canvas=await html2canvas($('#yycLeaderCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
+    var canvas=await html2canvas($('#yycDigitalCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
     var aa=document.createElement('a');
     aa.href=canvas.toDataURL('image/png');
     aa.download=(l.role_number||'yyc-leader-card')+'.png';
@@ -534,7 +524,7 @@ function renderAdminTab(tab,d){
     var ls=d.leaders||[];
     a.innerHTML='<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
-    $$('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l)leaderDashboard(l);});});
+    $('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l){l.__adminView=true;leaderDashboard(l);}});});
     $$('[data-edit-leader]').forEach(function(b){b.addEventListener('click',function(){adminLeaderForm(b.getAttribute('data-edit-leader'));});});
     $$('[data-del-leader]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete this leader?')) await adminAction('admin_delete_leader',{p_id:b.getAttribute('data-del-leader')},'Leader deleted');});});
     return;
