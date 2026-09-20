@@ -159,6 +159,8 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 
 /* Tighten the Tulunad Glimpse → Leaders nav spacing to remove the small visual gap. */
 @media(min-width:981px){
-  .desktop-nav>a:nth-child(2){margin-right:-12px}
+  /* Keep Tulunad Glimpse and Leaders visually tight at the exact marked area. */
+  .desktop-nav>a:nth-child(2){margin-right:-24px}
   .desktop-nav>a:nth-child(3){margin-left:0}
+  .desktop-nav>a:nth-child(2) + a:nth-child(3){padding-left:9px}
 }
