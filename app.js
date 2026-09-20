@@ -508,8 +508,30 @@ function adminPanel(tab){
     var workspace=$('#adminWorkspace');
     if(workspace){
       workspace.addEventListener('click',function(e){
-        var back=e.target.closest('[data-admin-overview]');
-        if(back){e.preventDefault();adminPanel('overview');}
+        var target=e.target.closest('button');
+        if(!target || !workspace.contains(target)) return;
+        var back=target.closest('[data-admin-overview]');
+        if(back){e.preventDefault();e.stopPropagation();adminPanel('overview');return;}
+        var cardLeader=target.closest('[data-card-leader]');
+        if(cardLeader){
+          e.preventDefault();e.stopPropagation();
+          var l=(d.leaders||[]).find(function(x){return String(x.id)===String(cardLeader.getAttribute('data-card-leader'));});
+          if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}
+          return;
+        }
+        var editLeader=target.closest('[data-edit-leader]');
+        if(editLeader){
+          e.preventDefault();e.stopPropagation();
+          adminLeaderForm(editLeader.getAttribute('data-edit-leader'));
+          return;
+        }
+        var delLeader=target.closest('[data-del-leader]');
+        if(delLeader){
+          e.preventDefault();e.stopPropagation();
+          var lid=delLeader.getAttribute('data-del-leader');
+          if(confirm('Delete this leader?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
+          return;
+        }
       });
     }
   });
@@ -538,9 +560,7 @@ function renderAdminTab(tab,d){
     var ls=d.leaders||[];
     a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
-    $('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}});});
-    $$('[data-edit-leader]').forEach(function(b){b.addEventListener('click',function(){adminLeaderForm(b.getAttribute('data-edit-leader'));});});
-    $$('[data-del-leader]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete this leader?')) await adminAction('admin_delete_leader',{p_id:b.getAttribute('data-del-leader')},'Leader deleted');});});
+    /* Leader Card/Edit/Delete are handled by the admin workspace event delegation below. */
     return;
   }
   if(tab==='updates'){
