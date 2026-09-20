@@ -189,3 +189,16 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
     margin-left:0;
   }
 }
+
+/* Hero association credit */
+.association-wrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto 4px;min-height:44px}
+.association-wrap img{width:46px;height:46px;object-fit:contain;border-radius:8px;display:block;filter:drop-shadow(0 5px 16px rgba(0,0,0,.35))}
+.association-wrap div{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.association-wrap span{font:500 8px/1 "Space Grotesk",sans-serif;letter-spacing:.24em;color:#d8c7a6}
+.association-wrap strong{font:600 14px/1.1 "Space Grotesk",sans-serif;letter-spacing:.08em;color:#f4efe4;margin-top:4px}
+@media(max-width:620px){
+  .association-wrap{margin:12px auto 2px;gap:8px}
+  .association-wrap img{width:40px;height:40px}
+  .association-wrap span{font-size:6.5px;letter-spacing:.16em}
+  .association-wrap strong{font-size:11px}
+}
