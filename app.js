@@ -395,10 +395,10 @@ function submitUpdate(auth){
 }
 function submitGallery(auth){
   if(auth===true && !memberToken){memberLogin();return;}
-  var obj={photo:''};
-  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit Gallery Photo</h2><p class="modal-sub">Admin approval is required before publishing.</p><form id="submitGalleryForm"><div class="field"><label>Caption</label><input id="sgTitle" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="sgFile" type="file" accept="image/*" required></div><div class="crop-preview yyc-simple-preview"><img id="sgPrev" src="assets/yyc-logo-clean.webp" alt="preview"></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
-  $('#sgFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],760);if(obj.photo)$('#sgPrev').src=obj.photo;});
-  $('#submitGalleryForm').addEventListener('submit',async function(e){e.preventDefault();if(!obj.photo){toast('Choose a photo');return;}try{var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{title:$('#sgTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery item sent to admin');}catch(err){toast(err.message);}});
+  var obj={photo:'',scale:1,x:50,y:50};
+  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit Gallery Photo</h2><p class="modal-sub">Admin approval is required before publishing.</p><form id="submitGalleryForm"><div class="field"><label>Caption</label><input id="sgTitle" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="sgFile" type="file" accept="image/*" required></div>'+imageEditor('galleryPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
+  wireEditor('galleryPhoto',obj,'sgFile');
+  $('#submitGalleryForm').addEventListener('submit',async function(e){e.preventDefault();if(!obj.photo){toast('Choose a photo');return;}try{var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{title:$('#sgTitle').value.trim(),src:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery item sent to admin');}catch(err){toast(err.message);}});
 }
 
 
