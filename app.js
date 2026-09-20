@@ -497,6 +497,7 @@ async function getAdmin(){
 function adminPanel(tab){
   getAdmin().then(function(d){
     if(!d) return;
+    window.__yycAdminLastData=d;
     tab=tab||'overview';
     var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
@@ -738,7 +739,57 @@ async function verifyFromUrl(){
     openModal('<div class="modal-kicker">YYC VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');
   }
 }
+function bindAdminActionDelegation(){
+  if(window.__yycAdminDelegationBound) return;
+  window.__yycAdminDelegationBound=true;
+  document.addEventListener('click',function(e){
+    var target=e.target && e.target.closest ? e.target.closest('button') : null;
+    if(!target) return;
+
+    var cardLeader=target.closest('[data-card-leader]');
+    if(cardLeader){
+      var modal=target.closest('#modal');
+      if(!modal) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var id=cardLeader.getAttribute('data-card-leader');
+      var d=window.__yycAdminLastData || adminData;
+      var l=(d && d.leaders || []).find(function(x){return String(x.id)===String(id);});
+      if(l){
+        l.__adminView=true;
+        l.__adminTab='leaders';
+        leaderDashboard(l);
+      }else{
+        toast('Leader record not found');
+      }
+      return;
+    }
+
+    var editLeader=target.closest('[data-edit-leader]');
+    if(editLeader){
+      var modal2=target.closest('#modal');
+      if(!modal2) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      adminLeaderForm(editLeader.getAttribute('data-edit-leader'));
+      return;
+    }
+
+    var delLeader=target.closest('[data-del-leader]');
+    if(delLeader){
+      var modal3=target.closest('#modal');
+      if(!modal3) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var lid=delLeader.getAttribute('data-del-leader');
+      if(confirm('Delete this leader?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
+      return;
+    }
+  },true);
+}
+
 function bindUI(){
+  bindAdminActionDelegation();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
   if($('#leaderLoginBtn')) $('#leaderLoginBtn').addEventListener('click',leaderLogin);
   if($('#memberLoginMobile')) $('#memberLoginMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();memberLogin();});
