@@ -36,6 +36,7 @@ function openModal(html){
   document.body.style.overflow='hidden';
 }
 function closeModal(){
+  /* Closing a modal never logs out any account. Session state changes only via explicit Logout. */
   $('#modal').classList.remove('open');
   $('#modal').setAttribute('aria-hidden','true');
   document.body.style.overflow='';
@@ -77,7 +78,7 @@ function readFile(file,maxSide){
 }
 function imageEditor(id,photo,scale,x,y){
   return '<div class="yyc-photo-editor ig-photo-editor">'+
-    '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Photo crop area">'+
+    '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square photo adjustment area">'+
       '<div class="ig-crop-grid"></div>'+
       '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
       '<span class="ig-drag-hint">DRAG TO POSITION</span>'+
@@ -94,11 +95,10 @@ function wireEditor(id,obj,fileInput){
   var stage=$('#'+id+'Stage'), img=$('#'+id+'Preview'), zoom=$('#'+id+'Scale');
   function draw(){
     obj.scale=Number(zoom.value);
-    var ox=Math.max(0,Math.min(100,obj.x==null?50:Number(obj.x)));
-    var oy=Math.max(0,Math.min(100,obj.y==null?50:Number(obj.y)));
-    obj.x=ox; obj.y=oy;
+    obj.x=Math.max(0,Math.min(100,obj.x==null?50:Number(obj.x)));
+    obj.y=Math.max(0,Math.min(100,obj.y==null?50:Number(obj.y)));
     img.style.transform='scale('+obj.scale+')';
-    img.style.objectPosition=ox+'% '+oy+'%';
+    img.style.objectPosition=obj.x+'% '+obj.y+'%';
     $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';
   }
   zoom.addEventListener('input',draw);
@@ -106,7 +106,8 @@ function wireEditor(id,obj,fileInput){
   var drag={on:false,x:0,y:0,ox:50,oy:50};
   function pointerDown(e){
     if(e.button!==undefined && e.button!==0) return;
-    drag.on=true; drag.x=e.clientX; drag.y=e.clientY; drag.ox=obj.x==null?50:Number(obj.x); drag.oy=obj.y==null?50:Number(obj.y);
+    drag.on=true; drag.x=e.clientX; drag.y=e.clientY;
+    drag.ox=obj.x==null?50:Number(obj.x); drag.oy=obj.y==null?50:Number(obj.y);
     stage.classList.add('is-dragging');
     if(stage.setPointerCapture && e.pointerId!=null) stage.setPointerCapture(e.pointerId);
     e.preventDefault();
@@ -115,8 +116,10 @@ function wireEditor(id,obj,fileInput){
     if(!drag.on) return;
     var rect=stage.getBoundingClientRect();
     var sensitivity=100/Math.max(120,Math.min(rect.width,rect.height));
-    obj.x=Math.max(0,Math.min(100,drag.ox-(e.clientX-drag.x)*sensitivity));
-    obj.y=Math.max(0,Math.min(100,drag.oy-(e.clientY-drag.y)*sensitivity));
+    /* Smaller movement at 1x, more responsive once zoomed. */
+    var zoomFactor=Math.max(1,Number(obj.scale)||1);
+    obj.x=Math.max(0,Math.min(100,drag.ox-(e.clientX-drag.x)*sensitivity/zoomFactor*1.35));
+    obj.y=Math.max(0,Math.min(100,drag.oy-(e.clientY-drag.y)*sensitivity/zoomFactor*1.35));
     draw();
     e.preventDefault();
   }

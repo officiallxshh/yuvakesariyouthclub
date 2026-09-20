@@ -385,3 +385,56 @@ body.yyc-inertial-scroll{
   .ig-zoom-range{width:125px}
   .ig-reset-btn{font-size:7px!important}
 }
+
+/* True square photo adjustment workspace */
+.ig-photo-editor{
+  display:grid;
+  grid-template-columns:minmax(240px,360px) 58px;
+  gap:18px;
+  align-items:center;
+  justify-content:center;
+  margin-top:18px;
+}
+.ig-photo-preview{
+  position:relative;
+  width:min(360px,100%);
+  aspect-ratio:1/1;
+  min-height:0;
+  overflow:hidden;
+  margin:0 auto;
+  border-radius:18px;
+  border:1px solid rgba(214,176,95,.34);
+  background:#090d11;
+  cursor:grab;
+  touch-action:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 14px 30px rgba(0,0,0,.24);
+}
+.ig-photo-preview.is-dragging{cursor:grabbing}
+.ig-photo-preview img{
+  width:100%;
+  height:100%;
+  display:block;
+  /* At 1x the complete uploaded photo stays visible inside the square. */
+  object-fit:contain;
+  object-position:50% 50%;
+  transform-origin:center center;
+  user-select:none;
+  -webkit-user-drag:none;
+  will-change:transform,object-position;
+  transition:transform .12s ease,object-position .08s ease;
+}
+.ig-photo-preview.is-dragging img{transition:none}
+.ig-photo-side{
+  min-height:240px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+@media(max-width:620px){
+  .ig-photo-editor{grid-template-columns:minmax(0,1fr) 48px;gap:9px}
+  .ig-photo-preview{width:100%;max-width:360px}
+  .ig-photo-side{min-height:190px}
+  .ig-zoom-range{width:125px}
+}
