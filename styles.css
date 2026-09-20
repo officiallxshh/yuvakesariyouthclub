@@ -222,3 +222,41 @@ html.yyc-inertial-scroll{
 body.yyc-inertial-scroll{
   overscroll-behavior-y:none;
 }
+
+/* Smooth modal / panel opening for login, leader, admin and other dialogs. */
+.modal{
+  display:block !important;
+  visibility:hidden;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .32s ease, visibility 0s linear .32s;
+}
+.modal.open{
+  visibility:visible;
+  opacity:1;
+  pointer-events:auto;
+  transition:opacity .32s ease, visibility 0s linear 0s;
+}
+.modal .modal-backdrop{
+  opacity:0;
+  transition:opacity .38s ease;
+}
+.modal.open .modal-backdrop{
+  opacity:1;
+}
+.modal .modal-shell{
+  opacity:0;
+  transform:translate3d(0,26px,0) scale(.985);
+  transition:opacity .42s cubic-bezier(.22,1,.36,1), transform .42s cubic-bezier(.22,1,.36,1);
+  will-change:transform,opacity;
+}
+.modal.open .modal-shell{
+  opacity:1;
+  transform:translate3d(0,0,0) scale(1);
+}
+@media(prefers-reduced-motion:reduce){
+  .modal,.modal .modal-backdrop,.modal .modal-shell{
+    transition:none !important;
+  }
+  .modal .modal-shell{transform:none !important}
+}
