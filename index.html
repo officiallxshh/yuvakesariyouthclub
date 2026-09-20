@@ -148,5 +148,73 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="app.js" defer></script>
+<script>
+function initInertialScroll(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if('ontouchstart' in window || navigator.maxTouchPoints>0) return;
+
+  var targetY=window.scrollY, currentY=window.scrollY, raf=0, active=false;
+  document.documentElement.classList.add('yyc-inertial-scroll');
+  document.body.classList.add('yyc-inertial-scroll');
+
+  function clampTarget(){
+    var max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+    targetY=Math.max(0,Math.min(max,targetY));
+  }
+  function tick(){
+    currentY += (targetY-currentY)*0.12;
+    if(Math.abs(targetY-currentY)<0.35){
+      currentY=targetY; active=false; raf=0;
+    }
+    window.scrollTo(0,currentY);
+    if(active) raf=requestAnimationFrame(tick);
+  }
+  function wake(){
+    if(active) return;
+    active=true;
+    raf=requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('scroll',function(){
+    if(!active){
+      currentY=window.scrollY;
+      targetY=currentY;
+    }
+  },{passive:true});
+
+  window.addEventListener('wheel',function(e){
+    if(Math.abs(e.deltaY)<1) return;
+    var overModal=e.target && e.target.closest && e.target.closest('.modal,.modal-box,.admin-workspace,.mobile-panel');
+    if(overModal) return;
+    e.preventDefault();
+    targetY += e.deltaY*0.72;
+    clampTarget();
+    wake();
+  },{passive:false});
+
+  window.addEventListener('keydown',function(e){
+    var key=e.key;
+    var delta=0;
+    if(key==='ArrowDown') delta=140;
+    else if(key==='ArrowUp') delta=-140;
+    else if(key==='PageDown') delta=window.innerHeight*0.82;
+    else if(key==='PageUp') delta=-window.innerHeight*0.82;
+    else if(key===' ' && !e.shiftKey) delta=window.innerHeight*0.82;
+    else if(key===' ' && e.shiftKey) delta=-window.innerHeight*0.82;
+    else if(key==='Home') {targetY=0; clampTarget(); wake(); return;}
+    else if(key==='End') {targetY=document.documentElement.scrollHeight-window.innerHeight; clampTarget(); wake(); return;}
+    else return;
+    if(e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+    e.preventDefault();
+    targetY += delta;
+    clampTarget();
+    wake();
+  });
+
+  window.addEventListener('resize',function(){targetY=window.scrollY;currentY=targetY;clampTarget();},{passive:true});
+}
+
+initInertialScroll();
+</script>
 </body>
 </html>

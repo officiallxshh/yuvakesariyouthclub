@@ -214,3 +214,11 @@ html{
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
 }
+
+/* Emoggle-inspired soft/inertial page scrolling — lightweight, no external library. */
+html.yyc-inertial-scroll{
+  scroll-behavior:auto !important;
+}
+body.yyc-inertial-scroll{
+  overscroll-behavior-y:none;
+}
