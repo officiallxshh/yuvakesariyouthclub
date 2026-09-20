@@ -179,3 +179,13 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
     transform:translateX(-50%);
   }
 }
+
+/* Reduce only the visual gap between Tulunad Glimpse and Leaders. */
+@media(min-width:981px){
+  .desktop-nav>a:nth-child(2){
+    margin-right:-12px;
+  }
+  .desktop-nav>a:nth-child(3){
+    margin-left:0;
+  }
+}
