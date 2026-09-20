@@ -1,4 +1,4 @@
-const CACHE='yyc-v30-tm-wxriorz-logo';
+const CACHE='yyc-v31-tm-wxriorz-logo';
 const SHELL=['./','./index.html','./styles.css','./app.js','./sw.js'];
 const STATIC=['./assets/tm-wxriorz.svg','./assets/yyc-lion-favicon.png','./assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp','./assets/dharma-daiva.webp','./assets/aati-kalenja.webp','./assets/yakshagana.webp','./assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.concat(STATIC))).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting())));
