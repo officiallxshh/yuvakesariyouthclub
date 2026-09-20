@@ -438,3 +438,69 @@ body.yyc-inertial-scroll{
   .ig-photo-side{min-height:190px}
   .ig-zoom-range{width:125px}
 }
+
+/* Hover photo controls: zoom +/− and precise left/right/up/down movement over the square image. */
+.ig-photo-preview{position:relative}
+.ig-hover-controls{
+  position:absolute;
+  left:50%;
+  bottom:12px;
+  z-index:5;
+  transform:translate(-50%,10px);
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:7px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  background:rgba(5,9,12,.78);
+  backdrop-filter:blur(12px);
+  box-shadow:0 12px 26px rgba(0,0,0,.35);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .22s ease,transform .22s ease;
+}
+.ig-photo-preview:hover .ig-hover-controls,
+.ig-photo-preview:focus-within .ig-hover-controls,
+.ig-photo-preview.is-dragging .ig-hover-controls{
+  opacity:1;
+  transform:translate(-50%,0);
+  pointer-events:auto;
+}
+.ig-control-row{display:flex;align-items:center;justify-content:center;gap:5px}
+.ig-control-row button{
+  width:30px;
+  height:27px;
+  padding:0;
+  border:1px solid rgba(239,202,123,.24);
+  border-radius:8px;
+  background:rgba(255,255,255,.055);
+  color:#f2d18c;
+  font:700 14px/1 "Space Grotesk",sans-serif;
+  cursor:pointer;
+}
+.ig-control-row button:hover{
+  background:rgba(239,202,123,.14);
+  border-color:rgba(239,202,123,.58);
+  transform:translateY(-1px);
+}
+.ig-control-row button[data-photo-action="reset"]{
+  width:66px;
+  font-size:7px;
+  letter-spacing:.12em;
+}
+.ig-control-row button[data-photo-action="center"]{font-size:11px}
+@media(max-width:620px){
+  .ig-hover-controls{
+    bottom:8px;
+    padding:6px;
+    opacity:1;
+    transform:translateX(-50%);
+    pointer-events:auto;
+  }
+  .ig-control-row button{width:28px;height:26px;font-size:13px}
+  .ig-control-row button[data-photo-action="reset"]{width:60px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ig-hover-controls,.ig-control-row button{transition:none!important}
+}
