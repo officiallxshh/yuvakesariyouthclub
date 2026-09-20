@@ -157,3 +157,14 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 .verify-leader-card{border-color:rgba(215,174,102,.30)}
 .verify-line{margin-top:12px;color:#a8b1ad;font-size:11px;line-height:1.5}
 
+
+/* Center the active highlight directly under the Tulunad Glimpse text. */
+@media(min-width:981px){
+  .desktop-nav>a:nth-child(2).active:after,
+  .desktop-nav>a:nth-child(2):hover:after{
+    left:50%;
+    right:auto;
+    width:52px;
+    transform:translateX(-50%);
+  }
+}
