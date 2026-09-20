@@ -340,7 +340,7 @@ function memberDashboard(memberArg){
     '<div class="member-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
         '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Official YYC member card with live verification QR.</p></div>'+
-        '<button class="mini-btn" id="memberLogout">Logout</button>'+
+        (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="memberLogout">Logout</button>')+
       '</div>'+
       yycMemberIdCardHTML(m)+
       '<div class="form-actions member-card-actions">'+
@@ -363,13 +363,17 @@ function memberDashboard(memberArg){
     });
   }).catch(function(){});
 
-  $('#memberLogout').addEventListener('click',async function(){
+  if(m.__adminView){
+    $('#memberBackAdmin').addEventListener('click',function(){adminPanel(m.__adminTab||'members');});
+  }else{
+    $('#memberLogout').addEventListener('click',async function(){
     try{await rpc('member_logout',{p_token:memberToken});}catch(e){}
     localStorage.removeItem(MEMBER_TOKEN_KEY);
     memberToken='';
     closeModal();
     toast('Member logged out');
-  });
+    });
+  }
 
   $('#downloadCard').addEventListener('click',async function(){
     try{
@@ -437,7 +441,7 @@ function leaderDashboard(leaderArg){
     '<div class="leader-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
         '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">The same official YYC card design is used for leader identity verification.</p></div>'+
-        (l.__adminView?'':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
+        (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
       '</div>'+
       yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
       (l.__adminView?'':'<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD LEADER ID</button></div>')+
@@ -458,7 +462,9 @@ function leaderDashboard(leaderArg){
     });
   }).catch(function(){});
 
-  if(!l.__adminView){
+  if(l.__adminView){
+    $('#leaderBackAdmin').addEventListener('click',function(){adminPanel(l.__adminTab||'leaders');});
+  }else{
     $('#leaderLogout').addEventListener('click',async function(){
       try{await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
       localStorage.removeItem(LEADER_TOKEN_KEY);
@@ -499,6 +505,13 @@ function adminPanel(tab){
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
     $$('.admin-tab').forEach(function(b){b.addEventListener('click',function(){adminPanel(this.getAttribute('data-tab'));});});
     renderAdminTab(tab,d);
+    var workspace=$('#adminWorkspace');
+    if(workspace){
+      workspace.addEventListener('click',function(e){
+        var back=e.target.closest('[data-admin-overview]');
+        if(back){e.preventDefault();adminPanel('overview');}
+      });
+    }
   });
 }
 function renderAdminTab(tab,d){
@@ -511,9 +524,10 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Remove</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $$('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m) memberDashboard(m);});});
+    $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
+    $('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
     $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
     $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
     $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
@@ -522,23 +536,23 @@ function renderAdminTab(tab,d){
 
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
-    $('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l){l.__adminView=true;leaderDashboard(l);}});});
+    $('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}});});
     $$('[data-edit-leader]').forEach(function(b){b.addEventListener('click',function(){adminLeaderForm(b.getAttribute('data-edit-leader'));});});
     $$('[data-del-leader]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete this leader?')) await adminAction('admin_delete_leader',{p_id:b.getAttribute('data-del-leader')},'Leader deleted');});});
     return;
   }
   if(tab==='updates'){
     var ups=d.updates||[];
-    a.innerHTML='<div class="admin-top"><h2>Updates</h2><button class="mini-btn gold" id="addUpdateBtn">+ Add update</button></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+'</small></div><div class="admin-actions"><button class="mini-btn" data-del-update="'+u.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
+    a.innerHTML='<div class="admin-top"><h2>Updates</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="addUpdateBtn">+ Add update</button></div></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+'</small></div><div class="admin-actions"><button class="mini-btn" data-del-update="'+u.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
     $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
     $$('[data-del-update]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
     return;
   }
   if(tab==='gallery'){
     var gs=d.gallery||[];
-    a.innerHTML='<div class="admin-top"><h2>Gallery</h2><button class="mini-btn gold" id="addGalleryBtn">+ Add photo</button></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'"><figcaption>'+esc(g.title)+' <button class="mini-btn" data-del-gallery="'+g.id+'">Delete</button></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
+    a.innerHTML='<div class="admin-top"><h2>Gallery</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="addGalleryBtn">+ Add photo</button></div></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'"><figcaption>'+esc(g.title)+' <button class="mini-btn" data-del-gallery="'+g.id+'">Delete</button></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
     $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
     $$('[data-del-gallery]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
     return;
@@ -546,7 +560,7 @@ function renderAdminTab(tab,d){
   if(tab==='approvals'){
     var pendingMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';});
     var pUpdates=d.pending_updates||[], pGallery=d.pending_gallery||[];
-    a.innerHTML='<div class="admin-top"><h2>Approval Queue</h2><span class="approval-count">'+(pendingMembers.length+pUpdates.length+pGallery.length)+' pending</span></div>'+(
+    a.innerHTML='<div class="admin-top"><h2>Approval Queue</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><span class="approval-count">'+(pendingMembers.length+pUpdates.length+pGallery.length)+' pending</span></div>'+(
       pendingMembers.concat(pUpdates.map(function(x){x.__kind='update';return x;}),pGallery.map(function(x){x.__kind='gallery';return x;})).length
       ? '<div class="admin-card-list">'+pendingMembers.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+' · MEMBER</strong><small>'+esc(m.email||'')+' · '+esc(m.phone||'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-am="'+m.id+'">Approve</button><button class="mini-btn" data-dm="'+m.id+'">Deny</button></div></div>';}).join('')+
       pUpdates.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+' · UPDATE</strong><small>'+esc(u.body)+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-au="'+u.id+'">Publish</button><button class="mini-btn" data-du="'+u.id+'">Deny</button></div></div>';}).join('')+
@@ -588,7 +602,7 @@ function renderAdminTab(tab,d){
             }).join('')+'</div>';
           }).join('')+'</div>';
       }
-      a.innerHTML='<div class="storage-top"><div><div class="modal-kicker">LIVE DATABASE</div><h2 class="modal-title">Data Storage</h2><p class="modal-sub">Live counts and records from the YYC Supabase database.</p></div><div class="storage-meta"><span>Updated</span><b>'+esc(new Date(s.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+'</b><button class="mini-btn gold" id="storageRefresh">↻ Refresh</button></div></div>'+
+      a.innerHTML='<div class="storage-top"><div><div class="modal-kicker">LIVE DATABASE</div><h2 class="modal-title">Data Storage</h2><p class="modal-sub">Live counts and records from the YYC Supabase database.</p></div><div class="storage-meta"><button class="mini-btn" data-admin-overview>← Overview</button><span>Updated</span><b>'+esc(new Date(s.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+'</b><button class="mini-btn gold" id="storageRefresh">↻ Refresh</button></div></div>'+
         '<div class="storage-stats">'+cards.map(function(x){return '<div class="storage-stat"><i>'+x[3]+'</i><div><b>'+x[2]+'</b><span>'+x[1]+'</span></div></div>';}).join('')+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Members</h3><span>'+((s.members||[]).length)+' shown</span></div>'+rows(s.members,[['Name','name'],['Role Number','role_number'],['Status','status']])+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Leaders</h3><span>'+((s.leaders||[]).length)+' shown</span></div>'+rows(s.leaders,[['Name','name'],['Role','role'],['Created','created_at']])+'</div>'+
@@ -605,7 +619,7 @@ function renderAdminTab(tab,d){
   }
   if(tab==='settings'){
     var s=d.settings||{};
-    a.innerHTML='<div class="admin-top"><h2>Site Settings</h2></div><form id="settingsForm"><div class="form-grid"><div class="field"><label>Club name</label><input id="setClub" value="'+esc(s.club_name||'YUVAKESARI YOUTH CLUB')+'"></div><div class="field"><label>Location</label><input id="setLoc" value="'+esc(s.location||'SUBRAHMANYA · KARNATAKA')+'"></div><div class="field full"><label>Slogan</label><input id="setSlogan" value="'+esc(s.slogan||'ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩')+'"></div><div class="field"><label>Instagram</label><input id="setInsta" value="'+esc(s.instagram||'')+'"></div><div class="field"><label>WhatsApp</label><input id="setWhats" value="'+esc(s.whatsapp||'')+'"></div><div class="field"><label>X</label><input id="setX" value="'+esc(s.x_url||'')+'"></div><div class="field"><label>Facebook</label><input id="setFb" value="'+esc(s.facebook||'')+'"></div></div><div class="form-actions"><button class="btn gold">SAVE SETTINGS</button></div></form>';
+    a.innerHTML='<div class="admin-top"><h2>Site Settings</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button></div></div><form id="settingsForm"><div class="form-grid"><div class="field"><label>Club name</label><input id="setClub" value="'+esc(s.club_name||'YUVAKESARI YOUTH CLUB')+'"></div><div class="field"><label>Location</label><input id="setLoc" value="'+esc(s.location||'SUBRAHMANYA · KARNATAKA')+'"></div><div class="field full"><label>Slogan</label><input id="setSlogan" value="'+esc(s.slogan||'ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩')+'"></div><div class="field"><label>Instagram</label><input id="setInsta" value="'+esc(s.instagram||'')+'"></div><div class="field"><label>WhatsApp</label><input id="setWhats" value="'+esc(s.whatsapp||'')+'"></div><div class="field"><label>X</label><input id="setX" value="'+esc(s.x_url||'')+'"></div><div class="field"><label>Facebook</label><input id="setFb" value="'+esc(s.facebook||'')+'"></div></div><div class="form-actions"><button class="btn gold">SAVE SETTINGS</button></div></form>';
     $('#settingsForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_save_settings',{p_token:adminToken,p_payload:{club_name:$('#setClub').value.trim(),location:$('#setLoc').value.trim(),slogan:$('#setSlogan').value.trim(),instagram:$('#setInsta').value.trim(),whatsapp:$('#setWhats').value.trim(),x_url:$('#setX').value.trim(),facebook:$('#setFb').value.trim()}});if(!r.ok)throw new Error(r.error||'Failed');toast('Settings saved');loadPublic();adminPanel('settings');}catch(err){toast(err.message);}});
   }
 }
@@ -615,8 +629,9 @@ async function adminAction(name,args,msg){
 function adminMemberForm(id){
   var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
-  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
+  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
+  $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
   $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
 }
 
@@ -624,7 +639,7 @@ function adminLeaderForm(id){
   var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',phone:'',email:'',login_enabled:false,status:'active',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
   openModal(
-    '<div class="modal-kicker">ADMIN · LEADERS</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2>'+
+    '<div class="modal-kicker">ADMIN · LEADERS</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminLeaderBack">← Leaders</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2>'+
     '<p class="modal-sub">Leader accounts are separate from members and are created only by the admin.</p>'+
     '<form id="adminLeaderForm"><div class="form-grid">'+
       '<div class="field"><label>Name</label><input id="alName" value="'+esc(existing.name)+'" required></div>'+
@@ -639,6 +654,7 @@ function adminLeaderForm(id){
     '<div class="form-actions"><button class="btn gold">SAVE LEADER</button></div></form>'
   );
   wireEditor('adminL',obj,'alFile');
+  $('#adminLeaderBack').addEventListener('click',function(){adminPanel('leaders');});
   $('#adminLeaderForm').addEventListener('submit',async function(e){
     e.preventDefault();
     try{
