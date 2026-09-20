@@ -767,3 +767,15 @@ body.yyc-inertial-scroll{
 @media(prefers-reduced-motion:reduce){
   .ig-photo-preview img,.ig-photo-preview:after,.ig-hover-controls,.ig-control-row button{transition:none!important}
 }
+
+/* Mouse-driven photo positioning: no physical directional buttons on the image. */
+.ig-hover-controls{display:none!important}
+.ig-photo-preview:after{
+  content:"DRAG PHOTO • SCROLL TO ZOOM";
+  opacity:.72;
+}
+.ig-photo-preview:hover:after,
+.ig-photo-preview.is-dragging:after,
+.ig-photo-preview:focus-within:after{
+  opacity:.22;
+}
