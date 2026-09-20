@@ -102,8 +102,15 @@ function wireEditor(id,obj,fileInput){
     obj.scale=Number(zoom.value);
     obj.x=Math.max(0,Math.min(100,obj.x==null?50:Number(obj.x)));
     obj.y=Math.max(0,Math.min(100,obj.y==null?50:Number(obj.y)));
-    img.style.transform='scale('+obj.scale+')';
-    img.style.objectPosition=obj.x+'% '+obj.y+'%';
+    var rect=stage.getBoundingClientRect();
+    var w=rect.width||320, h=rect.height||320;
+    /* Translate the whole preview so vertical movement is always visible. */
+    var maxPanX=w*0.32*obj.scale;
+    var maxPanY=h*0.32*obj.scale;
+    var tx=((obj.x-50)/50)*maxPanX;
+    var ty=((obj.y-50)/50)*maxPanY;
+    img.style.transform='translate3d('+tx.toFixed(2)+'px,'+ty.toFixed(2)+'px,0) scale('+obj.scale+')';
+    img.style.objectPosition='50% 50%';
     $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';
   }
   zoom.addEventListener('input',draw);
