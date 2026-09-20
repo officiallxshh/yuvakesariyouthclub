@@ -81,7 +81,12 @@ function imageEditor(id,photo,scale,x,y){
     '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square photo adjustment area">'+
       '<div class="ig-crop-grid"></div>'+
       '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
-      '<span class="ig-drag-hint">DRAG TO POSITION</span>'+
+      '<span class="ig-drag-hint">DRAG • SCROLL • ARROW KEYS</span>'+
+      '<div class="ig-hover-controls" aria-label="Photo adjustment controls">'+
+        '<div class="ig-control-row"><button type="button" data-photo-action="up" aria-label="Move photo up">↑</button><button type="button" data-photo-action="zoomIn" aria-label="Zoom in">＋</button><button type="button" data-photo-action="down" aria-label="Move photo down">↓</button></div>'+
+        '<div class="ig-control-row"><button type="button" data-photo-action="left" aria-label="Move photo left">←</button><button type="button" data-photo-action="center" aria-label="Center photo">●</button><button type="button" data-photo-action="right" aria-label="Move photo right">→</button></div>'+
+        '<div class="ig-control-row"><button type="button" data-photo-action="zoomOut" aria-label="Zoom out">−</button><button type="button" data-photo-action="reset" aria-label="Reset photo">RESET</button></div>'+
+      '</div>'+
     '</div>'+
     '<div class="ig-photo-side">'+
       '<div class="ig-zoom-title">ZOOM</div>'+
@@ -137,8 +142,42 @@ function wireEditor(id,obj,fileInput){
     draw();
   },{passive:false});
 
-  $('#'+id+'Reset').addEventListener('click',function(){
+  function clampZoom(v){ return Math.max(1,Math.min(2.4,Number(v)||1)); }
+  function nudge(dx,dy){
+    obj.x=Math.max(0,Math.min(100,(obj.x==null?50:Number(obj.x))+dx));
+    obj.y=Math.max(0,Math.min(100,(obj.y==null?50:Number(obj.y))+dy));
+    draw();
+  }
+  function resetPhoto(){
     obj.scale=1; obj.x=50; obj.y=50; zoom.value='1'; draw();
+  }
+  function zoomBy(delta){
+    zoom.value=clampZoom(Number(zoom.value)+delta).toFixed(2);
+    draw();
+  }
+  stage.querySelectorAll('[data-photo-action]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var act=btn.getAttribute('data-photo-action');
+      if(act==='up') nudge(0,-4);
+      else if(act==='down') nudge(0,4);
+      else if(act==='left') nudge(-4,0);
+      else if(act==='right') nudge(4,0);
+      else if(act==='center'){obj.x=50;obj.y=50;draw();}
+      else if(act==='zoomIn') zoomBy(.1);
+      else if(act==='zoomOut') zoomBy(-.1);
+      else if(act==='reset') resetPhoto();
+      stage.focus();
+    });
+  });
+  $('#'+id+'Reset').addEventListener('click',resetPhoto);
+  stage.addEventListener('keydown',function(e){
+    var step=e.shiftKey?8:4;
+    if(e.key==='ArrowUp'){nudge(0,-step);e.preventDefault();}
+    else if(e.key==='ArrowDown'){nudge(0,step);e.preventDefault();}
+    else if(e.key==='ArrowLeft'){nudge(-step,0);e.preventDefault();}
+    else if(e.key==='ArrowRight'){nudge(step,0);e.preventDefault();}
+    else if(e.key==='+' || e.key==='='){zoomBy(.1);e.preventDefault();}
+    else if(e.key==='-' || e.key==='_'){zoomBy(-.1);e.preventDefault();}
   });
 
   $('#'+fileInput).addEventListener('change',async function(){
