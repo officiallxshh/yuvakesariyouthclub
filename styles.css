@@ -260,3 +260,128 @@ body.yyc-inertial-scroll{
   }
   .modal .modal-shell{transform:none !important}
 }
+
+/* Instagram-style photo positioning editor: image stays left, zoom control stays right. */
+.ig-photo-editor{
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) 58px;
+  gap:14px;
+  align-items:center;
+  margin-top:16px;
+}
+.ig-photo-preview{
+  position:relative;
+  width:100%;
+  aspect-ratio:1/1;
+  min-height:180px;
+  overflow:hidden;
+  border-radius:18px;
+  border:1px solid rgba(214,176,95,.34);
+  background:#090d11;
+  cursor:grab;
+  touch-action:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 14px 30px rgba(0,0,0,.24);
+}
+.ig-photo-preview.is-dragging{cursor:grabbing}
+.ig-photo-preview img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transform-origin:center;
+  user-select:none;
+  -webkit-user-drag:none;
+  will-change:transform,object-position;
+  transition:transform .12s ease;
+}
+.ig-photo-preview.is-dragging img{transition:none}
+.ig-crop-grid{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  opacity:.28;
+  background:
+    linear-gradient(90deg,transparent 33.1%,rgba(255,255,255,.65) 33.1%,rgba(255,255,255,.65) 33.55%,transparent 33.55%,transparent 66.45%,rgba(255,255,255,.65) 66.45%,rgba(255,255,255,.65) 66.9%,transparent 66.9%),
+    linear-gradient(0deg,transparent 33.1%,rgba(255,255,255,.65) 33.1%,rgba(255,255,255,.65) 33.55%,transparent 33.55%,transparent 66.45%,rgba(255,255,255,.65) 66.45%,rgba(255,255,255,.65) 66.9%,transparent 66.9%);
+}
+.ig-drag-hint{
+  position:absolute;
+  left:10px;
+  bottom:9px;
+  z-index:3;
+  padding:5px 7px;
+  border-radius:999px;
+  background:rgba(4,7,9,.58);
+  border:1px solid rgba(255,255,255,.1);
+  color:#e9dfce;
+  font-size:7px;
+  letter-spacing:.14em;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+.ig-photo-preview:hover .ig-drag-hint,
+.ig-photo-preview.is-dragging .ig-drag-hint{opacity:.35}
+.ig-photo-side{
+  height:100%;
+  min-height:180px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.ig-zoom-title{
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  color:#b8aa91;
+  font:600 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.18em;
+}
+.ig-zoom-range{
+  -webkit-appearance:none;
+  appearance:none;
+  width:150px;
+  height:28px;
+  transform:rotate(-90deg);
+  background:transparent;
+  cursor:pointer;
+}
+.ig-zoom-range::-webkit-slider-runnable-track{
+  height:3px;
+  border-radius:99px;
+  background:linear-gradient(90deg,#5f4d32,#d8b15f);
+}
+.ig-zoom-range::-moz-range-track{
+  height:3px;
+  border-radius:99px;
+  background:linear-gradient(90deg,#5f4d32,#d8b15f);
+}
+.ig-zoom-range::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;
+  height:16px;
+  margin-top:-6.5px;
+  border-radius:50%;
+  background:#efd08a;
+  border:2px solid #0b1116;
+  box-shadow:0 2px 10px rgba(0,0,0,.45);
+}
+.ig-zoom-range::-moz-range-thumb{
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#efd08a;
+  border:2px solid #0b1116;
+  box-shadow:0 2px 10px rgba(0,0,0,.45);
+}
+.ig-photo-side output{color:#d7ae66;font-size:10px;letter-spacing:.06em}
+.ig-reset-btn{font-size:8px!important;padding:6px 7px!important}
+@media(max-width:620px){
+  .ig-photo-editor{grid-template-columns:minmax(0,1fr) 50px;gap:10px}
+  .ig-photo-preview{min-height:150px}
+  .ig-photo-side{min-height:150px}
+  .ig-zoom-range{width:125px}
+  .ig-reset-btn{font-size:7px!important}
+}

@@ -76,19 +76,77 @@ function readFile(file,maxSide){
   });
 }
 function imageEditor(id,photo,scale,x,y){
-  return '<div class="yyc-photo-editor"><div class="yyc-photo-preview"><img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview"></div><div class="yyc-photo-controls"><label>Zoom <input id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'"></label><output id="'+id+'ScaleOut">'+(scale||1).toFixed(2)+'×</output><label>Left / Right <input id="'+id+'X" type="range" min="0" max="100" value="'+(x==null?50:x)+'"></label><output id="'+id+'XOut">'+(x==null?50:x)+'%</output><label>Up / Down <input id="'+id+'Y" type="range" min="0" max="100" value="'+(y==null?50:y)+'"></label><output id="'+id+'YOut">'+(y==null?50:y)+'%</output></div></div>';
+  return '<div class="yyc-photo-editor ig-photo-editor">'+
+    '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Photo crop area">'+
+      '<div class="ig-crop-grid"></div>'+
+      '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
+      '<span class="ig-drag-hint">DRAG TO POSITION</span>'+
+    '</div>'+
+    '<div class="ig-photo-side">'+
+      '<div class="ig-zoom-title">ZOOM</div>'+
+      '<input class="ig-zoom-range" id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'" aria-label="Zoom">'+
+      '<output id="'+id+'ScaleOut">'+(scale||1).toFixed(2)+'×</output>'+
+      '<button type="button" class="mini-btn ig-reset-btn" id="'+id+'Reset">RESET</button>'+
+    '</div>'+
+  '</div>';
 }
 function wireEditor(id,obj,fileInput){
+  var stage=$('#'+id+'Stage'), img=$('#'+id+'Preview'), zoom=$('#'+id+'Scale');
   function draw(){
-    obj.scale=Number($('#'+id+'Scale').value); obj.x=Number($('#'+id+'X').value); obj.y=Number($('#'+id+'Y').value);
-    var im=$('#'+id+'Preview'); im.style.transform='scale('+obj.scale+')'; im.style.objectPosition=obj.x+'% '+obj.y+'%';
-    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×'; $('#'+id+'XOut').textContent=obj.x+'%'; $('#'+id+'YOut').textContent=obj.y+'%';
+    obj.scale=Number(zoom.value);
+    var ox=Math.max(0,Math.min(100,obj.x==null?50:Number(obj.x)));
+    var oy=Math.max(0,Math.min(100,obj.y==null?50:Number(obj.y)));
+    obj.x=ox; obj.y=oy;
+    img.style.transform='scale('+obj.scale+')';
+    img.style.objectPosition=ox+'% '+oy+'%';
+    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';
   }
-  ['Scale','X','Y'].forEach(function(k){ $('#'+id+k).addEventListener('input',draw); });
-  $('#'+fileInput).addEventListener('change',async function(){
-    var d=await readFile(this.files[0],520); if(!d) return;
-    obj.photo=d; $('#'+id+'Preview').src=d;
+  zoom.addEventListener('input',draw);
+
+  var drag={on:false,x:0,y:0,ox:50,oy:50};
+  function pointerDown(e){
+    if(e.button!==undefined && e.button!==0) return;
+    drag.on=true; drag.x=e.clientX; drag.y=e.clientY; drag.ox=obj.x==null?50:Number(obj.x); drag.oy=obj.y==null?50:Number(obj.y);
+    stage.classList.add('is-dragging');
+    if(stage.setPointerCapture && e.pointerId!=null) stage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+  function pointerMove(e){
+    if(!drag.on) return;
+    var rect=stage.getBoundingClientRect();
+    var sensitivity=100/Math.max(120,Math.min(rect.width,rect.height));
+    obj.x=Math.max(0,Math.min(100,drag.ox-(e.clientX-drag.x)*sensitivity));
+    obj.y=Math.max(0,Math.min(100,drag.oy-(e.clientY-drag.y)*sensitivity));
+    draw();
+    e.preventDefault();
+  }
+  function pointerUp(e){
+    drag.on=false; stage.classList.remove('is-dragging');
+    if(stage.releasePointerCapture && e.pointerId!=null){try{stage.releasePointerCapture(e.pointerId)}catch(err){}}
+  }
+  stage.addEventListener('pointerdown',pointerDown);
+  stage.addEventListener('pointermove',pointerMove);
+  stage.addEventListener('pointerup',pointerUp);
+  stage.addEventListener('pointercancel',pointerUp);
+  stage.addEventListener('wheel',function(e){
+    e.preventDefault();
+    zoom.value=Math.max(1,Math.min(2.4,Number(zoom.value)+(e.deltaY<0?0.05:-0.05)));
+    draw();
+  },{passive:false});
+
+  $('#'+id+'Reset').addEventListener('click',function(){
+    obj.scale=1; obj.x=50; obj.y=50; zoom.value='1'; draw();
   });
+
+  $('#'+fileInput).addEventListener('change',async function(){
+    try{
+      var d=await readFile(this.files[0],760);
+      if(!d) return;
+      obj.photo=d; obj.scale=1; obj.x=50; obj.y=50;
+      zoom.value='1'; img.src=d; draw();
+    }catch(err){toast('Could not load this photo');}
+  });
+  draw();
 }
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
