@@ -202,3 +202,15 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
   .association-wrap span{font-size:6.5px;letter-spacing:.16em}
   .association-wrap strong{font-size:11px}
 }
+
+/* Premium smooth anchor scrolling with fixed-header offset. */
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:96px;
+}
+@media(max-width:980px){
+  html{scroll-padding-top:76px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+}

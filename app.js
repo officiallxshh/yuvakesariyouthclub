@@ -134,10 +134,27 @@ function activeNav(){
   $$('.desktop-nav .nav-link').forEach(function(a){var h=(a.getAttribute('href')||'').slice(1);a.classList.toggle('active',h===target);});
 }
 function bindNavigation(){
-  $$('.desktop-nav .nav-link').forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,20);});});
-  window.addEventListener('hashchange',activeNav); activeNav();
+  $$(`a[href^="#"]`).forEach(function(link){
+    link.addEventListener('click',function(e){
+      var href=link.getAttribute('href');
+      if(!href || href==='#') return;
+      var target=document.querySelector(href);
+      if(!target) return;
+      e.preventDefault();
+      if(typeof closeMobile==='function') closeMobile();
+      var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var header=document.querySelector('.topbar');
+      var offset=header ? header.offsetHeight + 10 : 0;
+      var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
+      window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+      if(history.pushState) history.pushState(null,'',href);
+      setTimeout(activeNav,30);
+    });
+  });
+  $$('.desktop-nav .nav-link').forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,120);});});
+  window.addEventListener('hashchange',activeNav);
+  activeNav();
 }
-
 function memberRegister(){
   var obj={photo:'',scale:1,x:50,y:50};
   openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. After approval you can log in and receive your digital membership card.</p><form id="memberRegisterForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="rName" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" required></div><div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div><div class="field full"><label>Position</label><input id="rPosition" value="MEMBER" placeholder="MEMBER / VOLUNTEER / COORDINATOR"></div><div class="field full"><label>Member photo</label><input id="rPhoto" type="file" accept="image/*" required></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
