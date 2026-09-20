@@ -8,8 +8,10 @@ var YYC_CONFIG = {
 var sb = window.supabase.createClient(YYC_CONFIG.supabaseUrl, YYC_CONFIG.supabaseKey);
 var ADMIN_TOKEN_KEY = 'yyc_admin_session_v1';
 var MEMBER_TOKEN_KEY = 'yyc_member_session_v1';
+var LEADER_TOKEN_KEY = 'yyc_leader_session_v1';
 var adminToken = sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
 var memberToken = localStorage.getItem(MEMBER_TOKEN_KEY) || '';
+var leaderToken = localStorage.getItem(LEADER_TOKEN_KEY) || '';
 var publicData = null;
 var adminData = null;
 
@@ -282,6 +284,93 @@ function submitGallery(auth){
   $('#submitGalleryForm').addEventListener('submit',async function(e){e.preventDefault();if(!obj.photo){toast('Choose a photo');return;}try{var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{title:$('#sgTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery item sent to admin');}catch(err){toast(err.message);}});
 }
 
+
+function leaderLogin(){
+  openModal('<div class="modal-kicker">LEADER ACCESS</div><h2 class="modal-title">Leader Login</h2><p class="modal-sub">Use the email address or phone number created for you by the YYC admin.</p><form id="leaderLoginForm"><div class="field"><label>Email or phone</label><input id="lIdent" autocomplete="username" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="lPass" type="password" autocomplete="current-password" required></div><div class="form-actions"><button class="btn gold">LOGIN AS LEADER <span>→</span></button></div></form>');
+  $('#leaderLoginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    try{
+      var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
+      if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
+      leaderToken=r.token;
+      localStorage.setItem(LEADER_TOKEN_KEY,leaderToken);
+      closeModal();
+      leaderDashboard(r.leader);
+    }catch(err){toast(err.message);}
+  });
+}
+function leaderDashboard(leaderArg){
+  if(!leaderArg){
+    if(!leaderToken){leaderLogin();return;}
+    rpc('leader_me',{p_token:leaderToken}).then(function(r){
+      if(!r.ok){localStorage.removeItem(LEADER_TOKEN_KEY);leaderToken='';leaderLogin();return;}
+      leaderDashboard(r.leader);
+    }).catch(function(){leaderLogin();});
+    return;
+  }
+  var l=leaderArg;
+  var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(l.role_number||'');
+  var role=esc(l.role_number||'YYC-L-2026-000');
+  var name=esc(l.name||'Leader');
+  var position=esc(l.role||'LEADER');
+  var phone=esc(l.phone||'Not provided');
+  var email=esc(l.email||'Not provided');
+  var photo=esc(l.photo_url||'assets/yyc-logo-clean.webp');
+  var photoStyle='transform:scale('+(l.photo_scale||1)+');object-position:'+(l.photo_pos_x==null?50:l.photo_pos_x)+'% '+(l.photo_pos_y==null?50:l.photo_pos_y)+'%';
+
+  openModal(
+    '<div class="leader-dashboard premium-member-dashboard">'+
+      '<div class="member-dashboard-head">'+
+        '<div><div class="modal-kicker">LEADER IDENTITY</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">Your leadership identity is linked to your unique YYC leader number.</p></div>'+
+        '<button class="mini-btn" id="leaderLogout">Logout</button>'+
+      '</div>'+
+      '<div id="yycLeaderCard" class="yyc-id-card leader-id-card">'+
+        '<div class="id-card-top">'+
+          '<div class="id-card-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC logo"><div><strong>YUVAKESARI YOUTH CLUB</strong><span>SUBRAHMANYA · KARNATAKA</span></div></div>'+
+          '<div class="id-card-motto">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</div>'+
+        '</div>'+
+        '<div class="id-card-title-row"><div><b>YUVAKESARI</b><span>YOUTH CLUB</span></div><span class="id-card-edition">OFFICIAL LEADER ID</span></div>'+
+        '<div class="id-card-main">'+
+          '<div class="id-photo-frame"><img src="'+photo+'" alt="'+name+'" style="'+photoStyle+'"></div>'+
+          '<div class="id-card-info"><div class="id-member-name">'+name+'</div><div class="id-member-position">'+position+'</div><div class="id-info-lines">'+
+            '<div><small>LEADER ID</small><strong>'+role+'</strong></div>'+
+            '<div><small>PHONE</small><strong>'+phone+'</strong></div>'+
+            '<div><small>EMAIL</small><strong>'+email+'</strong></div>'+
+          '</div></div>'+
+          '<div class="id-qr-block"><div id="leaderQr" class="id-qr"></div><span>SCAN TO VERIFY</span></div>'+
+        '</div>'+
+        '<div class="id-card-bottom"><div class="verified-badge leader-verified-badge"><b>♛</b><span>VERIFIED LEADER</span></div><div class="id-sign"><strong>'+name+'</strong><span>'+position+'</span></div><div class="id-card-note">Tulu Nadu · Service · Unity · Culture</div></div>'+
+      '</div>'+
+      '<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD LEADER ID</button></div>'+
+      '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
+    '</div>'
+  );
+
+  loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
+    if(!window.QRCode || !l.role_number) return;
+    new QRCode($('#leaderQr'),{text:verifyUrl,width:108,height:108,colorDark:'#0b1014',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  }).catch(function(){});
+
+  $('#leaderLogout').addEventListener('click',async function(){
+    try{await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
+    localStorage.removeItem(LEADER_TOKEN_KEY);
+    leaderToken='';
+    closeModal();
+    toast('Leader logged out');
+  });
+
+  $('#downloadLeaderCard').addEventListener('click',async function(){
+    try{await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');}
+    catch(e){window.print();return;}
+    if(!window.html2canvas){window.print();return;}
+    var canvas=await html2canvas($('#yycLeaderCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
+    var aa=document.createElement('a');
+    aa.href=canvas.toDataURL('image/png');
+    aa.download=(l.role_number||'yyc-leader-card')+'.png';
+    aa.click();
+  });
+}
+
 function adminLogin(){
   openModal('<div class="modal-kicker">PRIVATE MANAGEMENT</div><h2 class="modal-title">YYC Admin Access</h2><p class="modal-sub">Secure club management dashboard.</p><form id="adminLoginForm"><div class="field"><label>Admin ID</label><input id="aUser" autocomplete="username" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="aPass" type="password" autocomplete="current-password" required></div><div class="form-actions"><button class="btn gold">ENTER ADMIN</button></div></form>');
   $('#adminLoginForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});if(!r.ok)throw new Error(r.error||'Invalid credentials');adminToken=r.token;sessionStorage.setItem(ADMIN_TOKEN_KEY,adminToken);closeModal();adminPanel();}catch(err){toast(err.message);}});
@@ -321,10 +410,12 @@ function renderAdminTab(tab,d){
     $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
     return;
   }
+
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+'</small><small>'+esc(l.line||'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
+    $$('[data-card-leader]').forEach(function(b){b.addEventListener('click',function(){var l=ls.find(function(x){return x.id===b.getAttribute('data-card-leader');});if(l)leaderDashboard(l);});});
     $$('[data-edit-leader]').forEach(function(b){b.addEventListener('click',function(){adminLeaderForm(b.getAttribute('data-edit-leader'));});});
     $$('[data-del-leader]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete this leader?')) await adminAction('admin_delete_leader',{p_id:b.getAttribute('data-del-leader')},'Leader deleted');});});
     return;
@@ -419,12 +510,40 @@ function adminMemberForm(id){
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
 }
+
 function adminLeaderForm(id){
-  var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
+  var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',phone:'',email:'',login_enabled:false,status:'active',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
-  openModal('<div class="modal-kicker">ADMIN · LEADERS</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2><form id="adminLeaderForm"><div class="form-grid"><div class="field"><label>Name</label><input id="alName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Role</label><input id="alRole" value="'+esc(existing.role||'')+'" required></div><div class="field full"><label>Line</label><input id="alLine" value="'+esc(existing.line||'')+'"></div><div class="field full"><label>Photo</label><input id="alFile" type="file" accept="image/*"></div></div>'+imageEditor('adminL',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE LEADER</button></div></form>');
+  openModal(
+    '<div class="modal-kicker">ADMIN · LEADERS</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2>'+
+    '<p class="modal-sub">Leader accounts are separate from members and are created only by the admin.</p>'+
+    '<form id="adminLeaderForm"><div class="form-grid">'+
+      '<div class="field"><label>Name</label><input id="alName" value="'+esc(existing.name)+'" required></div>'+
+      '<div class="field"><label>Role / Position</label><input id="alRole" value="'+esc(existing.role||'')+'" placeholder="PRESIDENT / SECRETARY / CHAIRMAN" required></div>'+
+      '<div class="field"><label>Phone</label><input id="alPhone" value="'+esc(existing.phone||'')+'"></div>'+
+      '<div class="field"><label>Email</label><input id="alEmail" type="email" value="'+esc(existing.email||'')+'"></div>'+
+      '<div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="alPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"></div>'+
+      '<div class="field"><label>Status</label><select id="alStatus"><option value="active" '+(existing.status!=='inactive'?'selected':'')+'>Active</option><option value="inactive" '+(existing.status==='inactive'?'selected':'')+'>Inactive</option></select></div>'+
+      '<div class="field full"><label>Display line</label><input id="alLine" value="'+esc(existing.line||'')+'" placeholder="YUVAKESARI YOUTH CLUB · SUBRAHMANYA"></div>'+
+      '<div class="field full"><label>Photo</label><input id="alFile" type="file" accept="image/*"></div>'+
+    '</div>'+imageEditor('adminL',obj.photo,obj.scale,obj.x,obj.y)+
+    '<div class="form-actions"><button class="btn gold">SAVE LEADER</button></div></form>'
+  );
   wireEditor('adminL',obj,'alFile');
-  $('#adminLeaderForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_leader',{p_token:adminToken,p_id:id,p_payload:{name:$('#alName').value.trim(),role:$('#alRole').value.trim(),line:$('#alLine').value.trim(),photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,sort_order:existing.sort_order||0}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Leader saved');adminPanel('leaders');}catch(err){toast(err.message);}});
+  $('#adminLeaderForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    try{
+      var payload={
+        name:$('#alName').value.trim(),role:$('#alRole').value.trim(),line:$('#alLine').value.trim(),
+        phone:$('#alPhone').value.trim(),email:$('#alEmail').value.trim(),password:$('#alPass').value,
+        status:$('#alStatus').value,photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,
+        sort_order:existing.sort_order||0
+      };
+      var r=await rpc('admin_upsert_leader',{p_token:adminToken,p_id:id,p_payload:payload});
+      if(!r.ok) throw new Error(r.error||'Failed');
+      closeModal();toast('Leader saved');adminPanel('leaders');
+    }catch(err){toast(err.message);}
+  });
 }
 function adminUpdateForm(id){
   var existing=(adminData.updates||[]).find(function(u){return u.id===id;}) || {title:'',body:'',event_date:today(),image_url:''};
@@ -438,40 +557,47 @@ function adminGalleryForm(id){
   $('#agFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],860);if(obj.photo)$('#agPrev').src=obj.photo;});
   $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!obj.photo)throw new Error('Photo is required');var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){toast(err.message);}});
 }
+
 async function verifyFromUrl(){
   var role=new URLSearchParams(location.search).get('verify');
   if(!role) return;
   try{
-    var r=await rpc('public_member_verify',{p_role_number:role});
-    if(!r.ok) throw new Error(r.error||'Member not found');
-    var m=r.member||{};
-    var photo=esc(m.photo_url||'assets/yyc-logo-clean.webp');
-    var photoStyle='transform:scale('+(m.photo_scale||1)+' );object-position:'+(m.photo_pos_x==null?50:m.photo_pos_x)+'% '+(m.photo_pos_y==null?50:m.photo_pos_y)+'%';
+    var r=await rpc('public_role_verify',{p_role_number:role});
+    if(!r.ok) throw new Error(r.error||'Role number not found');
+    var p=r.profile||{};
+    var kind=r.kind==='leader'?'leader':'member';
+    var photo=esc(p.photo_url||'assets/yyc-logo-clean.webp');
+    var photoStyle='transform:scale('+(p.photo_scale||1)+' );object-position:'+(p.photo_pos_x==null?50:p.photo_pos_x)+'% '+(p.photo_pos_y==null?50:p.photo_pos_y)+'%';
+    var heading=kind==='leader'?'Verified YYC Leader':'Verified YYC Member';
+    var kicker=kind==='leader'?'LEADER QR VERIFICATION':'MEMBER QR VERIFICATION';
+    var badge=kind==='leader'?'✓ VERIFIED LEADER':'✓ VERIFIED MEMBER';
+    var roleLabel=kind==='leader'?'LEADER ID':'MEMBER ID';
+    var notice=kind==='leader'
+      ? '✓ Leadership record is active in the YYC database. Leader number matches the official leader record.'
+      : '✓ Membership is approved in the YYC database. Role number matches the member record.';
     openModal(
       '<div class="verify-profile premium-verify-profile">'+
-        '<div class="verify-hero">'+
-          '<div><div class="modal-kicker">LIVE QR VERIFICATION</div><h2 class="modal-title">Verified YYC Member</h2><p class="modal-sub">This profile was opened directly from the member QR code.</p></div>'+
-          '<span class="verify-pill">✓ VERIFIED</span>'+
-        '</div>'+
-        '<div class="verify-profile-card">'+
-          '<div class="verify-photo"><img src="'+photo+'" alt="'+esc(m.name||'Member')+'" style="'+photoStyle+'"></div>'+
-          '<div class="verify-details">'+
-            '<div class="verify-member-name">'+esc(m.name||'Member')+'</div>'+
-            '<div class="verify-member-role">'+esc(m.position||'MEMBER')+'</div>'+
-            '<div class="verify-role-number">'+esc(m.role_number||role.toUpperCase())+'</div>'+
-            '<div class="verify-meta"><span>CLUB<strong>'+esc(m.club_name||'Yuvakesari Youth Club')+'</strong></span><span>STATUS<strong>APPROVED</strong></span></div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="notice verify-notice">✓ Membership is approved in the YYC database. Role number matches the member record.</div>'+
+        '<div class="verify-hero"><div><div class="modal-kicker">'+kicker+'</div><h2 class="modal-title">'+heading+'</h2><p class="modal-sub">This profile was opened directly from the official YYC QR code.</p></div><span class="verify-pill">'+badge+'</span></div>'+
+        '<div class="verify-profile-card '+(kind==='leader'?'verify-leader-card':'')+'">'+
+          '<div class="verify-photo"><img src="'+photo+'" alt="'+esc(p.name||kind)+'" style="'+photoStyle+'"></div>'+
+          '<div class="verify-details"><div class="verify-member-name">'+esc(p.name||'Unknown')+'</div><div class="verify-member-role">'+esc(p.position||'LEADER')+'</div>'+
+          '<div class="verify-role-number">'+esc(roleLabel+': '+(p.role_number||role.toUpperCase()))+'</div>'+
+          (kind==='leader'&&p.line?'<div class="verify-line">'+esc(p.line)+'</div>':'')+
+          '<div class="verify-meta"><span>CLUB<strong>'+esc(p.club_name||'Yuvakesari Youth Club')+'</strong></span><span>STATUS<strong>'+esc(kind==='leader'?(p.status||'active').toUpperCase():'APPROVED')+'</strong></span></div>'+
+          (kind==='leader'&&p.email?'<div class="verify-meta"><span>EMAIL<strong>'+esc(p.email)+'</strong></span><span>PHONE<strong>'+esc(p.phone||'Not provided')+'</strong></span></div>':'')+
+          '</div></div>'+
+        '<div class="notice verify-notice">'+notice+'</div>'+
       '</div>'
     );
   }catch(e){
-    openModal('<div class="modal-kicker">MEMBERSHIP VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');
+    openModal('<div class="modal-kicker">YYC VERIFICATION</div><h2 class="modal-title">Not Verified</h2><p class="modal-sub">'+esc(e.message)+'</p>');
   }
 }
 function bindUI(){
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
+  if($('#leaderLoginBtn')) $('#leaderLoginBtn').addEventListener('click',leaderLogin);
   if($('#memberLoginMobile')) $('#memberLoginMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();memberLogin();});
+  if($('#leaderLoginMobile')) $('#leaderLoginMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();leaderLogin();});
   if($('#adminOpenBtn')) $('#adminOpenBtn').addEventListener('click',adminLogin);
   if($('#adminOpenMobile')) $('#adminOpenMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();adminLogin();});
   if($('#footerAdminBtn')) $('#footerAdminBtn').addEventListener('click',adminLogin);
@@ -482,7 +608,7 @@ function bindUI(){
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
   bindNavigation();
 }
-window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,adminLogin:adminLogin,adminPanel:adminPanel};
+window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 document.addEventListener('DOMContentLoaded',function(){
   bindUI();
   loadPublic();

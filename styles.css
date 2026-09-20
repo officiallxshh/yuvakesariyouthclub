@@ -147,3 +147,12 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 @media(orientation:landscape) and (max-width:760px){
   .hero{min-height:auto;padding-top:78px;padding-bottom:80px;grid-template-columns:1fr 1fr;align-items:center}.hero-main{padding-right:6px}.culture-panel{padding-left:6px}.hero-logo{width:92px;height:92px}.brand-lockup h1{font-size:clamp(42px,8vw,60px)}.culture-overline em{font-size:28px}.orb-image,.orb-dharma .orb-image,.orb-aati .orb-image,.orb-yak .orb-image{width:72px!important;height:72px!important}.hero-bottom{display:none}
 }
+
+
+/* Leader access + identity card */
+.leader-login-btn{border-color:rgba(215,174,102,.32)!important;background:linear-gradient(145deg,rgba(215,174,102,.10),rgba(255,255,255,.025))!important}
+.leader-login-btn:hover{border-color:rgba(239,202,123,.62)!important}
+.leader-id-card{background:radial-gradient(circle at 78% 18%,rgba(197,145,54,.19),transparent 24%),radial-gradient(circle at 18% 75%,rgba(50,89,79,.17),transparent 25%),linear-gradient(145deg,#f8efdd 0 33%,#08151b 33% 100%)}
+.leader-verified-badge{border-color:#d1ae59!important}
+.verify-leader-card{border-color:rgba(215,174,102,.30)}
+.verify-line{margin-top:12px;color:#a8b1ad;font-size:11px;line-height:1.5}
