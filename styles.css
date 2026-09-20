@@ -940,3 +940,30 @@ body.yyc-inertial-scroll{
   .yyc-template-id-card{width:100%}
   .yyc-template-photo{border-radius:4%}
 }
+
+/* Admin navigation helpers */
+.admin-top-actions,.admin-form-top{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+.admin-form-top{
+  justify-content:flex-start;
+  margin-bottom:8px;
+}
+.storage-meta{
+  align-items:center;
+}
+@media(max-width:620px){
+  .admin-top{
+    align-items:flex-start!important;
+    flex-wrap:wrap;
+  }
+  .admin-top-actions{
+    width:100%;
+    justify-content:flex-end;
+  }
+  .admin-form-top{margin-bottom:6px}
+  .storage-meta{flex-wrap:wrap}
+}
