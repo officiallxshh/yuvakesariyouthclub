@@ -121,10 +121,10 @@ function wireEditor(id,obj,fileInput){
     if(!drag.on) return;
     var rect=stage.getBoundingClientRect();
     var sensitivity=100/Math.max(120,Math.min(rect.width,rect.height));
-    /* Smaller movement at 1x, more responsive once zoomed. */
+    /* Move the image in the same direction as the mouse/finger. */
     var zoomFactor=Math.max(1,Number(obj.scale)||1);
-    obj.x=Math.max(0,Math.min(100,drag.ox-(e.clientX-drag.x)*sensitivity/zoomFactor*1.35));
-    obj.y=Math.max(0,Math.min(100,drag.oy-(e.clientY-drag.y)*sensitivity/zoomFactor*1.35));
+    obj.x=Math.max(0,Math.min(100,drag.ox+(e.clientX-drag.x)*sensitivity/zoomFactor*1.35));
+    obj.y=Math.max(0,Math.min(100,drag.oy+(e.clientY-drag.y)*sensitivity/zoomFactor*1.35));
     draw();
     e.preventDefault();
   }
