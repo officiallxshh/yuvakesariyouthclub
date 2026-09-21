@@ -1354,3 +1354,19 @@ body.yyc-inertial-scroll{
   .yyc-back-details{gap:6px;margin-top:12px}.yyc-back-details>div{padding:7px 8px}
   .yyc-back-details b{font-size:7px}
 }
+
+/* ===== LEADERS SECTION — NATURAL PHOTO FRAMING ===== */
+.leaders-grid{align-items:start}
+.leader-card{background:linear-gradient(180deg,#0b1116,#080d10);border-color:rgba(237,192,104,.13)}
+.leader-photo{aspect-ratio:16/9;height:auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(145deg,#12191c,#0b1013);padding:8px;box-sizing:border-box}
+.leader-photo img{width:100%;height:100%;object-fit:contain;object-position:50% 50%;display:block;transform-origin:center center;max-width:100%;max-height:100%}
+.leader-info{padding:14px 16px 17px}
+.leader-info strong{font-size:24px}
+@media(max-width:980px){
+  .leader-photo{aspect-ratio:16/10;padding:7px}
+}
+@media(max-width:620px){
+  .leader-photo{aspect-ratio:16/10;padding:6px}
+  .leader-info{padding:12px 14px 15px}
+  .leader-info strong{font-size:21px}
+}
