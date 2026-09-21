@@ -426,43 +426,92 @@ function memberDashboard(memberArg){
 function downloadYYCIdCard(cardEl,filename){
   return loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(function(){
     if(!window.html2canvas) throw new Error('Card export library unavailable');
-    var clone=cardEl.cloneNode(true);
-    clone.id='';
-    clone.classList.remove('flipped');
-    clone.style.transform='none';
-    clone.style.position='relative';
-    clone.style.left='0';
-    clone.style.top='0';
-    clone.style.width=cardEl.offsetWidth+'px';
-    clone.style.height=cardEl.offsetHeight+'px';
-    clone.style.aspectRatio='auto';
-    var back=clone.querySelector('.yyc-card-back');
-    if(back) back.remove();
-    var front=clone.querySelector('.yyc-card-front');
-    if(front){
-      front.style.position='relative';
-      front.style.inset='auto';
-      front.style.transform='none';
-      front.style.backfaceVisibility='visible';
-      front.style.webkitBackfaceVisibility='visible';
+
+    var rect=cardEl.getBoundingClientRect();
+    var w=Math.max(1,Math.round(rect.width));
+    var h=Math.max(1,Math.round(rect.height));
+    var scale=2;
+
+    var stage=document.createElement('div');
+    stage.style.position='fixed';
+    stage.style.left='-20000px';
+    stage.style.top='0';
+    stage.style.width=(w*2+20)+'px';
+    stage.style.height=h+'px';
+    stage.style.display='flex';
+    stage.style.gap='20px';
+    stage.style.padding='0';
+    stage.style.margin='0';
+    stage.style.background='transparent';
+    stage.style.pointerEvents='none';
+    stage.style.zIndex='-1';
+
+    function makeFace(selector){
+      var source=cardEl.querySelector(selector);
+      if(!source) throw new Error('Card face not found');
+      var face=source.cloneNode(true);
+      face.removeAttribute('id');
+      face.classList.remove('flipped');
+      face.style.position='relative';
+      face.style.inset='auto';
+      face.style.width=w+'px';
+      face.style.height=h+'px';
+      face.style.minHeight='0';
+      face.style.aspectRatio='auto';
+      face.style.transform='none';
+      face.style.backfaceVisibility='visible';
+      face.style.webkitBackfaceVisibility='visible';
+      face.style.flex='0 0 '+w+'px';
+      face.style.margin='0';
+      return face;
     }
-    var hint=clone.parentElement && clone.parentElement.querySelector('.yyc-card-hint');
-    document.body.appendChild(clone);
-    return html2canvas(clone,{
-      backgroundColor:'#071016',
-      scale:2,
-      useCORS:true,
-      logging:false,
-      width:clone.offsetWidth,
-      height:clone.offsetHeight
-    }).then(function(canvas){
+
+    var front=makeFace('.yyc-card-front');
+    var back=makeFace('.yyc-card-back');
+    stage.appendChild(front);
+    stage.appendChild(back);
+    document.body.appendChild(stage);
+
+    return new Promise(function(resolve){
+      requestAnimationFrame(function(){
+        requestAnimationFrame(resolve);
+      });
+    }).then(function(){
+      return Promise.all([
+        html2canvas(front,{
+          backgroundColor:null,
+          scale:scale,
+          useCORS:true,
+          logging:false,
+          width:w,
+          height:h
+        }),
+        html2canvas(back,{
+          backgroundColor:null,
+          scale:scale,
+          useCORS:true,
+          logging:false,
+          width:w,
+          height:h
+        })
+      ]);
+    }).then(function(canvases){
+      var combined=document.createElement('canvas');
+      combined.width=w*scale*2+20*scale;
+      combined.height=h*scale;
+      var ctx=combined.getContext('2d');
+      ctx.fillStyle='#071016';
+      ctx.fillRect(0,0,combined.width,combined.height);
+      ctx.drawImage(canvases[0],0,0,w*scale,h*scale);
+      ctx.drawImage(canvases[1],w*scale+20*scale,0,w*scale,h*scale);
+
       var a=document.createElement('a');
-      a.href=canvas.toDataURL('image/png');
+      a.href=combined.toDataURL('image/png');
       a.download=filename+'.png';
       a.click();
-      clone.remove();
+      stage.remove();
     }).catch(function(err){
-      clone.remove();
+      stage.remove();
       throw err;
     });
   });
