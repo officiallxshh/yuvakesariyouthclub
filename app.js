@@ -456,7 +456,7 @@ function leaderDashboard(leaderArg){
   openModal(
     '<div class="leader-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Dedicated YYC leadership identity card using the leader's role, team line and contact data.</p></div>'+
+        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Dedicated YYC leadership identity card using the leader role, team line and contact data.</p></div>'+
         (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
       '</div>'+
       yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
