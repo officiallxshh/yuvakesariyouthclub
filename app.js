@@ -432,7 +432,19 @@ function downloadYYCIdCard(cardEl,filename){
     var h=Math.max(1,Math.round(rect.height));
     var scale=2;
 
-    /* Download layout: FRONT on top, BACK directly below. */
+    function waitForQr(face,tries){
+      return new Promise(function(resolve){
+        function check(){
+          var qr=face.querySelector('.yyc-live-qr');
+          if(qr && qr.querySelector('canvas')) return resolve(true);
+          if(tries<=0) return resolve(false);
+          tries--;
+          setTimeout(check,100);
+        }
+        check();
+      });
+    }
+
     var stage=document.createElement('div');
     stage.style.position='fixed';
     stage.style.left='-20000px';
@@ -451,41 +463,40 @@ function downloadYYCIdCard(cardEl,filename){
     function prepareQrClone(sourceFace,face){
       var sourceQr=sourceFace.querySelector('.yyc-live-qr');
       var cloneQr=face.querySelector('.yyc-live-qr');
-      if(!sourceQr || !cloneQr) return;
+      if(!sourceQr || !cloneQr) return false;
 
-      var canvas=sourceQr.querySelector('canvas');
-      var img=sourceQr.querySelector('img');
-      var dataUrl='';
-      try{
-        if(canvas && canvas.width && canvas.height) dataUrl=canvas.toDataURL('image/png');
-      }catch(err){}
+      var sourceCanvas=sourceQr.querySelector('canvas');
+      if(!sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) return false;
 
-      if(!dataUrl && img && img.src) dataUrl=img.src;
-      if(!dataUrl) return;
-
-      var replacement=document.createElement('img');
-      replacement.src=dataUrl;
-      replacement.alt='QR verification code';
-      replacement.width=116;
-      replacement.height=116;
-      replacement.style.display='block';
-      replacement.style.width='116px';
-      replacement.style.height='116px';
-      replacement.style.maxWidth='none';
-      replacement.style.maxHeight='none';
+      /* A cloned <canvas> has no drawing buffer. Create a fresh canvas and
+         explicitly copy the live QR pixels into it. The site's CSS keeps
+         <img> hidden, so the export deliberately uses canvas. */
+      var replacement=document.createElement('canvas');
+      replacement.width=sourceCanvas.width;
+      replacement.height=sourceCanvas.height;
+      replacement.setAttribute('aria-label','QR verification code');
+      replacement.style.setProperty('display','block','important');
+      replacement.style.setProperty('width','100%','important');
+      replacement.style.setProperty('height','100%','important');
+      replacement.style.setProperty('max-width','none','important');
+      replacement.style.setProperty('max-height','none','important');
       replacement.style.margin='0';
-      replacement.style.transform='none';
-      replacement.style.objectFit='contain';
       replacement.style.background='#fff';
+
+      var rctx=replacement.getContext('2d');
+      rctx.fillStyle='#fff';
+      rctx.fillRect(0,0,replacement.width,replacement.height);
+      rctx.drawImage(sourceCanvas,0,0);
 
       cloneQr.innerHTML='';
       cloneQr.appendChild(replacement);
-      cloneQr.style.width='116px';
-      cloneQr.style.height='116px';
-      cloneQr.style.display='flex';
-      cloneQr.style.alignItems='center';
-      cloneQr.style.justifyContent='center';
+      cloneQr.style.width='100%';
+      cloneQr.style.height='100%';
+      cloneQr.style.display='grid';
+      cloneQr.style.placeItems='center';
       cloneQr.style.background='#fff';
+      cloneQr.style.overflow='hidden';
+      return true;
     }
 
     function makeFace(selector){
@@ -505,26 +516,31 @@ function downloadYYCIdCard(cardEl,filename){
       face.style.webkitBackfaceVisibility='visible';
       face.style.flex='0 0 '+h+'px';
       face.style.margin='0';
-
-      /* cloneNode() does not preserve a canvas drawing buffer, so convert the
-         live QR canvas into a normal image before html2canvas captures it. */
-      prepareQrClone(source,face);
-      return face;
+      return {source:source,face:face};
     }
 
-    var front=makeFace('.yyc-card-front');
-    var back=makeFace('.yyc-card-back');
-    stage.appendChild(front);
-    stage.appendChild(back);
+    var frontPair=makeFace('.yyc-card-front');
+    var backPair=makeFace('.yyc-card-back');
+    stage.appendChild(frontPair.face);
+    stage.appendChild(backPair.face);
     document.body.appendChild(stage);
 
-    return new Promise(function(resolve){
-      requestAnimationFrame(function(){
-        requestAnimationFrame(resolve);
+    return Promise.all([
+      waitForQr(frontPair.source,30),
+      waitForQr(backPair.source,30)
+    ]).then(function(){
+      if(!prepareQrClone(frontPair.source,frontPair.face)){
+        throw new Error('QR code is still loading. Please wait a moment and try again.');
+      }
+      prepareQrClone(backPair.source,backPair.face);
+      return new Promise(function(resolve){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(resolve);
+        });
       });
     }).then(function(){
       return Promise.all([
-        html2canvas(front,{
+        html2canvas(frontPair.face,{
           backgroundColor:null,
           scale:scale,
           useCORS:true,
@@ -533,7 +549,7 @@ function downloadYYCIdCard(cardEl,filename){
           width:w,
           height:h
         }),
-        html2canvas(back,{
+        html2canvas(backPair.face,{
           backgroundColor:null,
           scale:scale,
           useCORS:true,
