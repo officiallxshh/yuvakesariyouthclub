@@ -16,7 +16,19 @@ var publicData = null;
 var adminData = null;
 
 var $ = function(s){ return document.querySelector(s); };
-var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var $ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+/* Premium membership-card interaction: delegated so member and leader cards both flip reliably. */
+document.addEventListener('click',function(e){
+  var card=e.target.closest && e.target.closest('.yyc-digital-card');
+  if(card) card.classList.toggle('flipped');
+});
+document.addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ') && document.activeElement && document.activeElement.classList.contains('yyc-digital-card')){
+    document.activeElement.classList.toggle('flipped');
+    e.preventDefault();
+  }
+});
 
 function esc(v){
   return String(v == null ? '' : v).replace(/[&<>'"]/g,function(c){
