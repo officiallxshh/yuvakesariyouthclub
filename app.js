@@ -292,27 +292,51 @@ function memberLogin(){
 function yycMemberIdCardHTML(m,kind){
   var isLeader=kind==='leader';
   var roleRaw=m.role_number||(isLeader?'YYC-L-2026-0000':'YYC-2026-0000');
-  var phoneRaw=m.phone||'';
-  var emailRaw=m.email||'';
-  var photo=m.photo_url||'';
+  var status=m.status==='approved'||m.approved?'ACTIVE':'PENDING';
+  var photo=m.photo_url||'assets/yyc-logo-clean.webp';
   var sx=Math.max(1,Math.min(2.4,Number(m.photo_scale)||1));
   var px=Math.max(0,Math.min(100,m.photo_pos_x==null?50:Number(m.photo_pos_x)));
   var py=Math.max(0,Math.min(100,m.photo_pos_y==null?50:Number(m.photo_pos_y)));
-  var tx=((px-50)/50)*15*sx;
-  var ty=((py-50)/50)*15*sx;
-  var photoTag=photo
-    ? '<img src="'+esc(photo)+'" alt="Photo" style="transform:translate3d('+tx.toFixed(2)+'%,'+ty.toFixed(2)+'%,0) scale('+sx.toFixed(2)+')">'
-    : '';
-  var emailSize=emailRaw.length>30?3.25:(emailRaw.length>23?3.65:4.05);
-  var typeLabel=isLeader?'leader':'member';
-  return '<div id="yycDigitalCard" class="yyc-template-id-card" role="img" aria-label="Yuvakesari Youth Club '+typeLabel+' identity card">'+
-    '<div class="yyc-template-photo">'+photoTag+'</div>'+
-    '<div class="yyc-template-data-mask yyc-template-id-mask"><div class="yyc-template-value">'+esc(roleRaw)+'</div></div>'+
-    '<div class="yyc-template-data-mask yyc-template-phone-mask"><div class="yyc-template-value">'+esc(phoneRaw)+'</div></div>'+
-    '<div class="yyc-template-data-mask yyc-template-email-mask"><div class="yyc-template-value" style="font-size:'+emailSize+'cqw">'+esc(emailRaw)+'</div></div>'+
-    '<div class="yyc-template-qr-mask"><div id="memberQr" class="yyc-template-qr"></div></div>'+
+  var phone=m.phone||'Not provided';
+  var email=m.email||'Not provided';
+  var joined=m.joined||m.created_at||'';
+  var typeLabel=isLeader?'LEADER':'MEMBER';
+  var barcode='';
+  for(var i=0;i<34;i++) barcode+='<span style="width:'+(i%6===0?3:(i%3===0?1:2))+'px"></span>';
+  var photoTag='<img src="'+esc(photo)+'" alt="Member photo" style="object-position:'+px+'% '+py+'%;transform:scale('+sx+')">';
+  return '<div class="yyc-digital-card-wrap">'+
+    '<div class="yyc-digital-card" id="yycDigitalCard" tabindex="0" role="button" aria-label="YYC digital membership card. Tap to flip">'+
+      '<div class="yyc-card-face yyc-card-front">'+
+        '<div class="yyc-card-glow"></div><div class="yyc-card-pattern"></div>'+
+        '<div class="yyc-card-inner">'+
+          '<div class="yyc-card-header">'+
+            '<div class="yyc-brand-lockup"><div class="yyc-logo-orb"><img src="assets/yyc-logo-clean.webp" alt="YYC"></div><div><b>YUVAKESARI YOUTH CLUB</b><span>SUBRAHMANYA • KARNATAKA</span></div></div>'+
+            '<div class="yyc-status '+(status==='ACTIVE'?'active':'pending')+'"><i></i>'+esc(status)+'</div>'+
+          '</div>'+
+          '<div class="yyc-card-body">'+
+            '<div class="yyc-member-photo">'+photoTag+'</div>'+
+            '<div class="yyc-member-copy"><div class="yyc-eyebrow">'+typeLabel+'</div><div class="yyc-member-name">'+esc(m.name||'YYC Member')+'</div><div class="yyc-member-role">'+esc(roleRaw)+'</div>'+
+              '<div class="yyc-meta-row"><span><small>DOB</small>'+esc(m.dob||'—')+'</span><span><small>JOINED</small>'+esc(fmtDate(joined)||joined||'—')+'</span></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="yyc-card-footer"><span>DIGITAL MEMBERSHIP CARD</span><div class="yyc-barcode">'+barcode+'</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="yyc-card-face yyc-card-back">'+
+        '<div class="yyc-card-inner">'+
+          '<div class="yyc-back-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><b>YYC MEMBERSHIP</b><span>VERIFY • CONNECT • GROW</span></div></div>'+
+          '<div class="yyc-back-title">Membership Verification</div>'+
+          '<p class="yyc-back-copy">This digital card represents a YYC membership record. Membership status and member details are maintained through the official club administration system.</p>'+
+          '<div class="yyc-detail-grid"><div><small>MEMBER NUMBER</small><b>'+esc(roleRaw)+'</b></div><div><small>POSITION</small><b>'+esc(m.position||typeLabel)+'</b></div><div><small>LOCATION</small><b>SUBRAHMANYA</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div></div>'+
+          '<div class="yyc-contact-line"><span>'+esc(phone)+'</span><span>'+esc(email)+'</span></div>'+
+          '<div class="yyc-back-note">YUVAKESARI YOUTH CLUB • DIGITAL MEMBER CARD</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="yyc-card-hint">TAP / CLICK TO FLIP • FRONT ↔ BACK</div>'+
   '</div>';
 }
+
 function memberDashboard(memberArg){
   var m=memberArg;
   if(!m){
