@@ -1157,3 +1157,54 @@ body.yyc-inertial-scroll{
 @media(max-width:620px){
   .yyc-template-id-card{width:100%!important}
 }
+
+
+/* ===== YYC PREMIUM DIGITAL MEMBERSHIP CARD v2 ===== */
+.yyc-digital-card-wrap{width:min(100%,560px);margin:18px auto 8px;container-type:inline-size}
+.yyc-digital-card{position:relative;width:100%;aspect-ratio:1.586/1;min-height:310px;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.2,.75,.2,1);cursor:pointer;outline:none}
+.yyc-digital-card.flipped{transform:rotateY(180deg)}
+.yyc-card-face{position:absolute;inset:0;overflow:hidden;border-radius:24px;backface-visibility:hidden;-webkit-backface-visibility:hidden;color:#fff;box-shadow:0 28px 65px rgba(0,0,0,.32);border:1px solid rgba(239,202,123,.22)}
+.yyc-card-front{background:linear-gradient(135deg,#071117 0%,#0c2228 48%,#102f31 100%)}
+.yyc-card-back{transform:rotateY(180deg);background:linear-gradient(145deg,#071117,#102b31 55%,#0a1a1f)}
+.yyc-card-inner{position:relative;z-index:3;height:100%;padding:clamp(18px,4cqw,28px);box-sizing:border-box}
+.yyc-card-glow{position:absolute;width:55%;aspect-ratio:1;border-radius:50%;right:-17%;top:-48%;background:radial-gradient(circle,rgba(239,202,123,.28),rgba(239,202,123,0) 68%);filter:blur(2px)}
+.yyc-card-pattern{position:absolute;inset:0;opacity:.18;background:linear-gradient(120deg,transparent 0 42%,rgba(239,202,123,.15) 42.2%,transparent 42.5% 64%,rgba(255,255,255,.08) 64.2%,transparent 64.5%)}
+.yyc-card-pattern:after{content:"YYC";position:absolute;right:-2%;bottom:-18%;font:900 38cqw/1 Inter,sans-serif;letter-spacing:-.08em;color:rgba(255,255,255,.035);transform:rotate(-8deg)}
+.yyc-card-header,.yyc-card-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.yyc-brand-lockup,.yyc-back-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.yyc-logo-orb,.yyc-back-brand img{width:clamp(36px,7cqw,48px);height:clamp(36px,7cqw,48px);border-radius:50%;border:1px solid rgba(239,202,123,.75);background:#071117;display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
+.yyc-logo-orb img,.yyc-back-brand img{width:100%;height:100%;object-fit:cover}
+.yyc-brand-lockup b,.yyc-back-brand b{display:block;font:800 clamp(9px,1.8cqw,13px)/1 Inter,sans-serif;letter-spacing:.06em;white-space:nowrap}
+.yyc-brand-lockup span,.yyc-back-brand span{display:block;margin-top:4px;color:#aebdb8;font:600 clamp(7px,1.25cqw,9px)/1 Inter,sans-serif;letter-spacing:.08em}
+.yyc-status{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font:800 clamp(7px,1.25cqw,9px)/1 Inter,sans-serif;letter-spacing:.09em;white-space:nowrap}
+.yyc-status i{width:6px;height:6px;border-radius:50%;background:#e0ad55;box-shadow:0 0 10px rgba(224,173,85,.65)}
+.yyc-status.active{color:#c9eddb;background:rgba(61,160,110,.10);border-color:rgba(91,205,145,.24)}
+.yyc-status.active i{background:#5bd091;box-shadow:0 0 10px rgba(91,208,145,.65)}
+.yyc-card-body{display:flex;align-items:center;gap:clamp(14px,3cqw,25px);margin-top:clamp(24px,5cqw,38px)}
+.yyc-member-photo{width:clamp(72px,15cqw,108px);height:clamp(92px,19cqw,138px);border-radius:14px;border:2px solid rgba(239,202,123,.78);overflow:hidden;background:#0b1a1f;box-shadow:0 10px 24px rgba(0,0,0,.28);flex:0 0 auto}
+.yyc-member-photo img{width:100%;height:100%;display:block;object-fit:cover;transform-origin:center;transition:transform .25s ease}
+.yyc-member-copy{min-width:0}
+.yyc-eyebrow{color:#bda774;font:800 clamp(7px,1.25cqw,9px)/1 Inter,sans-serif;letter-spacing:.18em}
+.yyc-member-name{margin:5px 0 7px;font:850 clamp(20px,5.2cqw,32px)/.98 Inter,sans-serif;letter-spacing:-.035em;word-break:break-word}
+.yyc-member-role{color:#edcb82;font:800 clamp(9px,1.55cqw,11px)/1 ui-monospace,monospace;letter-spacing:.1em}
+.yyc-meta-row{display:flex;gap:clamp(10px,2.5cqw,22px);margin-top:12px;flex-wrap:wrap}
+.yyc-meta-row span{font:600 clamp(8px,1.25cqw,10px)/1.25 Inter,sans-serif;color:#c8d3cf}
+.yyc-meta-row small{display:block;color:#80918d;font:700 6px/1 Inter,sans-serif;letter-spacing:.16em;margin-bottom:4px}
+.yyc-card-footer{position:absolute;left:clamp(18px,4cqw,28px);right:clamp(18px,4cqw,28px);bottom:clamp(15px,3cqw,22px);color:#83918d;font:700 6px/1 Inter,sans-serif;letter-spacing:.15em}
+.yyc-barcode{height:20px;display:flex;align-items:flex-end;gap:2px;opacity:.82}
+.yyc-barcode span{height:18px;background:#e9e7de;display:block}
+.yyc-barcode span:nth-child(3n){height:12px}.yyc-barcode span:nth-child(5n){height:20px}
+.yyc-card-back .yyc-card-inner{padding:clamp(20px,4.5cqw,30px)}
+.yyc-back-title{margin-top:clamp(24px,5cqw,38px);font:850 clamp(17px,3.2cqw,23px)/1 Inter,sans-serif}
+.yyc-back-copy{max-width:88%;margin:9px 0 18px;color:#b8c6c2;font:500 clamp(8px,1.45cqw,11px)/1.55 Inter,sans-serif}
+.yyc-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.yyc-detail-grid>div{padding:10px 11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}
+.yyc-detail-grid small{display:block;color:#71827e;font:700 6px/1 Inter,sans-serif;letter-spacing:.14em;margin-bottom:5px}
+.yyc-detail-grid b{display:block;color:#eee9dd;font:800 clamp(8px,1.4cqw,10px)/1.15 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.yyc-contact-line{display:flex;justify-content:space-between;gap:12px;margin-top:12px;color:#899894;font:600 clamp(6px,1.15cqw,8px)/1.2 Inter,sans-serif}
+.yyc-contact-line span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.yyc-back-note{position:absolute;left:clamp(20px,4.5cqw,30px);right:clamp(20px,4.5cqw,30px);bottom:clamp(16px,3cqw,22px);color:#bda774;font:800 6px/1 Inter,sans-serif;letter-spacing:.16em}
+.yyc-card-hint{text-align:center;margin-top:9px;color:#7c8986;font:700 8px/1 Inter,sans-serif;letter-spacing:.13em}
+@media(max-width:620px){.yyc-digital-card{min-height:250px}.yyc-card-face{border-radius:20px}}
+@media(max-width:420px){.yyc-digital-card{min-height:220px}.yyc-card-body{margin-top:18px}.yyc-member-photo{border-radius:11px}.yyc-card-inner{padding:15px}.yyc-card-footer{left:15px;right:15px;bottom:13px}}
+@media(prefers-reduced-motion:reduce){.yyc-digital-card{transition:none}}
