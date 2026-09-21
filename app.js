@@ -229,8 +229,8 @@ function renderPublic(){
   var lg=$('#leadersGrid');
   if(lg){
     lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
-      var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'" style="transform:scale('+Math.min(1.05,Math.max(1,Number(l.photo_scale)||1))+');object-position:50% 50%">' : '<span class="photo-placeholder">✦</span>';
-      return '<article class="leader-card reveal visible"><div class="leader-photo">'+img+'</div><div class="leader-info"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></article>';
+      var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'" style="width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;object-position:center center;transform:none;display:block">' : '<span class="photo-placeholder">✦</span>';
+      return '<article class="leader-card reveal visible"><div class="leader-photo natural-leader-photo">'+img+'</div><div class="leader-info"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></article>';
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
   var ug=$('#updatesGrid');
