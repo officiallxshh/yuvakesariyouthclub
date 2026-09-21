@@ -432,13 +432,15 @@ function downloadYYCIdCard(cardEl,filename){
     var h=Math.max(1,Math.round(rect.height));
     var scale=2;
 
+    /* Download layout: FRONT on top, BACK directly below. */
     var stage=document.createElement('div');
     stage.style.position='fixed';
     stage.style.left='-20000px';
     stage.style.top='0';
-    stage.style.width=(w*2+20)+'px';
-    stage.style.height=h+'px';
+    stage.style.width=w+'px';
+    stage.style.height=(h*2+20)+'px';
     stage.style.display='flex';
+    stage.style.flexDirection='column';
     stage.style.gap='20px';
     stage.style.padding='0';
     stage.style.margin='0';
@@ -461,7 +463,7 @@ function downloadYYCIdCard(cardEl,filename){
       face.style.transform='none';
       face.style.backfaceVisibility='visible';
       face.style.webkitBackfaceVisibility='visible';
-      face.style.flex='0 0 '+w+'px';
+      face.style.flex='0 0 '+h+'px';
       face.style.margin='0';
       return face;
     }
@@ -497,13 +499,13 @@ function downloadYYCIdCard(cardEl,filename){
       ]);
     }).then(function(canvases){
       var combined=document.createElement('canvas');
-      combined.width=w*scale*2+20*scale;
-      combined.height=h*scale;
+      combined.width=w*scale;
+      combined.height=h*scale*2+20*scale;
       var ctx=combined.getContext('2d');
       ctx.fillStyle='#071016';
       ctx.fillRect(0,0,combined.width,combined.height);
       ctx.drawImage(canvases[0],0,0,w*scale,h*scale);
-      ctx.drawImage(canvases[1],w*scale+20*scale,0,w*scale,h*scale);
+      ctx.drawImage(canvases[1],0,h*scale+20*scale,w*scale,h*scale);
 
       var a=document.createElement('a');
       a.href=combined.toDataURL('image/png');
@@ -516,7 +518,6 @@ function downloadYYCIdCard(cardEl,filename){
     });
   });
 }
-
 function submitUpdate(auth){
   if(auth===true && !memberToken){memberLogin();return;}
   openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit an Update</h2><p class="modal-sub">Your submission will remain hidden until an admin approves it.</p><form id="submitUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="suTitle" required></div><div class="field"><label>Date</label><input id="suDate" type="date" value="'+today()+'"></div><div class="field full"><label>Message</label><textarea id="suBody" required></textarea></div></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
