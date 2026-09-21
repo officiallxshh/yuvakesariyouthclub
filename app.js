@@ -16,7 +16,7 @@ var publicData = null;
 var adminData = null;
 
 var $ = function(s){ return document.querySelector(s); };
-var $ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
 /* Premium membership-card interaction: delegated so member and leader cards both flip reliably. */
 document.addEventListener('click',function(e){
