@@ -494,7 +494,7 @@ function leaderDashboard(leaderArg){
     try{await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');}
     catch(e){window.print();return;}
     if(!window.html2canvas){window.print();return;}
-    var canvas=await html2canvas($('#yycDigitalCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
+    var canvas=await html2canvas($('#yycLeaderCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
     var aa=document.createElement('a');
     aa.href=canvas.toDataURL('image/png');
     aa.download=(l.role_number||'yyc-leader-card')+'.png';
