@@ -303,50 +303,34 @@ function memberLogin(){
 }
 function yycMemberIdCardHTML(m,kind){
   var isLeader=kind==='leader';
-  var roleRaw=m.role_number||(isLeader?'YYC-L-2026-0000':'YYC-2026-0000');
-  var status=m.status==='approved'||m.approved?'ACTIVE':'PENDING';
+  var roleRaw=m.role_number||(isLeader?'YYC-LEADER':'YYC-MEMBER');
+  var statusRaw=String(m.status||(m.approved?'approved':'pending')).toLowerCase();
+  var status=isLeader?((statusRaw==='active'||statusRaw==='approved')?'ACTIVE':'INACTIVE'):((statusRaw==='approved'||m.approved)?'ACTIVE':'PENDING');
   var photo=m.photo_url||'assets/yyc-logo-clean.webp';
   var sx=Math.max(1,Math.min(2.4,Number(m.photo_scale)||1));
   var px=Math.max(0,Math.min(100,m.photo_pos_x==null?50:Number(m.photo_pos_x)));
   var py=Math.max(0,Math.min(100,m.photo_pos_y==null?50:Number(m.photo_pos_y)));
-  var phone=m.phone||'Not provided';
-  var email=m.email||'Not provided';
   var joined=m.joined||m.created_at||'';
-  var typeLabel=isLeader?'LEADER':'MEMBER';
-  var barcode='';
-  for(var i=0;i<34;i++) barcode+='<span style="width:'+(i%6===0?3:(i%3===0?1:2))+'px"></span>';
-  var photoTag='<img src="'+esc(photo)+'" alt="Member photo" style="object-position:'+px+'% '+py+'%;transform:scale('+sx+')">';
-  return '<div class="yyc-digital-card-wrap">'+
-    '<div class="yyc-digital-card" id="yycDigitalCard" tabindex="0" role="button" aria-label="YYC digital membership card. Tap to flip">'+
-      '<div class="yyc-card-face yyc-card-front">'+
-        '<div class="yyc-card-glow"></div><div class="yyc-card-pattern"></div>'+
-        '<div class="yyc-card-inner">'+
-          '<div class="yyc-card-header">'+
-            '<div class="yyc-brand-lockup"><div class="yyc-logo-orb"><img src="assets/yyc-logo-clean.webp" alt="YYC"></div><div><b>YUVAKESARI YOUTH CLUB</b><span>SUBRAHMANYA • KARNATAKA</span></div></div>'+
-            '<div class="yyc-status '+(status==='ACTIVE'?'active':'pending')+'"><i></i>'+esc(status)+'</div>'+
-          '</div>'+
-          '<div class="yyc-card-body">'+
-            '<div class="yyc-member-photo">'+photoTag+'</div>'+
-            '<div class="yyc-member-copy"><div class="yyc-eyebrow">'+typeLabel+'</div><div class="yyc-member-name">'+esc(m.name||'YYC Member')+'</div><div class="yyc-member-role">'+esc(roleRaw)+'</div>'+
-              '<div class="yyc-meta-row"><span><small>DOB</small>'+esc(m.dob||'—')+'</span><span><small>JOINED</small>'+esc(fmtDate(joined)||joined||'—')+'</span></div>'+
-            '</div>'+
-          '</div>'+
-          '<div class="yyc-card-footer"><span>DIGITAL MEMBERSHIP CARD</span><div class="yyc-barcode">'+barcode+'</div></div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="yyc-card-face yyc-card-back">'+
-        '<div class="yyc-card-inner">'+
-          '<div class="yyc-back-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><b>YYC MEMBERSHIP</b><span>VERIFY • CONNECT • GROW</span></div></div>'+
-          '<div class="yyc-back-title">Membership Verification</div>'+
-          '<p class="yyc-back-copy">This digital card represents a YYC membership record. Membership status and member details are maintained through the official club administration system.</p>'+
-          '<div class="yyc-detail-grid"><div><small>MEMBER NUMBER</small><b>'+esc(roleRaw)+'</b></div><div><small>POSITION</small><b>'+esc(m.position||typeLabel)+'</b></div><div><small>LOCATION</small><b>SUBRAHMANYA</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div></div>'+
-          '<div class="yyc-contact-line"><span>'+esc(phone)+'</span><span>'+esc(email)+'</span></div>'+
-          '<div class="yyc-back-note">YUVAKESARI YOUTH CLUB • DIGITAL MEMBER CARD</div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="yyc-card-hint">TAP / CLICK TO FLIP • FRONT ↔ BACK</div>'+
-  '</div>';
+  var club=m.club_name||'Yuvakesari Youth Club';
+  var position=isLeader?(m.role||m.position||'LEADER'):(m.position||'MEMBER');
+  var phone=m.phone||'Not provided', email=m.email||'Not provided';
+  var line=m.line||'Subrahmanya • Karnataka';
+  var typeLabel=isLeader?'LEADERSHIP ID':'MEMBERSHIP ID';
+  var initials=(String(m.name||'YYC').trim().split(/\s+/).map(function(v){return v[0];}).join('').slice(0,2)||'YC').toUpperCase();
+  var bars=''; for(var i=0;i<36;i++) bars+='<span></span>';
+  var photoTag='<img src="'+esc(photo)+'" alt="'+esc(m.name||'YYC')+'" style="object-position:'+px+'% '+py+'%;transform:scale('+sx+')">';
+  return '<div class="yyc-digital-card-wrap '+(isLeader?'leader-card-wrap':'member-card-wrap')+'">'+
+    '<div class="yyc-digital-card yyc-role-'+(isLeader?'leader':'member')+'" id="'+(isLeader?'yycLeaderCard':'yycDigitalCard')+'" tabindex="0" role="button" aria-label="'+esc(typeLabel)+'. Tap to flip">'+
+      '<div class="yyc-card-face yyc-card-front"><div class="yyc-card-grid"></div><div class="yyc-card-light"></div><div class="yyc-card-inner">'+
+        '<div class="yyc-card-top"><div class="yyc-brand-lockup"><div class="yyc-logo-orb"><img src="assets/yyc-logo-clean.webp" alt="YYC"></div><div><b>YUVAKESARI</b><span>YOUTH CLUB • '+esc(line)+'</span></div></div><div class="yyc-id-chip"><span>'+typeLabel+'</span><b>'+status+'</b></div></div>'+
+        '<div class="yyc-card-main"><div class="yyc-member-photo"><div class="yyc-photo-frame">'+photoTag+'</div></div><div class="yyc-member-copy"><div class="yyc-card-kicker">'+(isLeader?'CLUB LEADERSHIP':'REGISTERED MEMBER')+'</div><div class="yyc-member-name">'+esc(m.name||'YYC Member')+'</div><div class="yyc-member-role">'+esc(position)+'</div>'+
+        '<div class="yyc-data-strip"><div><small>UNIQUE ID</small><b>'+esc(roleRaw)+'</b></div>'+(isLeader?'<div><small>TEAM LINE</small><b>'+esc(m.line||'Leadership Team')+'</b></div>':'<div><small>DOB</small><b>'+esc(m.dob||'—')+'</b></div>')+'</div></div></div>'+
+        '<div class="yyc-card-bottom"><div><small>'+esc(club.toUpperCase())+'</small><b>'+typeLabel.toUpperCase()+'</b></div><div class="yyc-barcode">'+bars+'</div></div>'+
+      '</div></div>'+
+      '<div class="yyc-card-face yyc-card-back"><div class="yyc-card-inner"><div class="yyc-back-head"><div class="yyc-back-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><b>YUVAKESARI YOUTH CLUB</b><span>'+esc(isLeader?'OFFICIAL LEADERSHIP RECORD':'OFFICIAL MEMBERSHIP RECORD')+'</span></div></div><div class="yyc-back-seal">'+esc(initials)+'</div></div>'+
+      '<div class="yyc-back-title">'+esc(isLeader?'Leadership Credentials':'Membership Credentials')+'</div><div class="yyc-detail-grid"><div><small>UNIQUE ID</small><b>'+esc(roleRaw)+'</b></div><div><small>POSITION</small><b>'+esc(position)+'</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div><div><small>LOCATION</small><b>SUBRAHMANYA</b></div>'+(isLeader?'<div><small>TEAM LINE</small><b>'+esc(line)+'</b></div>':'<div><small>JOINED</small><b>'+esc(fmtDate(joined)||joined||'—')+'</b></div>')+'<div><small>CLUB</small><b>'+esc(club)+'</b></div></div>'+
+      '<div class="yyc-back-contact"><span>'+esc(phone)+'</span><span>'+esc(email)+'</span></div><div class="yyc-back-footer"><span>VALID FOR YYC DIGITAL VERIFICATION</span><div class="yyc-barcode">'+bars+'</div></div></div></div>'+
+    '</div><div class="yyc-card-hint">TAP / CLICK TO FLIP • '+esc(typeLabel)+'</div></div>';
 }
 
 function memberDashboard(memberArg){
@@ -374,7 +358,7 @@ function memberDashboard(memberArg){
         '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Official YYC member card with live verification QR.</p></div>'+
         (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="memberLogout">Logout</button>')+
       '</div>'+
-      yycMemberIdCardHTML(m)+
+      yycMemberIdCardHTML(m,'member')+
       '<div class="form-actions member-card-actions">'+
         '<button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button>'+
         '<button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button>'+
@@ -472,7 +456,7 @@ function leaderDashboard(leaderArg){
   openModal(
     '<div class="leader-dashboard premium-member-dashboard">'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Official Leader ID Card</h2><p class="modal-sub">The same official YYC card design is used for leader identity verification.</p></div>'+
+        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Dedicated YYC leadership identity card using the leader's role, team line and contact data.</p></div>'+
         (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
       '</div>'+
       yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
