@@ -424,110 +424,112 @@ function memberDashboard(memberArg){
 }
 
 function downloadYYCIdCard(cardEl,filename){
-  return loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(function(){
+  return Promise.all([
+    loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'),
+    loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js')
+  ]).then(function(){
     if(!window.html2canvas) throw new Error('Card export library unavailable');
+    if(!window.QRCode) throw new Error('QR library unavailable');
 
-    var rect=cardEl.getBoundingClientRect();
-    var w=Math.max(1,Math.round(rect.width));
-    var h=Math.max(1,Math.round(rect.height));
+    var dashboard=cardEl.closest('.premium-member-dashboard');
+    var verifyLink=dashboard && dashboard.querySelector('.verify-url-box a');
+    var verifyUrl=verifyLink && verifyLink.href;
+    if(!verifyUrl) throw new Error('QR verification link not found');
+
+    var wasFlipped=cardEl.classList.contains('flipped');
+    /* Export always starts from the real front orientation, then restores the
+       user's current flip state after the PNG is created. */
+    cardEl.classList.remove('flipped');
+
+    var frontSource=cardEl.querySelector('.yyc-card-front');
+    var backSource=cardEl.querySelector('.yyc-card-back');
+    var liveQr=frontSource && frontSource.querySelector('.yyc-live-qr');
+    if(!frontSource || !backSource || !liveQr){
+      if(wasFlipped) cardEl.classList.add('flipped');
+      throw new Error('ID card layout is incomplete');
+    }
+
+    var cardRect=cardEl.getBoundingClientRect();
+    var w=Math.max(1,Math.round(cardRect.width));
+    var h=Math.max(1,Math.round(cardRect.height));
     var scale=2;
+    var frontRect=frontSource.getBoundingClientRect();
+    var qrRect=liveQr.getBoundingClientRect();
 
-    function waitForQr(sourceFace,tries){
+    /* Create a fresh QR from the exact verification URL. This is intentionally
+       independent from the card's live canvas, so html2canvas/cloning cannot
+       drop the QR drawing buffer. */
+    var qrHost=document.createElement('div');
+    qrHost.style.position='fixed';
+    qrHost.style.left='-10000px';
+    qrHost.style.top='0';
+    qrHost.style.width='116px';
+    qrHost.style.height='116px';
+    qrHost.style.background='#fff';
+    qrHost.style.padding='0';
+    qrHost.style.margin='0';
+    qrHost.style.display='block';
+    document.body.appendChild(qrHost);
+    new QRCode(qrHost,{
+      text:verifyUrl,
+      width:116,
+      height:116,
+      colorDark:'#071015',
+      colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.H
+    });
+
+    function waitForQrCanvas(tries){
       return new Promise(function(resolve){
         function check(){
-          var qr=sourceFace.querySelector('.yyc-live-qr');
-          var canvas=qr && qr.querySelector('canvas');
-          if(canvas && canvas.width>0 && canvas.height>0) return resolve(true);
-          if(tries<=0) return resolve(false);
+          var c=qrHost.querySelector('canvas');
+          if(c && c.width>0 && c.height>0) return resolve(c);
+          if(tries<=0) return resolve(null);
           tries--;
-          setTimeout(check,120);
+          setTimeout(check,100);
         }
         check();
       });
     }
 
-    function makeFace(selector){
-      var source=cardEl.querySelector(selector);
-      if(!source) throw new Error('Card face not found');
-
+    function makeFace(source){
       var face=source.cloneNode(true);
       face.removeAttribute('id');
       face.classList.remove('flipped');
-      face.style.position='relative';
-      face.style.inset='auto';
+      face.style.position='fixed';
+      face.style.left='-20000px';
+      face.style.top='0';
       face.style.width=w+'px';
       face.style.height=h+'px';
       face.style.minHeight='0';
       face.style.aspectRatio='auto';
       face.style.transform='none';
+      face.style.inset='auto';
       face.style.backfaceVisibility='visible';
       face.style.webkitBackfaceVisibility='visible';
-      face.style.flex='0 0 '+h+'px';
       face.style.margin='0';
+      face.style.flex='none';
 
-      /* Do not try to export the QR through html2canvas. We composite the
-         original live QR canvas onto the final PNG ourselves below. */
-      var clonedQr=face.querySelector('.yyc-live-qr');
-      if(clonedQr){
-        clonedQr.innerHTML='';
-        clonedQr.style.background='#fff';
+      var qr=face.querySelector('.yyc-live-qr');
+      if(qr){
+        /* Leave an empty white QR frame in the html2canvas pass. The real QR
+           is composited afterward at the exact measured coordinates. */
+        qr.innerHTML='';
+        qr.style.background='#fff';
       }
-
-      return {source:source,face:face};
+      document.body.appendChild(face);
+      return face;
     }
 
-    function drawLiveQr(combined,qrSource,faceRect,destX,destY){
-      var qr=qrSource.querySelector('.yyc-live-qr');
-      var qrCanvas=qr && qr.querySelector('canvas');
-      if(!qrCanvas || !qrCanvas.width || !qrCanvas.height){
-        throw new Error('QR code is still loading. Please wait a moment and try again.');
-      }
+    var front=makeFace(frontSource);
+    var back=makeFace(backSource);
+    back.style.top=(h+20)+'px';
 
-      var qrRect=qr.getBoundingClientRect();
-      var x=(qrRect.left-faceRect.left)*scale;
-      var y=(qrRect.top-faceRect.top)*scale;
-      var ww=qrRect.width*scale;
-      var hh=qrRect.height*scale;
+    return waitForQrCanvas(40).then(function(qrCanvas){
+      if(!qrCanvas) throw new Error('QR code could not be generated');
 
-      /* White background first so the QR remains crisp even when the
-         surrounding html2canvas result has transparency. */
-      var ctx=combined.getContext('2d');
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(destX+x,destY+y,ww,hh);
-      ctx.imageSmoothingEnabled=false;
-      ctx.drawImage(qrCanvas,destX+x,destY+y,ww,hh);
-      ctx.imageSmoothingEnabled=true;
-    }
-
-    var frontPair=makeFace('.yyc-card-front');
-    var backPair=makeFace('.yyc-card-back');
-    document.body.appendChild(frontPair.face);
-    document.body.appendChild(backPair.face);
-
-    /* Temporarily position the export faces at real, measurable coordinates.
-       They remain far off-screen but are not display:none, so layout metrics
-       remain valid. */
-    frontPair.face.style.position='fixed';
-    frontPair.face.style.left='-20000px';
-    frontPair.face.style.top='0';
-    backPair.face.style.position='fixed';
-    backPair.face.style.left='-20000px';
-    backPair.face.style.top=(h+20)+'px';
-
-    return Promise.all([
-      waitForQr(frontPair.source,40),
-      waitForQr(backPair.source,10)
-    ]).then(function(ready){
-      if(!ready[0]) throw new Error('QR code is still loading. Please wait a moment and try again.');
-
-      return new Promise(function(resolve){
-        requestAnimationFrame(function(){
-          requestAnimationFrame(resolve);
-        });
-      });
-    }).then(function(){
       return Promise.all([
-        html2canvas(frontPair.face,{
+        html2canvas(front,{
           backgroundColor:null,
           scale:scale,
           useCORS:true,
@@ -538,7 +540,7 @@ function downloadYYCIdCard(cardEl,filename){
           scrollX:0,
           scrollY:0
         }),
-        html2canvas(backPair.face,{
+        html2canvas(back,{
           backgroundColor:null,
           scale:scale,
           useCORS:true,
@@ -549,33 +551,40 @@ function downloadYYCIdCard(cardEl,filename){
           scrollX:0,
           scrollY:0
         })
-      ]);
-    }).then(function(canvases){
-      var combined=document.createElement('canvas');
-      combined.width=w*scale;
-      combined.height=h*scale*2+20*scale;
+      ]).then(function(canvases){
+        var combined=document.createElement('canvas');
+        combined.width=w*scale;
+        combined.height=h*scale*2+20*scale;
+        var ctx=combined.getContext('2d');
+        ctx.fillStyle='#071016';
+        ctx.fillRect(0,0,combined.width,combined.height);
 
-      var ctx=combined.getContext('2d');
-      ctx.fillStyle='#071016';
-      ctx.fillRect(0,0,combined.width,combined.height);
+        ctx.drawImage(canvases[0],0,0,w*scale,h*scale);
+        ctx.drawImage(canvases[1],0,h*scale+20*scale,w*scale,h*scale);
 
-      ctx.drawImage(canvases[0],0,0,w*scale,h*scale);
-      drawLiveQr(combined,frontPair.source,frontPair.source.getBoundingClientRect(),0,0);
+        /* Place the freshly generated QR exactly where the live QR sits on
+           the front card. */
+        var x=(qrRect.left-frontRect.left)*scale;
+        var y=(qrRect.top-frontRect.top)*scale;
+        var qw=qrRect.width*scale;
+        var qh=qrRect.height*scale;
 
-      var backY=h*scale+20*scale;
-      ctx.drawImage(canvases[1],0,backY,w*scale,h*scale);
+        ctx.fillStyle='#fff';
+        ctx.fillRect(x,y,qw,qh);
+        ctx.imageSmoothingEnabled=false;
+        ctx.drawImage(qrCanvas,x,y,qw,qh);
+        ctx.imageSmoothingEnabled=true;
 
-      var a=document.createElement('a');
-      a.href=combined.toDataURL('image/png');
-      a.download=filename+'.png';
-      a.click();
-
-      frontPair.face.remove();
-      backPair.face.remove();
-    }).catch(function(err){
-      frontPair.face.remove();
-      backPair.face.remove();
-      throw err;
+        var a=document.createElement('a');
+        a.href=combined.toDataURL('image/png');
+        a.download=filename+'.png';
+        a.click();
+      });
+    }).finally(function(){
+      front.remove();
+      back.remove();
+      qrHost.remove();
+      if(wasFlipped) cardEl.classList.add('flipped');
     });
   });
 }
