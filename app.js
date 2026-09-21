@@ -415,23 +415,57 @@ function memberDashboard(memberArg){
 
   $('#downloadCard').addEventListener('click',async function(){
     try{
-      await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
-    }catch(e){window.print();return;}
-    if(!window.html2canvas){window.print();return;}
-    var canvas=await html2canvas($('#yycDigitalCard'),{
-      backgroundColor:'#071016',
-      scale:2,
-      useCORS:true,
-      logging:false
-    });
-    var a=document.createElement('a');
-    a.href=canvas.toDataURL('image/png');
-    a.download=(m.role_number||'yyc-member-card')+'.png';
-    a.click();
+      await downloadYYCIdCard($('#yycDigitalCard'),m.role_number||'yyc-member-card');
+    }catch(e){window.print();}
   });
 
   $('#memberSubmitUpdate').addEventListener('click',function(){submitUpdate(true);});
   $('#memberSubmitGallery').addEventListener('click',function(){submitGallery(true);});
+}
+
+function downloadYYCIdCard(cardEl,filename){
+  return loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(function(){
+    if(!window.html2canvas) throw new Error('Card export library unavailable');
+    var clone=cardEl.cloneNode(true);
+    clone.id='';
+    clone.classList.remove('flipped');
+    clone.style.transform='none';
+    clone.style.position='relative';
+    clone.style.left='0';
+    clone.style.top='0';
+    clone.style.width=cardEl.offsetWidth+'px';
+    clone.style.height=cardEl.offsetHeight+'px';
+    clone.style.aspectRatio='auto';
+    var back=clone.querySelector('.yyc-card-back');
+    if(back) back.remove();
+    var front=clone.querySelector('.yyc-card-front');
+    if(front){
+      front.style.position='relative';
+      front.style.inset='auto';
+      front.style.transform='none';
+      front.style.backfaceVisibility='visible';
+      front.style.webkitBackfaceVisibility='visible';
+    }
+    var hint=clone.parentElement && clone.parentElement.querySelector('.yyc-card-hint');
+    document.body.appendChild(clone);
+    return html2canvas(clone,{
+      backgroundColor:'#071016',
+      scale:2,
+      useCORS:true,
+      logging:false,
+      width:clone.offsetWidth,
+      height:clone.offsetHeight
+    }).then(function(canvas){
+      var a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=filename+'.png';
+      a.click();
+      clone.remove();
+    }).catch(function(err){
+      clone.remove();
+      throw err;
+    });
+  });
 }
 
 function submitUpdate(auth){
@@ -511,14 +545,9 @@ function leaderDashboard(leaderArg){
   }
 
   $('#downloadLeaderCard').addEventListener('click',async function(){
-    try{await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');}
-    catch(e){window.print();return;}
-    if(!window.html2canvas){window.print();return;}
-    var canvas=await html2canvas($('#yycLeaderCard'),{backgroundColor:'#071016',scale:2,useCORS:true,logging:false});
-    var aa=document.createElement('a');
-    aa.href=canvas.toDataURL('image/png');
-    aa.download=(l.role_number||'yyc-leader-card')+'.png';
-    aa.click();
+    try{
+      await downloadYYCIdCard($('#yycLeaderCard'),l.role_number||'yyc-leader-card');
+    }catch(e){window.print();}
   });
 }
 
