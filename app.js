@@ -448,6 +448,46 @@ function downloadYYCIdCard(cardEl,filename){
     stage.style.pointerEvents='none';
     stage.style.zIndex='-1';
 
+    function prepareQrClone(sourceFace,face){
+      var sourceQr=sourceFace.querySelector('.yyc-live-qr');
+      var cloneQr=face.querySelector('.yyc-live-qr');
+      if(!sourceQr || !cloneQr) return;
+
+      var canvas=sourceQr.querySelector('canvas');
+      var img=sourceQr.querySelector('img');
+      var dataUrl='';
+      try{
+        if(canvas && canvas.width && canvas.height) dataUrl=canvas.toDataURL('image/png');
+      }catch(err){}
+
+      if(!dataUrl && img && img.src) dataUrl=img.src;
+      if(!dataUrl) return;
+
+      var replacement=document.createElement('img');
+      replacement.src=dataUrl;
+      replacement.alt='QR verification code';
+      replacement.width=116;
+      replacement.height=116;
+      replacement.style.display='block';
+      replacement.style.width='116px';
+      replacement.style.height='116px';
+      replacement.style.maxWidth='none';
+      replacement.style.maxHeight='none';
+      replacement.style.margin='0';
+      replacement.style.transform='none';
+      replacement.style.objectFit='contain';
+      replacement.style.background='#fff';
+
+      cloneQr.innerHTML='';
+      cloneQr.appendChild(replacement);
+      cloneQr.style.width='116px';
+      cloneQr.style.height='116px';
+      cloneQr.style.display='flex';
+      cloneQr.style.alignItems='center';
+      cloneQr.style.justifyContent='center';
+      cloneQr.style.background='#fff';
+    }
+
     function makeFace(selector){
       var source=cardEl.querySelector(selector);
       if(!source) throw new Error('Card face not found');
@@ -465,6 +505,10 @@ function downloadYYCIdCard(cardEl,filename){
       face.style.webkitBackfaceVisibility='visible';
       face.style.flex='0 0 '+h+'px';
       face.style.margin='0';
+
+      /* cloneNode() does not preserve a canvas drawing buffer, so convert the
+         live QR canvas into a normal image before html2canvas captures it. */
+      prepareQrClone(source,face);
       return face;
     }
 
@@ -485,6 +529,7 @@ function downloadYYCIdCard(cardEl,filename){
           scale:scale,
           useCORS:true,
           logging:false,
+          allowTaint:true,
           width:w,
           height:h
         }),
@@ -493,6 +538,7 @@ function downloadYYCIdCard(cardEl,filename){
           scale:scale,
           useCORS:true,
           logging:false,
+          allowTaint:true,
           width:w,
           height:h
         })
