@@ -396,7 +396,7 @@ function memberDashboard(memberArg){
     if(!qrEl || !m.role_number) return;
     loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
       if(!window.QRCode) return;
-      new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+      qrEl.innerHTML=''; new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
     }).catch(function(){});
   })();
 
@@ -493,7 +493,7 @@ function leaderDashboard(leaderArg){
     if(!qrEl || !l.role_number) return;
     loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
       if(!window.QRCode) return;
-      new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+      qrEl.innerHTML=''; new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
     }).catch(function(){});
   })();
 
