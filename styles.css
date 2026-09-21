@@ -1481,3 +1481,8 @@ body.yyc-inertial-scroll{
   .leaders-grid .leader-avatar{width:58px!important;height:76px!important}
   .leaders-grid .leader-info strong{font-size:20px!important}
 }
+
+/* ===== SINGLE QR DISPLAY ===== */
+.yyc-live-qr{overflow:hidden}
+.yyc-live-qr canvas{display:block!important;width:100%!important;height:100%!important}
+.yyc-live-qr img{display:none!important}
