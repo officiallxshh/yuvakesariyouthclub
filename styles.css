@@ -1486,3 +1486,267 @@ body.yyc-inertial-scroll{
 .yyc-live-qr{overflow:hidden}
 .yyc-live-qr canvas{display:block!important;width:100%!important;height:100%!important}
 .yyc-live-qr img{display:none!important}
+
+
+/* ===== YYC PHOTO ADJUSTMENT PANEL — REDESIGNED ===== */
+.yyc-photo-editor.ig-photo-editor{
+  display:block;
+  margin-top:20px;
+  padding:18px;
+  border:1px solid rgba(237,193,105,.14);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 15% 0%,rgba(237,193,105,.08),transparent 34%),
+    linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:0 22px 55px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.03);
+}
+.ig-editor-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:16px;
+}
+.ig-editor-kicker{
+  display:block;
+  color:#d7ae66;
+  font:700 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.22em;
+}
+.ig-editor-head h3{
+  margin:7px 0 5px;
+  color:#f0e7d7;
+  font:600 24px/1.05 "DM Serif Display",serif;
+}
+.ig-editor-head p{
+  margin:0;
+  max-width:560px;
+  color:#7f8786;
+  font:500 10px/1.5 "Space Grotesk",sans-serif;
+}
+.ig-editor-badge{
+  flex:0 0 auto;
+  padding:7px 9px;
+  border:1px solid rgba(237,193,105,.16);
+  border-radius:999px;
+  color:#bda774;
+  background:rgba(237,193,105,.045);
+  font:700 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.ig-editor-body{
+  display:grid;
+  grid-template-columns:minmax(300px,1fr) 250px;
+  gap:16px;
+  align-items:stretch;
+}
+.ig-preview-wrap{
+  min-width:0;
+  padding:10px;
+  border-radius:20px;
+  background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.05);
+}
+.yyc-photo-preview.ig-photo-preview{
+  position:relative;
+  width:min(100%,430px);
+  aspect-ratio:1/1;
+  height:auto;
+  margin:auto;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid rgba(237,193,105,.2);
+  background:#070b0e;
+  cursor:grab;
+  touch-action:none;
+  box-shadow:0 18px 40px rgba(0,0,0,.34),inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.yyc-photo-preview.ig-photo-preview.is-dragging{cursor:grabbing}
+.ig-preview-topline,
+.ig-preview-bottom{
+  position:absolute;
+  left:12px;
+  right:12px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none;
+  font:700 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+  color:rgba(239,229,208,.72);
+}
+.ig-preview-topline{top:11px}
+.ig-preview-topline b{
+  padding:4px 6px;
+  border-radius:999px;
+  background:rgba(3,6,8,.62);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:6px;
+}
+.ig-preview-bottom{bottom:11px;color:rgba(239,229,208,.46)}
+.ig-preview-bottom span:last-child{text-align:right}
+.yyc-photo-preview.ig-photo-preview .ig-crop-grid{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+  opacity:.2;
+  background:
+    linear-gradient(90deg,transparent 32.8%,rgba(255,255,255,.72) 32.8%,rgba(255,255,255,.72) 33.1%,transparent 33.1%,transparent 66.9%,rgba(255,255,255,.72) 66.9%,rgba(255,255,255,.72) 67.2%,transparent 67.2%),
+    linear-gradient(0deg,transparent 32.8%,rgba(255,255,255,.72) 32.8%,rgba(255,255,255,.72) 33.1%,transparent 33.1%,transparent 66.9%,rgba(255,255,255,.72) 66.9%,rgba(255,255,255,.72) 67.2%,transparent 67.2%);
+}
+.yyc-photo-preview.ig-photo-preview:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:12px;
+  height:12px;
+  z-index:4;
+  border:1px solid rgba(239,202,123,.52);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 7px rgba(239,202,123,.05);
+  opacity:.42;
+  pointer-events:none;
+}
+.ig-preview-topline,.ig-preview-bottom{transition:opacity .2s ease}
+.yyc-photo-preview.ig-photo-preview.is-dragging .ig-preview-topline,
+.yyc-photo-preview.ig-photo-preview.is-dragging .ig-preview-bottom{opacity:.3}
+.yyc-photo-preview.ig-photo-preview img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  object-position:50% 50%;
+  transform-origin:center center;
+  user-select:none;
+  -webkit-user-drag:none;
+  will-change:transform;
+  transition:transform .12s cubic-bezier(.22,1,.36,1);
+}
+.yyc-photo-preview.ig-photo-preview.is-dragging img{transition:none}
+.ig-adjust-panel{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:100%;
+  padding:16px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(4,8,11,.54);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.ig-adjust-block{display:grid;gap:12px}
+.ig-block-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:#9d9689;
+  font:700 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.15em;
+}
+.ig-block-label output{
+  color:#eed18b;
+  font:700 16px/1 "Space Grotesk",sans-serif;
+  letter-spacing:0;
+}
+.ig-block-label small{
+  color:#696f70;
+  font:500 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:0;
+}
+.ig-range-shell{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:9px;
+  color:#686e6e;
+  font:700 7px/1 "Space Grotesk",sans-serif;
+}
+.ig-zoom-range{
+  width:100%;
+  height:22px;
+  margin:0;
+  accent-color:#d7ae66;
+  cursor:pointer;
+}
+.ig-position-status{gap:10px}
+.ig-position-readout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.ig-position-readout span{
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.025);
+  color:#707778;
+  font:700 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.12em;
+}
+.ig-position-readout b{
+  float:right;
+  color:#ded2bd;
+  font-size:9px;
+  letter-spacing:0;
+}
+.ig-adjust-divider{
+  height:1px;
+  margin:18px 0;
+  background:rgba(255,255,255,.06);
+}
+.ig-adjust-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:20px;
+}
+.ig-secondary-btn,
+.ig-reset-btn{
+  min-height:38px;
+  border-radius:11px;
+  border:1px solid rgba(237,193,105,.13);
+  background:rgba(255,255,255,.035);
+  color:#c8b991;
+  font:800 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.12em;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease,color .18s ease;
+}
+.ig-secondary-btn span,.ig-reset-btn span{
+  margin-right:5px;
+  font-size:13px;
+  vertical-align:-1px;
+}
+.ig-secondary-btn:hover,.ig-reset-btn:hover{
+  transform:translateY(-1px);
+  border-color:rgba(237,193,105,.32);
+  background:rgba(237,193,105,.065);
+  color:#f0d695;
+}
+.ig-secondary-btn:active,.ig-reset-btn:active{transform:translateY(0)}
+/* remove the old floating directional dock completely */
+.ig-hover-controls{display:none!important}
+
+@media(max-width:820px){
+  .ig-editor-body{grid-template-columns:1fr}
+  .ig-adjust-panel{gap:18px}
+  .ig-adjust-actions{margin-top:0}
+  .ig-preview-wrap{padding:8px}
+  .yyc-photo-preview.ig-photo-preview{width:min(100%,470px)}
+}
+@media(max-width:540px){
+  .yyc-photo-editor.ig-photo-editor{padding:13px;border-radius:20px}
+  .ig-editor-head{display:block}
+  .ig-editor-head h3{font-size:21px}
+  .ig-editor-badge{display:inline-block;margin-top:10px}
+  .ig-editor-head p{font-size:9px}
+  .ig-adjust-panel{padding:13px}
+  .ig-adjust-divider{margin:14px 0}
+}
