@@ -1027,7 +1027,7 @@ function bindUI(){
   if($('#memberRegisterBtn')) $('#memberRegisterBtn').addEventListener('click',memberRegister);
   if($('#submitUpdateBtn')) $('#submitUpdateBtn').addEventListener('click',function(){submitUpdate(false);});
   if($('#submitGalleryBtn')) $('#submitGalleryBtn').addEventListener('click',function(){submitGallery(false);});
-  $$('[data-close]').forEach(function(x){x.addEventListener('click',closeModal);});
+  $('[data-close]').forEach(function(x){x.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();closeModal();},false);});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
   bindNavigation();
 }
