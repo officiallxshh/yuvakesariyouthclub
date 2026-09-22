@@ -1918,3 +1918,18 @@ body.yyc-inertial-scroll{
   .report-card strong{font-size:21px}
   .event-admin-card{grid-template-columns:62px 1fr}
 }
+
+/* Admin header: keep Logout clear of the modal X close control. */
+.modal-shell:has(.admin-shell) .modal-close{
+  z-index:20;
+  right:14px;
+  top:12px;
+  pointer-events:auto;
+}
+.modal-shell:has(.admin-shell) .admin-header{
+  padding-right:58px;
+}
+.modal-shell:has(.admin-shell) .admin-header .mini-btn{
+  position:relative;
+  z-index:2;
+}
