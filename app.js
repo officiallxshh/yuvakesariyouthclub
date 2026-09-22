@@ -89,22 +89,37 @@ function readFile(file,maxSide){
   });
 }
 function imageEditor(id,photo,scale,x,y){
+  var z=(scale||1).toFixed(2);
   return '<div class="yyc-photo-editor ig-photo-editor">'+
-    '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square photo adjustment area">'+
-      '<div class="ig-crop-grid"></div>'+
-      '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
-      '<span class="ig-drag-hint">DRAG • SCROLL • ARROW KEYS</span>'+
-      '<div class="ig-hover-controls" aria-label="Photo adjustment controls">'+
-        '<div class="ig-control-row"><button type="button" data-photo-action="up" aria-label="Move photo up">↑</button><button type="button" data-photo-action="zoomIn" aria-label="Zoom in">＋</button><button type="button" data-photo-action="down" aria-label="Move photo down">↓</button></div>'+
-        '<div class="ig-control-row"><button type="button" data-photo-action="left" aria-label="Move photo left">←</button><button type="button" data-photo-action="center" aria-label="Center photo">●</button><button type="button" data-photo-action="right" aria-label="Move photo right">→</button></div>'+
-        '<div class="ig-control-row"><button type="button" data-photo-action="zoomOut" aria-label="Zoom out">−</button><button type="button" data-photo-action="reset" aria-label="Reset photo">RESET</button></div>'+
-      '</div>'+
+    '<div class="ig-editor-head">'+
+      '<div><span class="ig-editor-kicker">PHOTO ADJUSTMENT</span><h3>Position your photo perfectly</h3><p>Drag the image to move it. Use the wheel or touch scroll to zoom.</p></div>'+
+      '<span class="ig-editor-badge">SQUARE ID CROP</span>'+
     '</div>'+
-    '<div class="ig-photo-side">'+
-      '<div class="ig-zoom-title">ZOOM</div>'+
-      '<input class="ig-zoom-range" id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'" aria-label="Zoom">'+
-      '<output id="'+id+'ScaleOut">'+(scale||1).toFixed(2)+'×</output>'+
-      '<button type="button" class="mini-btn ig-reset-btn" id="'+id+'Reset">RESET</button>'+
+    '<div class="ig-editor-body">'+
+      '<div class="ig-preview-wrap">'+
+        '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square photo adjustment area">'+
+          '<div class="ig-preview-topline"><span>LIVE PREVIEW</span><b>1:1</b></div>'+
+          '<div class="ig-crop-grid"></div>'+
+          '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
+          '<span class="ig-center-mark"></span>'+
+          '<div class="ig-preview-bottom"><span>DRAG TO POSITION</span><span>SCROLL TO ZOOM</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<aside class="ig-adjust-panel">'+
+        '<div class="ig-adjust-block">'+
+          '<div class="ig-block-label"><span>ZOOM</span><output id="'+id+'ScaleOut">'+z+'×</output></div>'+
+          '<div class="ig-range-shell"><span>1×</span><input class="ig-zoom-range" id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'" aria-label="Zoom"><span>2.4×</span></div>'+
+        '</div>'+
+        '<div class="ig-adjust-divider"></div>'+
+        '<div class="ig-adjust-block ig-position-status">'+
+          '<div class="ig-block-label"><span>POSITION</span><small>Drag inside preview</small></div>'+
+          '<div class="ig-position-readout"><span>X <b id="'+id+'XOut">'+Math.round(x==null?50:x)+'%</b></span><span>Y <b id="'+id+'YOut">'+Math.round(y==null?50:y)+'%</b></span></div>'+
+        '</div>'+
+        '<div class="ig-adjust-actions">'+
+          '<button type="button" class="ig-secondary-btn" id="'+id+'Center"><span>◎</span> CENTER</button>'+
+          '<button type="button" class="ig-reset-btn" id="'+id+'Reset"><span>↺</span> RESET</button>'+
+        '</div>'+
+      '</aside>'+
     '</div>'+
   '</div>';
 }
