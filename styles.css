@@ -1750,3 +1750,171 @@ body.yyc-inertial-scroll{
   .ig-adjust-panel{padding:13px}
   .ig-adjust-divider{margin:14px 0}
 }
+
+/* ===== Admin expansion: search, events, reports ===== */
+.admin-toolbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:14px 0;
+}
+.admin-search{
+  flex:1;
+  min-width:0;
+  height:40px;
+  padding:0 13px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  outline:none;
+  background:rgba(255,255,255,.025);
+  color:#e7ddca;
+  font:600 10px/1 "Space Grotesk",sans-serif;
+}
+.admin-search::placeholder{color:#666d6d}
+.admin-search:focus{border-color:rgba(220,180,98,.32);box-shadow:0 0 0 3px rgba(220,180,98,.05)}
+.admin-result-count{
+  flex:0 0 auto;
+  color:#747b7b;
+  font:700 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.08em;
+}
+.admin-subline{
+  margin:5px 0 0;
+  color:#777f80;
+  font:500 10px/1.5 "Space Grotesk",sans-serif;
+}
+.admin-note{
+  padding:12px 14px;
+  margin:10px 0 14px;
+  border:1px solid rgba(237,193,105,.10);
+  border-radius:13px;
+  background:rgba(237,193,105,.035);
+  color:#858b8a;
+  font:500 9px/1.55 "Space Grotesk",sans-serif;
+}
+.events-admin-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.event-admin-card{
+  display:grid;
+  grid-template-columns:72px 1fr;
+  gap:12px;
+  min-width:0;
+  padding:13px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:15px;
+  background:rgba(255,255,255,.025);
+}
+.event-admin-date{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:65px;
+  padding:8px;
+  border-radius:11px;
+  background:rgba(220,180,98,.07);
+  color:#e4c47f;
+  text-align:center;
+  font:800 9px/1.25 "Space Grotesk",sans-serif;
+}
+.event-admin-main{min-width:0}
+.event-admin-main strong{
+  display:block;
+  color:#eee4d2;
+  font:700 13px/1.2 "Space Grotesk",sans-serif;
+}
+.event-admin-main span{
+  display:block;
+  margin-top:5px;
+  color:#9b9180;
+  font:600 8px/1.35 "Space Grotesk",sans-serif;
+}
+.event-admin-main p{
+  margin:7px 0 0;
+  color:#6e7676;
+  font:500 9px/1.5 "Space Grotesk",sans-serif;
+}
+.report-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.report-card{
+  min-height:92px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:15px;
+  background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+}
+.report-card span{
+  color:#777f80;
+  font:700 8px/1.2 "Space Grotesk",sans-serif;
+  letter-spacing:.08em;
+}
+.report-card strong{
+  color:#ecd08b;
+  font:700 25px/1 "Space Grotesk",sans-serif;
+}
+.report-split{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+.report-panel{
+  padding:15px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:15px;
+  background:rgba(255,255,255,.022);
+}
+.report-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.report-panel h3{
+  margin:0;
+  color:#e7dece;
+  font:700 11px/1.2 "Space Grotesk",sans-serif;
+}
+.report-panel-head b{
+  color:#e7c976;
+  font:800 15px/1 "Space Grotesk",sans-serif;
+}
+.report-progress{
+  height:7px;
+  margin:13px 0 9px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+}
+.report-progress span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#b08a48,#efd58e);
+}
+.report-panel p{
+  margin:0;
+  color:#727979;
+  font:500 8px/1.45 "Space Grotesk",sans-serif;
+}
+@media(max-width:700px){
+  .events-admin-grid,.report-split{grid-template-columns:1fr}
+  .report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  .admin-toolbar{display:block}
+  .admin-result-count{display:block;margin-top:8px}
+  .report-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .report-card{min-height:82px;padding:11px}
+  .report-card strong{font-size:21px}
+  .event-admin-card{grid-template-columns:62px 1fr}
+}
