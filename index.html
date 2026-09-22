@@ -15,7 +15,7 @@
 <link rel="shortcut icon" type="image/png" href="./assets/yyc-lion-favicon.png">
 <link rel="apple-touch-icon" sizes="64x64" href="./assets/yyc-lion-favicon.png">
 <link rel="preload" as="image" href="./assets/hero-tulunad.webp" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20260922-13">
+<link rel="stylesheet" href="styles.css?v=20260922-14">
 </head>
 <body>
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
@@ -29,7 +29,7 @@
     <a href="#glimpse" class="nav-link"><span class="nav-icon">◈</span>Tulunad Glimpse</a>
     <a href="#leaders" class="nav-link"><span class="nav-icon">♛</span>Leaders</a>
     <a href="#updates" class="nav-link"><span class="nav-icon">▤</span>Updates</a>
-    <a href="#gallery" class="nav-link"><span class="nav-icon">▧</span>Gallery</a>
+    <a href="#events" class="nav-link"><span class="nav-icon">◷</span>Events</a><a href="#gallery" class="nav-link"><span class="nav-icon">▧</span>Gallery</a>
     <a href="#join" class="nav-link"><span class="nav-icon">✦</span>Join</a>
     <button class="nav-admin member-login-btn" id="memberLoginBtn"><span>◉</span> Member Login</button><button class="nav-admin leader-login-btn" id="leaderLoginBtn"><span>♛</span> Leader Login</button><button class="nav-admin" id="adminOpenBtn"><span>⌑</span> Admin Login</button>
   </nav>
@@ -40,7 +40,7 @@
   <a href="#glimpse">◈ <span>Tulunad Glimpse</span></a>
   <a href="#leaders">♛ <span>Leaders</span></a>
   <a href="#updates">▤ <span>Updates</span></a>
-  <a href="#gallery">▧ <span>Gallery</span></a>
+  <a href="#events">◷ <span>Events</span></a><a href="#gallery">▧ <span>Gallery</span></a>
   <a href="#join">✦ <span>Join</span></a>
   <button class="nav-admin full member-login-btn" id="memberLoginMobile">◉ Member Login</g/g/button><button class="nav-admin full leader-login-btn" id="leaderLoginMobile">♛ Leader Panel</g/g/button><button class="nav-admin full" id="adminOpenMobile">⌑ Admin Panel</g/g/button>
 </div>
@@ -123,9 +123,18 @@
     <article class="update-card reveal visible"><time>YYC</time><div><h3>Culture • Service • Unity</h3><p>Explore upcoming programmes, social initiatives and youth activities through the club.</p></div><span></span></article>
   </div>
 </section>
+<section class="section events-section type-modern" id="events">
+  <div class="section-kicker">04 / EVENTS</div>
+  <div class="section-head tight reveal"><div><h2>What’s happening next.</h2><p>Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.</p></div><span class="counter" id="eventCount">00</span></div>
+  <div class="events-grid" id="eventsGrid">
+    <div class="event-card event-skeleton"><div class="event-skeleton-media"></div><div class="event-skeleton-body"><i></i><i></i><i></i></div></div>
+    <div class="event-card event-skeleton"><div class="event-skeleton-media"></div><div class="event-skeleton-body"><i></i><i></i><i></i></div></div>
+  </div>
+</section>
+
 
 <section class="section type-gallery" id="gallery">
-  <div class="section-kicker">04 / GALLERY</div>
+  <div class="section-kicker">05 / GALLERY</div>
   <div class="section-head tight reveal"><div><h2>Moments that move us.</h2><p>Community photos, programmes and youth activities.</p></div><button class="link-btn" id="submitGalleryBtn">Submit gallery item +</button></div>
   <div class="gallery-grid" id="galleryGrid">
     <figure class="gallery-card reveal visible"><img src="./assets/dharma-daiva.webp" alt="Dharma Daiva" loading="lazy"><figcaption>Dharma Daiva · Tulunadu</figcaption></figure>
@@ -135,7 +144,7 @@
 </section>
 
 <section class="section join-section type-editorial" id="join">
-  <div class="join-card reveal"><div><div class="section-kicker">05 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
+  <div class="join-card reveal"><div><div class="section-kicker">06 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
 </section>
 </main>
 
@@ -148,7 +157,7 @@
 <div class="modal" id="modal" aria-hidden="true"><div class="modal-backdrop" data-close></div><section class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button type="button" class="modal-close" data-close data-modal-close-only aria-label="Close" onclick="closeModal();return false;">×</button><div id="modalContent"></div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="app.js?v=20260922-22" defer></script>
+<script src="app.js?v=20260922-23" defer></script>
 <script>
 function initInertialScroll(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
