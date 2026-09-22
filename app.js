@@ -290,6 +290,8 @@ function renderPublic(){
     }).join('') : '<div class="empty">No updates published yet.</div>';
   }
 
+  if($('#eventCount')) $('#eventCount').textContent=String((publicData.events||[]).length).padStart(2,'0');
+
   var eg=$('#eventsGrid');
   if(eg){
     var events=publicData.events||[];
