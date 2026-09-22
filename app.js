@@ -1027,7 +1027,16 @@ function bindUI(){
   if($('#memberRegisterBtn')) $('#memberRegisterBtn').addEventListener('click',memberRegister);
   if($('#submitUpdateBtn')) $('#submitUpdateBtn').addEventListener('click',function(){submitUpdate(false);});
   if($('#submitGalleryBtn')) $('#submitGalleryBtn').addEventListener('click',function(){submitGallery(false);});
-  $('[data-close]').forEach(function(x){x.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();closeModal();},false);});
+  if(!window.__yycModalCloseBound){
+    window.__yycModalCloseBound=true;
+    document.addEventListener('click',function(e){
+      var el=e.target && e.target.closest ? e.target.closest('.modal-close, .modal [data-close]') : null;
+      if(!el) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeModal();
+    },true);
+  }
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
   bindNavigation();
 }
