@@ -670,7 +670,7 @@ function adminPanel(tab){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2></div><button class="mini-btn" id="adminLogout">Logout</button></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div></div>');
@@ -718,13 +718,15 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
     $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
     $('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
     $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
     $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
-    $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
+    $('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
+    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
+    $('#adminMemberSearch').dispatchEvent(new Event('input'));
     return;
   }
 
@@ -766,6 +768,60 @@ function renderAdminTab(tab,d){
     $$('[data-dg]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-dg'),p_action:'deny'},'Gallery denied');});});
     return;
   }
+
+  if(tab==='events'){
+    a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading events…</strong><span>Reading YYC event records</span></div>';
+    rpc('admin_storage_summary',{p_token:adminToken}).then(function(s){
+      if(!s.ok) throw new Error(s.error||'Unable to load events');
+      var events=s.events||[];
+      a.innerHTML='<div class="admin-top"><div><h2>Events</h2><p class="admin-subline">Events currently stored in the YYC database.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="eventsRefresh">↻ Refresh</button></div></div>'+
+        '<div class="admin-note">Event records are visible here. Create/edit/delete controls can be added when event-write RPCs are exposed by the backend.</div>'+
+        (events.length?'<div class="events-admin-grid">'+events.map(function(ev){
+          var dt=ev.event_date?new Date(ev.event_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'DATE TBC';
+          return '<article class="event-admin-card"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'</div></article>';
+        }).join('')+'</div>':'<div class="empty">No events stored yet.</div>');
+      $('#eventsRefresh').addEventListener('click',function(){adminPanel('events');});
+    }).catch(function(e){
+      a.innerHTML='<div class="storage-error"><strong>Could not load events.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="eventsRetry">Retry</button></div>';
+      $('#eventsRetry').addEventListener('click',function(){adminPanel('events');});
+    });
+    return;
+  }
+
+  if(tab==='reports'){
+    a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Building reports…</strong><span>Calculating from live YYC records</span></div>';
+    rpc('admin_storage_summary',{p_token:adminToken}).then(function(s){
+      if(!s.ok) throw new Error(s.error||'Unable to build reports');
+      var c=s.counts||{},members=s.members||[],leaders=s.leaders||[],announcements=s.announcements||[],gallery=s.gallery||[],events=s.events||[],volunteers=s.volunteers||[];
+      var approved=members.filter(function(m){return (m.status||'').toLowerCase()==='approved';}).length;
+      var pending=members.filter(function(m){return (m.status||'pending').toLowerCase()==='pending';}).length;
+      var published=announcements.filter(function(x){return (x.status||'published').toLowerCase()==='published';}).length;
+      var activeLeaders=leaders.filter(function(l){return (l.status||'active').toLowerCase()!=='inactive';}).length;
+      var total=members.length;
+      var approvalRate=total?Math.round((approved/total)*100):0;
+      var cards=[
+        ['Total Members',c.members||total],
+        ['Approved Members',c.approved_members||approved],
+        ['Pending Members',c.pending_members||pending],
+        ['Leaders',c.leaders||leaders.length],
+        ['Active Leaders',activeLeaders],
+        ['Published Updates',published],
+        ['Gallery Items',c.gallery||gallery.length],
+        ['Events',c.events||events.length],
+        ['Volunteers',c.volunteers||volunteers.length]
+      ];
+      a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC INSIGHTS</div><h2 class="modal-title">Reports</h2><p class="admin-subline">Live operational summary from the current database.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="reportsRefresh">↻ Refresh</button></div></div>'+
+        '<div class="report-grid">'+cards.map(function(x){return '<div class="report-card"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>';}).join('')+'</div>'+
+        '<div class="report-split"><section class="report-panel"><div class="report-panel-head"><h3>Member approval</h3><b>'+approvalRate+'%</b></div><div class="report-progress"><span style="width:'+approvalRate+'%"></span></div><p>'+approved+' approved out of '+total+' member records.</p></section>'+
+        '<section class="report-panel"><div class="report-panel-head"><h3>Operational content</h3><b>'+ (published+gallery.length+events.length) +'</b></div><p>Published updates, gallery items and event records currently stored.</p></section></div>';
+      $('#reportsRefresh').addEventListener('click',function(){adminPanel('reports');});
+    }).catch(function(e){
+      a.innerHTML='<div class="storage-error"><strong>Could not build reports.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="reportsRetry">Retry</button></div>';
+      $('#reportsRetry').addEventListener('click',function(){adminPanel('reports');});
+    });
+    return;
+  }
+
   if(tab==='storage'){
     a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading live data…</strong><span>Reading the YYC database</span></div>';
     rpc('admin_storage_summary',{p_token:adminToken}).then(function(s){
