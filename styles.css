@@ -2085,3 +2085,205 @@ button,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue{
   overflow:hidden;
   isolation:isolate;
 }
+
+/* ===== YYC EVENTS — CINEMATIC PUBLIC CARDS ===== */
+.events-section{
+  background:
+    radial-gradient(circle at 12% 18%,rgba(221,174,84,.08),transparent 26%),
+    radial-gradient(circle at 88% 78%,rgba(39,82,72,.08),transparent 28%),
+    linear-gradient(180deg,#071017 0%,#060b0f 55%,#05080b 100%);
+}
+.events-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.event-card{
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(237,192,104,.16);
+  border-radius:20px;
+  background:linear-gradient(155deg,rgba(12,20,24,.98),rgba(6,10,13,.98));
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+}
+.event-card-media{
+  position:relative;
+  height:210px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(231,189,92,.14),transparent 32%),
+    linear-gradient(145deg,#101b1f,#080c0f);
+}
+.event-card-media img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transition:transform .8s cubic-bezier(.16,1,.3,1),filter .6s ease;
+}
+.event-card:hover .event-card-media img{
+  transform:scale(1.055);
+  filter:saturate(1.08) contrast(1.04);
+}
+.event-card-art{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:flex-start;
+  padding:20px;
+  background:
+    radial-gradient(circle at 75% 15%,rgba(242,198,103,.16),transparent 28%),
+    linear-gradient(140deg,#172025,#0a0f13);
+}
+.event-card-art span{
+  color:#e8c675;
+  font:800 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.26em;
+}
+.event-card-art b{
+  margin-top:7px;
+  color:#e9dfce;
+  font:600 34px/1 "Cormorant Garamond",serif;
+  letter-spacing:.04em;
+}
+.event-date-badge{
+  position:absolute;
+  top:14px;
+  left:14px;
+  width:68px;
+  min-height:78px;
+  padding:9px 7px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(246,212,145,.28);
+  border-radius:14px;
+  background:rgba(4,8,10,.78);
+  backdrop-filter:blur(10px);
+  box-shadow:0 12px 30px rgba(0,0,0,.26);
+}
+.event-date-badge b{
+  color:#f0d08c;
+  font:700 25px/1 "Space Grotesk",sans-serif;
+}
+.event-date-badge span{
+  margin-top:5px;
+  color:#e5d7be;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.15em;
+}
+.event-date-badge small{
+  margin-top:4px;
+  color:#777f80;
+  font:700 6px/1 "Space Grotesk",sans-serif;
+}
+.event-card-body{padding:17px 17px 18px}
+.event-kicker{
+  display:block;
+  color:#b3955a;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.2em;
+}
+.event-card-body h3{
+  margin:8px 0 6px;
+  color:#eee5d5;
+  font:600 25px/1.05 "Cormorant Garamond",serif;
+}
+.event-card-body p{
+  margin:0;
+  color:#858d8d;
+  font:500 10px/1.55 "Space Grotesk",sans-serif;
+}
+.event-meta{
+  margin-top:13px;
+  padding-top:10px;
+  border-top:1px solid rgba(237,193,105,.08);
+  color:#c2b18e;
+  font:700 8px/1.35 "Space Grotesk",sans-serif;
+  letter-spacing:.04em;
+}
+.event-skeleton{
+  min-height:325px;
+  pointer-events:none;
+}
+.event-skeleton-media{
+  height:210px;
+  background:
+    linear-gradient(100deg,rgba(255,255,255,.02),rgba(255,255,255,.065),rgba(255,255,255,.02));
+  background-size:220% 100%;
+  animation:yycSkeletonShimmer 1.5s linear infinite;
+}
+.event-skeleton-body{
+  padding:17px;
+  display:grid;
+  gap:9px;
+}
+.event-skeleton-body i{
+  display:block;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.055);
+}
+.event-skeleton-body i:nth-child(1){width:28%}
+.event-skeleton-body i:nth-child(2){width:76%;height:18px}
+.event-skeleton-body i:nth-child(3){width:88%}
+@keyframes yycSkeletonShimmer{
+  from{background-position:210% 0}
+  to{background-position:-30% 0}
+}
+
+/* Homepage opening sequence: elegant, quick, and non-blocking. */
+body.yyC-opening .hero-photo{animation:yycOpeningBg 1.4s cubic-bezier(.16,1,.3,1) both}
+body.yyC-opening .hero-vignette{animation:yycOpeningVignette 1.15s ease both}
+body.yyC-opening .hero-logo{animation:yycOpeningLogo .8s cubic-bezier(.16,1,.3,1) .08s both}
+body.yyC-opening .brand-lockup{animation:yycOpeningText .72s cubic-bezier(.16,1,.3,1) .18s both}
+body.yyC-opening .association-wrap,
+body.yyC-opening .slogan,
+body.yyC-opening .gold-quote,
+body.yyC-opening .social-row,
+body.yyC-opening .hero-actions{
+  animation:yycOpeningText .72s cubic-bezier(.16,1,.3,1) .28s both;
+}
+body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16,1,.3,1) .16s both}
+@keyframes yycOpeningBg{
+  0%{transform:scale(1.12);filter:saturate(.92) contrast(1.02) brightness(.82)}
+  100%{transform:scale(1.035);filter:saturate(1.08) contrast(1.07) brightness(1)}
+}
+@keyframes yycOpeningVignette{
+  0%{opacity:1}
+  100%{opacity:.95}
+}
+@keyframes yycOpeningLogo{
+  0%{opacity:0;transform:scale(.82) translateY(14px);filter:blur(5px)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+}
+@keyframes yycOpeningText{
+  0%{opacity:0;transform:translateY(18px);filter:blur(4px)}
+  100%{opacity:1;transform:translateY(0);filter:blur(0)}
+}
+@keyframes yycOpeningCulture{
+  0%{opacity:0;transform:translateX(30px);filter:blur(4px)}
+  100%{opacity:1;transform:translateX(0);filter:blur(0)}
+}
+
+@media(max-width:980px){
+  .events-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .events-grid{grid-template-columns:1fr}
+  .event-card-media{height:195px}
+  .event-card-body h3{font-size:23px}
+  .event-skeleton{min-height:300px}
+  .event-skeleton-media{height:195px}
+}
+@media(prefers-reduced-motion:reduce){
+  .event-card-media img,.event-skeleton-media{animation:none!important;transition:none!important}
+  body.yyC-opening .hero-photo,body.yyC-opening .hero-vignette,body.yyC-opening .hero-logo,
+  body.yyC-opening .brand-lockup,body.yyC-opening .association-wrap,body.yyC-opening .slogan,
+  body.yyC-opening .gold-quote,body.yyC-opening .social-row,body.yyC-opening .hero-actions,
+  body.yyC-opening .culture-panel{animation:none!important}
+}
