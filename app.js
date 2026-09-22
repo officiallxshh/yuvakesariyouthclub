@@ -195,6 +195,91 @@ function wireEditor(id,obj,fileInput){
   });
   draw();
 }
+/* ===== YYC MOTION SYSTEM — NAVIGATION, BUTTONS & BACKGROUND ===== */
+function yycAnimateNavigation(targetEl){
+  var heroPhoto=$('.hero-photo');
+  var hero=$('.hero');
+  var target=targetEl;
+  if(heroPhoto){
+    var dirY=target ? (target.getBoundingClientRect().top < (hero ? hero.getBoundingClientRect().top + hero.clientHeight/2 : window.innerHeight/2) ? -1 : 1) : 1;
+    var dirX=target ? ((target.offsetTop||0)%2===0 ? 1 : -1) : 1;
+    heroPhoto.style.setProperty('--yyc-pan-x',(dirX*1.7).toFixed(2)+'%');
+    heroPhoto.style.setProperty('--yyc-pan-y',(dirY*1.15).toFixed(2)+'%');
+    heroPhoto.classList.remove('yyc-bg-navigate');
+    void heroPhoto.offsetWidth;
+    heroPhoto.classList.add('yyc-bg-navigate');
+  }
+  if(target){
+    target.classList.remove('yyc-section-navigate');
+    void target.offsetWidth;
+    target.classList.add('yyc-section-navigate');
+    setTimeout(function(){target.classList.remove('yyc-section-navigate');},850);
+  }
+  document.body.classList.remove('yyc-page-motion');
+  void document.body.offsetWidth;
+  document.body.classList.add('yyc-page-motion');
+  setTimeout(function(){document.body.classList.remove('yyc-page-motion');},520);
+}
+
+function bindMotionSystem(){
+  if(window.__yycMotionBound) return;
+  window.__yycMotionBound=true;
+
+  document.addEventListener('click',function(e){
+    var btn=e.target && e.target.closest ? e.target.closest('button,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue') : null;
+    if(!btn) return;
+
+    if(btn.tagName==='A'){
+      var href=btn.getAttribute('href')||'';
+      if(href.charAt(0)==='#'){
+        var target=$(href);
+        yycAnimateNavigation(target);
+      }
+    }else{
+      btn.classList.remove('yyc-click-pulse');
+      void btn.offsetWidth;
+      btn.classList.add('yyc-click-pulse');
+      setTimeout(function(){btn.classList.remove('yyc-click-pulse');},330);
+    }
+
+    var ripple=document.createElement('span');
+    ripple.className='yyc-ripple';
+    var rect=btn.getBoundingClientRect();
+    var size=Math.max(rect.width,rect.height)*1.35;
+    ripple.style.width=size+'px';
+    ripple.style.height=size+'px';
+    ripple.style.left=(e.clientX-rect.left-size/2)+'px';
+    ripple.style.top=(e.clientY-rect.top-size/2)+'px';
+    if(getComputedStyle(btn).position==='static') btn.style.position='relative';
+    btn.appendChild(ripple);
+    setTimeout(function(){if(ripple.parentNode) ripple.parentNode.removeChild(ripple);},650);
+  },false);
+
+  document.addEventListener('keydown',function(e){
+    if((e.key==='Enter'||e.key===' ') && document.activeElement){
+      var el=document.activeElement.closest && document.activeElement.closest('button,.btn,.link-btn,.nav-link');
+      if(el){
+        el.classList.remove('yyc-click-pulse');
+        void el.offsetWidth;
+        el.classList.add('yyc-click-pulse');
+        setTimeout(function(){el.classList.remove('yyc-click-pulse');},330);
+      }
+    }
+  },false);
+
+  /* Admin tabs are injected dynamically, so animate their workspace through delegation. */
+  document.addEventListener('click',function(e){
+    var tab=e.target && e.target.closest ? e.target.closest('.admin-tab') : null;
+    if(!tab) return;
+    setTimeout(function(){
+      var workspace=$('#adminWorkspace');
+      if(!workspace) return;
+      workspace.classList.remove('yyc-admin-tab-enter');
+      void workspace.offsetWidth;
+      workspace.classList.add('yyc-admin-tab-enter');
+    },30);
+  },false);
+}
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
   var arr=[];
@@ -1016,6 +1101,7 @@ function bindAdminActionDelegation(){
 }
 
 function bindUI(){
+  bindMotionSystem();
   bindAdminActionDelegation();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
   if($('#leaderLoginBtn')) $('#leaderLoginBtn').addEventListener('click',leaderLogin);
