@@ -1933,3 +1933,8 @@ body.yyc-inertial-scroll{
   position:relative;
   z-index:2;
 }
+
+/* ===== MODAL CLOSE BUTTON — HARDENED ===== */
+.modal-shell{z-index:1}
+.modal-close{z-index:9999!important;pointer-events:auto!important;cursor:pointer!important;}
+.modal-close:hover{transform:scale(1.04);}
