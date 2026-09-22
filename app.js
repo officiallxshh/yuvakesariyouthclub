@@ -1179,6 +1179,8 @@ function bindUI(){
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 document.addEventListener('DOMContentLoaded',function(){
+  document.body.classList.add('yyC-opening');
+  setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
   bindUI();
   loadPublic();
   verifyFromUrl();
