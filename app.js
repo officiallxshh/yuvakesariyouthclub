@@ -271,7 +271,9 @@ function renderPublic(){
   var locs=$$('.brand-type small'); locs.forEach(function(el){el.textContent='YOUTH CLUB';});
   var hs=$('#heroSocial'); if(hs) hs.innerHTML=socialHTML();
   var fs=$('#footerSocial'); if(fs) fs.innerHTML=socialHTML();
+
   if($('#leaderCount')) $('#leaderCount').textContent=String((publicData.leaders||[]).length).padStart(2,'0');
+
   var lg=$('#leadersGrid');
   if(lg){
     lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
@@ -279,15 +281,39 @@ function renderPublic(){
       return '<article class="leader-card compact-leader-card reveal visible"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
+
   var ug=$('#updatesGrid');
   if(ug){
     var ups=publicData.updates||[];
-    ug.innerHTML=ups.length ? ups.map(function(u){return '<article class="update-card reveal visible"><time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';}).join('') : '<div class="empty">No updates published yet.</div>';
+    ug.innerHTML=ups.length ? ups.map(function(u){
+      return '<article class="update-card reveal visible"><time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
+    }).join('') : '<div class="empty">No updates published yet.</div>';
   }
+
+  var eg=$('#eventsGrid');
+  if(eg){
+    var events=publicData.events||[];
+    eg.innerHTML=events.length ? events.map(function(ev){
+      var d=ev.event_date ? new Date(ev.event_date+'T00:00:00') : null;
+      var day=d&&!isNaN(d)?String(d.getDate()).padStart(2,'0'):'—';
+      var month=d&&!isNaN(d)?d.toLocaleDateString('en-IN',{month:'short'}).toUpperCase():'DATE TBC';
+      var year=d&&!isNaN(d)?String(d.getFullYear()):'';
+      var image=ev.image_url ? '<img src="'+esc(ev.image_url)+'" alt="'+esc(ev.title||'YYC event')+'" loading="lazy">' : '<div class="event-card-art"><span>YYC</span><b>EVENT</b></div>';
+      return '<article class="event-card reveal visible">'+
+        '<div class="event-card-media">'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
+        '<div class="event-card-body"><span class="event-kicker">YYC PROGRAMME</span><h3>'+esc(ev.title||'Untitled event')+'</h3>'+
+        (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
+        '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span></div></div>'+
+      '</article>';
+    }).join('') : '<div class="empty">No upcoming events published yet.</div>';
+  }
+
   var gg=$('#galleryGrid');
   if(gg){
     var gs=publicData.gallery||[];
-    gg.innerHTML=gs.length ? gs.map(function(g){return '<figure class="gallery-card reveal visible"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';}).join('') : '<div class="empty">No gallery items published yet.</div>';
+    gg.innerHTML=gs.length ? gs.map(function(g){
+      return '<figure class="gallery-card reveal visible"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
+    }).join('') : '<div class="empty">No gallery items published yet.</div>';
   }
 }
 async function loadPublic(){
@@ -831,16 +857,19 @@ function renderAdminTab(tab,d){
 
   if(tab==='events'){
     a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading events…</strong><span>Reading YYC event records</span></div>';
-    rpc('admin_storage_summary',{p_token:adminToken}).then(function(s){
+    rpc('admin_dashboard',{p_token:adminToken}).then(function(s){
       if(!s.ok) throw new Error(s.error||'Unable to load events');
+      adminData=s;
       var events=s.events||[];
-      a.innerHTML='<div class="admin-top"><div><h2>Events</h2><p class="admin-subline">Events currently stored in the YYC database.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="eventsRefresh">↻ Refresh</button></div></div>'+
-        '<div class="admin-note">Event records are visible here. Create/edit/delete controls can be added when event-write RPCs are exposed by the backend.</div>'+
+      a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC PROGRAMMES</div><h2 class="modal-title">Events</h2><p class="admin-subline">Create and manage public event cards.</p></div>'+
+        '<div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="adminAddEvent">+ Add event</button></div></div>'+
         (events.length?'<div class="events-admin-grid">'+events.map(function(ev){
-          var dt=ev.event_date?new Date(ev.event_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'DATE TBC';
-          return '<article class="event-admin-card"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'</div></article>';
-        }).join('')+'</div>':'<div class="empty">No events stored yet.</div>');
-      $('#eventsRefresh').addEventListener('click',function(){adminPanel('events');});
+          var dt=ev.event_date?new Date(ev.event_date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'DATE TBC';
+          return '<article class="event-admin-card"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'<div class="admin-actions event-admin-actions"><button class="mini-btn" data-edit-event="'+ev.id+'">Edit</button><button class="mini-btn" data-del-event="'+ev.id+'">Delete</button></div></div></article>';
+        }).join('')+'</div>':'<div class="empty">No events stored yet. Add the first YYC programme.</div>');
+      $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
+      $$('[data-edit-event]').forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
+      $$('[data-del-event]').forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
     }).catch(function(e){
       a.innerHTML='<div class="storage-error"><strong>Could not load events.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="eventsRetry">Retry</button></div>';
       $('#eventsRetry').addEventListener('click',function(){adminPanel('events');});
@@ -978,6 +1007,51 @@ function adminLeaderForm(id){
     }catch(err){toast(err.message);}
   });
 }
+function adminEventForm(id){
+  var events=adminData.events||[];
+  var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:''};
+  openModal(
+    '<div class="modal-kicker">ADMIN · EVENTS</div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button></div>'+
+    '<h2 class="modal-title">'+(id?'Edit':'Add')+' Event</h2>'+
+    '<p class="modal-sub">Publish a clean event card to the public YYC website.</p>'+
+    '<form id="adminEventForm">'+
+      '<div class="form-grid">'+
+        '<div class="field"><label>Event name</label><input id="aeTitle" value="'+esc(existing.title||'')+'" required></div>'+
+        '<div class="field"><label>Date</label><input id="aeDate" type="date" value="'+esc(existing.event_date||'')+'"></div>'+
+        '<div class="field"><label>Location</label><input id="aeLocation" value="'+esc(existing.location||'')+'" placeholder="Subrahmanya, Karnataka"></div>'+
+        '<div class="field"><label>Image URL</label><input id="aeImage" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
+        '<div class="field full"><label>Description</label><textarea id="aeDescription" placeholder="What is happening at this programme?">'+esc(existing.description||'')+'</textarea></div>'+
+      '</div>'+
+      '<div class="form-actions"><button class="btn gold">SAVE EVENT</button></div>'+
+    '</form>'
+  );
+  $('#adminEventBack').addEventListener('click',function(){adminPanel('events');});
+  $('#adminEventForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    try{
+      var payload={
+        title:$('#aeTitle').value.trim(),
+        description:$('#aeDescription').value.trim(),
+        event_date:$('#aeDate').value,
+        location:$('#aeLocation').value.trim(),
+        image_url:$('#aeImage').value.trim()
+      };
+      var r=await rpc('admin_upsert_event',{p_token:adminToken,p_id:id||null,p_payload:payload});
+      if(!r.ok) throw new Error(r.error||'Failed');
+      closeModal(); toast('Event saved'); adminPanel('events');
+    }catch(err){toast(err.message);}
+  });
+}
+function adminDeleteEvent(id){
+  if(!confirm('Delete this event?')) return;
+  rpc('admin_delete_event',{p_token:adminToken,p_id:id}).then(function(r){
+    if(!r.ok) throw new Error(r.error||'Failed');
+    toast('Event deleted');
+    adminPanel('events');
+  }).catch(function(e){toast(e.message);});
+}
+
 function adminUpdateForm(id){
   var existing=(adminData.updates||[]).find(function(u){return u.id===id;}) || {title:'',body:'',event_date:today(),image_url:''};
   openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
