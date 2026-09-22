@@ -195,36 +195,34 @@ function wireEditor(id,obj,fileInput){
   });
   draw();
 }
-/* ===== YYC MOTION SYSTEM — NAVIGATION, BUTTONS & BACKGROUND ===== */
+/* ===== YYC MOTION SYSTEM — SMOOTH, NO-LAYOUT-SHIFT ===== */
 function yycAnimateNavigation(targetEl){
   var heroPhoto=$('.hero-photo');
   var hero=$('.hero');
-  var target=targetEl;
   if(heroPhoto){
-    var dirY=target ? (target.getBoundingClientRect().top < (hero ? hero.getBoundingClientRect().top + hero.clientHeight/2 : window.innerHeight/2) ? -1 : 1) : 1;
-    var dirX=target ? ((target.offsetTop||0)%2===0 ? 1 : -1) : 1;
+    var dirY=targetEl ? (targetEl.getBoundingClientRect().top < (hero ? hero.clientHeight/2 : window.innerHeight/2) ? -1 : 1) : 1;
+    var dirX=targetEl ? ((targetEl.offsetTop||0)%2===0 ? 1 : -1) : 1;
     heroPhoto.style.setProperty('--yyc-pan-x',(dirX*1.7).toFixed(2)+'%');
     heroPhoto.style.setProperty('--yyc-pan-y',(dirY*1.15).toFixed(2)+'%');
     heroPhoto.classList.remove('yyc-bg-navigate');
     void heroPhoto.offsetWidth;
     heroPhoto.classList.add('yyc-bg-navigate');
   }
-  if(target){
-    target.classList.remove('yyc-section-navigate');
-    void target.offsetWidth;
-    target.classList.add('yyc-section-navigate');
-    setTimeout(function(){target.classList.remove('yyc-section-navigate');},850);
+
+  /* Never translate a full section while navigating: that creates a temporary gap above it. */
+  if(targetEl){
+    targetEl.classList.remove('yyc-section-navigate');
+    void targetEl.offsetWidth;
+    targetEl.classList.add('yyc-section-navigate');
+    setTimeout(function(){targetEl.classList.remove('yyc-section-navigate');},700);
   }
-  document.body.classList.remove('yyc-page-motion');
-  void document.body.offsetWidth;
-  document.body.classList.add('yyc-page-motion');
-  setTimeout(function(){document.body.classList.remove('yyc-page-motion');},520);
 }
 
 function bindMotionSystem(){
   if(window.__yycMotionBound) return;
   window.__yycMotionBound=true;
 
+  /* Click feedback without scale/transform, so buttons never grow and page layout never shifts. */
   document.addEventListener('click',function(e){
     var btn=e.target && e.target.closest ? e.target.closest('button,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue') : null;
     if(!btn) return;
@@ -235,36 +233,12 @@ function bindMotionSystem(){
         var target=$(href);
         yycAnimateNavigation(target);
       }
-    }else{
-      btn.classList.remove('yyc-click-pulse');
-      void btn.offsetWidth;
-      btn.classList.add('yyc-click-pulse');
-      setTimeout(function(){btn.classList.remove('yyc-click-pulse');},330);
     }
 
-    var ripple=document.createElement('span');
-    ripple.className='yyc-ripple';
-    var rect=btn.getBoundingClientRect();
-    var size=Math.max(rect.width,rect.height)*1.35;
-    ripple.style.width=size+'px';
-    ripple.style.height=size+'px';
-    ripple.style.left=(e.clientX-rect.left-size/2)+'px';
-    ripple.style.top=(e.clientY-rect.top-size/2)+'px';
-    if(getComputedStyle(btn).position==='static') btn.style.position='relative';
-    btn.appendChild(ripple);
-    setTimeout(function(){if(ripple.parentNode) ripple.parentNode.removeChild(ripple);},650);
-  },false);
-
-  document.addEventListener('keydown',function(e){
-    if((e.key==='Enter'||e.key===' ') && document.activeElement){
-      var el=document.activeElement.closest && document.activeElement.closest('button,.btn,.link-btn,.nav-link');
-      if(el){
-        el.classList.remove('yyc-click-pulse');
-        void el.offsetWidth;
-        el.classList.add('yyc-click-pulse');
-        setTimeout(function(){el.classList.remove('yyc-click-pulse');},330);
-      }
-    }
+    btn.classList.remove('yyc-click-flash');
+    void btn.offsetWidth;
+    btn.classList.add('yyc-click-flash');
+    setTimeout(function(){btn.classList.remove('yyc-click-flash');},260);
   },false);
 
   /* Admin tabs are injected dynamically, so animate their workspace through delegation. */
@@ -280,6 +254,7 @@ function bindMotionSystem(){
     },30);
   },false);
 }
+
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
   var arr=[];
