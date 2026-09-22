@@ -138,7 +138,7 @@ function wireEditor(id,obj,fileInput){
     var ty=((obj.y-50)/50)*maxPanY;
     img.style.transform='translate3d('+tx.toFixed(2)+'px,'+ty.toFixed(2)+'px,0) scale('+obj.scale+')';
     img.style.objectPosition='50% 50%';
-    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';
+    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×'; $('#'+id+'XOut').textContent=Math.round(obj.x)+'%'; $('#'+id+'YOut').textContent=Math.round(obj.y)+'%';
   }
   zoom.addEventListener('input',draw);
 
@@ -176,43 +176,14 @@ function wireEditor(id,obj,fileInput){
     draw();
   },{passive:false});
 
-  function clampZoom(v){ return Math.max(1,Math.min(2.4,Number(v)||1)); }
-  function nudge(dx,dy){
-    obj.x=Math.max(0,Math.min(100,(obj.x==null?50:Number(obj.x))+dx));
-    obj.y=Math.max(0,Math.min(100,(obj.y==null?50:Number(obj.y))+dy));
-    draw();
-  }
   function resetPhoto(){
     obj.scale=1; obj.x=50; obj.y=50; zoom.value='1'; draw();
   }
-  function zoomBy(delta){
-    zoom.value=clampZoom(Number(zoom.value)+delta).toFixed(2);
-    draw();
+  function centerPhoto(){
+    obj.x=50; obj.y=50; draw();
   }
-  stage.querySelectorAll('[data-photo-action]').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var act=btn.getAttribute('data-photo-action');
-      if(act==='up') nudge(0,-4);
-      else if(act==='down') nudge(0,4);
-      else if(act==='left') nudge(-4,0);
-      else if(act==='right') nudge(4,0);
-      else if(act==='center'){obj.x=50;obj.y=50;draw();}
-      else if(act==='zoomIn') zoomBy(.1);
-      else if(act==='zoomOut') zoomBy(-.1);
-      else if(act==='reset') resetPhoto();
-      stage.focus();
-    });
-  });
   $('#'+id+'Reset').addEventListener('click',resetPhoto);
-  stage.addEventListener('keydown',function(e){
-    var step=e.shiftKey?8:4;
-    if(e.key==='ArrowUp'){nudge(0,-step);e.preventDefault();}
-    else if(e.key==='ArrowDown'){nudge(0,step);e.preventDefault();}
-    else if(e.key==='ArrowLeft'){nudge(-step,0);e.preventDefault();}
-    else if(e.key==='ArrowRight'){nudge(step,0);e.preventDefault();}
-    else if(e.key==='+' || e.key==='='){zoomBy(.1);e.preventDefault();}
-    else if(e.key==='-' || e.key==='_'){zoomBy(-.1);e.preventDefault();}
-  });
+  $('#'+id+'Center').addEventListener('click',centerPhoto);
 
   $('#'+fileInput).addEventListener('change',async function(){
     try{
