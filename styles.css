@@ -2044,3 +2044,44 @@ button,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue{
     transition:none!important;
   }
 }
+
+/* ===== MOTION FIX: NO SIZE GROWTH / NO TEMPORARY PAGE GAPS ===== */
+.yyc-click-pulse,
+.yyc-click-pulse:hover{
+  animation:none!important;
+  transform:none!important;
+}
+.yyc-click-flash{
+  animation:yycClickFlash .26s ease-out!important;
+  transform:none!important;
+}
+@keyframes yycClickFlash{
+  0%{background-color:rgba(237,193,105,.13)}
+  100%{background-color:transparent}
+}
+
+/* Section animation uses opacity only; transform caused a temporary gap above sections. */
+.section.yyc-section-navigate{
+  animation:yycSectionFade .62s cubic-bezier(.16,1,.3,1)!important;
+}
+@keyframes yycSectionFade{
+  0%{opacity:.68;filter:brightness(.88)}
+  55%{opacity:1;filter:brightness(1.04)}
+  100%{opacity:1;filter:brightness(1)}
+}
+
+/* Admin tab animation also stays in place so the workspace does not create extra space. */
+.yyc-admin-tab-enter,
+.yyC-admin-tab-enter{
+  animation:yycAdminTabFade .4s ease-out!important;
+}
+@keyframes yycAdminTabFade{
+  0%{opacity:.5;filter:blur(1px)}
+  100%{opacity:1;filter:blur(0)}
+}
+
+/* Prevent any click-effect child from affecting document overflow or layout. */
+button,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue{
+  overflow:hidden;
+  isolation:isolate;
+}
