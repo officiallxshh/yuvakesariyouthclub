@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="styles.css?v=20260923-01">
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20260923-02">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-03">
-<link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-05">
+<link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-06">
 </head>
 <body>
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
@@ -159,6 +159,13 @@
 
 <div class="modal" id="modal" aria-hidden="true"><div class="modal-backdrop" data-close></div><section class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button type="button" class="modal-close" data-modal-close-only aria-label="Close">×</button><div id="modalContent"></div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* Independent YYC entrance sequence — never required for functionality. */
+(function(){
+  document.body.classList.add('yyC-opening');
+  window.setTimeout(function(){document.body.classList.remove('yyC-opening');},1250);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="app.js?v=20260923-04" defer></script>
 <script>
@@ -375,8 +382,8 @@ initInertialScroll();
   initScrollReveal();
   initLiveCounters();
 })();
-/* YYC resilient interaction bridge:
-   core controls have a direct fallback while the main app finishes binding. */
+/* YYC resilient interaction bridge — core controls are handled here first,
+   so a slow/broken deferred app bootstrap cannot make the site feel dead. */
 (function(){
   var routes={
     memberLoginBtn:'memberLogin',
@@ -391,65 +398,98 @@ initInertialScroll();
     submitGalleryBtn:'submitGallery'
   };
 
-  function invoke(id){
-    var name=routes[id];
-    if(!name) return false;
+  function closeMobileFallback(){
+    var panel=document.getElementById('mobilePanel');
+    var menu=document.getElementById('menuBtn');
+    if(panel) panel.classList.remove('open');
+    if(menu){
+      menu.classList.remove('menu-open');
+      menu.setAttribute('aria-expanded','false');
+      menu.setAttribute('aria-label','Open navigation');
+    }
+  }
+
+  function callApp(name){
     if(window.YYC && typeof window.YYC[name]==='function'){
-      if((id==='memberLoginMobile'||id==='leaderLoginMobile'||id==='adminOpenMobile') && typeof window.closeMobile==='function') window.closeMobile();
       window.YYC[name](false);
       return true;
     }
-    var src='app.js?v=20260923-03';
-    if(window.__yycAppReloading) return false;
-    window.__yycAppReloading=true;
+    if(window.__yycRuntimeLoading) return false;
+    window.__yycRuntimeLoading=true;
     var script=document.createElement('script');
-    script.src=src;
+    script.src='app.js?v=20260923-05';
     script.async=true;
     script.onload=function(){
-      window.__yycAppReloading=false;
-      if((id==='memberLoginMobile'||id==='leaderLoginMobile'||id==='adminOpenMobile') && typeof window.closeMobile==='function') window.closeMobile();
+      window.__yycRuntimeLoading=false;
       if(window.YYC && typeof window.YYC[name]==='function') window.YYC[name](false);
     };
-    script.onerror=function(){window.__yycAppReloading=false;};
+    script.onerror=function(){window.__yycRuntimeLoading=false;};
     document.head.appendChild(script);
+    return false;
+  }
+
+  function scrollToHash(href){
+    var target;
+    try{target=document.querySelector(href);}catch(e){target=null;}
+    if(!target) return false;
+    var header=document.getElementById('topbar');
+    var offset=header ? header.offsetHeight+10 : 0;
+    var top=Math.max(0,target.getBoundingClientRect().top+window.pageYOffset-offset);
+    window.scrollTo({top:top,behavior:'smooth'});
+    if(history.pushState) history.pushState(null,'',href);
     return true;
   }
 
+  /* One capture-stage listener guarantees the principal controls remain live. */
   document.addEventListener('click',function(e){
     var menu=e.target && e.target.closest ? e.target.closest('#menuBtn') : null;
-    if(menu && !window.__yycAppCoreBound){
-      e.preventDefault();
-      e.stopImmediatePropagation();
+    if(menu){
       var panel=document.getElementById('mobilePanel');
-      var open=panel && panel.classList.contains('open');
-      if(window.closeMobile && open) window.closeMobile();
+      var isOpen=panel && panel.classList.contains('open');
+      if(isOpen) closeMobileFallback();
       else{
         if(panel) panel.classList.add('open');
         menu.classList.add('menu-open');
         menu.setAttribute('aria-expanded','true');
         menu.setAttribute('aria-label','Close navigation');
       }
+      e.preventDefault();
+      e.stopImmediatePropagation();
       return;
     }
 
     var close=e.target && e.target.closest ? e.target.closest('[data-modal-close-only]') : null;
-    if(close && !window.__yycAppCoreBound){
-      e.preventDefault();
-      e.stopImmediatePropagation();
+    if(close){
       var modal=document.getElementById('modal');
       if(modal){
         modal.classList.remove('open');
         modal.setAttribute('aria-hidden','true');
         document.body.style.overflow='';
       }
+      e.preventDefault();
+      e.stopImmediatePropagation();
       return;
     }
 
-    var el=e.target && e.target.closest ? e.target.closest('button[id]') : null;
-    if(!el || !routes[el.id] || window.__yycAppCoreBound) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    invoke(el.id);
+    var button=e.target && e.target.closest ? e.target.closest('button[id]') : null;
+    if(button && routes[button.id]){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(button.id==='memberLoginMobile'||button.id==='leaderLoginMobile'||button.id==='adminOpenMobile') closeMobileFallback();
+      callApp(routes[button.id]);
+      return;
+    }
+
+    var link=e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if(link){
+      var href=link.getAttribute('href')||'';
+      if(href && href!=='#'){
+        if(scrollToHash(href)){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }
+    }
   },true);
 })();
 </script>
