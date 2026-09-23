@@ -346,3 +346,66 @@ button,
     transform:none!important;
   }
 }
+
+/* ===== YYC INTERACTION POLISH ===== */
+
+/* Scroll reveal — JS adds .yyc-scroll-in when content enters the viewport. */
+body.yyc-scroll-ready .section .reveal{
+  opacity:.2;
+  transform:translateY(22px);
+  transition:
+    opacity .72s cubic-bezier(.16,1,.3,1),
+    transform .72s cubic-bezier(.16,1,.3,1);
+  transition-delay:var(--yyc-reveal-delay,0ms);
+}
+body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
+  opacity:1;
+  transform:none;
+}
+.hero .reveal{
+  transition-delay:0ms!important;
+}
+
+/* Card/content staggering after a section enters. */
+body.yyc-scroll-ready .section .card-grid .reveal,
+body.yyc-scroll-ready .section .gallery-grid .reveal,
+body.yyc-scroll-ready .section .events-grid .reveal,
+body.yyc-scroll-ready .section .updates-list .reveal,
+body.yyc-scroll-ready .section .glimpse-grid .reveal{
+  transition-delay:var(--yyc-reveal-delay,0ms);
+}
+
+/* Hamburger becomes a clean close icon. */
+.menu-btn i{transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease}
+.menu-btn.menu-open i:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.menu-btn.menu-open i:nth-child(2){opacity:0;transform:scaleX(.35)}
+.menu-btn.menu-open i:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.mobile-panel{transform-origin:top center}
+
+/* Live counters get a tiny visual lift while changing. */
+.yyc-count-animating{
+  display:inline-block;
+  animation:yycCountPulse .42s ease-out;
+}
+@keyframes yycCountPulse{
+  0%{opacity:.45;transform:translateY(4px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+/* Desktop-only pointer parallax. */
+@media(min-width:981px) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .hero-photo{
+    transition:transform .6s cubic-bezier(.16,1,.3,1),filter 1.15s cubic-bezier(.16,1,.3,1);
+  }
+}
+
+/* Respect reduced-motion. */
+@media(prefers-reduced-motion:reduce){
+  body.yyc-scroll-ready .section .reveal{
+    opacity:1!important;
+    transform:none!important;
+    transition:none!important;
+  }
+  .menu-btn i{transition:none!important}
+  .yyc-count-animating{animation:none!important}
+}
