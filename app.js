@@ -661,6 +661,25 @@ async function downloadYYCDigitalCard(data,kind,button){
     if(button){button.disabled=false;button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD';}
   }
 }
+function downloadAdminCard(data,kind){
+  var holder=document.createElement('div');
+  holder.style.position='fixed';
+  holder.style.left='-20000px';
+  holder.style.top='0';
+  holder.style.width='680px';
+  holder.innerHTML=yycDigitalCard(data,kind);
+  document.body.appendChild(holder);
+  var btn=document.createElement('button');
+  btn.type='button';
+  try{
+    var card=holder.querySelector('.yyc-digital-card');
+    return downloadYYCDigitalCard(data,kind,btn).catch(function(e){toast(e.message);}).finally(function(){holder.remove();});
+  }catch(e){
+    holder.remove();
+    toast(e.message);
+    return Promise.resolve();
+  }
+}
 function yycPortalHeader(kind,data){
   var leader=kind==='leader';
   return '<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>'+
@@ -855,6 +874,13 @@ function adminPanel(tab,forceRefresh){
           if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}
           return;
         }
+        var dlLeader=target.closest('[data-download-leader]');
+        if(dlLeader){
+          e.preventDefault();e.stopPropagation();
+          var dl=(d.leaders||[]).find(function(x){return String(x.id)===String(dlLeader.getAttribute('data-download-leader'));});
+          if(dl) downloadAdminCard(dl,'leader');
+          return;
+        }
         var editLeader=target.closest('[data-edit-leader]');
         if(editLeader){
           e.preventDefault();e.stopPropagation();
@@ -882,9 +908,10 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $$('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
+    $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
+    $('[data-download-member]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-download-member');});if(m)downloadAdminCard(m,'member');});});
     $$('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
     $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
     $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
@@ -896,7 +923,7 @@ function renderAdminTab(tab,d){
 
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-download-leader="'+l.id+'">Download ID</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
     /* Leader Card/Edit/Delete are handled by the admin workspace event delegation below. */
     return;
