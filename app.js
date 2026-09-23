@@ -454,7 +454,7 @@ function memberDashboard(memberArg){
       '<div class="portal-ribbon member-portal-ribbon"><span class="portal-icon">◉</span><div><b>MEMBER PORTAL</b><small>ACCESS LEVEL · MEMBER</small></div><span class="portal-secure">SECURE</span></div>'+
       '<div class="member-dashboard-head">'+
         '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Your official YYC membership space — identity, verification and member submissions.</p></div>'+
-        (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="memberLogout">Logout</button>')+
+        (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<span class="portal-session-state">SESSION ACTIVE</span>')+
       '</div>'+
       '<div class="portal-summary-grid">'+
         '<div class="portal-summary-card"><span>MEMBER</span><b>'+name+'</b><small>'+position+'</small></div>'+
@@ -485,12 +485,14 @@ function memberDashboard(memberArg){
   if(m.__adminView){
     $('#memberBackAdmin').addEventListener('click',function(){adminPanel(m.__adminTab||'members');});
   }else{
-    $('#memberLogout').addEventListener('click',async function(){
-    try{await rpc('member_logout',{p_token:memberToken});}catch(e){}
-    localStorage.removeItem(MEMBER_TOKEN_KEY);
-    memberToken='';
-    closeModal();
-    toast('Member logged out');
+    $('#memberLogout').addEventListener('click',async function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      try{await rpc('member_logout',{p_token:memberToken});}catch(err){}
+      localStorage.removeItem(MEMBER_TOKEN_KEY);
+      memberToken='';
+      closeModal();
+      toast('Member logged out');
     });
   }
 
@@ -715,7 +717,7 @@ function leaderDashboard(leaderArg){
       '<div class="portal-ribbon leader-portal-ribbon"><span class="portal-icon">♛</span><div><b>LEADERSHIP PORTAL</b><small>ACCESS LEVEL · LEADER · READ ONLY</small></div><span class="portal-secure">PROTECTED</span></div>'+
       '<div class="member-dashboard-head">'+
         '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Official leadership identity, verification and protected team information.</p></div>'+
-        (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
+        (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<span class="portal-session-state">SESSION ACTIVE</span>')+
       '</div>'+
       '<div class="portal-summary-grid">'+
         '<div class="portal-summary-card"><span>LEADER</span><b>'+name+'</b><small>'+esc(l.role||l.position||'LEADER')+'</small></div>'+
@@ -725,6 +727,7 @@ function leaderDashboard(leaderArg){
       yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
       '<div class="portal-action-row"><div><b>Leadership tools</b><span>Official card and verification access for YYC leaders.</span></div><div class="form-actions member-card-actions">'+
       '<button class="btn gold" id="downloadLeaderCard">'+(l.__adminView?'DOWNLOAD ID CARD':'DOWNLOAD LEADER ID')+'</button>'+
+      (!l.__adminView?'<button class="btn danger-outline" id="leaderLogout">LOGOUT</button>':'')+
       '</div></div>'+
       '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
       '<div class="portal-note leader-portal-note"><span>✓</span><p>Leader accounts are read-only. Role, access and official record changes are controlled by YYC administration.</p></div>'+
@@ -744,8 +747,10 @@ function leaderDashboard(leaderArg){
   if(l.__adminView){
     $('#leaderBackAdmin').addEventListener('click',function(){adminPanel(l.__adminTab||'leaders');});
   }else{
-    $('#leaderLogout').addEventListener('click',async function(){
-      try{await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
+    $('#leaderLogout').addEventListener('click',async function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      try{await rpc('leader_logout',{p_token:leaderToken});}catch(err){}
       localStorage.removeItem(LEADER_TOKEN_KEY);
       leaderToken='';
       closeModal();
@@ -1182,11 +1187,19 @@ function bindUI(){
   if(!window.__yycModalCloseBound){
     window.__yycModalCloseBound=true;
     document.addEventListener('click',function(e){
-      var el=e.target && e.target.closest ? e.target.closest('.modal-close, .modal [data-close]') : null;
-      if(!el) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      closeModal();
+      var closeOnly=e.target && e.target.closest ? e.target.closest('[data-modal-close-only]') : null;
+      if(closeOnly){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeModal();
+        return;
+      }
+      var backdrop=e.target && e.target.closest ? e.target.closest('.modal-backdrop[data-close]') : null;
+      if(backdrop){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeModal();
+      }
     },true);
   }
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
