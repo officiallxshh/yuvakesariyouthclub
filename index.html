@@ -375,8 +375,8 @@ initInertialScroll();
   initScrollReveal();
   initLiveCounters();
 })();
-/* YYC emergency interaction bridge:
-   essential controls remain clickable even if the deferred app script finishes late. */
+/* YYC resilient interaction bridge:
+   core controls have a direct fallback while the main app finishes binding. */
 (function(){
   var routes={
     memberLoginBtn:'memberLogin',
@@ -390,10 +390,12 @@ initInertialScroll();
     submitUpdateBtn:'submitUpdate',
     submitGalleryBtn:'submitGallery'
   };
+
   function invoke(id){
     var name=routes[id];
     if(!name) return false;
     if(window.YYC && typeof window.YYC[name]==='function'){
+      if((id==='memberLoginMobile'||id==='leaderLoginMobile'||id==='adminOpenMobile') && typeof window.closeMobile==='function') window.closeMobile();
       window.YYC[name](false);
       return true;
     }
@@ -402,20 +404,49 @@ initInertialScroll();
     window.__yycAppReloading=true;
     var script=document.createElement('script');
     script.src=src;
-    script.defer=true;
+    script.async=true;
     script.onload=function(){
       window.__yycAppReloading=false;
+      if((id==='memberLoginMobile'||id==='leaderLoginMobile'||id==='adminOpenMobile') && typeof window.closeMobile==='function') window.closeMobile();
       if(window.YYC && typeof window.YYC[name]==='function') window.YYC[name](false);
     };
     script.onerror=function(){window.__yycAppReloading=false;};
     document.head.appendChild(script);
     return true;
   }
+
   document.addEventListener('click',function(e){
+    var menu=e.target && e.target.closest ? e.target.closest('#menuBtn') : null;
+    if(menu && !window.__yycAppCoreBound){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var panel=document.getElementById('mobilePanel');
+      var open=panel && panel.classList.contains('open');
+      if(window.closeMobile && open) window.closeMobile();
+      else{
+        if(panel) panel.classList.add('open');
+        menu.classList.add('menu-open');
+        menu.setAttribute('aria-expanded','true');
+        menu.setAttribute('aria-label','Close navigation');
+      }
+      return;
+    }
+
+    var close=e.target && e.target.closest ? e.target.closest('[data-modal-close-only]') : null;
+    if(close && !window.__yycAppCoreBound){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var modal=document.getElementById('modal');
+      if(modal){
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden','true');
+        document.body.style.overflow='';
+      }
+      return;
+    }
+
     var el=e.target && e.target.closest ? e.target.closest('button[id]') : null;
-    if(!el) return;
-    if(!routes[el.id]) return;
-    if(window.__yycAppCoreBound) return;
+    if(!el || !routes[el.id] || window.__yycAppCoreBound) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     invoke(el.id);
