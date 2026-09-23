@@ -328,3 +328,21 @@ button,
   .hero-photo{animation:none!important;transition:none!important}
   .modal-shell,.mobile-panel{transition:none!important}
 }
+
+/* Mobile hero image sizing: scale the original landscape image to the full
+   portrait hero height instead of letting desktop crop rules dominate. */
+@media(max-width:620px) and (orientation:portrait){
+  .hero-photo{
+    background-size:auto 100%!important;
+    background-position:center top!important;
+    transform:none!important;
+  }
+  body.yyC-opening .hero-photo{
+    animation:none!important;
+    transform:none!important;
+  }
+  .hero-photo.yyc-bg-navigate{
+    animation:none!important;
+    transform:none!important;
+  }
+}
