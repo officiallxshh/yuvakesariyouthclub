@@ -1047,3 +1047,24 @@ body.yyc-scroll-ready .section .glimpse-grid .reveal{
 @media(prefers-reduced-motion:reduce){
   .access-login-hero::after,.access-submit.is-loading::after{animation:none!important}
 }
+
+/* ===== FINAL CURTAIN ENTRANCE + CLICK RELIABILITY ===== */
+.yyc-curtain-intro{position:fixed;inset:0;z-index:99980;pointer-events:none;display:grid;place-items:center;overflow:hidden;background:#050609}
+.yyc-curtain-panel{position:absolute;top:0;bottom:0;width:50.5%;background:linear-gradient(180deg,#171118,#08090c 55%,#030406);box-shadow:inset 0 0 90px rgba(0,0,0,.74);transition:transform 1.3s cubic-bezier(.77,0,.175,1);will-change:transform}
+.yyc-curtain-panel::after{content:"";position:absolute;inset:0;opacity:.28;background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(238,194,106,.025) 23px 25px,transparent 26px 50px)}
+.yyc-curtain-left{left:0}.yyc-curtain-right{right:0}
+.yyc-curtain-intro.is-open .yyc-curtain-left{transform:translateX(-100%)}
+.yyc-curtain-intro.is-open .yyc-curtain-right{transform:translateX(100%)}
+.yyc-curtain-brand{position:relative;z-index:2;text-align:center;color:#edcf8d;display:flex;flex-direction:column;gap:6px;transition:opacity .45s ease .55s,transform .65s cubic-bezier(.16,1,.3,1) .55s}
+.yyc-curtain-brand span{font:700 clamp(28px,5vw,66px)/.9 "DM Serif Display",serif;letter-spacing:.08em}
+.yyc-curtain-brand b{font:700 9px/1 "Space Grotesk",sans-serif;letter-spacing:.42em;padding-left:.42em;color:#f2e5ca}
+.yyc-curtain-brand i{font:600 7px/1 "Space Grotesk",sans-serif;letter-spacing:.20em;color:#89847e;font-style:normal}
+.yyc-curtain-intro.is-open .yyc-curtain-brand{opacity:0;transform:scale(.94)}
+.yyc-curtain-intro.is-gone{display:none}
+
+/* Decorative effects never capture clicks. */
+.yyc-curtain-intro,.yyc-curtain-intro *{pointer-events:none!important}
+body:before,body:after,.hero-grid-line,.hero-glow,.hero-vignette,.section:after,.section:before{pointer-events:none!important}
+.topbar{z-index:1000!important}
+.topbar a,.topbar button,.hero-actions a,.culture-orb,.scroll-cue,.link-btn,.join-card button,.footer button,.mobile-panel a,.mobile-panel button{position:relative;z-index:10;pointer-events:auto!important}
+.modal,.modal-backdrop,.modal-shell,.modal-shell *{pointer-events:auto}
