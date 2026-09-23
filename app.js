@@ -106,14 +106,36 @@ function fmtDate(v){
   return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 }
 async function rpc(name,args){
-  var client=await ensureSupabaseClient();
-  var call=client.rpc(name,args || {});
-  var timeout=new Promise(function(_,reject){
-    setTimeout(function(){reject(new Error('YYC server did not respond. Please check your internet connection and try again.'));},12000);
-  });
-  var res=await Promise.race([call,timeout]);
-  if(res.error) throw new Error(res.error.message || 'Database request failed');
-  return res.data;
+  var payload=args || {};
+  var endpoint=YYC_CONFIG.supabaseUrl.replace(/\\/$/,'')+'/rest/v1/rpc/'+encodeURIComponent(name);
+  var controller=window.AbortController?new AbortController():null;
+  var timer=window.setTimeout(function(){if(controller)controller.abort();},15000);
+  try{
+    var res=await fetch(endpoint,{
+      method:'POST',
+      headers:{
+        'apikey':YYC_CONFIG.supabaseKey,
+        'Authorization':'Bearer '+YYC_CONFIG.supabaseKey,
+        'Content-Type':'application/json',
+        'Accept':'application/json'
+      },
+      body:JSON.stringify(payload),
+      signal:controller?controller.signal:undefined
+    });
+    var text=await res.text();
+    var data=null;
+    try{data=text?JSON.parse(text):null;}catch(parseErr){data=null;}
+    if(!res.ok){
+      var msg=(data&&(data.message||data.error||data.hint||data.details))||('Supabase request failed ('+res.status+')');
+      throw new Error(String(msg));
+    }
+    return data;
+  }catch(err){
+    if(err&&err.name==='AbortError') throw new Error('YYC server timed out. Please try again.');
+    throw err;
+  }finally{
+    window.clearTimeout(timer);
+  }
 }
 function setLoginStatus(formId,msg,isError){
   var form=$('#'+formId);
