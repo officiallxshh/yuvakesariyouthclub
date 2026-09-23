@@ -185,14 +185,17 @@
 
         if(kind==='adminLogin'){
           try{sessionStorage.setItem('yyc_admin_session_v1',result.token||'');}catch(_){}
+          window.adminToken=result.token||'';
           message(form,'Login successful. Opening admin panel…',false);
           await loadAppAndDashboard(kind,null);
         }else if(kind==='memberLogin'){
           try{localStorage.setItem('yyc_member_session_v1',result.token||'');}catch(_){}
+          window.memberToken=result.token||'';
           message(form,'Login successful. Opening member portal…',false);
           await loadAppAndDashboard(kind,result.member);
         }else{
           try{localStorage.setItem('yyc_leader_session_v1',result.token||'');}catch(_){}
+          window.leaderToken=result.token||'';
           message(form,'Login successful. Opening leader panel…',false);
           await loadAppAndDashboard(kind,result.leader);
         }
