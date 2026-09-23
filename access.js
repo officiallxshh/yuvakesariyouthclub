@@ -6,8 +6,9 @@
  * It owns the three primary login buttons so they always open and submit.
  */
 (function(){
-  var URL='https://vrllozfzheikjbhxvpkx.supabase.co';
+  var URL='https://vrllozfzheikjbhxvpkx2.supabase.co';
   var KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
+  var AUTH_URL=URL+'/functions/v1/yyc-auth';
   var modal, contentBox;
 
   function el(id){ return document.getElementById(id); }
@@ -58,11 +59,15 @@
   }
   async function rpc(name,args){
     var controller=window.AbortController?new AbortController():null;
-    var timer=setTimeout(function(){if(controller)controller.abort();},15000);
+    var timer=setTimeout(function(){if(controller)controller.abort();},12000);
     try{
-      var res=await fetch(URL+'/rest/v1/rpc/'+encodeURIComponent(name),{
+      var res=await fetch(AUTH_URL,{
         method:'POST',
-        headers:{'apikey':KEY,'Content-Type':'application/json','Accept':'application/json'},
+        headers:{
+          'apikey':KEY,
+          'Content-Type':'application/json',
+          'Accept':'application/json'
+        },
         body:JSON.stringify(args||{}),
         signal:controller?controller.signal:undefined
       });
@@ -70,12 +75,12 @@
       var data=null;
       try{data=raw?JSON.parse(raw):null;}catch(_){}
       if(!res.ok){
-        var err=(data&&(data.message||data.error||data.hint||data.details))||('Server error ('+res.status+')');
+        var err=(data&&(data.error||data.message||data.hint||data.details))||('Authentication server error ('+res.status+')');
         throw new Error(String(err));
       }
       return data;
     }catch(e){
-      if(e&&e.name==='AbortError') throw new Error('YYC server timed out. Please try again.');
+      if(e&&e.name==='AbortError') throw new Error('YYC authentication timed out. Please try again.');
       throw e;
     }finally{
       clearTimeout(timer);
@@ -177,9 +182,9 @@
       message(form,'Connecting securely to YYC…',false);
       try{
         var result;
-        if(kind==='memberLogin') result=await rpc('member_login',{p_identifier:id,p_password:pass});
-        else if(kind==='leaderLogin') result=await rpc('leader_login',{p_identifier:id,p_password:pass});
-        else result=await rpc('admin_login',{p_username:id,p_password:pass});
+        if(kind==='memberLogin') result=await rpc('yyc-auth',{kind:'member',identifier:id,password:pass});
+        else if(kind==='leaderLogin') result=await rpc('yyc-auth',{kind:'leader',identifier:id,password:pass});
+        else result=await rpc('yyc-auth',{kind:'admin',identifier:id,password:pass});
 
         if(!result||result.ok!==true) throw new Error((result&&result.error)||'Invalid credentials');
 
