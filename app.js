@@ -65,6 +65,30 @@ async function rpc(name,args){
   return res.data;
 }
 function loadScript(src){return new Promise(function(resolve,reject){if(document.querySelector('script[data-yyc-src="'+src+'"]')){var existing=document.querySelector('script[data-yyc-src="'+src+'"]');if(existing.dataset.loaded==='1')return resolve();existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}var s=document.createElement('script');s.src=src;s.async=true;s.dataset.yycSrc=src;s.onload=function(){s.dataset.loaded='1';resolve();};s.onerror=reject;document.head.appendChild(s);});}
+function yycEnhanceLogin(formId,passwordId){
+  var form=$('#'+formId), pass=$('#'+passwordId);
+  if(!form||!pass) return;
+  var wrap=pass.closest('.access-password-field');
+  var toggle=wrap&&wrap.querySelector('.access-password-toggle');
+  if(toggle){
+    toggle.addEventListener('click',function(){
+      var showing=pass.type==='text';
+      pass.type=showing?'password':'text';
+      toggle.textContent=showing?'SHOW':'HIDE';
+      toggle.setAttribute('aria-label',showing?'Show password':'Hide password');
+    });
+  }
+  form.addEventListener('submit',function(){
+    var btn=form.querySelector('button[type="submit"]');
+    if(!btn||btn.dataset.busy==='1') return;
+    btn.dataset.busy='1';
+    btn.disabled=true;
+    btn.classList.add('is-loading');
+    btn.dataset.originalText=btn.textContent;
+    btn.textContent='CHECKING…';
+  });
+}
+
 
 function readFile(file,maxSide){
   return new Promise(function(resolve,reject){
@@ -364,418 +388,103 @@ function memberRegister(){
   });
 }
 function memberLogin(){
-  openModal('<div class="modal-kicker">MEMBER ACCESS</div><h2 class="modal-title">Member Login</h2><p class="modal-sub">Use your registered email or phone after admin approval.</p><form id="memberLoginForm"><div class="field"><label>Email or phone</label><input id="mIdent" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="mPass" type="password" required></div><div class="form-actions"><button class="btn gold">LOGIN <span>→</span></button><button type="button" class="btn outline" id="openRegisterFromLogin">NEW MEMBER</button></div></form>');
+  openModal(
+    '<div class="access-login-screen member-access-screen">'+
+      '<div class="access-login-hero"><div class="access-login-icon">◉</div><div><span class="access-login-kicker">YYC MEMBER PORTAL</span><h2 class="access-login-title">Welcome back.</h2><p class="access-login-sub">Sign in with the email or phone number registered with Yuvakesari Youth Club.</p></div><span class="access-login-badge">MEMBER</span></div>'+
+      '<form id="memberLoginForm" class="access-login-form" novalidate>'+
+        '<div class="access-form-field"><label for="mIdent">Email or phone</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="mIdent" type="text" autocomplete="username" inputmode="email" placeholder="Enter email or phone" required></div></div>'+
+        '<div class="access-form-field"><label for="mPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
+        '<div class="access-login-meta"><span>✓ Approved members only</span><span>Secure YYC access</span></div>'+
+        '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN <span>→</span></button><button type="button" class="btn outline access-secondary" id="openRegisterFromLogin">NEW MEMBER</button></div>'+
+      '</form>'+
+      '<div class="access-login-footer">Don’t have an account? Apply for membership and wait for admin approval.</div>'+
+    '</div>'
+  );
+  yycEnhanceLogin('memberLoginForm','mPass');
   $('#openRegisterFromLogin').addEventListener('click',memberRegister);
   $('#memberLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    var form=this, btn=form.querySelector('button[type="submit"]');
     try{
       var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
       if(!r.ok) throw new Error(r.error||'Login failed');
       memberToken=r.token; localStorage.setItem(MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
-    }catch(err){toast(err.message);}
+    }catch(err){
+      if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
+      toast(err.message);
+    }
   });
 }
-function yycMemberIdCardHTML(m,kind){
-  var isLeader=kind==='leader';
-  var roleRaw=m.role_number||(isLeader?'YYC-LEADER':'YYC-MEMBER');
-  var statusRaw=String(m.status||(m.approved?'approved':'pending')).toLowerCase();
-  var approved=isLeader?(statusRaw==='active'||statusRaw==='approved'):(statusRaw==='approved'||m.approved===true);
-  var status=approved?(isLeader?'APPROVED LEADER':'APPROVED MEMBER'):(isLeader?'INACTIVE':'PENDING');
-  var photo=m.photo_url||'assets/yyc-logo-clean.webp';
-  var sx=Math.max(1,Math.min(2.4,Number(m.photo_scale)||1));
-  var px=Math.max(0,Math.min(100,m.photo_pos_x==null?50:Number(m.photo_pos_x)));
-  var py=Math.max(0,Math.min(100,m.photo_pos_y==null?50:Number(m.photo_pos_y)));
-  var position=isLeader?(m.role||m.position||'LEADER'):(m.position||'MEMBER');
-  var phone=m.phone||'Not provided';
-  var email=m.email||'Not provided';
-  var club=m.club_name||'Yuvakesari Youth Club';
-  var line=m.line||'Subrahmanya • Karnataka';
-  var verifyKey=String(roleRaw).replace(/[^A-Za-z0-9_-]/g,'-').slice(0,48)||'member';
-  var qrId='yycQr-'+verifyKey+'-'+(isLeader?'leader':'member');
-  var photoTag='<img src="'+esc(photo)+'" alt="'+esc(m.name||'YYC')+'" style="object-position:'+px+'% '+py+'%;transform:scale('+sx+')">';
-  var barcode=''; for(var i=0;i<30;i++) barcode+='<span></span>';
-  return '<div class="yyc-digital-card-wrap '+(isLeader?'leader-card-wrap':'member-card-wrap')+'">'+
-    '<div class="yyc-digital-card yyc-role-'+(isLeader?'leader':'member')+'" id="'+(isLeader?'yycLeaderCard':'yycDigitalCard')+'" tabindex="0" role="button" aria-label="'+esc(isLeader?'Leadership digital ID card':'Member digital ID card')+'. Tap to flip">'+
-      '<div class="yyc-card-face yyc-card-front">'+
-        '<div class="yyc-card-aurora"></div><div class="yyc-card-grid"></div>'+
-        '<div class="yyc-card-inner yyc-idcard-layout">'+
-          '<div class="yyc-idcard-head">'+
-            '<div class="yyc-id-brand"><div class="yyc-logo-orb"><img src="assets/yyc-logo-clean.webp" alt="YYC"></div><div><b>YUVAKESARI YOUTH CLUB</b><span>SUBRAHMANYA • KARNATAKA</span></div></div>'+
-            '<div class="yyc-id-type">'+esc(isLeader?'LEADER ID':'MEMBER ID')+'</div>'+
-          '</div>'+
-          '<div class="yyc-idcard-content">'+
-            '<div class="yyc-id-photo"><div class="yyc-photo-frame">'+photoTag+'</div></div>'+
-            '<div class="yyc-id-details">'+
-              '<div class="yyc-id-name">'+esc(m.name||'YYC Member')+'</div>'+
-              '<div class="yyc-id-position">'+esc(position)+'</div>'+
-              '<div class="yyc-id-field"><span>ROLE NUMBER</span><b>'+esc(roleRaw)+'</b></div>'+
-              '<div class="yyc-id-field"><span>CONTACT NO.</span><b>'+esc(phone)+'</b></div>'+
-              '<div class="yyc-id-field"><span>EMAIL ADDRESS</span><b>'+esc(email)+'</b></div>'+
-            '</div>'+
-            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><div class="yyc-live-qr" id="'+esc(qrId)+'"></div></div><span>SCAN TO VERIFY</span><small>OFFICIAL YYC RECORD</small></div>'+
-          '</div>'+
-          '<div class="yyc-idcard-footer"><div><small>'+esc(club.toUpperCase())+'</small><span>'+esc(line.toUpperCase())+'</span></div><div class="yyc-approved-seal '+(approved?'approved':'pending')+'"><i>✓</i><div><b>'+esc(status)+'</b><span>'+esc(approved?'VERIFIED RECORD':'AWAITING APPROVAL')+'</span></div></div><div class="yyc-mini-barcode">'+barcode+'</div></div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="yyc-card-face yyc-card-back">'+
-        '<div class="yyc-card-inner yyc-back-layout">'+
-          '<div class="yyc-back-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><b>YUVAKESARI YOUTH CLUB</b><span>'+esc(isLeader?'OFFICIAL LEADERSHIP IDENTITY':'OFFICIAL MEMBERSHIP IDENTITY')+'</span></div></div>'+
-          '<div class="yyc-back-copy"><div class="yyc-back-label">DIGITAL IDENTITY CARD</div><h3>'+esc(isLeader?'LEADERSHIP CREDENTIALS':'MEMBERSHIP CREDENTIALS')+'</h3><p>This card is linked to the official YYC digital record. Scan the QR code on the front to verify the current identity record.</p></div>'+
-          '<div class="yyc-back-details"><div><span>UNIQUE ID</span><b>'+esc(roleRaw)+'</b></div><div><span>POSITION</span><b>'+esc(position)+'</b></div><div><span>CLUB</span><b>'+esc(club)+'</b></div><div><span>LOCATION</span><b>SUBRAHMANYA, KARNATAKA</b></div></div>'+
-          '<div class="yyc-back-bottom"><span>VERIFY • CONNECT • GROW</span><div class="yyc-mini-barcode">'+barcode+'</div></div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="yyc-card-hint">TAP / CLICK TO FLIP • SCAN QR TO VERIFY</div>'+
-  '</div>';
-}
-
-function memberDashboard(memberArg){
-  var m=memberArg;
-  if(!m){
-    if(!memberToken){memberLogin();return;}
-    rpc('member_me',{p_token:memberToken}).then(function(r){
-      if(!r.ok){localStorage.removeItem(MEMBER_TOKEN_KEY);memberToken='';memberLogin();return;}
-      memberDashboard(r.member);
-    }).catch(function(){memberLogin();});
-    return;
-  }
-
-  var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(m.role_number||'');
-  var role=esc(m.role_number||'YYC-2026-0000');
-  var name=esc(m.name||'Member');
-  var position=esc(m.position||'MEMBER');
-  var phone=esc(m.phone||'Not provided');
-  var email=esc(m.email||'Not provided');
-  var photo=esc(m.photo_url||'assets/yyc-logo-clean.webp');
-
-  openModal(
-    '<div class="member-dashboard premium-member-dashboard">'+
-      '<div class="portal-ribbon member-portal-ribbon"><span class="portal-icon">◉</span><div><b>MEMBER PORTAL</b><small>ACCESS LEVEL · MEMBER</small></div><span class="portal-secure">SECURE</span></div>'+
-      '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Your official YYC membership space — identity, verification and member submissions.</p></div>'+
-        (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<span class="portal-session-state">SESSION ACTIVE</span>')+
-      '</div>'+
-      '<div class="portal-summary-grid">'+
-        '<div class="portal-summary-card"><span>MEMBER</span><b>'+name+'</b><small>'+position+'</small></div>'+
-        '<div class="portal-summary-card"><span>UNIQUE ID</span><b>'+role+'</b><small>Official YYC record</small></div>'+
-        '<div class="portal-summary-card"><span>STATUS</span><b class="portal-status '+(String(m.status||'').toLowerCase()==='approved'?'is-approved':'is-pending')+'">'+(String(m.status||'').toLowerCase()==='approved'?'APPROVED':'PENDING')+'</b><small>Admin verification</small></div>'+
-      '</div>'+
-      yycMemberIdCardHTML(m,'member')+
-      '<div class="portal-action-row"><div><b>Member tools</b><span>Use the actions below to stay connected with YYC.</span></div><div class="form-actions member-card-actions">'+
-        '<button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button>'+
-        '<button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button>'+
-        '<button class="btn outline" id="memberSubmitGallery">SUBMIT PHOTO</button>'+
-        (!m.__adminView?'<button class="btn danger-outline" id="memberLogout">LOGOUT</button>':'')+
-      '</div></div>'+
-      '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
-      '<div class="portal-note"><span>✓</span><p>Your role number, approval status and digital card remain controlled by YYC administration.</p></div>'+
-    '</div>'
-  );
-
-  (function(){
-    var qrEl=document.querySelector('[id^="yycQr-"][id$="-member"]');
-    if(!qrEl || !m.role_number) return;
-    loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
-      if(!window.QRCode) return;
-      qrEl.innerHTML=''; new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-    }).catch(function(){});
-  })();
-
-
-  if(m.__adminView){
-    $('#memberBackAdmin').addEventListener('click',function(){adminPanel(m.__adminTab||'members');});
-  }else{
-    $('#memberLogout').addEventListener('click',async function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      try{await rpc('member_logout',{p_token:memberToken});}catch(err){}
-      localStorage.removeItem(MEMBER_TOKEN_KEY);
-      memberToken='';
-      closeModal();
-      toast('Member logged out');
-    });
-  }
-
-  $('#downloadCard').addEventListener('click',async function(){
-    try{
-      await downloadYYCIdCard($('#yycDigitalCard'),m.role_number||'yyc-member-card');
-    }catch(e){window.print();}
-  });
-
-  $('#memberSubmitUpdate').addEventListener('click',function(){submitUpdate(true);});
-  $('#memberSubmitGallery').addEventListener('click',function(){submitGallery(true);});
-}
-
-function downloadYYCIdCard(cardEl,filename){
-  return Promise.all([
-    loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'),
-    loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js')
-  ]).then(function(){
-    if(!window.html2canvas) throw new Error('Card export library unavailable');
-    if(!window.QRCode) throw new Error('QR library unavailable');
-
-    var dashboard=cardEl.closest('.premium-member-dashboard');
-    var verifyLink=dashboard && dashboard.querySelector('.verify-url-box a');
-    var verifyUrl=verifyLink && verifyLink.href;
-    if(!verifyUrl) throw new Error('QR verification link not found');
-
-    var wasFlipped=cardEl.classList.contains('flipped');
-    /* Export always starts from the real front orientation, then restores the
-       user's current flip state after the PNG is created. */
-    cardEl.classList.remove('flipped');
-
-    var frontSource=cardEl.querySelector('.yyc-card-front');
-    var backSource=cardEl.querySelector('.yyc-card-back');
-    var liveQr=frontSource && frontSource.querySelector('.yyc-live-qr');
-    if(!frontSource || !backSource || !liveQr){
-      if(wasFlipped) cardEl.classList.add('flipped');
-      throw new Error('ID card layout is incomplete');
-    }
-
-    var cardRect=cardEl.getBoundingClientRect();
-    var w=Math.max(1,Math.round(cardRect.width));
-    var h=Math.max(1,Math.round(cardRect.height));
-    var scale=2;
-    var frontRect=frontSource.getBoundingClientRect();
-    var qrRect=liveQr.getBoundingClientRect();
-
-    /* Create a fresh QR from the exact verification URL. This is intentionally
-       independent from the card's live canvas, so html2canvas/cloning cannot
-       drop the QR drawing buffer. */
-    var qrHost=document.createElement('div');
-    qrHost.style.position='fixed';
-    qrHost.style.left='-10000px';
-    qrHost.style.top='0';
-    qrHost.style.width='116px';
-    qrHost.style.height='116px';
-    qrHost.style.background='#fff';
-    qrHost.style.padding='0';
-    qrHost.style.margin='0';
-    qrHost.style.display='block';
-    document.body.appendChild(qrHost);
-    new QRCode(qrHost,{
-      text:verifyUrl,
-      width:116,
-      height:116,
-      colorDark:'#071015',
-      colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.H
-    });
-
-    function waitForQrCanvas(tries){
-      return new Promise(function(resolve){
-        function check(){
-          var c=qrHost.querySelector('canvas');
-          if(c && c.width>0 && c.height>0) return resolve(c);
-          if(tries<=0) return resolve(null);
-          tries--;
-          setTimeout(check,100);
-        }
-        check();
-      });
-    }
-
-    function makeFace(source){
-      var face=source.cloneNode(true);
-      face.removeAttribute('id');
-      face.classList.remove('flipped');
-      face.style.position='fixed';
-      face.style.left='-20000px';
-      face.style.top='0';
-      face.style.width=w+'px';
-      face.style.height=h+'px';
-      face.style.minHeight='0';
-      face.style.aspectRatio='auto';
-      face.style.transform='none';
-      face.style.inset='auto';
-      face.style.backfaceVisibility='visible';
-      face.style.webkitBackfaceVisibility='visible';
-      face.style.margin='0';
-      face.style.flex='none';
-
-      var qr=face.querySelector('.yyc-live-qr');
-      if(qr){
-        /* Leave an empty white QR frame in the html2canvas pass. The real QR
-           is composited afterward at the exact measured coordinates. */
-        qr.innerHTML='';
-        qr.style.background='#fff';
-      }
-      document.body.appendChild(face);
-      return face;
-    }
-
-    var front=makeFace(frontSource);
-    var back=makeFace(backSource);
-    back.style.top=(h+20)+'px';
-
-    return waitForQrCanvas(40).then(function(qrCanvas){
-      if(!qrCanvas) throw new Error('QR code could not be generated');
-
-      return Promise.all([
-        html2canvas(front,{
-          backgroundColor:null,
-          scale:scale,
-          useCORS:true,
-          logging:false,
-          allowTaint:false,
-          width:w,
-          height:h,
-          scrollX:0,
-          scrollY:0
-        }),
-        html2canvas(back,{
-          backgroundColor:null,
-          scale:scale,
-          useCORS:true,
-          logging:false,
-          allowTaint:false,
-          width:w,
-          height:h,
-          scrollX:0,
-          scrollY:0
-        })
-      ]).then(function(canvases){
-        var combined=document.createElement('canvas');
-        combined.width=w*scale;
-        combined.height=h*scale*2+20*scale;
-        var ctx=combined.getContext('2d');
-        ctx.fillStyle='#071016';
-        ctx.fillRect(0,0,combined.width,combined.height);
-
-        ctx.drawImage(canvases[0],0,0,w*scale,h*scale);
-        ctx.drawImage(canvases[1],0,h*scale+20*scale,w*scale,h*scale);
-
-        /* Place the freshly generated QR exactly where the live QR sits on
-           the front card. */
-        var x=(qrRect.left-frontRect.left)*scale;
-        var y=(qrRect.top-frontRect.top)*scale;
-        var qw=qrRect.width*scale;
-        var qh=qrRect.height*scale;
-
-        ctx.fillStyle='#fff';
-        ctx.fillRect(x,y,qw,qh);
-        ctx.imageSmoothingEnabled=false;
-        ctx.drawImage(qrCanvas,x,y,qw,qh);
-        ctx.imageSmoothingEnabled=true;
-
-        var a=document.createElement('a');
-        a.href=combined.toDataURL('image/png');
-        a.download=filename+'.png';
-        a.click();
-      });
-    }).finally(function(){
-      front.remove();
-      back.remove();
-      qrHost.remove();
-      if(wasFlipped) cardEl.classList.add('flipped');
-    });
-  });
-}
-function submitUpdate(auth){
-  if(auth===true && !memberToken){memberLogin();return;}
-  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit an Update</h2><p class="modal-sub">Your submission will remain hidden until an admin approves it.</p><form id="submitUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="suTitle" required></div><div class="field"><label>Date</label><input id="suDate" type="date" value="'+today()+'"></div><div class="field full"><label>Message</label><textarea id="suBody" required></textarea></div></div><div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
-  $('#submitUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('member_submit_update',{p_token:memberToken,p_payload:{title:$('#suTitle').value.trim(),body:$('#suBody').value.trim(),event_date:$('#suDate').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update sent to admin approval');}catch(err){toast(err.message);}});
-}
-function submitGallery(auth){
-  if(auth===true && !memberToken){memberLogin();return;}
-  var obj={photo:'',scale:1,x:50,y:50};
-  openModal('<div class="modal-kicker">MEMBER SUBMISSION</div><h2 class="modal-title">Submit Gallery Photo</h2><p class="modal-sub">Admin approval is required before publishing.</p><form id="submitGalleryForm"><div class="field"><label>Caption</label><input id="sgTitle" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="sgFile" type="file" accept="image/*" required></div>'+imageEditor('galleryPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SEND FOR APPROVAL</button></div></form>');
-  wireEditor('galleryPhoto',obj,'sgFile');
-  $('#submitGalleryForm').addEventListener('submit',async function(e){e.preventDefault();if(!obj.photo){toast('Choose a photo');return;}try{var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{title:$('#sgTitle').value.trim(),src:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery item sent to admin');}catch(err){toast(err.message);}});
-}
-
 
 function leaderLogin(){
-  openModal('<div class="modal-kicker">LEADER ACCESS</div><h2 class="modal-title">Leader Login</h2><p class="modal-sub">Use the email address or phone number created for you by the YYC admin.</p><form id="leaderLoginForm"><div class="field"><label>Email or phone</label><input id="lIdent" autocomplete="username" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="lPass" type="password" autocomplete="current-password" required></div><div class="form-actions"><button class="btn gold">LOGIN AS LEADER <span>→</span></button></div></form>');
+  openModal(
+    '<div class="access-login-screen leader-access-screen">'+
+      '<div class="access-login-hero"><div class="access-login-icon">♛</div><div><span class="access-login-kicker">YYC LEADERSHIP PORTAL</span><h2 class="access-login-title">Leadership access.</h2><p class="access-login-sub">Use the email or phone number created for you by YYC administration.</p></div><span class="access-login-badge leader">LEADER</span></div>'+
+      '<form id="leaderLoginForm" class="access-login-form" novalidate>'+
+        '<div class="access-form-field"><label for="lIdent">Email or phone</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="lIdent" type="text" autocomplete="username" inputmode="email" placeholder="Enter email or phone" required></div></div>'+
+        '<div class="access-form-field"><label for="lPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="lPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
+        '<div class="access-login-meta"><span>♛ Read-only leadership space</span><span>Protected access</span></div>'+
+        '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN AS LEADER <span>→</span></button></div>'+
+      '</form>'+
+      '<div class="access-login-footer">Leadership accounts are created and managed by YYC administration.</div>'+
+    '</div>'
+  );
+  yycEnhanceLogin('leaderLoginForm','lPass');
   $('#leaderLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    var form=this, btn=form.querySelector('button[type="submit"]');
     try{
       var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
-      leaderToken=r.token;
-      localStorage.setItem(LEADER_TOKEN_KEY,leaderToken);
-      closeModal();
-      leaderDashboard(r.leader);
-    }catch(err){toast(err.message);}
-  });
-}
-function leaderDashboard(leaderArg){
-  if(!leaderArg){
-    if(!leaderToken){leaderLogin();return;}
-    rpc('leader_me',{p_token:leaderToken}).then(function(r){
-      if(!r.ok){localStorage.removeItem(LEADER_TOKEN_KEY);leaderToken='';leaderLogin();return;}
-      leaderDashboard(r.leader);
-    }).catch(function(){leaderLogin();});
-    return;
-  }
-  var l=leaderArg;
-  var verifyUrl=location.origin+location.pathname+'?verify='+encodeURIComponent(l.role_number||'');
-  var name=esc(l.name||'Leader');
-
-  openModal(
-    '<div class="leader-dashboard premium-member-dashboard">'+
-      '<div class="portal-ribbon leader-portal-ribbon"><span class="portal-icon">♛</span><div><b>LEADERSHIP PORTAL</b><small>ACCESS LEVEL · LEADER · READ ONLY</small></div><span class="portal-secure">PROTECTED</span></div>'+
-      '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Official leadership identity, verification and protected team information.</p></div>'+
-        (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<span class="portal-session-state">SESSION ACTIVE</span>')+
-      '</div>'+
-      '<div class="portal-summary-grid">'+
-        '<div class="portal-summary-card"><span>LEADER</span><b>'+name+'</b><small>'+esc(l.role||l.position||'LEADER')+'</small></div>'+
-        '<div class="portal-summary-card"><span>UNIQUE ID</span><b>'+esc(l.role_number||'PENDING')+'</b><small>Official leadership record</small></div>'+
-        '<div class="portal-summary-card"><span>ACCESS</span><b class="portal-status is-approved">READ ONLY</b><small>Editing disabled</small></div>'+
-      '</div>'+
-      yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
-      '<div class="portal-action-row"><div><b>Leadership tools</b><span>Official card and verification access for YYC leaders.</span></div><div class="form-actions member-card-actions">'+
-      '<button class="btn gold" id="downloadLeaderCard">'+(l.__adminView?'DOWNLOAD ID CARD':'DOWNLOAD LEADER ID')+'</button>'+
-      (!l.__adminView?'<button class="btn danger-outline" id="leaderLogout">LOGOUT</button>':'')+
-      '</div></div>'+
-      '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
-      '<div class="portal-note leader-portal-note"><span>✓</span><p>Leader accounts are read-only. Role, access and official record changes are controlled by YYC administration.</p></div>'+
-    '</div>'
-  );
-
-  (function(){
-    var qrEl=document.querySelector('[id^="yycQr-"][id$="-leader"]');
-    if(!qrEl || !l.role_number) return;
-    loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js').then(function(){
-      if(!window.QRCode) return;
-      qrEl.innerHTML=''; new QRCode(qrEl,{text:verifyUrl,width:116,height:116,colorDark:'#071015',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-    }).catch(function(){});
-  })();
-
-
-  if(l.__adminView){
-    $('#leaderBackAdmin').addEventListener('click',function(){adminPanel(l.__adminTab||'leaders');});
-  }else{
-    $('#leaderLogout').addEventListener('click',async function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      try{await rpc('leader_logout',{p_token:leaderToken});}catch(err){}
-      localStorage.removeItem(LEADER_TOKEN_KEY);
-      leaderToken='';
-      closeModal();
-      toast('Leader logged out');
-    });
-  }
-
-  $('#downloadLeaderCard').addEventListener('click',async function(){
-    try{
-      await downloadYYCIdCard($('#yycLeaderCard'),l.role_number||'yyc-leader-card');
-    }catch(e){window.print();}
+      leaderToken=r.token; localStorage.setItem(LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
+    }catch(err){
+      if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
+      toast(err.message);
+    }
   });
 }
 
 function adminLogin(){
-  openModal('<div class="modal-kicker">PRIVATE MANAGEMENT</div><h2 class="modal-title">YYC Admin Access</h2><p class="modal-sub">Secure club management dashboard.</p><form id="adminLoginForm"><div class="field"><label>Admin ID</label><input id="aUser" autocomplete="username" required></div><div class="field" style="margin-top:12px"><label>Password</label><input id="aPass" type="password" autocomplete="current-password" required></div><div class="form-actions"><button class="btn gold">ENTER ADMIN</button></div></form>');
-  $('#adminLoginForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});if(!r.ok)throw new Error(r.error||'Invalid credentials');adminToken=r.token;sessionStorage.setItem(ADMIN_TOKEN_KEY,adminToken);closeModal();adminPanel();}catch(err){toast(err.message);}});
+  openModal(
+    '<div class="access-login-screen admin-access-screen">'+
+      '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC PRIVATE CONTROL</span><h2 class="access-login-title">Admin sign in.</h2><p class="access-login-sub">Enter the administrator credentials to access the complete YYC management system.</p></div><span class="access-login-badge admin">PRIVATE</span></div>'+
+      '<form id="adminLoginForm" class="access-login-form" novalidate>'+
+        '<div class="access-form-field"><label for="aUser">Admin ID</label><div class="access-input-wrap"><span class="access-input-icon">◉</span><input id="aUser" type="text" autocomplete="username" placeholder="Enter admin ID" required></div></div>'+
+        '<div class="access-form-field"><label for="aPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="aPass" type="password" autocomplete="current-password" placeholder="Enter admin password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
+        '<div class="access-login-meta"><span>⌑ Private administrator access</span><span>Session protected</span></div>'+
+        '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">ENTER ADMIN <span>→</span></button></div>'+
+      '</form>'+
+      '<div class="access-login-footer">Administrator credentials are private. Do not share them with other users.</div>'+
+    '</div>'
+  );
+  yycEnhanceLogin('adminLoginForm','aPass');
+  $('#adminLoginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var form=this, btn=form.querySelector('button[type="submit"]');
+    try{
+      var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
+      if(!r.ok) throw new Error(r.error||'Invalid credentials');
+      adminToken=r.token; sessionStorage.setItem(ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
+    }catch(err){
+      if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
+      toast(err.message);
+    }
+  });
 }
-async function getAdmin(){
+
+function getAdmin(force){
   if(!adminToken){adminLogin();return null;}
-  try{adminData=await rpc('admin_dashboard',{p_token:adminToken});if(!adminData.ok){sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';toast('Admin session expired');adminLogin();return null;}return adminData;}catch(e){toast(e.message);return null;}
+  if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
+  return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
+    if(!d || d.ok===false){
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
+    }
+    adminData=d;
+    return d;
+  }).catch(function(e){toast(e.message);return null;});
 }
-function adminPanel(tab){
-  getAdmin().then(function(d){
+function adminPanel(tab,forceRefresh){
+  getAdmin(!!forceRefresh).then(function(d){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
@@ -784,7 +493,15 @@ function adminPanel(tab){
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
-    $$('.admin-tab').forEach(function(b){b.addEventListener('click',function(){adminPanel(this.getAttribute('data-tab'));});});
+    $('.admin-tab').forEach(function(b){
+      b.addEventListener('click',function(){
+        var selected=this.getAttribute('data-tab')||'overview';
+        $('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
+        renderAdminTab(selected,d);
+        var workspace=$('#adminWorkspace');
+        if(workspace){workspace.classList.remove('yyc-admin-tab-enter');void workspace.offsetWidth;workspace.classList.add('yyc-admin-tab-enter');}
+      });
+    });
     renderAdminTab(tab,d);
     var workspace=$('#adminWorkspace');
     if(workspace){
@@ -984,7 +701,7 @@ function renderAdminTab(tab,d){
   }
 }
 async function adminAction(name,args,msg){
-  try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel();}catch(e){toast(e.message);}
+  try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');}catch(e){toast(e.message);}
 }
 function adminMemberForm(id){
   var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
