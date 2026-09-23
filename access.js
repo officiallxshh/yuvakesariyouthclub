@@ -6,7 +6,7 @@
  * It owns the three primary login buttons so they always open and submit.
  */
 (function(){
-  var URL='https://vrllozfzheikjbhxvpkx2.supabase.co';
+  var URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var AUTH_URL=URL+'/functions/v1/yyc-auth';
   var modal, contentBox;
