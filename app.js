@@ -700,10 +700,10 @@ function adminPanel(tab,forceRefresh){
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
-    $('.admin-tab').forEach(function(b){
+    $$$('.admin-tab').forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
-        $('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
+        $$$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
         renderAdminTab(selected,d);
         var workspace=$('#adminWorkspace');
         if(workspace){workspace.classList.remove('yyc-admin-tab-enter');void workspace.offsetWidth;workspace.classList.add('yyc-admin-tab-enter');}
@@ -753,12 +753,12 @@ function renderAdminTab(tab,d){
     var members=d.members||[];
     a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Overview</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
-    $('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
+    $$('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
+    $$('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
     $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
     $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
-    $('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
-    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
+    $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
+    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
     return;
   }
