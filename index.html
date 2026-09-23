@@ -160,7 +160,7 @@
 <div class="modal" id="modal" aria-hidden="true"><div class="modal-backdrop" data-close></div><section class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button type="button" class="modal-close" data-modal-close-only aria-label="Close">×</button><div id="modalContent"></div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="app.js?v=20260923-02" defer></script>
+<script src="app.js?v=20260923-03" defer></script>
 <script>
 function initInertialScroll(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -374,6 +374,52 @@ initInertialScroll();
 
   initScrollReveal();
   initLiveCounters();
+})();
+/* YYC emergency interaction bridge:
+   essential controls remain clickable even if the deferred app script finishes late. */
+(function(){
+  var routes={
+    memberLoginBtn:'memberLogin',
+    memberLoginMobile:'memberLogin',
+    leaderLoginBtn:'leaderLogin',
+    leaderLoginMobile:'leaderLogin',
+    adminOpenBtn:'adminLogin',
+    adminOpenMobile:'adminLogin',
+    memberRegisterBtn:'memberRegister',
+    footerAdminBtn:'adminLogin',
+    submitUpdateBtn:'submitUpdate',
+    submitGalleryBtn:'submitGallery'
+  };
+  function invoke(id){
+    var name=routes[id];
+    if(!name) return false;
+    if(window.YYC && typeof window.YYC[name]==='function'){
+      window.YYC[name](false);
+      return true;
+    }
+    var src='app.js?v=20260923-03';
+    if(window.__yycAppReloading) return false;
+    window.__yycAppReloading=true;
+    var script=document.createElement('script');
+    script.src=src;
+    script.defer=true;
+    script.onload=function(){
+      window.__yycAppReloading=false;
+      if(window.YYC && typeof window.YYC[name]==='function') window.YYC[name](false);
+    };
+    script.onerror=function(){window.__yycAppReloading=false;};
+    document.head.appendChild(script);
+    return true;
+  }
+  document.addEventListener('click',function(e){
+    var el=e.target && e.target.closest ? e.target.closest('button[id]') : null;
+    if(!el) return;
+    if(!routes[el.id]) return;
+    if(window.__yycAppCoreBound) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    invoke(el.id);
+  },true);
 })();
 </script>
 </body>
