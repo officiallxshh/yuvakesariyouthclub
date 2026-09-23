@@ -579,7 +579,19 @@ function yycExportFace(sourceFace,width){
 async function downloadYYCDigitalCard(data,kind,button){
   data=data||{};
   var verify=yycVerifyUrl(data.role_number||'PENDING');
-  var wrap=button && button.closest ? button.closest('.yyc-digital-card-wrap') : document.querySelector('.yyc-digital-card-wrap');
+  var wrap=null;
+  if(button && button.closest){
+    wrap=button.closest('.yyc-digital-card-wrap');
+    if(!wrap){
+      var portal=button.closest('.premium-member-dashboard');
+      if(portal) wrap=portal.querySelector('.yyc-digital-card-wrap');
+      if(!wrap){
+        var adminWorkspace=button.closest('.admin-workspace');
+        if(adminWorkspace) wrap=adminWorkspace.querySelector('.yyc-digital-card-wrap');
+      }
+    }
+  }
+  if(!wrap) wrap=document.querySelector('.yyc-digital-card-wrap');
   if(!wrap) throw new Error('ID card not found.');
   var card=wrap.querySelector('.yyc-digital-card');
   var front=card&&card.querySelector('.yyc-card-front');
@@ -677,6 +689,7 @@ function downloadAdminCard(data,kind){
   document.body.appendChild(holder);
   var btn=document.createElement('button');
   btn.type='button';
+  holder.appendChild(btn);
   try{
     var card=holder.querySelector('.yyc-digital-card');
     return downloadYYCDigitalCard(data,kind,btn).catch(function(e){toast(e.message);}).finally(function(){holder.remove();});
