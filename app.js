@@ -107,7 +107,7 @@ function fmtDate(v){
 }
 async function rpc(name,args){
   var payload=args || {};
-  var endpoint=YYC_CONFIG.supabaseUrl.replace(/\\/$/,'')+'/rest/v1/rpc/'+encodeURIComponent(name);
+  var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/rest/v1/rpc/'+encodeURIComponent(name);
   var controller=window.AbortController?new AbortController():null;
   var timer=window.setTimeout(function(){if(controller)controller.abort();},15000);
   try{
