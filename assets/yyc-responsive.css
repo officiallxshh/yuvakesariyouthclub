@@ -804,3 +804,246 @@ body.yyc-scroll-ready .section .glimpse-grid .reveal{
     transform:none!important;
   }
 }
+
+/* ===== FAST / AESTHETIC ACCESS LOGIN UI ===== */
+.access-login-screen{
+  width:min(620px,100%);
+  margin:0 auto;
+  padding:2px;
+}
+.access-login-hero{
+  position:relative;
+  display:grid;
+  grid-template-columns:54px minmax(0,1fr) auto;
+  gap:14px;
+  align-items:center;
+  margin-bottom:20px;
+  padding:17px;
+  border:1px solid rgba(237,193,105,.13);
+  border-radius:20px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 2% 50%,rgba(237,193,105,.10),transparent 26%),
+    linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  box-shadow:0 18px 45px rgba(0,0,0,.15);
+}
+.access-login-hero::after{
+  content:"";
+  position:absolute;
+  left:-35%;
+  top:0;
+  width:28%;
+  height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+  transform:skewX(-20deg);
+  animation:yycAccessSweep 6s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes yycAccessSweep{
+  0%,64%{left:-35%;opacity:0}
+  70%{opacity:1}
+  84%,100%{left:120%;opacity:0}
+}
+.access-login-icon{
+  width:54px;height:54px;
+  display:grid;place-items:center;
+  border-radius:16px;
+  border:1px solid rgba(237,193,105,.24);
+  background:radial-gradient(circle,rgba(237,193,105,.13),rgba(237,193,105,.035));
+  color:#ebcc88;
+  font:900 19px/1 "Space Grotesk",sans-serif;
+  box-shadow:0 0 28px rgba(237,193,105,.08);
+}
+.access-login-kicker{
+  display:block;
+  color:#c9ad73;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.20em;
+}
+.access-login-title{
+  margin:7px 0 4px;
+  color:#f1dfbd;
+  font:600 clamp(30px,4.8vw,48px)/.95 "Cormorant Garamond",serif;
+}
+.access-login-sub{
+  margin:0;
+  max-width:470px;
+  color:#8d9795;
+  font:500 10px/1.55 "Space Grotesk",sans-serif;
+}
+.access-login-badge{
+  align-self:start;
+  padding:7px 9px;
+  border:1px solid rgba(91,205,145,.16);
+  border-radius:999px;
+  color:#8fdab1;
+  background:rgba(91,205,145,.035);
+  font:800 6px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.access-login-badge.leader{
+  color:#e5c785;
+  border-color:rgba(229,199,133,.18);
+  background:rgba(229,199,133,.035);
+}
+.access-login-badge.admin{
+  color:#efd39b;
+  border-color:rgba(237,193,105,.22);
+  background:rgba(237,193,105,.05);
+}
+.access-login-form{
+  display:grid;
+  gap:13px;
+  padding:18px;
+  border:1px solid rgba(237,193,105,.10);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(255,255,255,.026),rgba(255,255,255,.009));
+}
+.access-form-field{
+  display:grid;
+  gap:7px;
+}
+.access-form-field label{
+  color:#b6a88f;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+.access-input-wrap,
+.access-password-field{
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:0 12px;
+  border:1px solid rgba(237,193,105,.11);
+  border-radius:13px;
+  background:rgba(3,8,11,.55);
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+}
+.access-input-wrap:focus-within,
+.access-password-field:focus-within{
+  border-color:rgba(237,193,105,.40);
+  background:rgba(237,193,105,.025);
+  box-shadow:0 0 0 3px rgba(237,193,105,.055),0 8px 24px rgba(0,0,0,.10);
+}
+.access-input-icon{
+  width:22px;
+  flex:0 0 22px;
+  text-align:center;
+  color:#d8bb7b;
+  opacity:.85;
+  font:900 11px/1 "Space Grotesk",sans-serif;
+}
+.access-input-wrap input,
+.access-password-field input{
+  min-width:0;
+  flex:1;
+  width:100%;
+  height:48px;
+  padding:0;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:#f2eadc;
+  box-shadow:none!important;
+  font:600 12px/1 "Space Grotesk",sans-serif;
+}
+.access-input-wrap input::placeholder,
+.access-password-field input::placeholder{color:#5f6968}
+.access-password-toggle{
+  min-height:34px!important;
+  padding:0 9px;
+  border:1px solid rgba(237,193,105,.14);
+  border-radius:9px;
+  background:rgba(237,193,105,.035);
+  color:#dcbf80;
+  font:800 6px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.11em;
+}
+.access-password-toggle:hover{
+  border-color:rgba(237,193,105,.32);
+  background:rgba(237,193,105,.07);
+}
+.access-login-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  color:#66706f;
+  font:600 7px/1.3 "Space Grotesk",sans-serif;
+}
+.access-login-actions{
+  margin-top:2px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:9px;
+}
+.access-login-actions .access-submit{
+  min-height:48px;
+}
+.access-login-actions .access-secondary{
+  min-height:48px;
+}
+.access-submit.is-loading{
+  position:relative;
+  color:transparent!important;
+  pointer-events:none;
+}
+.access-submit.is-loading::after{
+  content:"";
+  width:15px;height:15px;
+  position:absolute;
+  left:50%;top:50%;
+  margin:-7.5px 0 0 -7.5px;
+  border:2px solid rgba(8,11,13,.35);
+  border-top-color:#0a0d0f;
+  border-radius:50%;
+  animation:yycLoginSpin .7s linear infinite;
+}
+@keyframes yycLoginSpin{to{transform:rotate(360deg)}}
+.access-login-footer{
+  margin-top:12px;
+  padding:10px 2px 1px;
+  color:#646d6d;
+  text-align:center;
+  font:600 7px/1.5 "Space Grotesk",sans-serif;
+}
+.admin-access-screen .access-login-hero{
+  border-color:rgba(237,193,105,.19);
+}
+.admin-access-screen .access-login-form{
+  box-shadow:0 20px 55px rgba(0,0,0,.18);
+}
+.leader-access-screen .access-login-icon{
+  border-color:rgba(229,199,133,.24);
+  color:#e6c785;
+}
+.member-access-screen .access-login-icon{
+  border-color:rgba(91,205,145,.20);
+  color:#88d6a8;
+}
+
+/* Small-screen access panels stay compact and fully tappable. */
+@media(max-width:600px){
+  .access-login-hero{
+    grid-template-columns:44px minmax(0,1fr);
+    gap:11px;
+    padding:13px;
+  }
+  .access-login-icon{width:44px;height:44px;border-radius:13px;font-size:16px}
+  .access-login-badge{grid-column:2;justify-self:start;margin-top:-3px}
+  .access-login-title{font-size:34px}
+  .access-login-sub{font-size:9px}
+  .access-login-form{padding:13px}
+  .access-login-actions{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+  .access-login-title{font-size:29px}
+  .access-login-sub{font-size:8px}
+  .access-login-form{gap:11px}
+  .access-input-wrap,.access-password-field{min-height:50px}
+}
+@media(prefers-reduced-motion:reduce){
+  .access-login-hero::after,.access-submit.is-loading::after{animation:none!important}
+}
