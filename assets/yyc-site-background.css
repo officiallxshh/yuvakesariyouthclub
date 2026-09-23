@@ -1,0 +1,132 @@
+/* YYC SITE ATMOSPHERE — continuous cinematic background */
+:root{
+  --yyc-bg-overlay-top:rgba(5,10,13,.56);
+  --yyc-bg-overlay-bottom:rgba(3,7,10,.86);
+}
+
+/* One continuous Western Ghats / Tulunad environment behind the entire site. */
+html{
+  background:#05080b;
+}
+
+body{
+  background:
+    radial-gradient(circle at 52% 16%,rgba(225,177,77,.055),transparent 24%),
+    linear-gradient(180deg,var(--yyc-bg-overlay-top) 0%,rgba(4,9,12,.68) 42%,var(--yyc-bg-overlay-bottom) 100%),
+    url('./hero-tulunad.webp') center top / cover fixed no-repeat,
+    #05080b;
+  background-attachment:fixed;
+  background-size:auto,auto,cover,auto;
+  background-position:center,center,center top,center;
+}
+
+/* Keep the hero's original treatment; the page background takes over after it. */
+.hero{
+  background:transparent;
+}
+
+/* Semi-transparent editorial glass sections let the same landscape breathe through. */
+.section{
+  background:
+    radial-gradient(circle at 10% 10%,rgba(221,174,84,.075),transparent 24%),
+    radial-gradient(circle at 90% 78%,rgba(38,83,72,.065),transparent 28%),
+    linear-gradient(180deg,rgba(7,16,23,.74) 0%,rgba(6,11,15,.78) 55%,rgba(5,8,11,.84) 100%);
+  backdrop-filter:blur(1.5px);
+  -webkit-backdrop-filter:blur(1.5px);
+}
+
+/* Give the culture section a little more of the landscape texture. */
+.glimpse-section{
+  background:
+    radial-gradient(circle at 78% 20%,rgba(176,127,47,.11),transparent 24%),
+    radial-gradient(circle at 18% 74%,rgba(31,82,72,.09),transparent 28%),
+    linear-gradient(180deg,rgba(8,17,23,.68),rgba(6,11,15,.77) 56%,rgba(5,8,11,.84));
+}
+
+/* Leaders: darker for photo contrast, but still translucent. */
+#leaders{
+  background:
+    radial-gradient(circle at 82% 20%,rgba(221,174,84,.065),transparent 25%),
+    linear-gradient(180deg,rgba(6,12,16,.77),rgba(4,8,11,.84));
+}
+
+/* Live board: slightly darker, with a warm glint around the content. */
+.dark-band{
+  background:
+    radial-gradient(circle at 76% 14%,rgba(219,171,81,.075),transparent 26%),
+    linear-gradient(180deg,rgba(6,12,17,.78),rgba(4,8,11,.86));
+}
+
+/* Events: keep enough image visible to avoid the “empty black block” feeling. */
+.events-section{
+  background:
+    radial-gradient(circle at 12% 18%,rgba(221,174,84,.085),transparent 26%),
+    radial-gradient(circle at 88% 78%,rgba(39,82,72,.075),transparent 28%),
+    linear-gradient(180deg,rgba(7,16,23,.73) 0%,rgba(6,11,15,.79) 55%,rgba(5,8,11,.85) 100%);
+}
+
+/* Gallery: dark enough for photos, translucent enough for continuity. */
+.type-gallery{
+  background:
+    radial-gradient(circle at 18% 18%,rgba(219,171,81,.06),transparent 24%),
+    radial-gradient(circle at 86% 76%,rgba(39,82,72,.06),transparent 26%),
+    linear-gradient(180deg,rgba(6,12,16,.74),rgba(4,8,11,.84));
+}
+
+/* Join section gets a subtle warm atmosphere without becoming a flat panel. */
+.join-section{
+  background:
+    radial-gradient(circle at 85% 36%,rgba(221,175,84,.105),transparent 27%),
+    linear-gradient(180deg,rgba(7,14,19,.74),rgba(4,8,11,.86));
+}
+
+/* The join card remains readable while the environment stays visible around it. */
+.join-card{
+  background:
+    radial-gradient(circle at 90% 20%,rgba(221,175,84,.10),transparent 25%),
+    linear-gradient(110deg,rgba(10,16,20,.82),rgba(11,18,24,.76));
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+}
+
+/* Keep content surfaces themselves solid enough for readability. */
+.leader-card,
+.update-card,
+.gallery-card,
+.event-card{
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+
+/* Footer should feel like the same page, not a separate black document. */
+.footer{
+  background:
+    linear-gradient(180deg,rgba(4,7,10,.88),rgba(2,4,6,.94));
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+
+/* A soft cinematic veil follows the viewport and keeps contrast consistent. */
+body:after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:49;
+  background:
+    radial-gradient(circle at 50% 42%,transparent 0%,transparent 42%,rgba(0,0,0,.18) 100%),
+    linear-gradient(180deg,rgba(2,5,7,.05),rgba(2,5,7,.12));
+}
+
+/* Avoid fixed-background cost on small/touch devices while preserving the look. */
+@media(max-width:820px){
+  body{
+    background-attachment:scroll;
+    background-position:center center;
+  }
+}
+
+/* Respect reduced-motion preferences. */
+@media(prefers-reduced-motion:reduce){
+  body{background-attachment:scroll}
+}
