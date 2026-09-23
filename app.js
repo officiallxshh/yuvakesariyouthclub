@@ -115,7 +115,6 @@ async function rpc(name,args){
       method:'POST',
       headers:{
         'apikey':YYC_CONFIG.supabaseKey,
-        'Authorization':'Bearer '+YYC_CONFIG.supabaseKey,
         'Content-Type':'application/json',
         'Accept':'application/json'
       },
