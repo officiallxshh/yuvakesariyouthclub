@@ -169,7 +169,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="app.js?v=20260923-09" defer></script>
+<script src="app.js?v=20260923-10" defer></script>
 <script>
 function initInertialScroll(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -416,7 +416,7 @@ initInertialScroll();
       }
       if(ready()) return;
 
-      var existing=document.querySelector('script[src*="app.js?v=20260923-09"],script[src*="app.js?v=20260923-08"],script[src*="app.js?v=20260923-07"]');
+      var existing=document.querySelector('script[src*="app.js?v=20260923-10"],script[src*="app.js?v=20260923-08"],script[src*="app.js?v=20260923-07"]');
       if(existing){
         var done=false;
         var finish=function(){
@@ -432,7 +432,7 @@ initInertialScroll();
       }
 
       var sc=document.createElement('script');
-      sc.src='app.js?v=20260923-09';
+      sc.src='app.js?v=20260923-10';
       sc.async=true;
       sc.onload=function(){window.setTimeout(function(){
         if(ready()) resolve();
