@@ -1202,3 +1202,72 @@ body:before,body:after,.hero-grid-line,.hero-glow,.hero-vignette,.section:after,
     font-size:9px;
   }
 }
+
+
+/* ===== ADMIN CARD PREVIEW + QR ===== */
+.portal-admin-backbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 12px;
+  padding:9px 11px;
+  border:1px solid rgba(237,193,105,.12);
+  border-radius:13px;
+  background:rgba(255,255,255,.018);
+}
+.portal-admin-backbar span{
+  color:#737c79;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.portal-admin-backbar .mini-btn{
+  min-height:38px;
+}
+.yyc-qr-link{
+  display:block;
+  width:100%;
+  height:100%;
+  color:inherit;
+  text-decoration:none;
+}
+.yyc-live-qr{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+}
+.yyc-live-qr img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#fff;
+  border-radius:5px;
+}
+.yyc-qr-fallback{
+  display:none;
+  position:absolute;
+  inset:0;
+  place-items:center;
+  text-align:center;
+  padding:8px;
+  background:#fff;
+  color:#111;
+  font:900 8px/1.2 "Space Grotesk",sans-serif;
+  letter-spacing:.08em;
+}
+.yyc-live-qr:has(img[style*="display: none"]) .yyc-qr-fallback{
+  display:grid;
+}
+@media(max-width:620px){
+  .portal-admin-backbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .portal-admin-backbar .mini-btn{
+    width:100%;
+  }
+}
