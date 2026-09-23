@@ -1096,3 +1096,109 @@ body:before,body:after,.hero-grid-line,.hero-glow,.hero-vignette,.section:after,
   background:rgba(220,189,112,.055);
 }
 .toast{z-index:99999!important}
+
+
+/* ===== ADMIN PANEL DISPLAY-FIT =====
+   Keep the Admin Control Center proportional to the active viewport:
+   wide desktop gets more room, laptops stay compact, and phones use nearly
+   the full screen without creating double-scroll traps. */
+.modal-shell:has(.admin-shell){
+  width:min(1320px,calc(100vw - 40px))!important;
+  max-width:calc(100vw - 40px)!important;
+  height:min(92vh,900px)!important;
+  max-height:92vh!important;
+  margin:4vh auto!important;
+  padding:clamp(14px,1.55vw,24px)!important;
+  border-radius:clamp(20px,2vw,28px)!important;
+}
+.modal-shell:has(.admin-shell) .admin-shell{
+  min-height:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+.modal-shell:has(.admin-shell) .admin-header{
+  flex:0 0 auto;
+  padding-top:clamp(8px,1vw,13px);
+  padding-bottom:clamp(13px,1.35vw,20px);
+}
+.modal-shell:has(.admin-shell) .admin-tabs{
+  flex:0 0 auto;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+}
+.modal-shell:has(.admin-shell) .admin-workspace{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
+  overflow:auto;
+  padding-right:clamp(2px,.5vw,6px);
+}
+.modal-shell:has(.admin-shell) .admin-session-footer{
+  flex:0 0 auto;
+}
+
+@media(min-width:1500px){
+  .modal-shell:has(.admin-shell){
+    width:min(1380px,calc(100vw - 56px))!important;
+    max-width:calc(100vw - 56px)!important;
+    height:min(90vh,920px)!important;
+    margin:5vh auto!important;
+  }
+}
+@media(min-width:981px) and (max-width:1250px){
+  .modal-shell:has(.admin-shell){
+    width:min(1160px,calc(100vw - 28px))!important;
+    max-width:calc(100vw - 28px)!important;
+    height:min(91vh,860px)!important;
+    margin:4.5vh auto!important;
+    padding:16px!important;
+  }
+  .modal-shell:has(.admin-shell) .admin-header .modal-title{
+    font-size:clamp(30px,3vw,38px)!important;
+  }
+  .modal-shell:has(.admin-shell) .admin-tabs{
+    gap:6px;
+  }
+  .modal-shell:has(.admin-shell) .admin-tab{
+    padding:8px 10px;
+    font-size:9px;
+  }
+}
+@media(max-width:980px){
+  .modal-shell:has(.admin-shell){
+    width:calc(100vw - 20px)!important;
+    max-width:calc(100vw - 20px)!important;
+    height:calc(100svh - 20px)!important;
+    max-height:calc(100svh - 20px)!important;
+    margin:10px auto!important;
+    padding:14px!important;
+  }
+}
+@media(max-width:620px){
+  .modal-shell:has(.admin-shell){
+    width:calc(100vw - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+    height:calc(100svh - 12px)!important;
+    max-height:calc(100svh - 12px)!important;
+    margin:6px auto!important;
+    padding:11px!important;
+    border-radius:18px!important;
+  }
+  .modal-shell:has(.admin-shell) .admin-header{
+    padding-right:58px!important;
+  }
+  .modal-shell:has(.admin-shell) .admin-tabs{
+    margin-left:0;
+    margin-right:0;
+    padding-top:10px;
+    padding-bottom:10px;
+  }
+  .modal-shell:has(.admin-shell) .admin-tab{
+    min-height:40px;
+    padding:8px 10px;
+    font-size:9px;
+  }
+}
