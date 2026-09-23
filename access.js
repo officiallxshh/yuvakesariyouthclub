@@ -8,7 +8,7 @@
 (function(){
   var URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
-  var AUTH_URL=URL+'/functions/v1/yyc-auth';
+  var AUTH_URL=URL+'/functions/v1/yyc-login';
   var modal, contentBox;
 
   function el(id){ return document.getElementById(id); }
