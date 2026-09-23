@@ -515,7 +515,7 @@ function yycDigitalCard(data,kind){
               '<div class="yyc-id-field"><span>UNIQUE ID</span><b>'+esc(roleNumber)+'</b></div>'+
               '<div class="yyc-id-field"><span>CLUB</span><b>YUVAKESARI YOUTH CLUB</b></div>'+
             '</div>'+
-            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><a class="yyc-qr-link" href="'+esc(verify)+'" target="_blank" rel="noopener" aria-label="Open YYC verification page"><div class="yyc-live-qr"><img src="'+qr+'" alt="YYC verification QR" loading="eager" decoding="async" referrerpolicy="no-referrer"><span class="yyc-qr-fallback">OPEN VERIFY</span></div></a></div><span>SCAN TO VERIFY</span><small>Official YYC profile</small></div>'+
+            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><a class="yyc-qr-link" href="'+esc(verify)+'" target="_blank" rel="noopener" aria-label="Open YYC verification page"><div class="yyc-live-qr"><img src="'+qr+'" alt="YYC verification QR" loading="eager" decoding="async" crossorigin="anonymous" referrerpolicy="no-referrer"><span class="yyc-qr-fallback">OPEN VERIFY</span></div></a></div><span>SCAN TO VERIFY</span><small>Official YYC profile</small></div>'+
           '</div>'+
           '<div class="yyc-idcard-footer"><div><small>VALID DIGITAL ID · OFFICIAL YYC RECORD</small><span>'+esc(leader?'LEADERSHIP ACCESS':'APPROVED MEMBERSHIP')+'</span></div><div class="yyc-approved-seal active"><i>✓</i><div><b>VERIFIED</b><span>YYC DATABASE</span></div></div><div class="yyc-mini-barcode">'+yycBarcode()+'</div></div>'+
         '</div>'+
