@@ -480,6 +480,107 @@ function memberRegister(){
     }catch(err){toast(err.message);}
   });
 }
+function yycVerifyUrl(roleNumber){
+  return location.origin+location.pathname+'?verify='+encodeURIComponent(roleNumber||'');
+}
+function yycBarcode(){
+  var a=[];
+  for(var i=0;i<46;i++) a.push('<span style="height:'+(9+(i%7)*2)+'px"></span>');
+  return a.join('');
+}
+function yycDigitalCard(data,kind){
+  data=data||{};
+  var leader=kind==='leader';
+  var roleNumber=data.role_number||'PENDING';
+  var photo=data.photo_url||'assets/yyc-logo-clean.webp';
+  var name=data.name||'YYC Member';
+  var position=leader?(data.role||'LEADER'):(data.position||'MEMBER');
+  var verify=yycVerifyUrl(roleNumber);
+  var qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(verify);
+  var dob=data.dob||'—';
+  return '<div class="yyc-digital-card-wrap">'+
+    '<div class="yyc-digital-card '+(leader?'yyc-role-leader':'')+'" tabindex="0" role="button" aria-label="Flip digital '+(leader?'leader':'membership')+' card">'+
+      '<div class="yyc-card-face yyc-card-front">'+
+        '<div class="yyc-card-aurora"></div><div class="yyc-card-grid"></div>'+
+        '<div class="yyc-idcard-layout">'+
+          '<div class="yyc-idcard-head">'+
+            '<div class="yyc-id-brand"><span class="yyc-logo-orb"><img src="assets/yyc-logo-clean.webp" alt="YYC"></span><div><b>YUVAKESARI YOUTH CLUB</b><span>SUBRAHMANYA · KARNATAKA</span></div></div>'+
+            '<span class="yyc-id-type">'+(leader?'LEADER ID CARD':'MEMBER ID CARD')+'</span>'+
+          '</div>'+
+          '<div class="yyc-idcard-content">'+
+            '<div class="yyc-id-photo"><div class="yyc-photo-frame"><img src="'+esc(photo)+'" alt="'+esc(name)+'"></div></div>'+
+            '<div class="yyc-id-details">'+
+              '<div class="yyc-id-name">'+esc(name)+'</div>'+
+              '<div class="yyc-id-position">'+esc(position)+'</div>'+
+              '<div class="yyc-id-field"><span>UNIQUE ID</span><b>'+esc(roleNumber)+'</b></div>'+
+              '<div class="yyc-id-field"><span>CLUB</span><b>YUVAKESARI YOUTH CLUB</b></div>'+
+            '</div>'+
+            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><div class="yyc-live-qr"><img src="'+qr+'" alt="YYC verification QR"></div></div><span>SCAN TO VERIFY</span><small>Official YYC profile</small></div>'+
+          '</div>'+
+          '<div class="yyc-idcard-footer"><div><small>VALID DIGITAL ID · OFFICIAL YYC RECORD</small><span>'+esc(leader?'LEADERSHIP ACCESS':'APPROVED MEMBERSHIP')+'</span></div><div class="yyc-approved-seal active"><i>✓</i><div><b>VERIFIED</b><span>YYC DATABASE</span></div></div><div class="yyc-mini-barcode">'+yycBarcode()+'</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="yyc-card-face yyc-card-back">'+
+        '<div class="yyc-back-layout">'+
+          '<div class="yyc-back-brand"><img src="assets/yyc-logo-clean.webp" alt="YYC"><div><b>YUVAKESARI YOUTH CLUB</b><span>SUBRAHMANYA · KARNATAKA</span></div></div>'+
+          '<div class="yyc-back-copy"><span class="yyc-back-label">OFFICIAL DIGITAL ID</span><h3>Identity backed by the YYC record.</h3><p>This card belongs to the approved '+(leader?'YYC leader':'YYC member')+'. Scan the QR code on the front to open the official verification page.</p></div>'+
+          '<div class="yyc-back-details"><div><span>UNIQUE ID</span><b>'+esc(roleNumber)+'</b></div><div><span>POSITION</span><b>'+esc(position)+'</b></div><div><span>DATE OF BIRTH</span><b>'+esc(dob)+'</b></div><div><span>STATUS</span><b>ACTIVE</b></div></div>'+
+          '<div class="yyc-back-contact"><span>'+esc(data.email||'Email not provided')+'</span><span>'+esc(data.phone||'Phone not provided')+'</span></div>'+
+          '<div class="yyc-back-bottom"><span>धर्मो रक्षति रक्षितः 🚩</span><span>YUVAKESARI · YYC</span></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="yyc-card-hint">CLICK THE CARD TO FLIP · YOUR OFFICIAL YYC DIGITAL ID</div>'+
+  '</div>';
+}
+function yycPortalHeader(kind,data){
+  var leader=kind==='leader';
+  return '<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>'+
+    '<div class="member-dashboard-head"><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>';
+}
+function yycPortalSummary(data,kind){
+  var leader=kind==='leader';
+  var role=leader?(data.role||'LEADER'):(data.position||'MEMBER');
+  var number=data.role_number||'PENDING';
+  return '<div class="portal-summary-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">'+
+    '<div class="portal-summary-card" style="padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:15px"><small style="color:#77827f;font:800 7px/1 Inter;letter-spacing:.14em">UNIQUE ID</small><b style="display:block;margin-top:7px;color:#e9dfc6">'+esc(number)+'</b></div>'+
+    '<div class="portal-summary-card" style="padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:15px"><small style="color:#77827f;font:800 7px/1 Inter;letter-spacing:.14em">POSITION</small><b style="display:block;margin-top:7px;color:#e9dfc6">'+esc(role)+'</b></div>'+
+    '<div class="portal-summary-card" style="padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:15px"><small style="color:#77827f;font:800 7px/1 Inter;letter-spacing:.14em">STATUS</small><b class="portal-status" style="display:block;margin-top:7px;color:#8fd8b0">ACTIVE</b></div>'+
+  '</div>';
+}
+function memberDashboard(data){
+  data=data||{};
+  openModal('<div class="premium-member-dashboard">'+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
+    yycDigitalCard(data,'member')+
+    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
+    '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
+  '</div>');
+  var verify=$('#memberVerifyBtn');
+  if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
+  var logout=$('#memberLogout');
+  if(logout) logout.addEventListener('click',async function(){
+    logout.disabled=true;
+    try{if(memberToken) await rpc('member_logout',{p_token:memberToken});}catch(e){}
+    yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);memberToken='';closeModal();toast('Member logged out');
+  });
+}
+function leaderDashboard(data){
+  data=data||{};
+  openModal('<div class="premium-member-dashboard">'+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
+    yycDigitalCard(data,'leader')+
+    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
+    '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
+  '</div>');
+  var verify=$('#leaderVerifyBtn');
+  if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
+  var logout=$('#leaderLogout');
+  if(logout) logout.addEventListener('click',async function(){
+    logout.disabled=true;
+    try{if(leaderToken) await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
+    yycSafeRemove(localStorage,LEADER_TOKEN_KEY);leaderToken='';closeModal();toast('Leader logged out');
+  });
+}
+
 function memberLogin(){
   openModal(
     '<div class="access-login-screen member-access-screen">'+
