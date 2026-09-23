@@ -130,3 +130,41 @@ body:after{
 @media(prefers-reduced-motion:reduce){
   body{background-attachment:scroll}
 }
+
+/* ===== DESKTOP NAV SPACING FIX =====
+   Keep the top navigation compact and prevent “Tulunad Glimpse” from
+   wrapping and creating a visually oversized gap before Leaders. */
+@media(min-width:1441px){
+  .topbar{
+    height:76px;
+    padding:0 26px;
+  }
+  .brand{
+    min-width:300px;
+  }
+  .desktop-nav{
+    gap:2px;
+    align-items:center;
+    flex-wrap:nowrap;
+  }
+  .desktop-nav>a,
+  .desktop-nav>.nav-admin{
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+  .desktop-nav>a{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .desktop-nav>a:nth-child(2){
+    margin-right:0;
+  }
+  .desktop-nav>a:nth-child(3){
+    margin-left:0;
+  }
+  .desktop-nav .nav-admin{
+    padding-left:15px;
+    padding-right:15px;
+    margin-left:4px;
+  }
+}
