@@ -62,7 +62,19 @@ var publicData = null;
 var adminData = null;
 
 var $ = function(s){ return document.querySelector(s); };
-var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var $ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+/* Export the portal entry points immediately.
+   Function declarations are hoisted, so login buttons can use these even if a
+   non-essential startup enhancement fails later in this file. */
+window.YYC = {
+  memberLogin: function(){ return memberLogin(); },
+  memberRegister: function(){ return memberRegister(); },
+  leaderLogin: function(){ return leaderLogin(); },
+  leaderDashboard: function(data){ return leaderDashboard(data); },
+  adminLogin: function(){ return adminLogin(); },
+  adminPanel: function(tab,forceRefresh){ return adminPanel(tab,forceRefresh); }
+};
 
 /* Premium membership-card interaction: delegated so member and leader cards both flip reliably. */
 document.addEventListener('click',function(e){
