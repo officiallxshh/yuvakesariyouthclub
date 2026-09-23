@@ -533,6 +533,102 @@ function yycDigitalCard(data,kind){
     '<div class="yyc-card-hint">CLICK THE CARD TO FLIP · YOUR OFFICIAL YYC DIGITAL ID</div>'+
   '</div>';
 }
+async function yycLoadHtml2Canvas(){
+  if(window.html2canvas) return window.html2canvas;
+  if(window.__yycHtml2CanvasPromise) return window.__yycHtml2CanvasPromise;
+  window.__yycHtml2CanvasPromise=new Promise(function(resolve,reject){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.async=true;
+    s.onload=function(){window.html2canvas?resolve(window.html2canvas):reject(new Error('Download engine did not initialize.'));};
+    s.onerror=function(){reject(new Error('Could not load the ID card download engine.'));};
+    document.head.appendChild(s);
+  }).finally(function(){window.__yycHtml2CanvasPromise=null;});
+  return window.__yycHtml2CanvasPromise;
+}
+function yycExportFace(sourceFace,width){
+  var clone=sourceFace.cloneNode(true);
+  clone.classList.remove('yyc-card-front','yyc-card-back');
+  clone.classList.add('yyc-export-face');
+  clone.style.position='relative';
+  clone.style.inset='auto';
+  clone.style.transform='none';
+  clone.style.backfaceVisibility='visible';
+  clone.style.webkitBackfaceVisibility='visible';
+  clone.style.width=width+'px';
+  clone.style.height=Math.round(width/1.72)+'px';
+  clone.style.minHeight='0';
+  clone.style.maxHeight='none';
+  clone.style.overflow='hidden';
+  clone.style.boxSizing='border-box';
+  return clone;
+}
+async function downloadYYCDigitalCard(data,kind,button){
+  data=data||{};
+  var wrap=button && button.closest ? button.closest('.yyc-digital-card-wrap') : document.querySelector('.yyc-digital-card-wrap');
+  if(!wrap) throw new Error('ID card not found.');
+  var card=wrap.querySelector('.yyc-digital-card');
+  var front=card&&card.querySelector('.yyc-card-front');
+  var back=card&&card.querySelector('.yyc-card-back');
+  if(!front||!back) throw new Error('ID card faces are not ready.');
+  if(button){button.disabled=true;button.dataset.prevText=button.textContent;button.textContent='PREPARING…';}
+  try{
+    var html2canvas=await yycLoadHtml2Canvas();
+    var width=900, gap=28, padding=24;
+    var faceHeight=Math.round(width/1.72);
+    var stage=document.createElement('div');
+    stage.style.position='fixed';
+    stage.style.left='-20000px';
+    stage.style.top='0';
+    stage.style.width=(width+padding*2)+'px';
+    stage.style.padding=padding+'px';
+    stage.style.boxSizing='border-box';
+    stage.style.background='#05090c';
+    stage.style.zIndex='-1';
+    stage.style.pointerEvents='none';
+    var frontClone=yycExportFace(front,width);
+    var backClone=yycExportFace(back,width);
+    stage.appendChild(frontClone);
+    var spacer=document.createElement('div');
+    spacer.style.height=gap+'px';
+    stage.appendChild(spacer);
+    stage.appendChild(backClone);
+    document.body.appendChild(stage);
+
+    var canvases=[];
+    try{
+      canvases.push(await html2canvas(frontClone,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000}));
+      canvases.push(await html2canvas(backClone,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000}));
+    }finally{
+      stage.remove();
+    }
+
+    var out=document.createElement('canvas');
+    var scale=2, outW=(width+padding*2)*scale, outH=(faceHeight*2+gap+padding*2)*scale;
+    out.width=Math.round(outW); out.height=Math.round(outH);
+    var ctx=out.getContext('2d');
+    ctx.fillStyle='#05090c';
+    ctx.fillRect(0,0,out.width,out.height);
+    ctx.drawImage(canvases[0],padding*scale,padding*scale,width*scale,faceHeight*scale);
+    ctx.drawImage(canvases[1],padding*scale,(padding+faceHeight+gap)*scale,width*scale,faceHeight*scale);
+    var filename='YYC-'+(kind==='leader'?'Leader':'Member')+'-ID-'+String(data.role_number||'Card').replace(/[^a-z0-9_-]+/gi,'-')+'.png';
+    out.toBlob(function(blob){
+      if(!blob) throw new Error('Could not create the ID card image.');
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    },'image/png');
+  }catch(e){
+    throw e;
+  }finally{
+    if(button){button.disabled=false;button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD';}
+  }
+}
 function yycPortalHeader(kind,data){
   var leader=kind==='leader';
   return '<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>'+
@@ -552,7 +648,7 @@ function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
     yycDigitalCard(data,'member')+
-    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
+    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn outline" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'members');});
@@ -569,7 +665,7 @@ function leaderDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
     yycDigitalCard(data,'leader')+
-    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
+    '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn outline" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
