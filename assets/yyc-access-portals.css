@@ -178,3 +178,35 @@
   .portal-action-row .btn{width:100%}
   .admin-portal-ribbon+.admin-header .modal-title{font-size:29px}
 }
+
+/* ===== MODAL X vs LOGOUT — NO ACCIDENTAL LOGOUT =====
+   Keep every explicit Logout control physically separated from the modal X.
+   The X only closes the current panel; session state is changed by Logout. */
+.modal-shell:has(.admin-shell) .admin-header{
+  padding-right:78px!important;
+}
+.modal-shell:has(.admin-shell) #adminLogout{
+  margin-right:46px!important;
+  position:relative;
+  z-index:2;
+}
+
+.member-dashboard-head,
+.leader-dashboard .member-dashboard-head{
+  padding-right:62px;
+}
+.member-dashboard-head #memberLogout,
+.member-dashboard-head #leaderLogout{
+  margin-right:46px!important;
+  position:relative;
+  z-index:2;
+}
+
+/* Make the X the dedicated close hit-target, never a logout target. */
+.modal-shell>.modal-close{
+  position:absolute!important;
+  top:12px!important;
+  right:14px!important;
+  z-index:99999!important;
+  pointer-events:auto!important;
+}
