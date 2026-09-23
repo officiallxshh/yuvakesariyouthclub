@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="styles.css?v=20260923-01">
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20260923-02">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-03">
-<link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-02">
+<link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-03">
 </head>
 <body>
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
@@ -370,35 +370,10 @@ initInertialScroll();
     }
   }
 
-  /* Subtle mouse parallax for desktop only; phones/tablets stay stable. */
-  function initHeroParallax(){
-    if(reduceMotion || !finePointer || window.innerWidth<981) return;
-    var hero=document.getElementById('home');
-    var photo=hero && hero.querySelector('.hero-photo');
-    if(!hero || !photo) return;
-
-    var raf=0,px=0,py=0;
-    function paint(){
-      raf=0;
-      var x=(px-.5)*1.35;
-      var y=(py-.5)*.85;
-      photo.style.transform='scale(1.055) translate3d('+x.toFixed(2)+'%,'+y.toFixed(2)+'%,0)';
-    }
-    hero.addEventListener('pointermove',function(e){
-      if(e.pointerType==='touch') return;
-      var rect=hero.getBoundingClientRect();
-      px=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
-      py=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
-      if(!raf) raf=requestAnimationFrame(paint);
-    });
-    hero.addEventListener('pointerleave',function(){
-      photo.style.transform='';
-    });
-  }
+  /* Hero background uses automatic CSS zoom; no pointer-driven movement. */
 
   initScrollReveal();
   initLiveCounters();
-  initHeroParallax();
 })();
 </script>
 </body>
