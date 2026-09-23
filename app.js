@@ -107,9 +107,22 @@ function fmtDate(v){
 }
 async function rpc(name,args){
   var client=await ensureSupabaseClient();
-  var res=await client.rpc(name,args || {});
+  var call=client.rpc(name,args || {});
+  var timeout=new Promise(function(_,reject){
+    setTimeout(function(){reject(new Error('YYC server did not respond. Please check your internet connection and try again.'));},12000);
+  });
+  var res=await Promise.race([call,timeout]);
   if(res.error) throw new Error(res.error.message || 'Database request failed');
   return res.data;
+}
+function setLoginStatus(formId,msg,isError){
+  var form=$('#'+formId);
+  if(!form) return;
+  var status=form.querySelector('.access-login-status');
+  if(!status) return;
+  status.textContent=msg||'';
+  status.classList.toggle('is-error',!!isError);
+  status.classList.toggle('is-success',!!msg&&!isError);
 }
 function loadScript(src){return new Promise(function(resolve,reject){if(document.querySelector('script[data-yyc-src="'+src+'"]')){var existing=document.querySelector('script[data-yyc-src="'+src+'"]');if(existing.dataset.loaded==='1')return resolve();existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}var s=document.createElement('script');s.src=src;s.async=true;s.dataset.yycSrc=src;s.onload=function(){s.dataset.loaded='1';resolve();};s.onerror=reject;document.head.appendChild(s);});}
 function yycEnhanceLogin(formId,passwordId){
@@ -443,7 +456,8 @@ function memberLogin(){
         '<div class="access-form-field"><label for="mPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>✓ Approved members only</span><span>Secure YYC access</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN <span>→</span></button><button type="button" class="btn outline access-secondary" id="openRegisterFromLogin">NEW MEMBER</button></div>'+
-      '</form>'+
+      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+       '</form>'+
       '<div class="access-login-footer">Don’t have an account? Apply for membership and wait for admin approval.</div>'+
     '</div>'
   );
@@ -453,8 +467,10 @@ function memberLogin(){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
+      setLoginStatus('memberLoginForm','Checking your YYC membership…',false);
       var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
       if(!r.ok) throw new Error(r.error||'Login failed');
+      setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
@@ -472,7 +488,8 @@ function leaderLogin(){
         '<div class="access-form-field"><label for="lPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="lPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>♛ Read-only leadership space</span><span>Protected access</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN AS LEADER <span>→</span></button></div>'+
-      '</form>'+
+      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+       '</form>'+
       '<div class="access-login-footer">Leadership accounts are created and managed by YYC administration.</div>'+
     '</div>'
   );
@@ -481,8 +498,10 @@ function leaderLogin(){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
+      setLoginStatus('leaderLoginForm','Checking your YYC leadership access…',false);
       var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
+      setLoginStatus('leaderLoginForm','Login successful. Opening leadership portal…',false);
       leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
@@ -500,7 +519,8 @@ function adminLogin(){
         '<div class="access-form-field"><label for="aPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="aPass" type="password" autocomplete="current-password" placeholder="Enter admin password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>⌑ Private administrator access</span><span>Session protected</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">ENTER ADMIN <span>→</span></button></div>'+
-      '</form>'+
+      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+       '</form>'+
       '<div class="access-login-footer">Administrator credentials are private. Do not share them with other users.</div>'+
     '</div>'
   );
@@ -509,8 +529,10 @@ function adminLogin(){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
+      setLoginStatus('adminLoginForm','Checking secure administrator access…',false);
       var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid credentials');
+      setLoginStatus('adminLoginForm','Login successful. Opening admin control center…',false);
       adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
