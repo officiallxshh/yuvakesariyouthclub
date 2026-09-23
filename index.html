@@ -168,9 +168,9 @@
   window.setTimeout(function(){c.classList.add('is-gone');},1550);
 })();
 </script>
-<script src="access.js?v=20260923-01"></script>
+<script src="access.js?v=20260923-02"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="app.js?v=20260923-13"></script>
+<script src="app.js?v=20260923-14"></script>
 <script>
 function initInertialScroll(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -435,7 +435,7 @@ initInertialScroll();
       /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
          broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20260923-13-'+Date.now();
+      sc.src='app.js?v=20260923-14-'+Date.now();
       sc.async=false;
       sc.onload=function(){
         if(check()) return;
