@@ -515,7 +515,7 @@ function yycDigitalCard(data,kind){
               '<div class="yyc-id-field"><span>UNIQUE ID</span><b>'+esc(roleNumber)+'</b></div>'+
               '<div class="yyc-id-field"><span>CLUB</span><b>YUVAKESARI YOUTH CLUB</b></div>'+
             '</div>'+
-            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><div class="yyc-live-qr"><img src="'+qr+'" alt="YYC verification QR"></div></div><span>SCAN TO VERIFY</span><small>Official YYC profile</small></div>'+
+            '<div class="yyc-id-qr-panel"><div class="yyc-qr-frame"><a class="yyc-qr-link" href="'+esc(verify)+'" target="_blank" rel="noopener" aria-label="Open YYC verification page"><div class="yyc-live-qr"><img src="'+qr+'" alt="YYC verification QR" loading="eager" decoding="async" referrerpolicy="no-referrer"><span class="yyc-qr-fallback">OPEN VERIFY</span></div></a></div><span>SCAN TO VERIFY</span><small>Official YYC profile</small></div>'+
           '</div>'+
           '<div class="yyc-idcard-footer"><div><small>VALID DIGITAL ID · OFFICIAL YYC RECORD</small><span>'+esc(leader?'LEADERSHIP ACCESS':'APPROVED MEMBERSHIP')+'</span></div><div class="yyc-approved-seal active"><i>✓</i><div><b>VERIFIED</b><span>YYC DATABASE</span></div></div><div class="yyc-mini-barcode">'+yycBarcode()+'</div></div>'+
         '</div>'+
@@ -550,11 +550,12 @@ function yycPortalSummary(data,kind){
 }
 function memberDashboard(data){
   data=data||{};
-  openModal('<div class="premium-member-dashboard">'+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
+  openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
     yycDigitalCard(data,'member')+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
   '</div>');
+  var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'members');});
   var verify=$('#memberVerifyBtn');
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var logout=$('#memberLogout');
@@ -566,11 +567,12 @@ function memberDashboard(data){
 }
 function leaderDashboard(data){
   data=data||{};
-  openModal('<div class="premium-member-dashboard">'+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
+  openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
     yycDigitalCard(data,'leader')+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0"><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
   '</div>');
+  var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
   var verify=$('#leaderVerifyBtn');
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var logout=$('#leaderLogout');
