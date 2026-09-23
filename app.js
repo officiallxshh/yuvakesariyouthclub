@@ -474,6 +474,7 @@ function memberLogin(){
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
+      setLoginStatus('memberLoginForm',err.message,true);
       toast(err.message);
     }
   });
@@ -505,6 +506,7 @@ function leaderLogin(){
       leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
+      setLoginStatus('leaderLoginForm',err.message,true);
       toast(err.message);
     }
   });
@@ -536,6 +538,7 @@ function adminLogin(){
       adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
+      setLoginStatus('adminLoginForm',err.message,true);
       toast(err.message);
     }
   });
