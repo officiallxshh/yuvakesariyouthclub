@@ -451,17 +451,24 @@ function memberDashboard(memberArg){
 
   openModal(
     '<div class="member-dashboard premium-member-dashboard">'+
+      '<div class="portal-ribbon member-portal-ribbon"><span class="portal-icon">◉</span><div><b>MEMBER PORTAL</b><small>ACCESS LEVEL · MEMBER</small></div><span class="portal-secure">SECURE</span></div>'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Official YYC member card with live verification QR.</p></div>'+
+        '<div><div class="modal-kicker">MEMBER IDENTITY</div><h2 class="modal-title">Digital Membership Card</h2><p class="modal-sub">Your official YYC membership space — identity, verification and member submissions.</p></div>'+
         (m.__adminView?'<button class="mini-btn" id="memberBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="memberLogout">Logout</button>')+
       '</div>'+
+      '<div class="portal-summary-grid">'+
+        '<div class="portal-summary-card"><span>MEMBER</span><b>'+name+'</b><small>'+position+'</small></div>'+
+        '<div class="portal-summary-card"><span>UNIQUE ID</span><b>'+role+'</b><small>Official YYC record</small></div>'+
+        '<div class="portal-summary-card"><span>STATUS</span><b class="portal-status '+(String(m.status||'').toLowerCase()==='approved'?'is-approved':'is-pending')+'">'+(String(m.status||'').toLowerCase()==='approved'?'APPROVED':'PENDING')+'</b><small>Admin verification</small></div>'+
+      '</div>'+
       yycMemberIdCardHTML(m,'member')+
-      '<div class="form-actions member-card-actions">'+
+      '<div class="portal-action-row"><div><b>Member tools</b><span>Use the actions below to stay connected with YYC.</span></div><div class="form-actions member-card-actions">'+
         '<button class="btn gold" id="downloadCard">DOWNLOAD ID CARD</button>'+
         '<button class="btn outline" id="memberSubmitUpdate">SUBMIT UPDATE</button>'+
         '<button class="btn outline" id="memberSubmitGallery">SUBMIT PHOTO</button>'+
-      '</div>'+
+      '</div></div>'+
       '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
+      '<div class="portal-note"><span>✓</span><p>Your role number, approval status and digital card remain controlled by YYC administration.</p></div>'+
     '</div>'
   );
 
@@ -705,14 +712,22 @@ function leaderDashboard(leaderArg){
 
   openModal(
     '<div class="leader-dashboard premium-member-dashboard">'+
+      '<div class="portal-ribbon leader-portal-ribbon"><span class="portal-icon">♛</span><div><b>LEADERSHIP PORTAL</b><small>ACCESS LEVEL · LEADER · READ ONLY</small></div><span class="portal-secure">PROTECTED</span></div>'+
       '<div class="member-dashboard-head">'+
-        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Dedicated YYC leadership identity card using the leader role, team line and contact data.</p></div>'+
+        '<div><div class="modal-kicker">'+(l.__adminView?'ADMIN · LEADER IDENTITY':'LEADER ACCESS · READ ONLY')+'</div><h2 class="modal-title">Leadership Digital Card</h2><p class="modal-sub">Official leadership identity, verification and protected team information.</p></div>'+
         (l.__adminView?'<button class="mini-btn" id="leaderBackAdmin">← BACK TO ADMIN</button>':'<button class="mini-btn" id="leaderLogout">Logout</button>')+
       '</div>'+
+      '<div class="portal-summary-grid">'+
+        '<div class="portal-summary-card"><span>LEADER</span><b>'+name+'</b><small>'+esc(l.role||l.position||'LEADER')+'</small></div>'+
+        '<div class="portal-summary-card"><span>UNIQUE ID</span><b>'+esc(l.role_number||'PENDING')+'</b><small>Official leadership record</small></div>'+
+        '<div class="portal-summary-card"><span>ACCESS</span><b class="portal-status is-approved">READ ONLY</b><small>Editing disabled</small></div>'+
+      '</div>'+
       yycMemberIdCardHTML({role_number:l.role_number,name:l.name,position:l.role||l.position,phone:l.phone,email:l.email,photo_url:l.photo_url,photo_scale:l.photo_scale,photo_pos_x:l.photo_pos_x,photo_pos_y:l.photo_pos_y},'leader')+
-      (l.__adminView?'':'<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD LEADER ID</button></div>')+
-      (l.__adminView?'<div class="form-actions member-card-actions"><button class="btn gold" id="downloadLeaderCard">DOWNLOAD ID CARD</button></div>':'')+
+      '<div class="portal-action-row"><div><b>Leadership tools</b><span>Official card and verification access for YYC leaders.</span></div><div class="form-actions member-card-actions">'+
+      '<button class="btn gold" id="downloadLeaderCard">'+(l.__adminView?'DOWNLOAD ID CARD':'DOWNLOAD LEADER ID')+'</button>'+
+      '</div></div>'+
       '<div class="verify-url-box"><small>QR VERIFICATION LINK</small><a href="'+esc(verifyUrl)+'" target="_blank" rel="noopener">'+esc(verifyUrl)+'</a></div>'+
+      '<div class="portal-note leader-portal-note"><span>✓</span><p>Leader accounts are read-only. Role, access and official record changes are controlled by YYC administration.</p></div>'+
     '</div>'
   );
 
@@ -761,7 +776,7 @@ function adminPanel(tab){
     var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
-    openModal('<div class="admin-shell"><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2></div><button class="mini-btn" id="adminLogout">Logout</button></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div></div>');
+    openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><button class="mini-btn" id="adminLogout">Logout</button></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div></div>');
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
     $$('.admin-tab').forEach(function(b){b.addEventListener('click',function(){adminPanel(this.getAttribute('data-tab'));});});
     renderAdminTab(tab,d);
