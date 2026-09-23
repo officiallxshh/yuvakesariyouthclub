@@ -679,6 +679,7 @@ function adminLogin(){
 }
 
 function getAdmin(force){
+  if(!adminToken) adminToken=yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
   if(!adminToken){adminLogin();return null;}
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
