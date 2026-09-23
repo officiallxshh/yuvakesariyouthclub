@@ -46,9 +46,18 @@ function ensureSupabaseClient(){
 var ADMIN_TOKEN_KEY = 'yyc_admin_session_v1';
 var MEMBER_TOKEN_KEY = 'yyc_member_session_v1';
 var LEADER_TOKEN_KEY = 'yyc_leader_session_v1';
-var adminToken = sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
-var memberToken = localStorage.getItem(MEMBER_TOKEN_KEY) || '';
-var leaderToken = localStorage.getItem(LEADER_TOKEN_KEY) || '';
+function yycSafeGet(store,key){
+  try{return store.getItem(key)||'';}catch(e){return '';}
+}
+function yycSafeSet(store,key,value){
+  try{store.setItem(key,value);}catch(e){}
+}
+function yycSafeRemove(store,key){
+  try{store.removeItem(key);}catch(e){}
+}
+var adminToken = yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
+var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
 var adminData = null;
 
@@ -446,7 +455,7 @@ function memberLogin(){
     try{
       var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
       if(!r.ok) throw new Error(r.error||'Login failed');
-      memberToken=r.token; localStorage.setItem(MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
+      memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
       toast(err.message);
@@ -474,7 +483,7 @@ function leaderLogin(){
     try{
       var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
-      leaderToken=r.token; localStorage.setItem(LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
+      leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
       toast(err.message);
@@ -502,7 +511,7 @@ function adminLogin(){
     try{
       var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid credentials');
-      adminToken=r.token; sessionStorage.setItem(ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
+      adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
       toast(err.message);
@@ -515,7 +524,7 @@ function getAdmin(force){
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
     if(!d || d.ok===false){
-      sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
+      yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
     }
     adminData=d;
     return d;
@@ -530,7 +539,7 @@ function adminPanel(tab,forceRefresh){
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
-    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}sessionStorage.removeItem(ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
+    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
     $('.admin-tab').forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
@@ -963,7 +972,10 @@ function bindUI(){
   window.__yycAppCoreBound=true;
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
-document.addEventListener('DOMContentLoaded',function(){
+window.__yycAppCoreBound=false;
+function initYYCApp(){
+  if(window.__yycAppInitialized) return;
+  window.__yycAppInitialized=true;
   ensureSupabaseClient().catch(function(){});
   document.body.classList.add('yyC-opening');
   setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
@@ -971,5 +983,14 @@ document.addEventListener('DOMContentLoaded',function(){
   loadPublic();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
-  if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){if(!rs.length)return Promise.resolve();return Promise.all(rs.map(function(r){return r.unregister();})).then(function(){if(!sessionStorage.getItem('yyc_sw_clean_v1')){sessionStorage.setItem('yyc_sw_clean_v1','1');location.reload();}});}).catch(function(){});}
-});
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(rs){
+      if(!rs.length)return;
+      return Promise.all(rs.map(function(r){return r.unregister();})).then(function(){
+        if(!yycSafeGet(sessionStorage,'yyc_sw_clean_v1')) yycSafeSet(sessionStorage,'yyc_sw_clean_v1','1');
+      });
+    }).catch(function(){});
+  }
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initYYCApp);
+else initYYCApp();
