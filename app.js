@@ -533,6 +533,19 @@ function yycDigitalCard(data,kind){
     '<div class="yyc-card-hint">CLICK THE CARD TO FLIP · YOUR OFFICIAL YYC DIGITAL ID</div>'+
   '</div>';
 }
+async function yycLoadQrGenerator(){
+  if(window.qrcode) return window.qrcode;
+  if(window.__yycQrGeneratorPromise) return window.__yycQrGeneratorPromise;
+  window.__yycQrGeneratorPromise=new Promise(function(resolve,reject){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    s.async=true;
+    s.onload=function(){window.qrcode?resolve(window.qrcode):reject(new Error('QR generator did not initialize.'));};
+    s.onerror=function(){reject(new Error('Could not load the QR generator.'));};
+    document.head.appendChild(s);
+  }).finally(function(){window.__yycQrGeneratorPromise=null;});
+  return window.__yycQrGeneratorPromise;
+}
 async function yycLoadHtml2Canvas(){
   if(window.html2canvas) return window.html2canvas;
   if(window.__yycHtml2CanvasPromise) return window.__yycHtml2CanvasPromise;
@@ -588,6 +601,25 @@ async function downloadYYCDigitalCard(data,kind,button){
     stage.style.pointerEvents='none';
     var frontClone=yycExportFace(front,width);
     var backClone=yycExportFace(back,width);
+
+    /* Generate the QR inside the export DOM as inline SVG. This avoids external
+       image/CORS issues and guarantees the downloaded PNG contains the QR. */
+    var qrGenerator=await yycLoadQrGenerator();
+    var qrMaker=qrGenerator(0,'M');
+    qrMaker.addData(String(verify));
+    qrMaker.make();
+    var qrSvg=qrMaker.createSvgTag({cellSize:5,margin:0});
+    [frontClone,backClone].forEach(function(faceClone){
+      faceClone.querySelectorAll('.yyc-live-qr').forEach(function(box){
+        box.innerHTML=qrSvg;
+        box.style.background='#fff';
+        box.style.display='grid';
+        box.style.placeItems='center';
+        var svg=box.firstElementChild;
+        if(svg){svg.setAttribute('width','100%');svg.setAttribute('height','100%');}
+      });
+    });
+
     stage.appendChild(frontClone);
     var spacer=document.createElement('div');
     spacer.style.height=gap+'px';
