@@ -62,7 +62,7 @@ var publicData = null;
 var adminData = null;
 
 var $ = function(s){ return document.querySelector(s); };
-var $ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
 /* Export the portal entry points immediately.
    Function declarations are hoisted, so login buttons can use these even if a
