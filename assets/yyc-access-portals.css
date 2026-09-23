@@ -210,3 +210,70 @@
   z-index:99999!important;
   pointer-events:auto!important;
 }
+
+/* ===== FINAL LOGOUT / CLOSE SEPARATION ===== */
+.admin-session-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:16px auto 0;
+  padding:10px 12px;
+  max-width:1180px;
+  border-top:1px solid rgba(255,255,255,.06);
+  color:#626b69;
+  font:700 6px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.admin-session-footer .mini-btn{
+  min-width:90px;
+  color:#e1c58b;
+  border-color:rgba(225,187,96,.26);
+}
+.danger-outline{
+  min-height:38px!important;
+  border:1px solid rgba(220,110,100,.26)!important;
+  background:rgba(220,110,100,.035)!important;
+  color:#d6aaa4!important;
+}
+.danger-outline:hover{
+  border-color:rgba(232,125,113,.5)!important;
+  background:rgba(220,110,100,.075)!important;
+  color:#efd0ca!important;
+}
+.portal-session-state{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:#7ec49e;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.12em;
+}
+.portal-session-state:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#62c58c;
+  box-shadow:0 0 10px rgba(98,197,140,.55);
+}
+.member-dashboard-head #memberBackAdmin,
+.leader-dashboard .member-dashboard-head #leaderBackAdmin{
+  margin-left:auto;
+}
+.modal-shell>.modal-close{
+  width:40px!important;
+  height:40px!important;
+  display:grid!important;
+  place-items:center!important;
+  line-height:1!important;
+  font-size:25px!important;
+  background:rgba(4,8,11,.92)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.28);
+}
+@media(max-width:700px){
+  .admin-session-footer{align-items:flex-start}
+}
+@media(max-width:460px){
+  .admin-session-footer span{font-size:5.5px}
+}
