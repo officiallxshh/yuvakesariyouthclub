@@ -227,7 +227,179 @@ function initInertialScroll(){
   window.addEventListener('resize',function(){targetY=window.scrollY;currentY=targetY;clampTarget();},{passive:true});
 }
 
+
 initInertialScroll();
+
+(function(){
+  'use strict';
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia && window.matchMedia('(pointer:fine)').matches;
+
+  /* Mobile navigation: the same buttons remain available, but the panel gets a proper
+     open/close state and app.js can safely call closeMobile(). */
+  var menuBtn=document.getElementById('menuBtn');
+  var mobilePanel=document.getElementById('mobilePanel');
+
+  window.closeMobile=function(){
+    if(!mobilePanel) return;
+    mobilePanel.classList.remove('open');
+    if(menuBtn){
+      menuBtn.classList.remove('menu-open');
+      menuBtn.setAttribute('aria-expanded','false');
+      menuBtn.setAttribute('aria-label','Open navigation');
+    }
+  };
+
+  function openMobile(){
+    if(!mobilePanel) return;
+    mobilePanel.classList.add('open');
+    if(menuBtn){
+      menuBtn.classList.add('menu-open');
+      menuBtn.setAttribute('aria-expanded','true');
+      menuBtn.setAttribute('aria-label','Close navigation');
+    }
+  }
+
+  if(menuBtn){
+    menuBtn.addEventListener('click',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if(mobilePanel && mobilePanel.classList.contains('open')) window.closeMobile();
+      else openMobile();
+    });
+  }
+
+  if(mobilePanel){
+    mobilePanel.querySelectorAll('a[href^="#"]').forEach(function(link){
+      link.addEventListener('click',function(){ window.closeMobile(); });
+    });
+    document.addEventListener('click',function(e){
+      if(!mobilePanel.classList.contains('open')) return;
+      if(e.target && mobilePanel.contains(e.target)) return;
+      if(menuBtn && menuBtn.contains(e.target)) return;
+      window.closeMobile();
+    });
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape') window.closeMobile();
+    });
+    window.addEventListener('resize',function(){
+      if(window.innerWidth>980) window.closeMobile();
+    });
+  }
+
+  /* Scroll reveal: deliberately disabled on the hero so the opening cinematic
+     remains unchanged. */
+  function initScrollReveal(){
+    if(reduceMotion || !('IntersectionObserver' in window)){
+      document.body.classList.remove('yyc-scroll-ready');
+      return;
+    }
+    document.body.classList.add('yyc-scroll-ready');
+
+    var pending = function(){
+      var nodes=document.querySelectorAll('.section .reveal');
+      nodes.forEach(function(el){
+        if(el.__yycObserved) return;
+        el.__yycObserved=true;
+        var parent=el.closest('.card-grid,.gallery-grid,.events-grid,.updates-list,.glimpse-grid');
+        var index=parent ? Array.prototype.indexOf.call(parent.querySelectorAll('.reveal'),el) : 0;
+        el.style.setProperty('--yyc-reveal-delay',Math.min(index*55,220)+'ms');
+      });
+      if(!window.__yycRevealObserver){
+        window.__yycRevealObserver=new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            if(!entry.isIntersecting) return;
+            entry.target.classList.add('yyc-scroll-in');
+            window.__yycRevealObserver.unobserve(entry.target);
+          });
+        },{root:null,rootMargin:'0px 0px -8% 0px',threshold:.08});
+      }
+      document.querySelectorAll('.section .reveal').forEach(function(el){
+        if(!el.classList.contains('yyc-scroll-in')) window.__yycRevealObserver.observe(el);
+      });
+    };
+
+    pending();
+    if(window.MutationObserver){
+      new MutationObserver(pending).observe(document.body,{childList:true,subtree:true});
+    }
+  }
+
+  /* Animate live counters from 00 to the number supplied by publicData.
+     A MutationObserver picks up Supabase-rendered values without changing app.js. */
+  function animateCounter(el,target){
+    if(!el) return;
+    target=Math.max(0,parseInt(target,10)||0);
+    if(el.__yycCounterTarget===target) return;
+    el.__yycCounterTarget=target;
+
+    var start=parseInt(el.textContent,10);
+    if(isNaN(start)) start=0;
+    var from=start;
+    var began=performance.now();
+    el.classList.remove('yyc-count-animating');
+    void el.offsetWidth;
+    el.classList.add('yyc-count-animating');
+
+    function tick(now){
+      var p=Math.min(1,(now-began)/650);
+      var eased=1-Math.pow(1-p,3);
+      el.textContent=String(Math.round(from+(target-from)*eased)).padStart(2,'0');
+      if(p<1) requestAnimationFrame(tick);
+      else el.classList.remove('yyc-count-animating');
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function initLiveCounters(){
+    ['leaderCount','eventCount'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) animateCounter(el,parseInt(el.textContent,10)||0);
+    });
+    if(window.MutationObserver){
+      new MutationObserver(function(records){
+        records.forEach(function(record){
+          if(record.type!=='childList') return;
+          var el=record.target;
+          if(el && el.id && (el.id==='leaderCount'||el.id==='eventCount')){
+            animateCounter(el,parseInt(el.textContent,10)||0);
+          }
+        });
+      }).observe(document.body,{subtree:true,childList:true});
+    }
+  }
+
+  /* Subtle mouse parallax for desktop only; phones/tablets stay stable. */
+  function initHeroParallax(){
+    if(reduceMotion || !finePointer || window.innerWidth<981) return;
+    var hero=document.getElementById('home');
+    var photo=hero && hero.querySelector('.hero-photo');
+    if(!hero || !photo) return;
+
+    var raf=0,px=0,py=0;
+    function paint(){
+      raf=0;
+      var x=(px-.5)*1.35;
+      var y=(py-.5)*.85;
+      photo.style.transform='scale(1.055) translate3d('+x.toFixed(2)+'%,'+y.toFixed(2)+'%,0)';
+    }
+    hero.addEventListener('pointermove',function(e){
+      if(e.pointerType==='touch') return;
+      var rect=hero.getBoundingClientRect();
+      px=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+      py=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+      if(!raf) raf=requestAnimationFrame(paint);
+    });
+    hero.addEventListener('pointerleave',function(){
+      photo.style.transform='';
+    });
+  }
+
+  initScrollReveal();
+  initLiveCounters();
+  initHeroParallax();
+})();
 </script>
 </body>
 </html>
