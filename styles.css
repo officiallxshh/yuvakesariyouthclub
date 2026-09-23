@@ -1485,7 +1485,7 @@ body.yyc-inertial-scroll{
 /* ===== SINGLE QR DISPLAY ===== */
 .yyc-live-qr{overflow:hidden}
 .yyc-live-qr canvas{display:block!important;width:100%!important;height:100%!important}
-.yyc-live-qr img{display:none!important}
+.yyc-live-qr img{display:block!important;width:100%!important;height:100%!important;object-fit:contain;background:#fff}
 
 
 /* ===== YYC PHOTO ADJUSTMENT PANEL — REDESIGNED ===== */
