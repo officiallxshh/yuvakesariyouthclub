@@ -960,6 +960,7 @@ function bindUI(){
   }
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
   bindNavigation();
+  window.__yycAppCoreBound=true;
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 document.addEventListener('DOMContentLoaded',function(){
