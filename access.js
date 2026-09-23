@@ -126,7 +126,7 @@
       }
 
       var s=document.createElement('script');
-      s.src='app.js?v=20260923-14-'+Date.now();
+      s.src='app.js?v=20260923-16-'+Date.now();
       s.async=false;
       s.dataset.yycAccessApp='1';
       s.onload=function(){
@@ -182,9 +182,9 @@
       message(form,'Connecting securely to YYC…',false);
       try{
         var result;
-        if(kind==='memberLogin') result=await rpc('yyc-auth',{kind:'member',identifier:id,password:pass});
-        else if(kind==='leaderLogin') result=await rpc('yyc-auth',{kind:'leader',identifier:id,password:pass});
-        else result=await rpc('yyc-auth',{kind:'admin',identifier:id,password:pass});
+        if(kind==='memberLogin') result=await rpc('yyc-login',{kind:'member',identifier:id,password:pass});
+        else if(kind==='leaderLogin') result=await rpc('yyc-login',{kind:'leader',identifier:id,password:pass});
+        else result=await rpc('yyc-login',{kind:'admin',identifier:id,password:pass});
 
         if(!result||result.ok!==true) throw new Error((result&&result.error)||'Invalid credentials');
 
