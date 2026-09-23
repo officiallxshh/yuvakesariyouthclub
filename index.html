@@ -169,7 +169,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="app.js?v=20260923-10" defer></script>
+<script src="app.js?v=20260923-11" defer></script>
 <script>
 function initInertialScroll(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -407,42 +407,59 @@ initInertialScroll();
 
   function ensureApp(name){
     if(window.YYC && typeof window.YYC[name]==='function') return Promise.resolve();
-    if(window.__yycAppBootPromise) return window.__yycAppBootPromise;
 
-    window.__yycAppBootPromise=new Promise(function(resolve,reject){
-      function ready(){
-        if(window.YYC && typeof window.YYC[name]==='function'){ resolve(); return true; }
+    if(window.__yycDirectBootPromise) return window.__yycDirectBootPromise;
+
+    window.__yycDirectBootPromise=new Promise(function(resolve,reject){
+      var finished=false;
+      var deadline=window.setTimeout(function(){
+        if(finished) return;
+        finished=true;
+        reject(new Error('YYC application did not load. Please refresh the page once.'));
+      },8000);
+
+      function check(){
+        if(window.YYC && typeof window.YYC[name]==='function'){
+          if(finished) return true;
+          finished=true;
+          window.clearTimeout(deadline);
+          resolve();
+          return true;
+        }
         return false;
       }
-      if(ready()) return;
 
-      var existing=document.querySelector('script[src*="app.js?v=20260923-10"],script[src*="app.js?v=20260923-08"],script[src*="app.js?v=20260923-07"]');
-      if(existing){
-        var done=false;
-        var finish=function(){
-          if(done) return;
-          done=true;
-          if(ready()) resolve();
-          else reject(new Error('YYC application loaded but did not initialize. Please refresh once.'));
-        };
-        existing.addEventListener('load',function(){window.setTimeout(finish,0);},{once:true});
-        existing.addEventListener('error',function(){if(!done){done=true;reject(new Error('YYC application could not be loaded.'));}},{once:true});
-        window.setTimeout(function(){ if(!done && ready()) finish(); },250);
-        return;
-      }
+      if(check()) return;
 
+      /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
+         broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20260923-10';
-      sc.async=true;
-      sc.onload=function(){window.setTimeout(function(){
-        if(ready()) resolve();
-        else reject(new Error('YYC application loaded but did not initialize. Please refresh once.'));
-      },0);};
-      sc.onerror=function(){reject(new Error('YYC application could not be loaded'));};
+      sc.src='app.js?v=20260923-11-'+Date.now();
+      sc.async=false;
+      sc.onload=function(){
+        if(check()) return;
+        window.setTimeout(function(){
+          if(!check() && !finished){
+            finished=true;
+            window.clearTimeout(deadline);
+            reject(new Error('YYC application loaded but the login module did not initialize.'));
+          }
+        },250);
+      };
+      sc.onerror=function(){
+        if(finished) return;
+        finished=true;
+        window.clearTimeout(deadline);
+        reject(new Error('Could not load the YYC application file.'));
+      };
       document.head.appendChild(sc);
-    }).finally(function(){window.__yycAppBootPromise=null;});
 
-    return window.__yycAppBootPromise;
+      var poll=window.setInterval(function(){
+        if(check() || finished) window.clearInterval(poll);
+      },100);
+    }).finally(function(){window.__yycDirectBootPromise=null;});
+
+    return window.__yycDirectBootPromise;
   }
 
   function showAccessLoading(kind){
