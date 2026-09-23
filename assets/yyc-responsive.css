@@ -1,0 +1,330 @@
+/* YYC RESPONSIVE DEVICE LAYER
+   Final pass for phone, tablet, laptop, desktop, TV and landscape screens.
+   Loaded last so it protects the existing design without changing the desktop identity. */
+
+*,
+*::before,
+*::after{box-sizing:border-box}
+
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+img{max-width:100%}
+button,a,input,select,textarea{touch-action:manipulation}
+button,a.btn,.btn,.link-btn,.nav-link,.mobile-panel a,.culture-orb,.scroll-cue,.admin-tab,.mini-btn{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Keep the cinematic site image present on every device.
+   Touch devices use a normal scroll background for better performance. */
+.hero-photo{
+  display:block!important;
+  background-image:url('./hero-tulunad.webp')!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+  background-position:center center!important;
+}
+body{
+  background-image:
+    radial-gradient(circle at 52% 16%,rgba(225,177,77,.055),transparent 24%),
+    linear-gradient(180deg,rgba(5,10,13,.56),rgba(4,9,12,.68) 42%,rgba(3,7,10,.86) 100%),
+    url('./assets/hero-tulunad.webp');
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center,center,center top;
+  background-size:auto,auto,cover;
+}
+@media(max-width:980px){
+  body{background-attachment:scroll}
+  .hero-photo{background-position:center 42%!important}
+}
+
+/* Universal touch targets: controls remain easy to tap without growing desktop UI. */
+button,
+.btn,
+.link-btn,
+.nav-admin,
+.mobile-panel a,
+.admin-tab,
+.mini-btn{
+  min-height:44px;
+}
+.nav-admin{white-space:nowrap}
+.mobile-panel .nav-admin.full{min-height:46px}
+
+/* Phone navigation */
+@media(max-width:980px){
+  .topbar{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));}
+  .brand{min-width:0;max-width:calc(100% - 58px)}
+  .brand-type{min-width:0}
+  .brand-type b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand-type small{white-space:nowrap}
+  .menu-btn{flex:0 0 44px}
+  .mobile-panel{
+    left:max(10px,env(safe-area-inset-left));
+    right:max(10px,env(safe-area-inset-right));
+    max-height:calc(100svh - 82px);
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .mobile-panel .full{
+    margin-left:0;
+    margin-right:0;
+  }
+}
+
+/* Hero: no clipped controls and no desktop-sized typography on smaller screens. */
+@media(max-width:980px){
+  .hero{
+    width:100%;
+    min-height:100svh;
+    height:auto;
+    padding-left:clamp(14px,4vw,28px);
+    padding-right:clamp(14px,4vw,28px);
+    padding-top:92px;
+    padding-bottom:115px;
+  }
+  .hero-main,
+  .culture-panel{width:100%;min-width:0}
+  .hero-main{padding-left:0;padding-right:0}
+  .hero-logo{max-width:46vw;max-height:46vw}
+  .brand-lockup h1{max-width:100%;overflow-wrap:anywhere}
+  .lockup-line{max-width:100%}
+  .lockup-line span{white-space:nowrap}
+  .association-wrap{max-width:100%;justify-content:center}
+  .gold-quote{max-width:100%}
+  .social-row{max-width:100%}
+  .hero-actions{
+    width:100%;
+    max-width:620px;
+    margin-left:auto;
+    margin-right:auto;
+    align-items:stretch;
+  }
+  .hero-actions .btn{
+    flex:1 1 190px;
+    min-width:0;
+    min-height:46px;
+    white-space:nowrap;
+  }
+  .culture-panel{overflow:visible}
+  .culture-orbs{
+    width:100%;
+    max-width:100%;
+    overflow:visible;
+    flex-wrap:wrap;
+  }
+  .culture-orb{flex:0 1 auto}
+  .hero-bottom{
+    max-width:calc(100% - 24px);
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .bottom-rail{max-width:100%;overflow:auto;white-space:nowrap}
+  .hashtag{display:none}
+}
+
+/* Tablets and small laptops: retain the two-column look only when there is room. */
+@media(min-width:621px) and (max-width:1100px){
+  .hero{
+    min-height:100svh;
+    grid-template-columns:minmax(0,1fr) minmax(290px,40vw);
+    padding-top:94px;
+  }
+  .hero-actions .btn{flex:0 1 auto}
+  .culture-orbs{flex-wrap:nowrap}
+}
+
+/* Phones */
+@media(max-width:620px){
+  .hero{
+    min-height:calc(100svh + 230px);
+    padding-top:88px;
+    padding-bottom:104px;
+  }
+  .hero-logo{width:min(126px,34vw);height:min(126px,34vw)}
+  .brand-lockup h1{font-size:clamp(42px,14vw,56px)}
+  .lockup-line{gap:7px}
+  .lockup-line i{flex:1 1 20px;max-width:50px}
+  .lockup-line span{font-size:10px;letter-spacing:.20em}
+  .slogan{font-size:clamp(15px,4.6vw,19px);line-height:1.35}
+  .gold-quote{font-size:clamp(20px,6vw,25px)}
+  .gold-quote strong{font-size:clamp(24px,7vw,30px)}
+  .hero-actions{display:grid;grid-template-columns:1fr;gap:9px}
+  .hero-actions .btn{width:100%;min-width:0}
+  .social-row{gap:8px}
+  .social-row a{width:42px;height:42px}
+  .culture-orbs{gap:8px;justify-content:center}
+  .culture-orb{max-width:31%}
+  .orb-image,.orb-dharma .orb-image,.orb-aati .orb-image,.orb-yak .orb-image{
+    width:clamp(72px,24vw,96px)!important;
+    height:clamp(72px,24vw,96px)!important;
+  }
+  .orb-caption{max-width:100px}
+  .orb-caption b{font-size:7px}
+  .culture-foot{width:100%;flex-wrap:wrap}
+  .hero-bottom{left:10px;right:10px;bottom:8px}
+  .bottom-rail{font-size:8px;padding:10px 12px}
+  .scroll-cue{min-height:44px}
+}
+
+/* Very small phones */
+@media(max-width:400px){
+  .topbar{height:64px}
+  .brand-mark{width:42px;height:42px}
+  .brand-mark img{width:38px;height:38px}
+  .brand-type b{font-size:18px}
+  .brand-type small{font-size:6px;letter-spacing:.28em}
+  .mobile-panel{top:64px}
+  .hero{padding-top:80px}
+  .hero-logo{margin-bottom:12px}
+  .association-wrap span{font-size:7px}
+  .association-wrap strong{font-size:9px}
+  .culture-orbs{gap:4px}
+  .culture-orb{max-width:32%}
+  .orb-caption b{font-size:6px;letter-spacing:.05em}
+  .hero-bottom .bottom-rail i{height:10px}
+}
+
+/* Landscape phones: give the hero a usable two-column composition. */
+@media(orientation:landscape) and (max-width:760px){
+  .hero{
+    min-height:auto;
+    padding-top:78px;
+    padding-bottom:82px;
+    grid-template-columns:minmax(0,1fr) minmax(250px,44vw);
+    gap:16px;
+    align-items:center;
+  }
+  .hero-logo{width:96px;height:96px}
+  .brand-lockup h1{font-size:clamp(38px,9vw,54px)}
+  .slogan{font-size:14px}
+  .gold-quote{font-size:18px}
+  .gold-quote strong{font-size:22px}
+  .hero-actions{display:flex;gap:7px}
+  .hero-actions .btn{flex:1;font-size:7px;padding:0 9px}
+  .culture-overline em{font-size:28px}
+  .culture-copy{font-size:9px}
+  .culture-orbs{flex-wrap:nowrap}
+  .orb-image,.orb-dharma .orb-image,.orb-aati .orb-image,.orb-yak .orb-image{
+    width:76px!important;height:76px!important;
+  }
+  .hero-bottom{position:relative;left:auto;right:auto;bottom:auto;grid-column:1 / -1;margin-top:4px}
+}
+
+/* Sections scale cleanly across tablets and phones. */
+@media(max-width:980px){
+  .section{
+    width:100%;
+    min-height:0;
+    padding-top:72px;
+    padding-bottom:72px;
+  }
+  .section-head{width:100%}
+  .section-head p{max-width:100%}
+  .glimpse-grid,.card-grid,.gallery-grid,.events-grid{width:100%;max-width:100%}
+}
+
+/* Accessible action rows in member/leader portals. */
+@media(max-width:700px){
+  .portal-action-row .form-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .portal-action-row .form-actions .btn,
+  .portal-action-row .form-actions button{
+    width:100%;
+    min-width:0;
+  }
+}
+@media(max-width:460px){
+  .portal-action-row .form-actions{grid-template-columns:1fr}
+  .portal-action-row .btn,.portal-action-row .form-actions button{min-height:46px}
+}
+
+/* Admin remains usable on touch screens. */
+@media(max-width:900px){
+  .admin-tabs{
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+  .admin-tab{min-height:44px}
+  .admin-workspace{overflow:auto;-webkit-overflow-scrolling:touch}
+}
+
+/* Modals fit all phone and tablet formats; their own content can scroll. */
+.modal{
+  padding:
+    max(10px,env(safe-area-inset-top))
+    max(10px,env(safe-area-inset-right))
+    max(10px,env(safe-area-inset-bottom))
+    max(10px,env(safe-area-inset-left));
+}
+@media(max-width:700px){
+  .modal-shell,
+  .modal-shell:has(.admin-shell){
+    width:min(96vw,760px)!important;
+    max-width:96vw!important;
+    max-height:94svh!important;
+    margin:3svh auto!important;
+    padding:14px!important;
+    border-radius:20px!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .modal-shell>.modal-close{
+    width:44px!important;
+    height:44px!important;
+    top:8px!important;
+    right:8px!important;
+  }
+  .member-dashboard-head{
+    padding-right:52px!important;
+  }
+  .admin-header{
+    padding-right:58px!important;
+  }
+}
+@media(max-width:460px){
+  .modal-shell,
+  .modal-shell:has(.admin-shell){
+    width:calc(100vw - 16px)!important;
+    max-width:calc(100vw - 16px)!important;
+    padding:12px!important;
+    border-radius:18px!important;
+  }
+}
+
+/* Digital membership cards and verification profiles never exceed the viewport. */
+.yyc-id-card,
+.yyc-digital-card,
+.verify-profile-card,
+.premium-member-dashboard{
+  max-width:100%;
+}
+.yyc-id-card img,
+.yyc-digital-card img,
+.verify-profile-card img{max-width:100%;height:auto}
+
+/* Footer controls stay reachable on phones. */
+@media(max-width:620px){
+  .footer-main{
+    gap:14px;
+  }
+  .footer-main .link-btn{
+    min-height:44px;
+    padding:0 16px;
+  }
+}
+
+/* TV / wide desktop: keep hero content centered rather than stretched. */
+@media(min-width:1600px){
+  .hero-main{max-width:860px}
+  .culture-panel{max-width:560px}
+  .section{max-width:1600px}
+}
+
+/* Reduced-motion users still receive the image and all controls. */
+@media(prefers-reduced-motion:reduce){
+  .hero-photo{animation:none!important;transition:none!important}
+  .modal-shell,.mobile-panel{transition:none!important}
+}
