@@ -408,32 +408,87 @@ initInertialScroll();
   function ensureApp(name){
     if(window.YYC && typeof window.YYC[name]==='function') return Promise.resolve();
     if(window.__yycAppBootPromise) return window.__yycAppBootPromise;
+
     window.__yycAppBootPromise=new Promise(function(resolve,reject){
+      function ready(){
+        if(window.YYC && typeof window.YYC[name]==='function'){ resolve(); return true; }
+        return false;
+      }
+      if(ready()) return;
+
+      var existing=document.querySelector('script[src*="app.js?v=20260923-09"],script[src*="app.js?v=20260923-08"],script[src*="app.js?v=20260923-07"]');
+      if(existing){
+        var done=false;
+        var finish=function(){
+          if(done) return;
+          done=true;
+          if(ready()) resolve();
+          else reject(new Error('YYC application loaded but did not initialize. Please refresh once.'));
+        };
+        existing.addEventListener('load',function(){window.setTimeout(finish,0);},{once:true});
+        existing.addEventListener('error',function(){if(!done){done=true;reject(new Error('YYC application could not be loaded.'));}},{once:true});
+        window.setTimeout(function(){ if(!done && ready()) finish(); },250);
+        return;
+      }
+
       var sc=document.createElement('script');
       sc.src='app.js?v=20260923-09';
       sc.async=true;
-      sc.onload=resolve;
-      sc.onerror=function(){reject(new Error('YYC app could not be loaded'));};
+      sc.onload=function(){window.setTimeout(function(){
+        if(ready()) resolve();
+        else reject(new Error('YYC application loaded but did not initialize. Please refresh once.'));
+      },0);};
+      sc.onerror=function(){reject(new Error('YYC application could not be loaded'));};
       document.head.appendChild(sc);
     }).finally(function(){window.__yycAppBootPromise=null;});
+
     return window.__yycAppBootPromise;
   }
 
-  function openFallback(kind){
+  function showAccessLoading(kind){
     var modal=document.getElementById('modal'),content=document.getElementById('modalContent');
-    if(!modal||!content)return;
-    var member=kind==='memberLogin', leader=kind==='leaderLogin';
-    var title=member?'Member Login':leader?'Leader Login':'Admin Login';
-    var label=member||leader?'Email or phone':'Admin ID';
-    var id='yycDirect_'+kind;
-    content.innerHTML='<div class="access-login-screen direct-access-fallback"><div class="access-login-hero"><div class="access-login-icon">'+(member?'◉':leader?'♛':'⌑')+'</div><div><span class="access-login-kicker">YUVAKESARI YOUTH CLUB</span><h2 class="access-login-title">'+title+'</h2><p class="access-login-sub">Secure access is initializing. Please continue.</p></div><span class="access-login-badge">'+(member?'MEMBER':leader?'LEADER':'PRIVATE')+'</span></div><form id="'+id+'" class="access-login-form"><div class="access-form-field"><label>'+label+'</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input required autocomplete="username" placeholder="'+label+'"></div></div><div class="access-form-field"><label>Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input type="password" required autocomplete="current-password" placeholder="Password"><button type="button" class="access-password-toggle">SHOW</button></div></div><div class="form-actions access-login-actions"><button class="btn gold" type="submit">CONTINUE <span>→</span></button></div></form><div class="access-login-footer">YYC secure application is being initialized.</div></div>';
-    modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
-    var form=document.getElementById(id),pass=form.querySelector('input[type="password"]'),toggle=form.querySelector('.access-password-toggle');
-    toggle.onclick=function(){var show=pass.type==='password';pass.type=show?'text':'password';toggle.textContent=show?'HIDE':'SHOW';};
-    form.onsubmit=function(e){
-      e.preventDefault();
-      ensureApp(kind).then(function(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';if(window.YYC&&window.YYC[kind])window.YYC[kind](false);}).catch(function(err){var msg=document.querySelector('.direct-access-fallback .access-login-footer');if(msg)msg.textContent=err.message;});
+    if(!modal||!content) return;
+    var title=kind==='memberLogin'?'Member Login':kind==='leaderLogin'?'Leader Login':'Admin Login';
+    var badge=kind==='memberLogin'?'MEMBER':kind==='leaderLogin'?'LEADER':'PRIVATE';
+    content.innerHTML='<div class="access-login-screen direct-access-loading">'+
+      '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YUVAKESARI YOUTH CLUB</span><h2 class="access-login-title">'+title+'</h2><p class="access-login-sub">Opening secure access…</p></div><span class="access-login-badge">'+badge+'</span></div>'+
+      '<div class="direct-loading-indicator"><span></span><b>CONNECTING TO YYC</b><small>Please wait a moment.</small></div>'+
+    '</div>';
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+  }
+
+  function showAccessLoadError(message,kind){
+    var content=document.getElementById('modalContent');
+    if(!content) return;
+    content.innerHTML='<div class="access-login-screen direct-access-loading">'+
+      '<div class="access-login-hero"><div class="access-login-icon">!</div><div><span class="access-login-kicker">YUVAKESARI YOUTH CLUB</span><h2 class="access-login-title">Access could not start.</h2><p class="access-login-sub">'+message+'</p></div></div>'+
+      '<div class="form-actions access-login-actions"><button type="button" class="btn gold" id="yycRetryAccess">RETRY <span>↻</span></button></div>'+
+      '</div>';
+    var retry=document.getElementById('yycRetryAccess');
+    if(retry) retry.onclick=function(){
+      showAccessLoading(kind);
+      ensureApp(kind).then(function(){
+        if(window.YYC&&typeof window.YYC[kind]==='function') window.YYC[kind]();
+        else throw new Error('YYC login module is unavailable.');
+      }).catch(function(err){showAccessLoadError(err.message,kind);});
     };
+  }
+
+  function openRealAccess(kind){
+    showAccessLoading(kind);
+    ensureApp(kind).then(function(){
+      if(window.YYC&&typeof window.YYC[kind]==='function'){
+        var modal=document.getElementById('modal');
+        if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+        window.YYC[kind]();
+      }else{
+        throw new Error('YYC login module is unavailable.');
+      }
+    }).catch(function(err){
+      showAccessLoadError(err.message,kind);
+    });
   }
 
   document.addEventListener('click',function(e){
@@ -442,7 +497,7 @@ initInertialScroll();
     var close=e.target&&e.target.closest?e.target.closest('[data-modal-close-only]'):null;
     if(close){e.preventDefault();e.stopImmediatePropagation();var modal=document.getElementById('modal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}return;}
     var b=e.target&&e.target.closest?e.target.closest('button[id]'):null;
-    if(b&&routes[b.id]){e.preventDefault();e.stopImmediatePropagation();if(/Mobile$/.test(b.id))closeMobile();var name=routes[b.id];if(window.YYC&&typeof window.YYC[name]==='function')window.YYC[name](false);else if(name==='memberLogin'||name==='leaderLogin'||name==='adminLogin')openFallback(name);else ensureApp(name);return;}
+    if(b&&routes[b.id]){e.preventDefault();e.stopImmediatePropagation();if(/Mobile$/.test(b.id))closeMobile();var name=routes[b.id];if(window.YYC&&typeof window.YYC[name]==='function')window.YYC[name]();else if(name==='memberLogin'||name==='leaderLogin'||name==='adminLogin')openRealAccess(name);else ensureApp(name);return;}
     var a=e.target&&e.target.closest?e.target.closest('a[href^="#"]'):null;
     if(a){var href=a.getAttribute('href')||'';if(href&&href!=='#'){var t;try{t=document.querySelector(href);}catch(err){t=null;}if(t){e.preventDefault();e.stopImmediatePropagation();var header=document.getElementById('topbar'),off=header?header.offsetHeight+10:0;window.scrollTo({top:Math.max(0,t.getBoundingClientRect().top+window.pageYOffset-off),behavior:'smooth'});if(history.pushState)history.pushState(null,'',href);closeMobile();}}}
   },true);
