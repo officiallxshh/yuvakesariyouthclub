@@ -55,7 +55,7 @@ function yycSafeSet(store,key,value){
 function yycSafeRemove(store,key){
   try{store.removeItem(key);}catch(e){}
 }
-var adminToken = yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+var adminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
 var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
 var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
@@ -746,7 +746,7 @@ function memberDashboard(data){
   if(logout) logout.addEventListener('click',async function(){
     logout.disabled=true;
     try{if(memberToken) await rpc('member_logout',{p_token:memberToken});}catch(e){}
-    yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);memberToken='';closeModal();toast('Member logged out');
+    yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);yycSafeRemove(localStorage,'yyc_member_profile_v1');memberToken='';closeModal();toast('Member logged out');
   });
 }
 function leaderDashboard(data){
@@ -766,7 +766,7 @@ function leaderDashboard(data){
   if(logout) logout.addEventListener('click',async function(){
     logout.disabled=true;
     try{if(leaderToken) await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
-    yycSafeRemove(localStorage,LEADER_TOKEN_KEY);leaderToken='';closeModal();toast('Leader logged out');
+    yycSafeRemove(localStorage,LEADER_TOKEN_KEY);yycSafeRemove(localStorage,'yyc_leader_profile_v1');leaderToken='';closeModal();toast('Leader logged out');
   });
 }
 
@@ -794,7 +794,7 @@ function memberLogin(){
       var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
       if(!r.ok) throw new Error(r.error||'Login failed');
       setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
-      memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); closeModal(); memberDashboard(r.member);
+      memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{})); closeModal(); memberDashboard(r.member);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
       setLoginStatus('memberLoginForm',err.message,true);
@@ -826,7 +826,7 @@ function leaderLogin(){
       var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
       setLoginStatus('leaderLoginForm','Login successful. Opening leadership portal…',false);
-      leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); closeModal(); leaderDashboard(r.leader);
+      leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(r.leader||{})); closeModal(); leaderDashboard(r.leader);
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
       setLoginStatus('leaderLoginForm',err.message,true);
@@ -858,7 +858,7 @@ function adminLogin(){
       var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid credentials');
       setLoginStatus('adminLoginForm','Login successful. Opening admin control center…',false);
-      adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
+      adminToken=r.token; yycSafeSet(localStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
       setLoginStatus('adminLoginForm',err.message,true);
@@ -868,12 +868,12 @@ function adminLogin(){
 }
 
 function getAdmin(force){
-  if(!adminToken) adminToken=yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+  if(!adminToken) adminToken=yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
   if(!adminToken){adminLogin();return null;}
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
     if(!d || d.ok===false){
-      yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
+      yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
     }
     adminData=d;
     return d;
@@ -889,7 +889,7 @@ function adminPanel(tab,forceRefresh){
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
-    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);adminToken='';closeModal();toast('Admin logged out');});
+    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
     $$('.admin-tab').forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
@@ -1351,6 +1351,19 @@ function bindUI(){
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 window.__yycAppCoreBound=false;
+function restorePersistentPortals(){
+  /* Persistent until the user explicitly logs out. */
+  try{
+    var memberProfile=memberToken?JSON.parse(yycSafeGet(localStorage,'yyc_member_profile_v1')||'null'):null;
+    if(memberToken && memberProfile && memberProfile.role_number) memberDashboard(memberProfile);
+  }catch(e){}
+  try{
+    var leaderProfile=leaderToken?JSON.parse(yycSafeGet(localStorage,'yyc_leader_profile_v1')||'null'):null;
+    if(leaderToken && leaderProfile && leaderProfile.role_number) leaderDashboard(leaderProfile);
+  }catch(e){}
+  if(adminToken) adminPanel();
+}
+
 function initYYCApp(){
   if(window.__yycAppInitialized) return;
   window.__yycAppInitialized=true;
@@ -1359,6 +1372,7 @@ function initYYCApp(){
   setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
   bindUI();
   loadPublic();
+  restorePersistentPortals();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
   if('serviceWorker' in navigator){
