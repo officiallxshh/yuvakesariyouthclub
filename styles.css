@@ -2287,3 +2287,24 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   body.yyC-opening .gold-quote,body.yyC-opening .social-row,body.yyC-opening .hero-actions,
   body.yyC-opening .culture-panel{animation:none!important}
 }
+
+
+/* ===== PHOTO EDITOR TOUCH FIX =====
+   Keep the browser from interpreting a drag as page scrolling while the
+   Instagram-style crop area is active. This makes horizontal and vertical
+   positioning consistent on touch devices without adding directional buttons.
+*/
+.yyc-photo-preview.ig-photo-preview{
+  touch-action:none;
+  cursor:grab;
+  overscroll-behavior:contain;
+}
+.yyc-photo-preview.ig-photo-preview.is-dragging{
+  cursor:grabbing;
+}
+@media (pointer:coarse){
+  .yyc-photo-preview.ig-photo-preview{
+    -webkit-user-select:none;
+    user-select:none;
+  }
+}
