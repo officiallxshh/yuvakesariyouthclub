@@ -873,11 +873,25 @@ function getAdmin(force){
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
     if(!d || d.ok===false){
-      yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;toast('Admin session expired');adminLogin();return null;
+      var msg=d&&d.error ? String(d.error) : 'Could not load admin data';
+      if(/^unauthorized$/i.test(msg.trim()) || /invalid.*token|session.*invalid|token.*invalid/i.test(msg)){
+        yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);
+        adminToken='';
+        adminData=null;
+        toast('Admin session ended. Please login again.');
+        adminLogin();
+        return null;
+      }
+      toast(msg);
+      return null;
     }
     adminData=d;
     return d;
-  }).catch(function(e){toast(e.message);return null;});
+  }).catch(function(e){
+    /* Network/server failures never destroy a valid saved session. */
+    toast(e.message||'Could not load admin data');
+    return null;
+  });
 }
 function adminPanel(tab,forceRefresh){
   /* FIXED SELECTOR MODE */
