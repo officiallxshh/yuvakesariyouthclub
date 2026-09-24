@@ -96,8 +96,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;bac
 .admin-header .modal-title{font-size:40px;line-height:1}
 .admin-header .modal-kicker{margin-bottom:4px}
 .admin-header .mini-btn{min-width:82px}
-.admin-tabs{position:sticky;top:-24px;z-index:3;display:flex;flex-wrap:wrap;gap:8px;margin:0 -2px 20px;padding:16px 2px 13px;background:linear-gradient(180deg,#0a1015 78%,rgba(10,16,21,0));border-bottom:1px solid rgba(255,255,255,.06)}
-.admin-tab{padding:10px 15px;border-radius:12px;font-weight:600;letter-spacing:.02em}
+.admin-tabs{position:sticky;top:-24px;z-index:3;display:flex;flex-wrap:nowrap;gap:8px;margin:0 -2px 20px;padding:16px 4px 13px;background:linear-gradient(180deg,#0a1015 78%,rgba(10,16,21,0));border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scroll-behavior:smooth;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:thin}
+.admin-tab{padding:10px 15px;border-radius:12px;font-weight:600;letter-spacing:.02em;flex:0 0 auto;white-space:nowrap}
 .admin-workspace{max-height:68vh;overflow:auto;padding:0 3px 6px 1px;scrollbar-width:thin}
 .admin-workspace::-webkit-scrollbar{width:7px}.admin-workspace::-webkit-scrollbar-thumb{background:rgba(215,174,102,.22);border-radius:99px}
 .admin-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;max-width:1180px;margin:0 auto}
@@ -107,7 +107,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;bac
 .notice{max-width:1180px;margin-left:auto;margin-right:auto}
 .storage-top,.storage-stats,.storage-section{max-width:1180px;margin-left:auto;margin-right:auto}
 @media(max-width:900px){.modal-shell:has(.admin-shell){width:96vw;margin:2vh auto;padding:18px}.admin-tabs{top:-18px}.admin-workspace{max-height:76vh}.admin-stats{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:620px){.modal-shell:has(.admin-shell){width:97vw;padding:15px;border-radius:20px}.admin-header{padding-bottom:16px}.admin-header .modal-title{font-size:30px}.admin-tabs{top:-15px;overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;padding-bottom:11px}.admin-tab{flex:0 0 auto}.admin-workspace{max-height:78vh}.admin-stats{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.modal-shell:has(.admin-shell){width:97vw;padding:15px;border-radius:20px}.admin-header{padding-bottom:16px}.admin-header .modal-title{font-size:30px}.admin-tabs{top:-15px;padding-bottom:11px}.admin-tab{max-height:78vh}.admin-stats{grid-template-columns:1fr 1fr}}
 
 /* YYC official digital ID card */
 .premium-member-dashboard{max-width:1180px;margin:0 auto}.member-dashboard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
