@@ -54,6 +54,10 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;bac
 .yyc-photo-controls output{color:#d7ae66;font-size:11px}
 .yyс-simple-preview,.yyc-simple-preview{margin-top:16px!important}
 .admin-shell{min-height:520px}
+.modal-shell:has(.admin-shell){overflow:hidden}
+.admin-shell{min-height:520px;max-height:calc(90vh - 58px);display:flex;flex-direction:column;min-width:0}
+.admin-workspace{flex:1 1 auto;min-height:180px;height:calc(90vh - 250px);max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 8px 12px 1px;scrollbar-width:thin}
+.admin-workspace::-webkit-scrollbar{width:9px}.admin-workspace::-webkit-scrollbar-track{background:rgba(255,255,255,.025);border-radius:99px}.admin-workspace::-webkit-scrollbar-thumb{background:rgba(215,174,102,.32);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
 .admin-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px}
 .admin-tab{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#adb3bd;border-radius:999px;padding:9px 13px;font-size:11px;cursor:pointer;transition:.2s}
 .admin-tab.active,.admin-tab:hover{border-color:#d7ae66;color:#f4ddb0;background:rgba(215,174,102,.08)}
