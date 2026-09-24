@@ -578,87 +578,80 @@ function yycExportFace(sourceFace,width){
 }
 async function downloadYYCDigitalCard(data,kind,button){
   data=data||{};
-  var verify=yycVerifyUrl(data.role_number||'PENDING');
-  var wrap=null;
-  var temporaryHolder=null;
-
-  /* The download button lives outside the card itself. Never depend on
-     button.closest('.yyc-digital-card-wrap'); rebuild a clean export copy
-     from the same member/leader data when needed. */
-  if(button && button.closest){
-    var portal=button.closest('.premium-member-dashboard');
-    if(portal) wrap=portal.querySelector('.yyc-digital-card-wrap');
-    if(!wrap){
-      var adminWorkspace=button.closest('.admin-workspace');
-      if(adminWorkspace) wrap=adminWorkspace.querySelector('.yyc-digital-card-wrap');
-    }
-  }
-  if(!wrap) wrap=document.querySelector('.yyc-digital-card-wrap');
-
-  if(!wrap){
-    temporaryHolder=document.createElement('div');
-    temporaryHolder.style.position='fixed';
-    temporaryHolder.style.left='-20000px';
-    temporaryHolder.style.top='0';
-    temporaryHolder.style.width='680px';
-    temporaryHolder.style.background='#05090c';
-    temporaryHolder.style.pointerEvents='none';
-    temporaryHolder.innerHTML=yycDigitalCard(data,kind);
-    document.body.appendChild(temporaryHolder);
-    wrap=temporaryHolder.querySelector('.yyc-digital-card-wrap');
-  }
-
-  var card=wrap&&wrap.querySelector('.yyc-digital-card');
-  var front=card&&card.querySelector('.yyc-card-front');
-  var back=card&&card.querySelector('.yyc-card-back');
-  if(!front||!back){
-    if(temporaryHolder) temporaryHolder.remove();
-    throw new Error('ID card is not ready. Please open the card once and try again.');
-  }
-
   if(button){
     button.disabled=true;
     button.dataset.prevText=button.textContent;
     button.textContent='PREPARING…';
   }
-
+  var holder=null;
+  var stage=null;
   try{
+    /*
+     * Build a fresh export card from the same data instead of reading the
+     * currently displayed DOM. This removes the old "ID card not found" failure
+     * and works from Member, Leader and Admin screens.
+     */
+    holder=document.createElement('div');
+    holder.style.position='fixed';
+    holder.style.left='-12000px';
+    holder.style.top='0';
+    holder.style.width='680px';
+    holder.style.background='#05090c';
+    holder.style.pointerEvents='none';
+    holder.style.zIndex='-1';
+    holder.innerHTML=yycDigitalCard(data,kind);
+    document.body.appendChild(holder);
+
+    var card=holder.querySelector('.yyc-digital-card');
+    var front=card&&card.querySelector('.yyc-card-front');
+    var back=card&&card.querySelector('.yyc-card-back');
+    if(!front||!back) throw new Error('Unable to prepare the YYC ID card.');
+
     var html2canvas=await yycLoadHtml2Canvas();
-    var width=900, gap=28, padding=24;
+    var qrGenerator=await yycLoadQrGenerator();
+
+    var verify=yycVerifyUrl(data.role_number||'PENDING');
+    var qrMaker=qrGenerator(0,'M');
+    qrMaker.addData(String(verify));
+    qrMaker.make();
+    var qrSvg=qrMaker.createSvgTag({cellSize:5,margin:0});
+
+    var width=900;
+    var gap=28;
+    var padding=24;
     var faceHeight=Math.round(width/1.72);
 
-    var stage=document.createElement('div');
+    function makeExportFace(source){
+      var clone=yycExportFace(source,width);
+      clone.querySelectorAll('.yyc-live-qr').forEach(function(box){
+        box.innerHTML=qrSvg;
+        box.style.background='#fff';
+        box.style.display='grid';
+        box.style.placeItems='center';
+        var svg=box.querySelector('svg');
+        if(svg){
+          svg.setAttribute('width','100%');
+          svg.setAttribute('height','100%');
+          svg.style.display='block';
+          svg.style.background='#fff';
+        }
+      });
+      return clone;
+    }
+
+    stage=document.createElement('div');
     stage.style.position='fixed';
-    stage.style.left='-20000px';
+    stage.style.left='-12000px';
     stage.style.top='0';
     stage.style.width=(width+padding*2)+'px';
     stage.style.padding=padding+'px';
     stage.style.boxSizing='border-box';
     stage.style.background='#05090c';
-    stage.style.zIndex='-1';
     stage.style.pointerEvents='none';
+    stage.style.zIndex='-1';
 
-    var frontClone=yycExportFace(front,width);
-    var backClone=yycExportFace(back,width);
-
-    /* Generate a fresh QR as inline SVG for the exported image.
-       This avoids remote-image/CORS problems and keeps it scannable. */
-    var qrGenerator=await yycLoadQrGenerator();
-    var qrMaker=qrGenerator(0,'M');
-    qrMaker.addData(String(verify));
-    qrMaker.make();
-    var qrSvg=qrMaker.createSvgTag({cellSize:5,margin:0});
-    [frontClone,backClone].forEach(function(faceClone){
-      faceClone.querySelectorAll('.yyc-live-qr').forEach(function(box){
-        box.innerHTML=qrSvg;
-        box.style.background='#fff';
-        box.style.display='grid';
-        box.style.placeItems='center';
-        var svg=box.firstElementChild;
-        if(svg){svg.setAttribute('width','100%');svg.setAttribute('height','100%');}
-      });
-    });
-
+    var frontClone=makeExportFace(front);
+    var backClone=makeExportFace(back);
     stage.appendChild(frontClone);
     var spacer=document.createElement('div');
     spacer.style.height=gap+'px';
@@ -666,17 +659,27 @@ async function downloadYYCDigitalCard(data,kind,button){
     stage.appendChild(backClone);
     document.body.appendChild(stage);
 
-    var canvases=[];
-    try{
-      canvases.push(await html2canvas(frontClone,{
-        backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000
-      }));
-      canvases.push(await html2canvas(backClone,{
-        backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000
-      }));
-    }finally{
-      stage.remove();
-    }
+    /*
+     * Wait one frame so local images and layout have dimensions before capture.
+     */
+    await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});
+
+    var frontCanvas=await html2canvas(frontClone,{
+      backgroundColor:null,
+      useCORS:true,
+      allowTaint:false,
+      scale:2,
+      logging:false,
+      imageTimeout:15000
+    });
+    var backCanvas=await html2canvas(backClone,{
+      backgroundColor:null,
+      useCORS:true,
+      allowTaint:false,
+      scale:2,
+      logging:false,
+      imageTimeout:15000
+    });
 
     var out=document.createElement('canvas');
     var scale=2;
@@ -686,56 +689,39 @@ async function downloadYYCDigitalCard(data,kind,button){
     var ctx=out.getContext('2d');
     ctx.fillStyle='#05090c';
     ctx.fillRect(0,0,out.width,out.height);
-
-    /* Front on top, back directly below. */
-    ctx.drawImage(canvases[0],padding*scale,padding*scale,width*scale,faceHeight*scale);
-    ctx.drawImage(canvases[1],padding*scale,(padding+faceHeight+gap)*scale,width*scale,faceHeight*scale);
+    ctx.drawImage(frontCanvas,padding*scale,padding*scale,width*scale,faceHeight*scale);
+    ctx.drawImage(backCanvas,padding*scale,(padding+faceHeight+gap)*scale,width*scale,faceHeight*scale);
 
     var filename='YYC-'+(kind==='leader'?'Leader':'Member')+'-ID-'+String(data.role_number||'Card').replace(/[^a-z0-9_-]+/gi,'-')+'.png';
 
     await new Promise(function(resolve,reject){
       out.toBlob(function(blob){
-        if(!blob){reject(new Error('Could not create the ID card image.'));return;}
-        try{
-          var url=URL.createObjectURL(blob);
-          var link=document.createElement('a');
-          link.href=url;
-          link.download=filename;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(function(){URL.revokeObjectURL(url);},2000);
-          resolve();
-        }catch(err){reject(err);}
+        if(!blob){reject(new Error('Could not create the ID card download.'));return;}
+        var url=URL.createObjectURL(blob);
+        var link=document.createElement('a');
+        link.href=url;
+        link.download=filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function(){URL.revokeObjectURL(url);},3000);
+        resolve();
       },'image/png');
     });
+    toast('ID card downloaded');
+  }catch(e){
+    toast(e&&e.message?e.message:'ID card download failed.');
   }finally{
-    if(temporaryHolder) temporaryHolder.remove();
+    if(stage) stage.remove();
+    if(holder) holder.remove();
     if(button){
       button.disabled=false;
-      button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD';
+      button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD ↓';
     }
   }
 }
-function downloadAdminCard(data,kind){
-  var holder=document.createElement('div');
-  holder.style.position='fixed';
-  holder.style.left='-20000px';
-  holder.style.top='0';
-  holder.style.width='680px';
-  holder.innerHTML=yycDigitalCard(data,kind);
-  document.body.appendChild(holder);
-  var btn=document.createElement('button');
-  btn.type='button';
-  holder.appendChild(btn);
-  try{
-    var card=holder.querySelector('.yyc-digital-card');
-    return downloadYYCDigitalCard(data,kind,btn).catch(function(e){toast(e.message);}).finally(function(){holder.remove();});
-  }catch(e){
-    holder.remove();
-    toast(e.message);
-    return Promise.resolve();
-  }
+function downloadAdminCard(data,kind,button){
+  return downloadYYCDigitalCard(data,kind,button);
 }
 function yycPortalHeader(kind,data){
   var leader=kind==='leader';
@@ -944,7 +930,27 @@ function adminPanel(tab,forceRefresh){
           if(dl) downloadAdminCard(dl,'leader');
           return;
         }
-        var editLeader=target.closest('[data-edit-leader]');
+        var dlMember=target.closest('[data-download-member]');
+    if(dlMember){
+      e.preventDefault();
+      e.stopPropagation();
+      var md=window.__yycAdminLastData||adminData;
+      var mm=(md&&md.members||[]).find(function(x){return String(x.id)===String(dlMember.getAttribute('data-download-member'));});
+      if(mm) downloadAdminCard(mm,'member',dlMember); else toast('Member record not found');
+      return;
+    }
+
+    var dlLeader=target.closest('[data-download-leader]');
+    if(dlLeader){
+      e.preventDefault();
+      e.stopPropagation();
+      var ld=window.__yycAdminLastData||adminData;
+      var ll=(ld&&ld.leaders||[]).find(function(x){return String(x.id)===String(dlLeader.getAttribute('data-download-leader'));});
+      if(ll) downloadAdminCard(ll,'leader',dlLeader); else toast('Leader record not found');
+      return;
+    }
+
+    var editLeader=target.closest('[data-edit-leader]');
         if(editLeader){
           e.preventDefault();e.stopPropagation();
           adminLeaderForm(editLeader.getAttribute('data-edit-leader'));
