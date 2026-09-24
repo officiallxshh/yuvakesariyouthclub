@@ -578,27 +578,17 @@ function yycExportFace(sourceFace,width){
 }
 async function downloadYYCDigitalCard(data,kind,button){
   data=data||{};
+  var holder=null;
+  var stage=null;
   if(button){
     button.disabled=true;
     button.dataset.prevText=button.textContent;
     button.textContent='PREPARING…';
   }
-  var holder=null;
-  var stage=null;
   try{
-    /*
-     * Build a fresh export card from the same data instead of reading the
-     * currently displayed DOM. This removes the old "ID card not found" failure
-     * and works from Member, Leader and Admin screens.
-     */
+    if(!data.role_number) throw new Error('This ID card does not have a valid Unique ID yet.');
     holder=document.createElement('div');
-    holder.style.position='fixed';
-    holder.style.left='-12000px';
-    holder.style.top='0';
-    holder.style.width='680px';
-    holder.style.background='#05090c';
-    holder.style.pointerEvents='none';
-    holder.style.zIndex='-1';
+    holder.style.cssText='position:fixed;left:-10000px;top:0;width:960px;z-index:2147483000;background:#05090c;visibility:visible;pointer-events:none;';
     holder.innerHTML=yycDigitalCard(data,kind);
     document.body.appendChild(holder);
 
@@ -609,8 +599,7 @@ async function downloadYYCDigitalCard(data,kind,button){
 
     var html2canvas=await yycLoadHtml2Canvas();
     var qrGenerator=await yycLoadQrGenerator();
-
-    var verify=yycVerifyUrl(data.role_number||'PENDING');
+    var verify=yycVerifyUrl(data.role_number);
     var qrMaker=qrGenerator(0,'M');
     qrMaker.addData(String(verify));
     qrMaker.make();
@@ -623,11 +612,18 @@ async function downloadYYCDigitalCard(data,kind,button){
 
     function makeExportFace(source){
       var clone=yycExportFace(source,width);
+      clone.style.position='relative';
+      clone.style.left='auto';
+      clone.style.top='auto';
+      clone.style.visibility='visible';
+      clone.style.opacity='1';
+      clone.style.transform='none';
       clone.querySelectorAll('.yyc-live-qr').forEach(function(box){
         box.innerHTML=qrSvg;
         box.style.background='#fff';
         box.style.display='grid';
         box.style.placeItems='center';
+        box.style.overflow='hidden';
         var svg=box.querySelector('svg');
         if(svg){
           svg.setAttribute('width','100%');
@@ -640,16 +636,7 @@ async function downloadYYCDigitalCard(data,kind,button){
     }
 
     stage=document.createElement('div');
-    stage.style.position='fixed';
-    stage.style.left='-12000px';
-    stage.style.top='0';
-    stage.style.width=(width+padding*2)+'px';
-    stage.style.padding=padding+'px';
-    stage.style.boxSizing='border-box';
-    stage.style.background='#05090c';
-    stage.style.pointerEvents='none';
-    stage.style.zIndex='-1';
-
+    stage.style.cssText='position:fixed;left:-10000px;top:0;width:'+(width+padding*2)+'px;padding:'+padding+'px;box-sizing:border-box;background:#05090c;z-index:2147483001;visibility:visible;pointer-events:none;';
     var frontClone=makeExportFace(front);
     var backClone=makeExportFace(back);
     stage.appendChild(frontClone);
@@ -659,58 +646,62 @@ async function downloadYYCDigitalCard(data,kind,button){
     stage.appendChild(backClone);
     document.body.appendChild(stage);
 
-    /*
-     * Wait one frame so local images and layout have dimensions before capture.
-     */
+    var images=Array.prototype.slice.call(stage.querySelectorAll('img'));
+    await Promise.all(images.map(function(img){
+      if(img.complete && img.naturalWidth>0){
+        return img.decode ? img.decode().catch(function(){}) : Promise.resolve();
+      }
+      return new Promise(function(resolve){
+        var done=function(){resolve();};
+        img.addEventListener('load',done,{once:true});
+        img.addEventListener('error',done,{once:true});
+        window.setTimeout(done,8000);
+      });
+    }));
     await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});
 
-    var frontCanvas=await html2canvas(frontClone,{
+    var captureOptions={
       backgroundColor:null,
       useCORS:true,
       allowTaint:false,
       scale:2,
       logging:false,
-      imageTimeout:15000
-    });
-    var backCanvas=await html2canvas(backClone,{
-      backgroundColor:null,
-      useCORS:true,
-      allowTaint:false,
-      scale:2,
-      logging:false,
-      imageTimeout:15000
-    });
+      imageTimeout:15000,
+      removeContainer:false
+    };
+    var frontCanvas=await html2canvas(frontClone,captureOptions);
+    var backCanvas=await html2canvas(backClone,captureOptions);
 
-    var out=document.createElement('canvas');
     var scale=2;
+    var out=document.createElement('canvas');
     out.width=Math.round((width+padding*2)*scale);
     out.height=Math.round((faceHeight*2+gap+padding*2)*scale);
-
     var ctx=out.getContext('2d');
     ctx.fillStyle='#05090c';
     ctx.fillRect(0,0,out.width,out.height);
     ctx.drawImage(frontCanvas,padding*scale,padding*scale,width*scale,faceHeight*scale);
     ctx.drawImage(backCanvas,padding*scale,(padding+faceHeight+gap)*scale,width*scale,faceHeight*scale);
 
-    var filename='YYC-'+(kind==='leader'?'Leader':'Member')+'-ID-'+String(data.role_number||'Card').replace(/[^a-z0-9_-]+/gi,'-')+'.png';
-
-    await new Promise(function(resolve,reject){
-      out.toBlob(function(blob){
-        if(!blob){reject(new Error('Could not create the ID card download.'));return;}
-        var url=URL.createObjectURL(blob);
-        var link=document.createElement('a');
-        link.href=url;
-        link.download=filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(function(){URL.revokeObjectURL(url);},3000);
-        resolve();
+    var filename='YYC-'+(kind==='leader'?'Leader':'Member')+'-ID-'+String(data.role_number).replace(/[^a-z0-9_-]+/gi,'-')+'.png';
+    var blob=await new Promise(function(resolve,reject){
+      out.toBlob(function(value){
+        if(value) resolve(value);
+        else reject(new Error('Could not create the ID card image.'));
       },'image/png');
     });
-    toast('ID card downloaded');
+
+    var url=URL.createObjectURL(blob);
+    var link=document.createElement('a');
+    link.href=url;
+    link.download=filename;
+    link.rel='noopener';
+    link.style.display='none';
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(function(){link.remove();URL.revokeObjectURL(url);},3000);
+    toast('ID card downloaded successfully');
   }catch(e){
-    toast(e&&e.message?e.message:'ID card download failed.');
+    toast(e&&e.message?e.message:'ID card download failed. Please try again.');
   }finally{
     if(stage) stage.remove();
     if(holder) holder.remove();
