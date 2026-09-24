@@ -1271,3 +1271,9 @@ body:before,body:after,.hero-grid-line,.hero-glow,.hero-vignette,.section:after,
     width:100%;
   }
 }
+
+
+/* Admin control center should not close from an outside/backdrop click. */
+.modal:has(.admin-shell) .modal-backdrop{
+  pointer-events:none!important;
+}
