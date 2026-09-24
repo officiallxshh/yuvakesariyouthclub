@@ -1405,7 +1405,7 @@ function bindUI(){
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 window.__yycAppCoreBound=false;
-async function restorePersistentPortals(){
+async async function restorePersistentPortals(){
   /* Keep saved sessions alive across refresh/reopen, but NEVER open a portal
      automatically on page load. The portal opens only when its access button is
      clicked. Temporary network failures do not clear the saved session. */
