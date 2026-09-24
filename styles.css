@@ -2312,3 +2312,20 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
     user-select:none;
   }
 }
+
+
+/* ===== ADMIN UNIFIED SCROLL WORKSPACE =====
+   Every Admin tab uses the same internal vertical scroll area.
+*/
+.modal-shell:has(.admin-shell){overflow:hidden}
+.admin-shell{display:flex;flex-direction:column;min-height:0;max-height:calc(90vh - 58px)}
+.admin-tabs{flex:0 0 auto}
+.admin-workspace{flex:1 1 auto;min-height:180px;height:calc(90vh - 250px);max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin}
+.admin-workspace::-webkit-scrollbar{width:9px}
+.admin-workspace::-webkit-scrollbar-track{background:rgba(255,255,255,.025);border-radius:99px}
+.admin-workspace::-webkit-scrollbar-thumb{background:rgba(215,174,102,.32);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+
+@media(max-width:620px){
+  .admin-shell{max-height:calc(100svh - 30px)}
+  .admin-workspace{height:calc(100svh - 270px);min-height:170px}
+}
