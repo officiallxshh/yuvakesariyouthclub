@@ -1365,16 +1365,39 @@ function bindUI(){
 }
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 window.__yycAppCoreBound=false;
-function restorePersistentPortals(){
-  /* Persistent until the user explicitly logs out. */
-  try{
-    var memberProfile=memberToken?JSON.parse(yycSafeGet(localStorage,'yyc_member_profile_v1')||'null'):null;
-    if(memberToken && memberProfile && memberProfile.role_number) memberDashboard(memberProfile);
-  }catch(e){}
-  try{
-    var leaderProfile=leaderToken?JSON.parse(yycSafeGet(localStorage,'yyc_leader_profile_v1')||'null'):null;
-    if(leaderToken && leaderProfile && leaderProfile.role_number) leaderDashboard(leaderProfile);
-  }catch(e){}
+async function restorePersistentPortals(){
+  /* Persistent until the user explicitly logs out. Validate saved tokens without
+     treating network/server failures as automatic logout. */
+  if(memberToken){
+    try{
+      var mr=await rpc('member_me',{p_token:memberToken});
+      if(mr && mr.ok && mr.member){
+        yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(mr.member));
+        memberDashboard(mr.member);
+      }else if(mr && mr.ok===false){
+        yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+        yycSafeRemove(localStorage,'yyc_member_profile_v1');
+        memberToken='';
+      }
+    }catch(e){
+      /* Keep the saved member session on network errors. */
+    }
+  }
+  if(leaderToken){
+    try{
+      var lr=await rpc('leader_me',{p_token:leaderToken});
+      if(lr && lr.ok && lr.leader){
+        yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(lr.leader));
+        leaderDashboard(lr.leader);
+      }else if(lr && lr.ok===false){
+        yycSafeRemove(localStorage,LEADER_TOKEN_KEY);
+        yycSafeRemove(localStorage,'yyc_leader_profile_v1');
+        leaderToken='';
+      }
+    }catch(e){
+      /* Keep the saved leader session on network errors. */
+    }
+  }
   if(adminToken) adminPanel();
 }
 
