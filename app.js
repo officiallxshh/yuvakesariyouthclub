@@ -771,6 +771,24 @@ function leaderDashboard(data){
 }
 
 function memberLogin(){
+  if(memberToken){
+    var cachedMember=null;
+    try{cachedMember=JSON.parse(yycSafeGet(localStorage,'yyc_member_profile_v1')||'null');}catch(e){}
+    if(cachedMember && cachedMember.role_number){
+      memberDashboard(cachedMember);
+      return;
+    }
+    return rpc('member_me',{p_token:memberToken}).then(function(r){
+      if(r&&r.ok&&r.member){
+        yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member));
+        memberDashboard(r.member);
+        return;
+      }
+      yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+      memberToken='';
+      memberLogin();
+    }).catch(function(e){toast(e.message||'Could not restore member session');});
+  }
   openModal(
     '<div class="access-login-screen member-access-screen">'+
       '<div class="access-login-hero"><div class="access-login-icon">◉</div><div><span class="access-login-kicker">YYC MEMBER PORTAL</span><h2 class="access-login-title">Welcome back.</h2><p class="access-login-sub">Sign in with the email or phone number registered with Yuvakesari Youth Club.</p></div><span class="access-login-badge">MEMBER</span></div>'+
@@ -804,6 +822,24 @@ function memberLogin(){
 }
 
 function leaderLogin(){
+  if(leaderToken){
+    var cachedLeader=null;
+    try{cachedLeader=JSON.parse(yycSafeGet(localStorage,'yyc_leader_profile_v1')||'null');}catch(e){}
+    if(cachedLeader && cachedLeader.role_number){
+      leaderDashboard(cachedLeader);
+      return;
+    }
+    return rpc('leader_me',{p_token:leaderToken}).then(function(r){
+      if(r&&r.ok&&r.leader){
+        yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(r.leader));
+        leaderDashboard(r.leader);
+        return;
+      }
+      yycSafeRemove(localStorage,LEADER_TOKEN_KEY);
+      leaderToken='';
+      leaderLogin();
+    }).catch(function(e){toast(e.message||'Could not restore leader session');});
+  }
   openModal(
     '<div class="access-login-screen leader-access-screen">'+
       '<div class="access-login-hero"><div class="access-login-icon">♛</div><div><span class="access-login-kicker">YYC LEADERSHIP PORTAL</span><h2 class="access-login-title">Leadership access.</h2><p class="access-login-sub">Use the email or phone number created for you by YYC administration.</p></div><span class="access-login-badge leader">LEADER</span></div>'+
@@ -836,6 +872,10 @@ function leaderLogin(){
 }
 
 function adminLogin(){
+  if(adminToken){
+    adminPanel();
+    return;
+  }
   openModal(
     '<div class="access-login-screen admin-access-screen">'+
       '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC PRIVATE CONTROL</span><h2 class="access-login-title">Admin sign in.</h2><p class="access-login-sub">Enter the administrator credentials to access the complete YYC management system.</p></div><span class="access-login-badge admin">PRIVATE</span></div>'+
@@ -1366,39 +1406,34 @@ function bindUI(){
 window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
 window.__yycAppCoreBound=false;
 async function restorePersistentPortals(){
-  /* Persistent until the user explicitly logs out. Validate saved tokens without
-     treating network/server failures as automatic logout. */
+  /* Keep saved sessions alive across refresh/reopen, but NEVER open a portal
+     automatically on page load. The portal opens only when its access button is
+     clicked. Temporary network failures do not clear the saved session. */
   if(memberToken){
     try{
       var mr=await rpc('member_me',{p_token:memberToken});
       if(mr && mr.ok && mr.member){
         yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(mr.member));
-        memberDashboard(mr.member);
       }else if(mr && mr.ok===false){
         yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
         yycSafeRemove(localStorage,'yyc_member_profile_v1');
         memberToken='';
       }
-    }catch(e){
-      /* Keep the saved member session on network errors. */
-    }
+    }catch(e){}
   }
   if(leaderToken){
     try{
       var lr=await rpc('leader_me',{p_token:leaderToken});
       if(lr && lr.ok && lr.leader){
         yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(lr.leader));
-        leaderDashboard(lr.leader);
       }else if(lr && lr.ok===false){
         yycSafeRemove(localStorage,LEADER_TOKEN_KEY);
         yycSafeRemove(localStorage,'yyc_leader_profile_v1');
         leaderToken='';
       }
-    }catch(e){
-      /* Keep the saved leader session on network errors. */
-    }
+    }catch(e){}
   }
-  if(adminToken) adminPanel();
+  /* Admin token stays saved silently; adminPanel() is opened only by Admin Login. */
 }
 
 function initYYCApp(){
