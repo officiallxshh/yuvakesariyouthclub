@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-04">
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-12">
 </head>
-<body><div class="yyc-curtain-intro" id="yycCurtainIntro" aria-hidden="true"><div class="yyc-curtain-panel yyc-curtain-left"></div><div class="yyc-curtain-panel yyc-curtain-right"></div><div class="yyc-curtain-brand"><span>YUVAKESARI</span><b>YOUTH CLUB</b><i>SUBRAHMANYA · KARNATAKA</i></div></div>
+<body class="yyC-opening">
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 <header class="topbar" id="topbar">
   <a href="#home" class="brand">
@@ -160,12 +160,15 @@
 <div class="modal" id="modal" aria-hidden="true"><div class="modal-backdrop" data-close></div><section class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button type="button" class="modal-close" data-modal-close-only aria-label="Close">×</button><div id="modalContent"></div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script id="CURTAIN_BOOT">
+<script id="YYC_OPENING_BOOT">
 (function(){
-  var c=document.getElementById('yycCurtainIntro');
-  if(!c)return;
-  window.setTimeout(function(){c.classList.add('is-open');},70);
-  window.setTimeout(function(){c.classList.add('is-gone');},1550);
+  var body=document.body;
+  if(!body) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    body.classList.remove('yyC-opening');
+    return;
+  }
+  window.setTimeout(function(){ body.classList.remove('yyC-opening'); }, 1500);
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
