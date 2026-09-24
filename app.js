@@ -580,28 +580,53 @@ async function downloadYYCDigitalCard(data,kind,button){
   data=data||{};
   var verify=yycVerifyUrl(data.role_number||'PENDING');
   var wrap=null;
+  var temporaryHolder=null;
+
+  /* The download button lives outside the card itself. Never depend on
+     button.closest('.yyc-digital-card-wrap'); rebuild a clean export copy
+     from the same member/leader data when needed. */
   if(button && button.closest){
-    wrap=button.closest('.yyc-digital-card-wrap');
+    var portal=button.closest('.premium-member-dashboard');
+    if(portal) wrap=portal.querySelector('.yyc-digital-card-wrap');
     if(!wrap){
-      var portal=button.closest('.premium-member-dashboard');
-      if(portal) wrap=portal.querySelector('.yyc-digital-card-wrap');
-      if(!wrap){
-        var adminWorkspace=button.closest('.admin-workspace');
-        if(adminWorkspace) wrap=adminWorkspace.querySelector('.yyc-digital-card-wrap');
-      }
+      var adminWorkspace=button.closest('.admin-workspace');
+      if(adminWorkspace) wrap=adminWorkspace.querySelector('.yyc-digital-card-wrap');
     }
   }
   if(!wrap) wrap=document.querySelector('.yyc-digital-card-wrap');
-  if(!wrap) throw new Error('ID card not found.');
-  var card=wrap.querySelector('.yyc-digital-card');
+
+  if(!wrap){
+    temporaryHolder=document.createElement('div');
+    temporaryHolder.style.position='fixed';
+    temporaryHolder.style.left='-20000px';
+    temporaryHolder.style.top='0';
+    temporaryHolder.style.width='680px';
+    temporaryHolder.style.background='#05090c';
+    temporaryHolder.style.pointerEvents='none';
+    temporaryHolder.innerHTML=yycDigitalCard(data,kind);
+    document.body.appendChild(temporaryHolder);
+    wrap=temporaryHolder.querySelector('.yyc-digital-card-wrap');
+  }
+
+  var card=wrap&&wrap.querySelector('.yyc-digital-card');
   var front=card&&card.querySelector('.yyc-card-front');
   var back=card&&card.querySelector('.yyc-card-back');
-  if(!front||!back) throw new Error('ID card faces are not ready.');
-  if(button){button.disabled=true;button.dataset.prevText=button.textContent;button.textContent='PREPARING…';}
+  if(!front||!back){
+    if(temporaryHolder) temporaryHolder.remove();
+    throw new Error('ID card is not ready. Please open the card once and try again.');
+  }
+
+  if(button){
+    button.disabled=true;
+    button.dataset.prevText=button.textContent;
+    button.textContent='PREPARING…';
+  }
+
   try{
     var html2canvas=await yycLoadHtml2Canvas();
     var width=900, gap=28, padding=24;
     var faceHeight=Math.round(width/1.72);
+
     var stage=document.createElement('div');
     stage.style.position='fixed';
     stage.style.left='-20000px';
@@ -612,11 +637,12 @@ async function downloadYYCDigitalCard(data,kind,button){
     stage.style.background='#05090c';
     stage.style.zIndex='-1';
     stage.style.pointerEvents='none';
+
     var frontClone=yycExportFace(front,width);
     var backClone=yycExportFace(back,width);
 
-    /* Generate the QR inside the export DOM as inline SVG. This avoids external
-       image/CORS issues and guarantees the downloaded PNG contains the QR. */
+    /* Generate a fresh QR as inline SVG for the exported image.
+       This avoids remote-image/CORS problems and keeps it scannable. */
     var qrGenerator=await yycLoadQrGenerator();
     var qrMaker=qrGenerator(0,'M');
     qrMaker.addData(String(verify));
@@ -642,41 +668,53 @@ async function downloadYYCDigitalCard(data,kind,button){
 
     var canvases=[];
     try{
-      canvases.push(await html2canvas(frontClone,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000}));
-      canvases.push(await html2canvas(backClone,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000}));
+      canvases.push(await html2canvas(frontClone,{
+        backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000
+      }));
+      canvases.push(await html2canvas(backClone,{
+        backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,imageTimeout:15000
+      }));
     }finally{
       stage.remove();
     }
 
     var out=document.createElement('canvas');
-    var scale=2, outW=(width+padding*2)*scale, outH=(faceHeight*2+gap+padding*2)*scale;
-    out.width=Math.round(outW); out.height=Math.round(outH);
+    var scale=2;
+    out.width=Math.round((width+padding*2)*scale);
+    out.height=Math.round((faceHeight*2+gap+padding*2)*scale);
+
     var ctx=out.getContext('2d');
     ctx.fillStyle='#05090c';
     ctx.fillRect(0,0,out.width,out.height);
+
+    /* Front on top, back directly below. */
     ctx.drawImage(canvases[0],padding*scale,padding*scale,width*scale,faceHeight*scale);
     ctx.drawImage(canvases[1],padding*scale,(padding+faceHeight+gap)*scale,width*scale,faceHeight*scale);
+
     var filename='YYC-'+(kind==='leader'?'Leader':'Member')+'-ID-'+String(data.role_number||'Card').replace(/[^a-z0-9_-]+/gi,'-')+'.png';
+
     await new Promise(function(resolve,reject){
       out.toBlob(function(blob){
         if(!blob){reject(new Error('Could not create the ID card image.'));return;}
         try{
           var url=URL.createObjectURL(blob);
-          var a=document.createElement('a');
-          a.href=url;
-          a.download=filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+          var link=document.createElement('a');
+          link.href=url;
+          link.download=filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
           setTimeout(function(){URL.revokeObjectURL(url);},2000);
           resolve();
         }catch(err){reject(err);}
       },'image/png');
     });
-  }catch(e){
-    throw e;
   }finally{
-    if(button){button.disabled=false;button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD';}
+    if(temporaryHolder) temporaryHolder.remove();
+    if(button){
+      button.disabled=false;
+      button.textContent=button.dataset.prevText||'DOWNLOAD ID CARD';
+    }
   }
 }
 function downloadAdminCard(data,kind){
