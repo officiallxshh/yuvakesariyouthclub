@@ -1277,3 +1277,52 @@ body:before,body:after,.hero-grid-line,.hero-glow,.hero-vignette,.section:after,
 .modal:has(.admin-shell) .modal-backdrop{
   pointer-events:none!important;
 }
+
+
+/* ===== ID CARD DOWNLOAD ACTIONS ===== */
+.yyc-card-download-bar{
+  max-width:680px;
+  margin:12px auto 0;
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid rgba(237,193,105,.14);
+  border-radius:15px;
+  background:linear-gradient(145deg,rgba(237,193,105,.055),rgba(255,255,255,.018));
+}
+.yyc-card-download-bar>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.yyc-card-download-bar b{
+  color:#e8d3a2;
+  font:900 9px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.12em;
+}
+.yyc-card-download-bar span{
+  color:#727d79;
+  font:600 7px/1.35 "Space Grotesk",sans-serif;
+}
+.yyc-card-download-bar .btn{
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+.yyc-export-face{
+  position:relative!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+@media(max-width:620px){
+  .yyc-card-download-bar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .yyc-card-download-bar .btn{
+    width:100%;
+  }
+}
