@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://officiallxshh.github.io/yuvakesariyouthclub/sitemap.xml
