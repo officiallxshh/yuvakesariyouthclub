@@ -99,6 +99,44 @@ function toast(msg){
   clearTimeout(window.__yycToast);
   window.__yycToast=setTimeout(function(){t.classList.remove('show');},2600);
 }
+
+/* Admin data export — CSV only; intentionally excludes passwords, session tokens and raw photo URLs. */
+function downloadYYCAdminCSV(filename,headers,rows){
+  function csv(v){
+    var s=String(v==null?'':v).replace(/\r?\n/g,' ');
+    return /[",]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  var text=headers.map(csv).join(',')+'\n'+rows.map(function(row){return headers.map(function(h){return csv(row[h]);}).join(',');}).join('\n');
+  var blob=new Blob([text],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  window.setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+
+function exportYYCMembersCSV(members){
+  var headers=['Name','Date of Birth','Phone','Email','Role Number','Club Name','Position','Status','Approved','Created At'];
+  var rows=(members||[]).map(function(m){return {
+    'Name':m.name,'Date of Birth':m.dob,'Phone':m.phone,'Email':m.email,
+    'Role Number':m.role_number,'Club Name':m.club_name,'Position':m.position,
+    'Status':m.status,'Approved':m.approved?'Approved':'Pending','Created At':m.created_at
+  };});
+  downloadYYCAdminCSV('yyc-members-export.csv',headers,rows);
+  toast((rows.length||0)+' member record'+(rows.length===1?'':'s')+' exported');
+}
+
+function exportYYCStorageCSV(s){
+  var headers=['Record Type','ID','Name','Role Number','Role','Status','Approved','Date of Birth','Phone','Email','Club Name','Title','Message','Caption','Event Date','Location','Description','Area','Created At','Published At'];
+  var rows=[];
+  (s.members||[]).forEach(function(m){rows.push({'Record Type':'Member','ID':m.id,'Name':m.name,'Role Number':m.role_number,'Status':m.status,'Approved':m.approved?'Approved':'Pending','Date of Birth':m.dob,'Phone':m.phone,'Email':m.email,'Club Name':m.club_name,'Role':m.position,'Created At':m.created_at});});
+  (s.leaders||[]).forEach(function(l){rows.push({'Record Type':'Leader','ID':l.id,'Name':l.name,'Role':l.role,'Status':l.status,'Phone':l.phone,'Email':l.email,'Created At':l.created_at});});
+  (s.announcements||[]).forEach(function(x){rows.push({'Record Type':'Announcement','ID':x.id,'Title':x.title,'Message':x.message,'Status':x.status,'Published At':x.published_at,'Created At':x.created_at});});
+  (s.gallery||[]).forEach(function(x){rows.push({'Record Type':'Gallery','ID':x.id,'Title':x.title,'Caption':x.caption,'Status':x.status,'Created At':x.created_at});});
+  (s.events||[]).forEach(function(x){rows.push({'Record Type':'Event','ID':x.id,'Title':x.title,'Event Date':x.event_date,'Location':x.location,'Description':x.description,'Status':x.status,'Created At':x.created_at});});
+  (s.volunteers||[]).forEach(function(x){rows.push({'Record Type':'Volunteer','ID':x.id,'Name':x.name,'Area':x.area,'Approved':x.approved?'Approved':'Pending','Created At':x.created_at});});
+  downloadYYCAdminCSV('yyc-data-export.csv',headers,rows);
+  toast((rows.length||0)+' records exported');
+}
+
 function openModal(html){
   $('#modalContent').innerHTML=html;
   $('#modal').classList.add('open');
@@ -1154,7 +1192,7 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
     $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
     $('[data-download-member]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-download-member');});if(m)downloadAdminCard(m,'member');});});
@@ -1164,6 +1202,7 @@ function renderAdminTab(tab,d){
     $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
     $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
+    $('#exportMembersCSV').addEventListener('click',function(){exportYYCMembersCSV(members);});
     return;
   }
 
@@ -1290,7 +1329,7 @@ function renderAdminTab(tab,d){
             }).join('')+'</div>';
           }).join('')+'</div>';
       }
-      a.innerHTML='<div class="storage-top"><div><div class="modal-kicker">LIVE DATABASE</div><h2 class="modal-title">Data Storage</h2><p class="modal-sub">Live counts and records from the YYC Supabase database.</p></div><div class="storage-meta"><button class="mini-btn" data-admin-overview>← Back to Admin</button><span>Updated</span><b>'+esc(new Date(s.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+'</b><button class="mini-btn gold" id="storageRefresh">↻ Refresh</button></div></div>'+
+      a.innerHTML='<div class="storage-top"><div><div class="modal-kicker">LIVE DATABASE</div><h2 class="modal-title">Data Storage</h2><p class="modal-sub">Live counts and records from the YYC Supabase database.</p></div><div class="storage-meta"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="exportStorageCSV">Export CSV</button><span>Updated</span><b>'+esc(new Date(s.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+'</b><button class="mini-btn gold" id="storageRefresh">↻ Refresh</button></div></div>'+
         '<div class="storage-stats">'+cards.map(function(x){return '<div class="storage-stat"><i>'+x[3]+'</i><div><b>'+x[2]+'</b><span>'+x[1]+'</span></div></div>';}).join('')+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Members</h3><span>'+((s.members||[]).length)+' shown</span></div>'+rows(s.members,[['Name','name'],['Role Number','role_number'],['Status','status']])+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Leaders</h3><span>'+((s.leaders||[]).length)+' shown</span></div>'+rows(s.leaders,[['Name','name'],['Role','role'],['Created','created_at']])+'</div>'+
@@ -1299,6 +1338,7 @@ function renderAdminTab(tab,d){
         '<div class="storage-section"><div class="storage-section-head"><h3>Events</h3><span>'+((s.events||[]).length)+' shown</span></div>'+rows(s.events,[['Title','title'],['Date','event_date'],['Location','location']])+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Volunteers</h3><span>'+((s.volunteers||[]).length)+' shown</span></div>'+rows(s.volunteers,[['Name','name'],['Area','area'],['Approved','approved']])+'</div>';
       $('#storageRefresh').addEventListener('click',function(){adminPanel('storage');});
+      $('#exportStorageCSV').addEventListener('click',function(){exportYYCStorageCSV(s);});
     }).catch(function(e){
       a.innerHTML='<div class="storage-error"><strong>Could not load live storage.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="storageRetry">Retry</button></div>';
       $('#storageRetry').addEventListener('click',function(){adminPanel('storage');});
