@@ -2375,3 +2375,5 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 .hero-establishment{margin-top:9px;text-align:center;font-size:8px;letter-spacing:.24em;color:rgba(233,208,156,.82);font-weight:600;text-transform:uppercase}
 @media(max-width:620px){.hero-establishment{font-size:7px;letter-spacing:.18em;margin-top:8px}}
 
+
+.footer-legal{display:flex;justify-content:center;align-items:center;gap:9px;margin:14px 0 2px;font-size:9px;letter-spacing:.08em}.footer-legal a{color:#9d936f;text-decoration:none;transition:.2s ease}.footer-legal a:hover{color:#e2c37f}.footer-legal span{color:#5f655f}@media(max-width:620px){.footer-legal{font-size:8px;margin-top:12px}}
