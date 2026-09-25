@@ -2389,12 +2389,14 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
    regardless of the uploaded image's original aspect ratio. The same square
    rule is used by the registration photo adjustment preview.
 */
+#leadersGrid .leader-avatar,
 .leaders-grid .leader-avatar{
   width:78px!important;
   height:102px!important;
   aspect-ratio:78/102!important;
   flex:0 0 78px!important;
 }
+#leadersGrid .leader-avatar img,
 .leaders-grid .leader-avatar img{
   width:100%!important;
   height:100%!important;
@@ -2403,12 +2405,14 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   object-fit:cover!important;
   object-position:50% 50%!important;
 }
+#leadersGrid .leader-photo,
 .leaders-grid .leader-photo{
   width:100%!important;
   aspect-ratio:4/3!important;
   height:auto!important;
   min-height:0!important;
 }
+#leadersGrid .leader-photo img,
 .leaders-grid .leader-photo img{
   width:100%!important;
   height:100%!important;
