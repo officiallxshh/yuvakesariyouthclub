@@ -441,7 +441,8 @@ function renderPublic(){
   if(ug){
     var ups=publicData.updates||[];
     ug.innerHTML=ups.length ? ups.map(function(u){
-      return '<article class="update-card reveal visible"><time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
+      var image=u.image_url ? '<div class="update-card-media"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy"></div>' : '';
+      return '<article class="update-card '+(image?'has-image':'')+' reveal visible">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
     }).join('') : '<div class="empty">No updates published yet.</div>';
   }
 
@@ -1445,8 +1446,10 @@ function adminDeleteEvent(id){
 
 function adminUpdateForm(id){
   var existing=(adminData.updates||[]).find(function(u){return u.id===id;}) || {title:'',body:'',event_date:today(),image_url:''};
-  openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
-  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){toast(err.message);}});
+  var obj={photo:existing.image_url||''};
+  openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div><div class="field full"><label>Announcement image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"><small class="field-help">Add a clear image to appear with this announcement.</small></div></div><div class="crop-preview yyc-simple-preview admin-update-image-preview"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
+  $('#auFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,1000);if(obj.photo)$('#auPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:obj.photo||''}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){toast(err.message);}});
 }
 function adminGalleryForm(id){
   var existing=(adminData.gallery||[]).find(function(g){return g.id===id;}) || {title:'',src:'',caption:''};
