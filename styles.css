@@ -2391,10 +2391,10 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 */
 #leadersGrid .leader-avatar,
 .leaders-grid .leader-avatar{
-  width:112px!important;
-  height:138px!important;
-  aspect-ratio:112/138!important;
-  flex:0 0 112px!important;
+  width:150px!important;
+  height:176px!important;
+  aspect-ratio:150/176!important;
+  flex:0 0 150px!important;
 }
 #leadersGrid .leader-avatar img,
 .leaders-grid .leader-avatar img{
@@ -2439,6 +2439,11 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   object-position:50% 50%!important;
 }
 @media(max-width:620px){
-  .leaders-grid .leader-avatar{width:88px!important;height:110px!important;aspect-ratio:88/110!important;flex-basis:88px!important}
+  .leaders-grid .leader-avatar{width:112px!important;height:136px!important;aspect-ratio:112/136!important;flex-basis:112px!important}
   .membership-photo{width:min(175px,58vw)!important;height:auto!important;aspect-ratio:210/260!important}
 }
+
+/* Larger leadership portrait treatment */
+#leadersGrid .leader-profile-row{grid-template-columns:150px minmax(0,1fr)!important;min-height:176px!important;gap:16px!important}
+#leadersGrid .leader-info{align-self:center!important}
+@media(max-width:620px){#leadersGrid .leader-profile-row{grid-template-columns:112px minmax(0,1fr)!important;min-height:136px!important;gap:13px!important}}
