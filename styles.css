@@ -2444,10 +2444,44 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 }
 
 /* Larger leadership portrait treatment */
-#leadersGrid .leader-profile-row{grid-template-columns:175px minmax(0,1fr)!important;min-height:205px!important;gap:18px!important}
-#leadersGrid .leader-avatar{width:175px!important;height:205px!important;aspect-ratio:175/205!important;flex-basis:175px!important}
-#leadersGrid .leader-info{align-self:center!important}
-@media(max-width:620px){
-  #leadersGrid .leader-profile-row{grid-template-columns:130px minmax(0,1fr)!important;min-height:158px!important;gap:14px!important}
-  #leadersGrid .leader-avatar{width:130px!important;height:158px!important;aspect-ratio:130/158!important;flex-basis:130px!important}
+#leadersGrid .leader-profile-row{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:16px!important;
+  min-height:0!important;
+  width:100%!important;
 }
+#leadersGrid .leader-avatar{
+  width:220px!important;
+  height:255px!important;
+  aspect-ratio:220/255!important;
+  flex:0 0 220px!important;
+  margin:0 auto!important;
+}
+#leadersGrid .leader-info{
+  width:100%!important;
+  text-align:center!important;
+  align-self:stretch!important;
+}
+#leadersGrid .leader-kicker,
+#leadersGrid .leader-info strong,
+#leadersGrid .leader-info small,
+#leadersGrid .leader-info .micro{
+  text-align:center!important;
+}
+@media(max-width:620px){
+  #leadersGrid .leader-profile-row{gap:13px!important}
+  #leadersGrid .leader-avatar{
+    width:150px!important;
+    height:180px!important;
+    aspect-ratio:150/180!important;
+    flex-basis:150px!important;
+  }
+}
+
+/* Final centered leadership photo layout */
+#leadersGrid .leader-card.compact-leader-card{padding:18px 18px 17px!important}
+#leadersGrid .leader-card-line{margin-left:auto!important;margin-right:auto!important;width:82%!important}
+@media(max-width:620px){#leadersGrid .leader-card.compact-leader-card{padding:14px 14px 15px!important}}
