@@ -2366,3 +2366,7 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   .portal-profile-large-photo{width:78px;height:78px;border-radius:18px}
   .portal-profile-grid{grid-template-columns:1fr}
 }
+
+/* Establishment date */
+.footer-establishment{display:block;margin-top:6px;color:#c9b27b;font-size:8px;letter-spacing:.18em;text-transform:uppercase}
+@media(max-width:620px){.footer-establishment{font-size:7px;letter-spacing:.14em}}
