@@ -716,8 +716,9 @@ function downloadAdminCard(data,kind,button){
 }
 function yycPortalHeader(kind,data){
   var leader=kind==='leader';
+  var preview=data&&data.__adminView;
   return '<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>'+
-    '<div class="member-dashboard-head"><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>';
+    '<div class="member-dashboard-head yyc-portal-heading"><div><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>'+(!preview?portalAccountMenu(kind,data):'')+'</div>';
 }
 function yycPortalSummary(data,kind){
   var leader=kind==='leader';
@@ -729,6 +730,130 @@ function yycPortalSummary(data,kind){
     '<div class="portal-summary-card" style="padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:15px"><small style="color:#77827f;font:800 7px/1 Inter;letter-spacing:.14em">STATUS</small><b class="portal-status" style="display:block;margin-top:7px;color:#8fd8b0">ACTIVE</b></div>'+
   '</div>';
 }
+
+function portalAccountMenu(kind,data){
+  data=data||{};
+  var leader=kind==='leader';
+  var id=leader?'leader':'member';
+  var photo=data.photo_url||'assets/yyc-logo-clean.webp';
+  return '<div class="yyc-portal-account">'+
+    '<button type="button" class="yyc-portal-avatar-btn" id="'+id+'ProfileMenuBtn" aria-haspopup="true" aria-expanded="false" aria-label="Open '+id+' profile menu">'+
+      '<img src="'+esc(photo)+'" alt="'+esc(data.name|| (leader?'Leader':'Member'))+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
+      '<span class="yyc-portal-avatar-caret">⌄</span>'+
+    '</button>'+
+    '<div class="yyc-portal-menu" id="'+id+'ProfileMenu" hidden>'+
+      '<div class="yyc-portal-menu-head"><img src="'+esc(photo)+'" alt=""><div><b>'+esc(data.name|| (leader?'Leader':'Member'))+'</b><small>'+esc(data.role_number||'YYC PROFILE')+'</small></div></div>'+
+      '<button type="button" class="yyc-portal-menu-item" id="'+id+'ProfileViewBtn"><span>◉</span> MY PROFILE</button>'+
+      '<button type="button" class="yyc-portal-menu-item" id="'+id+'IdCardBtn"><span>▣</span> ID CARD</button>'+
+      '<button type="button" class="yyc-portal-menu-item '+(leader?'is-disabled':'')+'" id="'+id+'EditSubmissionBtn" '+(leader?'title="Leader details are managed by YYC Admin"':'')+'><span>✎</span> EDIT SUBMISSION</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function bindPortalAccountMenu(kind,data){
+  var leader=kind==='leader';
+  var id=leader?'leader':'member';
+  var menuBtn=$('#'+id+'ProfileMenuBtn');
+  var menu=$('#'+id+'ProfileMenu');
+  if(!menuBtn||!menu) return;
+  function close(){menu.hidden=true;menuBtn.setAttribute('aria-expanded','false');}
+  function toggle(){menu.hidden=!menu.hidden;menuBtn.setAttribute('aria-expanded',menu.hidden?'false':'true');}
+  menuBtn.addEventListener('click',function(e){e.stopPropagation();toggle();});
+  document.addEventListener('click',function(e){if(!menu.hidden && !e.target.closest('.yyc-portal-account'))close();});
+  var profile=$('#'+id+'ProfileViewBtn');
+  if(profile) profile.addEventListener('click',function(){close();portalProfileView(kind,data);});
+  var card=$('#'+id+'IdCardBtn');
+  if(card) card.addEventListener('click',function(){close();var el=document.querySelector('.yyc-digital-card-wrap');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});});
+  var edit=$('#'+id+'EditSubmissionBtn');
+  if(edit) edit.addEventListener('click',function(){close();if(leader) toast('Leader details are managed by YYC Admin');else memberEditSubmission(data);});
+}
+
+function portalProfileView(kind,data){
+  data=data||{};
+  var leader=kind==='leader';
+  var date=data.dob?fmtDate(data.dob):'—';
+  var photo=data.photo_url||'assets/yyc-logo-clean.webp';
+  openModal(
+    '<div class="portal-profile-view">'+
+      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="portalProfileBack">← BACK</button><span class="portal-profile-kicker">'+(leader?'LEADER PROFILE':'MEMBER PROFILE')+'</span></div>'+
+      '<div class="portal-profile-hero">'+
+        '<img class="portal-profile-large-photo" src="'+esc(photo)+'" alt="'+esc(data.name||'YYC Profile')+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
+        '<div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">'+esc(data.name|| (leader?'Leader':'Member'))+'</h2><p class="modal-sub">'+esc(leader?(data.role||'LEADER'):(data.position||'MEMBER'))+'</p></div>'+
+      '</div>'+
+      '<div class="portal-profile-grid">'+
+        '<div><span>UNIQUE ID</span><b>'+esc(data.role_number||'—')+'</b></div>'+
+        '<div><span>DATE OF BIRTH</span><b>'+esc(date)+'</b></div>'+
+        '<div><span>PHONE</span><b>'+esc(data.phone||'—')+'</b></div>'+
+        '<div><span>EMAIL</span><b>'+esc(data.email||'—')+'</b></div>'+
+        '<div><span>CLUB</span><b>'+esc(data.club_name||'Yuvakesari Youth Club')+'</b></div>'+
+        '<div><span>STATUS</span><b>ACTIVE</b></div>'+
+      '</div>'+
+      '<div class="form-actions"><button type="button" class="btn gold" id="portalProfileCardBtn">VIEW ID CARD</button>'+(leader?'':'<button type="button" class="btn outline" id="portalProfileEditBtn">EDIT SUBMISSION</button>')+'</div>'+
+    '</div>'
+  );
+  var back=$('#portalProfileBack');
+  if(back) back.addEventListener('click',function(){leader?leaderDashboard(data):memberDashboard(data);});
+  var card=$('#portalProfileCardBtn');
+  if(card) card.addEventListener('click',function(){
+    leader?leaderDashboard(data):memberDashboard(data);
+    setTimeout(function(){var el=document.querySelector('.yyc-digital-card-wrap');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  });
+  var edit=$('#portalProfileEditBtn');
+  if(edit) edit.addEventListener('click',function(){memberEditSubmission(data);});
+}
+
+function memberEditSubmission(data){
+  data=data||{};
+  var obj={photo:data.photo_url||'',scale:data.photo_scale||1,x:data.photo_pos_x==null?50:data.photo_pos_x,y:data.photo_pos_y==null?50:data.photo_pos_y};
+  openModal(
+    '<div class="portal-profile-view">'+
+      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="memberEditBack">← BACK</button><span class="portal-profile-kicker">MEMBER · EDIT SUBMISSION</span></div>'+
+      '<h2 class="modal-title">Edit your submission.</h2>'+
+      '<p class="modal-sub">You can update your personal contact details and photo. YYC Admin controls your Unique ID, position and approval status.</p>'+
+      '<form id="memberEditSubmissionForm"><div class="form-grid">'+
+        '<div class="field"><label>Full name</label><input id="meName" value="'+esc(data.name||'')+'" required></div>'+
+        '<div class="field"><label>Date of birth</label><input id="meDob" type="date" value="'+esc(data.dob||'')+'" required></div>'+
+        '<div class="field"><label>Phone</label><input id="mePhone" value="'+esc(data.phone||'')+'" required></div>'+
+        '<div class="field"><label>Email</label><input id="meEmail" type="email" value="'+esc(data.email||'')+'" required></div>'+
+        '<div class="field full"><label>Change photo</label><input id="mePhoto" type="file" accept="image/*"></div>'+
+      '</div>'+imageEditor('memberEditPhoto',obj.photo,obj.scale,obj.x,obj.y)+
+      '<div class="form-actions"><button type="submit" class="btn gold">SAVE CHANGES <span>✓</span></button></div></form>'+
+    '</div>'
+  );
+  wireEditor('memberEditPhoto',obj,'mePhoto');
+  var back=$('#memberEditBack');
+  if(back) back.addEventListener('click',function(){memberDashboard(data);});
+  $('#memberEditSubmissionForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
+    try{
+      btn.disabled=true;
+      var payload={
+        name:$('#meName').value.trim(),
+        dob:$('#meDob').value,
+        phone:$('#mePhone').value.trim(),
+        email:$('#meEmail').value.trim(),
+        photo_data:obj.photo,
+        photo_scale:obj.scale,
+        photo_pos_x:obj.x,
+        photo_pos_y:obj.y
+      };
+      if(!payload.name||!payload.dob||!payload.phone||!payload.email) throw new Error('Please complete all required fields');
+      if(!obj.photo) throw new Error('Please keep or choose a member photo');
+      var r=await rpc('member_update_submission',{p_token:memberToken,p_payload:payload});
+      if(!r||!r.ok) throw new Error(r&&r.error||'Could not save changes');
+      memberToken=yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
+      yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member));
+      closeModal();
+      memberDashboard(r.member);
+      toast('Member submission updated');
+    }catch(err){
+      btn.disabled=false;
+      toast(err.message||'Could not save changes');
+    }
+  });
+}
+
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
@@ -738,6 +863,7 @@ function memberDashboard(data){
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'members');});
+  bindPortalAccountMenu('member',data);
   var verify=$('#memberVerifyBtn');
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var download=$('#memberDownloadBtn');
@@ -758,6 +884,7 @@ function leaderDashboard(data){
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
+  bindPortalAccountMenu('leader',data);
   var verify=$('#leaderVerifyBtn');
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var download=$('#leaderDownloadBtn');
