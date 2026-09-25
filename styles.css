@@ -2374,3 +2374,7 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 /* Homepage establishment date */
 .hero-establishment{margin-top:9px;text-align:center;font-size:8px;letter-spacing:.24em;color:rgba(233,208,156,.82);font-weight:600;text-transform:uppercase}
 @media(max-width:620px){.hero-establishment{font-size:7px;letter-spacing:.18em;margin-top:8px}}
+
+/* Homepage location line */
+.hero-location{margin-top:10px;text-align:center;font-size:8px;letter-spacing:.24em;color:rgba(232,221,198,.78);font-weight:600;text-transform:uppercase}
+@media(max-width:620px){.hero-location{font-size:7px;letter-spacing:.17em;margin-top:8px}}
