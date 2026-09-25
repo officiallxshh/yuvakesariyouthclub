@@ -2391,10 +2391,10 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 */
 #leadersGrid .leader-avatar,
 .leaders-grid .leader-avatar{
-  width:78px!important;
-  height:102px!important;
-  aspect-ratio:78/102!important;
-  flex:0 0 78px!important;
+  width:112px!important;
+  height:138px!important;
+  aspect-ratio:112/138!important;
+  flex:0 0 112px!important;
 }
 #leadersGrid .leader-avatar img,
 .leaders-grid .leader-avatar img{
@@ -2428,9 +2428,9 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   object-position:50% 50%!important;
 }
 .membership-photo{
-  width:170px!important;
-  height:210px!important;
-  aspect-ratio:170/210!important;
+  width:210px!important;
+  height:260px!important;
+  aspect-ratio:210/260!important;
 }
 .membership-photo img{
   width:100%!important;
@@ -2439,6 +2439,6 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   object-position:50% 50%!important;
 }
 @media(max-width:620px){
-  .leaders-grid .leader-avatar{width:64px!important;height:84px!important;aspect-ratio:64/84!important;flex-basis:64px!important}
-  .membership-photo{width:min(150px,55vw)!important;height:auto!important;aspect-ratio:170/210!important}
+  .leaders-grid .leader-avatar{width:88px!important;height:110px!important;aspect-ratio:88/110!important;flex-basis:88px!important}
+  .membership-photo{width:min(175px,58vw)!important;height:auto!important;aspect-ratio:210/260!important}
 }
