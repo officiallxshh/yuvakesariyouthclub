@@ -129,7 +129,7 @@ function exportYYCStorageCSV(s){
   var rows=[];
   (s.members||[]).forEach(function(m){rows.push({'Record Type':'Member','ID':m.id,'Name':m.name,'Role Number':m.role_number,'Status':m.status,'Approved':m.approved?'Approved':'Pending','Date of Birth':m.dob,'Phone':m.phone,'Email':m.email,'Club Name':m.club_name,'Role':m.position,'Created At':m.created_at});});
   (s.leaders||[]).forEach(function(l){rows.push({'Record Type':'Leader','ID':l.id,'Name':l.name,'Role':l.role,'Status':l.status,'Phone':l.phone,'Email':l.email,'Created At':l.created_at});});
-  (s.announcements||[]).forEach(function(x){rows.push({'Record Type':'Announcement','ID':x.id,'Title':x.title,'Message':x.message,'Status':x.status,'Published At':x.published_at,'Created At':x.created_at});});
+  (s.announcements||[]).forEach(function(x){rows.push({'Record Type':'Announcement','ID':x.id,'Title':x.title,'Message':x.body,'Status':x.status,'Published At':x.published_at,'Created At':x.created_at});});
   (s.gallery||[]).forEach(function(x){rows.push({'Record Type':'Gallery','ID':x.id,'Title':x.title,'Caption':x.caption,'Status':x.status,'Created At':x.created_at});});
   (s.events||[]).forEach(function(x){rows.push({'Record Type':'Event','ID':x.id,'Title':x.title,'Event Date':x.event_date,'Location':x.location,'Description':x.description,'Status':x.status,'Created At':x.created_at});});
   (s.volunteers||[]).forEach(function(x){rows.push({'Record Type':'Volunteer','ID':x.id,'Name':x.name,'Area':x.area,'Approved':x.approved?'Approved':'Pending','Created At':x.created_at});});
