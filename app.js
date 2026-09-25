@@ -717,8 +717,13 @@ function downloadAdminCard(data,kind,button){
 function yycPortalHeader(kind,data){
   var leader=kind==='leader';
   var preview=data&&data.__adminView;
-  return '<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>'+
-    '<div class="member-dashboard-head yyc-portal-heading"><div><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>'+(!preview?portalAccountMenu(kind,data):'')+'</div>';
+  var ribbon='<div class="portal-ribbon '+(leader?'leader-portal-ribbon':'member-portal-ribbon')+'"><span class="portal-icon">'+(leader?'♛':'◉')+'</span><div><b>'+(leader?'LEADER PANEL':'MEMBER PANEL')+'</b><small>YUVAKESARI YOUTH CLUB · SECURE ACCESS</small></div><span class="portal-session-state">ACTIVE SESSION</span></div>';
+  if(preview){
+    return ribbon+
+      '<div class="member-dashboard-head"><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>';
+  }
+  return ribbon+
+    '<div class="member-dashboard-head yyc-portal-heading"><div><div class="modal-kicker">'+(leader?'LEADERSHIP ACCESS':'MEMBERSHIP ACCESS')+'</div><h2 class="modal-title">'+(leader?'Welcome to the leader panel.':'Welcome back, '+esc(data.name||'Member')+'.')+'</h2><p class="modal-sub">'+(leader?'Your YYC leadership space is read-only. Account changes are managed by YYC administration.':'Your approved membership, unique ID and digital card are available here.')+'</p></div>'+portalAccountMenu(kind,data)+'</div>';
 }
 function yycPortalSummary(data,kind){
   var leader=kind==='leader';
