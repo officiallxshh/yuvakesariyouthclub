@@ -2444,6 +2444,10 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 }
 
 /* Larger leadership portrait treatment */
-#leadersGrid .leader-profile-row{grid-template-columns:150px minmax(0,1fr)!important;min-height:176px!important;gap:16px!important}
+#leadersGrid .leader-profile-row{grid-template-columns:175px minmax(0,1fr)!important;min-height:205px!important;gap:18px!important}
+#leadersGrid .leader-avatar{width:175px!important;height:205px!important;aspect-ratio:175/205!important;flex-basis:175px!important}
 #leadersGrid .leader-info{align-self:center!important}
-@media(max-width:620px){#leadersGrid .leader-profile-row{grid-template-columns:112px minmax(0,1fr)!important;min-height:136px!important;gap:13px!important}}
+@media(max-width:620px){
+  #leadersGrid .leader-profile-row{grid-template-columns:130px minmax(0,1fr)!important;min-height:158px!important;gap:14px!important}
+  #leadersGrid .leader-avatar{width:130px!important;height:158px!important;aspect-ratio:130/158!important;flex-basis:130px!important}
+}
