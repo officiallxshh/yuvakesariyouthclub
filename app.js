@@ -221,6 +221,27 @@ function yycEnhanceLogin(formId,passwordId){
 }
 
 
+async function uploadYYCImage(dataUrl,type,token,recordId,oldUrl){
+  if(!dataUrl || !String(dataUrl).startsWith('data:image/')) return dataUrl || '';
+  var headers={'Content-Type':'application/json','apikey':YYC_CONFIG.supabaseKey};
+  if(token) headers['x-yyc-session']=token;
+  var response=await fetch(YYC_CONFIG.supabaseUrl+'/functions/v1/yyc-image-upload',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      type:type,
+      token:token||'',
+      data_url:dataUrl,
+      record_id:recordId||'',
+      old_url:oldUrl||''
+    })
+  });
+  var result;
+  try{result=await response.json();}catch(e){throw new Error('Image storage service returned an invalid response');}
+  if(!response.ok || !result.ok) throw new Error(result.error||'Could not store image');
+  return result.public_url;
+}
+
 function readFile(file,maxSide){
   return new Promise(function(resolve,reject){
     if(!file){resolve('');return;}
@@ -532,8 +553,11 @@ function memberRegister(){
   $('#memberRegisterForm').addEventListener('submit',async function(e){
     e.preventDefault();
     try{
-      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
       if(!obj.photo){toast('Please choose a photo');return;}
+      var btn=e.currentTarget.querySelector('button[type="submit"]');
+      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
+      var storedPhoto=await uploadYYCImage(obj.photo,'member-registration','', '', '');
+      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:storedPhoto,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
       var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
       if(!r.ok) throw new Error(r.error||'Registration failed');
       closeModal(); toast('Application submitted — wait for admin approval');
@@ -905,6 +929,12 @@ function memberEditSubmission(data){
       };
       if(!payload.name||!payload.dob||!payload.phone||!payload.email) throw new Error('Please complete all required fields');
       if(!obj.photo) throw new Error('Please keep or choose a member photo');
+      if(String(obj.photo).startsWith('data:image/')){
+        btn.textContent='UPLOADING PHOTO…';
+        payload.photo_data=await uploadYYCImage(obj.photo,'member-profile',memberToken,data.id||'',data.photo_url||'');
+      }else{
+        payload.photo_data=data.photo_url||obj.photo;
+      }
       var r=await rpc('member_update_submission',{p_token:memberToken,p_payload:payload});
       if(!r||!r.ok) throw new Error(r&&r.error||'Could not save changes');
       memberToken=yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
@@ -1382,7 +1412,7 @@ function adminMemberForm(id){
   openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
-  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!id && !obj.photo)throw new Error('Photo is required');var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){toast(err.message);}});
+  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';photo=await uploadYYCImage(photo,'member',adminToken,id||'',existing.photo_url||'');}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
 }
 
 function adminLeaderForm(id){
@@ -1407,22 +1437,29 @@ function adminLeaderForm(id){
   $('#adminLeaderBack').addEventListener('click',function(){adminPanel('leaders');});
   $('#adminLeaderForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
     try{
+      var photo=obj.photo;
+      if(String(photo).startsWith('data:image/')){
+        if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
+        photo=await uploadYYCImage(photo,'leader',adminToken,id||'',existing.photo_url||'');
+      }else if(!photo){photo=existing.photo_url||'';}
       var payload={
         name:$('#alName').value.trim(),role:$('#alRole').value.trim(),line:$('#alLine').value.trim(),
         phone:$('#alPhone').value.trim(),email:$('#alEmail').value.trim(),password:$('#alPass').value,
-        status:$('#alStatus').value,photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,
+        status:$('#alStatus').value,photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,
         sort_order:existing.sort_order||0
       };
       var r=await rpc('admin_upsert_leader',{p_token:adminToken,p_id:id,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
       closeModal();toast('Leader saved');adminPanel('leaders');
-    }catch(err){toast(err.message);}
+    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE LEADER';}toast(err.message);}
   });
 }
 function adminEventForm(id){
   var events=adminData.events||[];
   var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:''};
+  var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · EVENTS</div>'+
     '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button></div>'+
@@ -1433,27 +1470,37 @@ function adminEventForm(id){
         '<div class="field"><label>Event name</label><input id="aeTitle" value="'+esc(existing.title||'')+'" required></div>'+
         '<div class="field"><label>Date</label><input id="aeDate" type="date" value="'+esc(existing.event_date||'')+'"></div>'+
         '<div class="field"><label>Location</label><input id="aeLocation" value="'+esc(existing.location||'')+'" placeholder="Subrahmanya, Karnataka"></div>'+
-        '<div class="field"><label>Image URL</label><input id="aeImage" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
+        '<div class="field full"><label>Event image <span class="field-note">(optional)</span></label><input id="aeFile" type="file" accept="image/*"><small class="field-help">Upload a clear event image; it will be stored in YYC media.</small></div>'+
+        '<div class="field full"><label>External image URL <span class="field-note">(optional)</span></label><input id="aeImage" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
         '<div class="field full"><label>Description</label><textarea id="aeDescription" placeholder="What is happening at this programme?">'+esc(existing.description||'')+'</textarea></div>'+
       '</div>'+
+      '<div class="crop-preview yyc-simple-preview admin-event-image-preview"><img id="aePrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Event image preview"></div>'+
       '<div class="form-actions"><button class="btn gold">SAVE EVENT</button></div>'+
     '</form>'
   );
+  $('#aeFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,1200);$('#aePrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  $('#aeImage').addEventListener('input',function(){if(!String(obj.photo).startsWith('data:image/')){$('#aePrev').src=this.value.trim()||'assets/yyc-logo-clean.webp';}});
   $('#adminEventBack').addEventListener('click',function(){adminPanel('events');});
   $('#adminEventForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
     try{
+      var image=$('#aeImage').value.trim()||existing.image_url||'';
+      if(String(obj.photo).startsWith('data:image/')){
+        if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
+        image=await uploadYYCImage(obj.photo,'event',adminToken,id||'',existing.image_url||'');
+      }
       var payload={
         title:$('#aeTitle').value.trim(),
         description:$('#aeDescription').value.trim(),
         event_date:$('#aeDate').value,
         location:$('#aeLocation').value.trim(),
-        image_url:$('#aeImage').value.trim()
+        image_url:image
       };
       var r=await rpc('admin_upsert_event',{p_token:adminToken,p_id:id||null,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
       closeModal(); toast('Event saved'); adminPanel('events');
-    }catch(err){toast(err.message);}
+    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE EVENT';}toast(err.message);}
   });
 }
 function adminDeleteEvent(id){
@@ -1470,14 +1517,14 @@ function adminUpdateForm(id){
   var obj={photo:existing.image_url||''};
   openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div><div class="field full"><label>Announcement image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"><small class="field-help">Add a clear image to appear with this announcement.</small></div></div><div class="crop-preview yyc-simple-preview admin-update-image-preview"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
   $('#auFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,1000);if(obj.photo)$('#auPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
-  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:obj.photo||''}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){toast(err.message);}});
+  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{var image=obj.photo||'';if(String(image).startsWith('data:image/')){if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}image=await uploadYYCImage(image,'announcement',adminToken,id||'',existing.image_url||'');}var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:image}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH UPDATE';}toast(err.message);}});
 }
 function adminGalleryForm(id){
   var existing=(adminData.gallery||[]).find(function(g){return g.id===id;}) || {title:'',src:'',caption:''};
   var obj={photo:existing.src||''};
   openModal('<div class="modal-kicker">ADMIN · GALLERY</div><h2 class="modal-title">Publish Gallery Photo</h2><form id="adminGalleryForm"><div class="field"><label>Caption</label><input id="agTitle" value="'+esc(existing.title)+'" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="agFile" type="file" accept="image/*"></div><div class="crop-preview yyc-simple-preview"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div><div class="form-actions"><button class="btn gold">PUBLISH PHOTO</button></div></form>');
   $('#agFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],860);if(obj.photo)$('#agPrev').src=obj.photo;});
-  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();try{if(!obj.photo)throw new Error('Photo is required');var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:obj.photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){toast(err.message);}});
+  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH PHOTO';}toast(err.message);}});
 }
 
 async function verifyFromUrl(){
