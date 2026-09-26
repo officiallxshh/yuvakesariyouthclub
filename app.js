@@ -419,6 +419,17 @@ function socialHTML(){
   if(s.facebook) arr.push('<a class="social-link" href="'+esc(s.facebook)+'" target="_blank" rel="noopener"><img src="assets/social-facebook.png" alt="Facebook" width="30" height="30"></a>');
   return arr.join('');
 }
+var yycCollectionExpanded={updates:false,events:false,gallery:false};
+function yycLimitedSectionHTML(key,items,renderer,emptyText,itemClass){
+  if(!items || !items.length) return '<div class="empty">'+emptyText+'</div>';
+  var expanded=!!yycCollectionExpanded[key];
+  var visible=expanded ? items : items.slice(0,4);
+  var html=visible.map(renderer).join('');
+  if(items.length>4){
+    html+='<div class="yyc-read-more-wrap"><button type="button" class="yyc-read-more" data-yyc-more="'+key+'">'+(expanded?'SHOW LESS':'READ MORE')+' <span>'+(expanded?'↑':'→')+'</span></button><small>Showing '+(expanded?items.length:Math.min(4,items.length))+' of '+items.length+'</small></div>';
+  }
+  return html;
+}
 function renderPublic(){
   if(!publicData) return;
   var s=publicData.settings || {};
@@ -440,10 +451,10 @@ function renderPublic(){
   var ug=$('#updatesGrid');
   if(ug){
     var ups=publicData.updates||[];
-    ug.innerHTML=ups.length ? ups.map(function(u){
+    ug.innerHTML=yycLimitedSectionHTML('updates',ups,function(u){
       var image=u.image_url ? '<div class="update-card-media"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy"></div>' : '';
       return '<article class="update-card '+(image?'has-image':'')+' reveal visible">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
-    }).join('') : '<div class="empty">No updates published yet.</div>';
+    },'No updates published yet.','update-card');
   }
 
   if($('#eventCount')) $('#eventCount').textContent=String((publicData.events||[]).length).padStart(2,'0');
@@ -451,7 +462,7 @@ function renderPublic(){
   var eg=$('#eventsGrid');
   if(eg){
     var events=publicData.events||[];
-    eg.innerHTML=events.length ? events.map(function(ev){
+    eg.innerHTML=yycLimitedSectionHTML('events',events,function(ev){
       var d=ev.event_date ? new Date(ev.event_date+'T00:00:00') : null;
       var day=d&&!isNaN(d)?String(d.getDate()).padStart(2,'0'):'—';
       var month=d&&!isNaN(d)?d.toLocaleDateString('en-IN',{month:'short'}).toUpperCase():'DATE TBC';
@@ -463,16 +474,26 @@ function renderPublic(){
         (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
         '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span></div></div>'+
       '</article>';
-    }).join('') : '<div class="empty">No upcoming events published yet.</div>';
+    },'No upcoming events published yet.','event-card');
   }
 
   var gg=$('#galleryGrid');
   if(gg){
     var gs=publicData.gallery||[];
-    gg.innerHTML=gs.length ? gs.map(function(g){
+    gg.innerHTML=yycLimitedSectionHTML('gallery',gs,function(g){
       return '<figure class="gallery-card reveal visible"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
-    }).join('') : '<div class="empty">No gallery items published yet.</div>';
+    },'No gallery items published yet.','gallery-card');
   }
+  $('.yyc-read-more').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var key=this.getAttribute('data-yyc-more');
+      if(!key) return;
+      yycCollectionExpanded[key]=!yycCollectionExpanded[key];
+      renderPublic();
+      var target=key==='updates'?$('#updatesGrid'):key==='events'?$('#eventsGrid'):$('#galleryGrid');
+      if(target) target.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  });
 }
 async function loadPublic(){
   try{ publicData=await rpc('public_site_data',{}); renderPublic(); }
