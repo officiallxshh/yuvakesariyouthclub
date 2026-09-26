@@ -561,7 +561,11 @@ function memberRegister(){
       var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
       if(!r.ok) throw new Error(r.error||'Registration failed');
       closeModal(); toast('Application submitted — wait for admin approval');
-    }catch(err){toast(err.message);}
+    }catch(err){
+      var submitBtn=document.querySelector('#memberRegisterForm button[type="submit"]');
+      if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='SUBMIT APPLICATION ↗';}
+      toast(err.message);
+    }
   });
 }
 function yycVerifyUrl(roleNumber){
