@@ -2485,3 +2485,16 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
 #leadersGrid .leader-card.compact-leader-card{padding:18px 18px 17px!important}
 #leadersGrid .leader-card-line{margin-left:auto!important;margin-right:auto!important;width:82%!important}
 @media(max-width:620px){#leadersGrid .leader-card.compact-leader-card{padding:14px 14px 15px!important}}
+
+/* Squircle profile photos — leader photos only */
+#leadersGrid .leader-avatar{
+  border-radius:28px!important;
+  overflow:hidden!important;
+}
+#leadersGrid .leader-avatar img{
+  border-radius:28px!important;
+}
+@media(max-width:620px){
+  #leadersGrid .leader-avatar,
+  #leadersGrid .leader-avatar img{border-radius:24px!important}
+}
