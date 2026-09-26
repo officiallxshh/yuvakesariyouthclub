@@ -394,6 +394,81 @@ function yycAnimateNavigation(targetEl){
   }
 }
 
+/* ===== YYC WHEEL SCROLL — EMOGGLE-INSPIRED MEDIUM-FAST SMOOTHING ===== */
+function bindYYCWheelScroll(){
+  if(window.__yycWheelScrollBound) return;
+  window.__yycWheelScrollBound=true;
+
+  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return;
+
+  var targetY=window.pageYOffset || 0;
+  var currentY=targetY;
+  var raf=0;
+
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+  function scrollableAncestorCanConsume(el,delta){
+    var node=el;
+    while(node && node!==document.body && node!==document.documentElement){
+      if(node instanceof HTMLElement){
+        var cs=window.getComputedStyle(node);
+        var oy=cs.overflowY;
+        var scrollable=(oy==='auto'||oy==='scroll'||oy==='overlay') && node.scrollHeight>node.clientHeight+1;
+        if(scrollable){
+          if(delta<0 && node.scrollTop>0) return true;
+          if(delta>0 && node.scrollTop < node.scrollHeight-node.clientHeight-1) return true;
+        }
+      }
+      node=node.parentElement;
+    }
+    return false;
+  }
+
+  function animate(){
+    raf=0;
+    var diff=targetY-currentY;
+    if(Math.abs(diff)<0.5){
+      currentY=targetY;
+      window.scrollTo(0,currentY);
+      return;
+    }
+    currentY += diff*0.24;
+    window.scrollTo(0,currentY);
+    raf=window.requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('scroll',function(){
+    if(!raf && Math.abs((window.pageYOffset||0)-currentY)>18){
+      currentY=window.pageYOffset||0;
+      targetY=currentY;
+    }
+  },{passive:true});
+
+  window.addEventListener('wheel',function(e){
+    if(e.ctrlKey) return;
+    if(document.body.style.overflow==='hidden') return;
+
+    var delta=e.deltaY;
+    if(!delta) return;
+    if(e.deltaMode===1) delta*=16;
+    else if(e.deltaMode===2) delta*=window.innerHeight;
+
+    if(scrollableAncestorCanConsume(e.target,delta)) return;
+
+    var maxY=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+    if(maxY<=0) return;
+
+    e.preventDefault();
+
+    /* Medium-fast feel: a little softer than native, without the slow "cinematic"
+       crawl. Repeated wheel events blend into one continuous motion. */
+    targetY=clamp(targetY + delta*0.86,0,maxY);
+
+    if(!raf) raf=window.requestAnimationFrame(animate);
+  },{passive:false});
+}
+
 function bindMotionSystem(){
   if(window.__yycMotionBound) return;
   window.__yycMotionBound=true;
@@ -1616,6 +1691,7 @@ function bindAdminActionDelegation(){
 }
 
 function bindUI(){
+  bindYYCWheelScroll();
   bindMotionSystem();
   bindAdminActionDelegation();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
