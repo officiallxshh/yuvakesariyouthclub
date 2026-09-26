@@ -394,7 +394,7 @@ function yycAnimateNavigation(targetEl){
   }
 }
 
-/* ===== YYC WHEEL SCROLL — EMOGGLE-INSPIRED MEDIUM-FAST SMOOTHING ===== */
+/* ===== YYC WHEEL SCROLL — EMOGGLE-INSPIRED, NO-BOUNCE ===== */
 function bindYYCWheelScroll(){
   if(window.__yycWheelScrollBound) return;
   window.__yycWheelScrollBound=true;
@@ -402,7 +402,7 @@ function bindYYCWheelScroll(){
   var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduce) return;
 
-  var targetY=window.pageYOffset || 0;
+  var targetY=window.scrollY || window.pageYOffset || 0;
   var currentY=targetY;
   var raf=0;
 
@@ -426,11 +426,11 @@ function bindYYCWheelScroll(){
   }
 
   function animate(){
-    raf=0;
     var diff=targetY-currentY;
-    if(Math.abs(diff)<0.5){
+    if(Math.abs(diff)<0.6){
       currentY=targetY;
-      window.scrollTo({top:currentY,left:0,behavior:'auto'});
+      window.scrollTo(0,currentY);
+      raf=0;
       return;
     }
     currentY += diff*0.24;
@@ -438,12 +438,12 @@ function bindYYCWheelScroll(){
     raf=window.requestAnimationFrame(animate);
   }
 
-  window.addEventListener('scroll',function(){
-    if(!raf && Math.abs((window.pageYOffset||0)-currentY)>18){
-      currentY=window.pageYOffset||0;
-      targetY=currentY;
-    }
-  },{passive:true});
+  window.__yycStopWheelScroll=function(){
+    if(raf) window.cancelAnimationFrame(raf);
+    raf=0;
+    currentY=window.scrollY || window.pageYOffset || 0;
+    targetY=currentY;
+  };
 
   window.addEventListener('wheel',function(e){
     if(e.ctrlKey) return;
@@ -461,9 +461,14 @@ function bindYYCWheelScroll(){
 
     e.preventDefault();
 
-    /* Medium-fast feel: a little softer than native, without the slow "cinematic"
-       crawl. Repeated wheel events blend into one continuous motion. */
-    targetY=clamp(targetY + delta*0.86,0,maxY);
+    /* Start each new wheel burst from the real page position. This prevents
+       stale target positions from producing the little reverse/bounce motion. */
+    if(!raf){
+      currentY=window.scrollY || window.pageYOffset || 0;
+      targetY=currentY;
+    }
+
+    targetY=clamp(targetY + delta*0.90,0,maxY);
 
     if(!raf) raf=window.requestAnimationFrame(animate);
   },{passive:false});
