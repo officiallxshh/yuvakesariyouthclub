@@ -430,7 +430,7 @@ function bindYYCWheelScroll(){
     var diff=targetY-currentY;
     if(Math.abs(diff)<0.5){
       currentY=targetY;
-      window.scrollTo(0,currentY);
+      window.scrollTo({top:currentY,left:0,behavior:'auto'});
       return;
     }
     currentY += diff*0.24;
