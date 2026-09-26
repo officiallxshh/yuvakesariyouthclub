@@ -394,86 +394,6 @@ function yycAnimateNavigation(targetEl){
   }
 }
 
-/* ===== YYC WHEEL SCROLL — EMOGGLE-INSPIRED, NO-BOUNCE ===== */
-function bindYYCWheelScroll(){
-  if(window.__yycWheelScrollBound) return;
-  window.__yycWheelScrollBound=true;
-
-  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduce) return;
-
-  var targetY=window.scrollY || window.pageYOffset || 0;
-  var currentY=targetY;
-  var raf=0;
-
-  function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-
-  function scrollableAncestorCanConsume(el,delta){
-    var node=el;
-    while(node && node!==document.body && node!==document.documentElement){
-      if(node instanceof HTMLElement){
-        var cs=window.getComputedStyle(node);
-        var oy=cs.overflowY;
-        var scrollable=(oy==='auto'||oy==='scroll'||oy==='overlay') && node.scrollHeight>node.clientHeight+1;
-        if(scrollable){
-          if(delta<0 && node.scrollTop>0) return true;
-          if(delta>0 && node.scrollTop < node.scrollHeight-node.clientHeight-1) return true;
-        }
-      }
-      node=node.parentElement;
-    }
-    return false;
-  }
-
-  function animate(){
-    var diff=targetY-currentY;
-    if(Math.abs(diff)<0.6){
-      currentY=targetY;
-      window.scrollTo(0,currentY);
-      raf=0;
-      return;
-    }
-    currentY += diff*0.24;
-    window.scrollTo(0,currentY);
-    raf=window.requestAnimationFrame(animate);
-  }
-
-  window.__yycStopWheelScroll=function(){
-    if(raf) window.cancelAnimationFrame(raf);
-    raf=0;
-    currentY=window.scrollY || window.pageYOffset || 0;
-    targetY=currentY;
-  };
-
-  window.addEventListener('wheel',function(e){
-    if(e.ctrlKey) return;
-    if(document.body.style.overflow==='hidden') return;
-
-    var delta=e.deltaY;
-    if(!delta) return;
-    if(e.deltaMode===1) delta*=16;
-    else if(e.deltaMode===2) delta*=window.innerHeight;
-
-    if(scrollableAncestorCanConsume(e.target,delta)) return;
-
-    var maxY=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
-    if(maxY<=0) return;
-
-    e.preventDefault();
-
-    /* Start each new wheel burst from the real page position. This prevents
-       stale target positions from producing the little reverse/bounce motion. */
-    if(!raf){
-      currentY=window.scrollY || window.pageYOffset || 0;
-      targetY=currentY;
-    }
-
-    targetY=clamp(targetY + delta*0.90,0,maxY);
-
-    if(!raf) raf=window.requestAnimationFrame(animate);
-  },{passive:false});
-}
-
 function bindMotionSystem(){
   if(window.__yycMotionBound) return;
   window.__yycMotionBound=true;
@@ -1696,7 +1616,6 @@ function bindAdminActionDelegation(){
 }
 
 function bindUI(){
-  bindYYCWheelScroll();
   bindMotionSystem();
   bindAdminActionDelegation();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
