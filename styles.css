@@ -2816,3 +2816,10 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   .swag-media{aspect-ratio:1/1}
   .swag-body h3{font-size:27px}
 }
+
+/* Desktop navigation spacing — keep the header clean without changing mobile navigation. */
+@media(min-width:1201px){
+  .desktop-nav{gap:3px}
+  .desktop-nav>a{padding-left:11px;padding-right:11px}
+  .nav-admin{padding-left:17px;padding-right:17px;margin-left:5px}
+}
