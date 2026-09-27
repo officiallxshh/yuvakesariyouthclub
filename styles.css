@@ -2884,3 +2884,102 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
     white-space:nowrap;
   }
 }
+
+/* ===== HOMEPAGE HERO REFINEMENT ===== */
+@media(min-width:981px){
+  .hero-main{
+    max-width:760px;
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .hero-logo{
+    width:150px;
+    height:150px;
+    margin-bottom:15px;
+  }
+  .brand-lockup h1{
+    letter-spacing:.055em;
+  }
+  .lockup-line{
+    margin-top:13px;
+    gap:14px;
+  }
+  .lockup-line i{width:76px}
+  .lockup-line span{
+    font-size:17px;
+    letter-spacing:.42em;
+  }
+  .association-wrap{
+    margin:10px auto 2px;
+    min-height:38px;
+    gap:8px;
+    opacity:.9;
+  }
+  .association-wrap img{
+    width:38px;
+    height:38px;
+  }
+  .association-wrap span{
+    font-size:7px;
+    letter-spacing:.20em;
+  }
+  .association-wrap strong{
+    font-size:12px;
+    margin-top:3px;
+  }
+  .slogan{
+    font-size:22px;
+    margin:15px 0 5px;
+  }
+  .slogan span{font-size:20px}
+  .gold-quote{
+    font-size:32px;
+    margin-top:3px;
+  }
+  .gold-quote strong{font-size:38px}
+  .social-row{
+    gap:9px;
+    margin:14px 0 12px;
+  }
+  .hero-actions{gap:10px}
+}
+
+@media(max-width:980px){
+  .hero-main{
+    max-width:720px;
+  }
+  .association-wrap{opacity:.92}
+}
+
+@media(max-width:760px){
+  .hero-main{padding-top:5px}
+  .hero-logo{
+    width:112px;
+    height:112px;
+    margin-bottom:11px;
+  }
+  .association-wrap{
+    margin:10px auto 1px;
+    min-height:34px;
+  }
+  .association-wrap img{width:34px;height:34px}
+  .association-wrap span{font-size:6px}
+  .association-wrap strong{font-size:10px}
+  .slogan{margin-top:13px}
+  .gold-quote{margin-top:2px}
+  .social-row{margin:12px 0 11px}
+  .hero-actions{gap:7px}
+}
+
+@media(max-width:420px){
+  .hero-logo{
+    width:100px;
+    height:100px;
+  }
+  .association-wrap{gap:6px}
+  .association-wrap img{width:30px;height:30px}
+  .association-wrap span{font-size:5.5px}
+  .association-wrap strong{font-size:9px}
+  .slogan{margin-top:11px}
+  .social-row{margin-top:10px}
+}
