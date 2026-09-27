@@ -492,7 +492,7 @@ function bindYYCScrollMotion(){
 }
 function yycHttpUrl(value,fallback){
   var v=String(value||'').trim();
-  return /^https?:\\/\\//i.test(v) ? v : (fallback||'');
+  return /^https?:\/\//i.test(v) ? v : (fallback||'');
 }
 function yycPrice(value){
   if(value===null||value===undefined||value==='') return '';
