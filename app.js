@@ -125,7 +125,7 @@ function exportYYCMembersCSV(members){
 }
 
 function exportYYCStorageCSV(s){
-  var headers=['Record Type','ID','Name','Role Number','Role','Status','Approved','Date of Birth','Phone','Email','Club Name','Title','Message','Caption','Event Date','Location','Description','Area','Created At','Published At'];
+  var headers=['Record Type','ID','Name','Role Number','Role','Status','Approved','Date of Birth','Phone','Email','Club Name','Title','Message','Caption','Event Date','Location','Description','Area','Price','Sizes','Category','Order Link','Created At','Published At'];
   var rows=[];
   (s.members||[]).forEach(function(m){rows.push({'Record Type':'Member','ID':m.id,'Name':m.name,'Role Number':m.role_number,'Status':m.status,'Approved':m.approved?'Approved':'Pending','Date of Birth':m.dob,'Phone':m.phone,'Email':m.email,'Club Name':m.club_name,'Role':m.position,'Created At':m.created_at});});
   (s.leaders||[]).forEach(function(l){rows.push({'Record Type':'Leader','ID':l.id,'Name':l.name,'Role':l.role,'Status':l.status,'Phone':l.phone,'Email':l.email,'Created At':l.created_at});});
@@ -133,6 +133,7 @@ function exportYYCStorageCSV(s){
   (s.gallery||[]).forEach(function(x){rows.push({'Record Type':'Gallery','ID':x.id,'Title':x.title,'Caption':x.caption,'Status':x.status,'Created At':x.created_at});});
   (s.events||[]).forEach(function(x){rows.push({'Record Type':'Event','ID':x.id,'Title':x.title,'Event Date':x.event_date,'Location':x.location,'Description':x.description,'Status':x.status,'Created At':x.created_at});});
   (s.volunteers||[]).forEach(function(x){rows.push({'Record Type':'Volunteer','ID':x.id,'Name':x.name,'Area':x.area,'Approved':x.approved?'Approved':'Pending','Created At':x.created_at});});
+  (s.swags||[]).forEach(function(x){rows.push({'Record Type':'Swag','ID':x.id,'Title':x.title,'Category':x.category,'Price':x.price,'Sizes':x.sizes,'Description':x.description,'Status':x.status,'Order Link':x.order_url,'Created At':x.created_at});});
   downloadYYCAdminCSV('yyc-data-export.csv',headers,rows);
   toast((rows.length||0)+' records exported');
 }
@@ -489,6 +490,16 @@ function bindYYCScrollMotion(){
   window.YYCObserveReveals=observeReveals;
   observeReveals(document);
 }
+function yycHttpUrl(value,fallback){
+  var v=String(value||'').trim();
+  return /^https?:\\/\\//i.test(v) ? v : (fallback||'');
+}
+function yycPrice(value){
+  if(value===null||value===undefined||value==='') return '';
+  var n=Number(value);
+  if(!isFinite(n)) return '';
+  return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n);
+}
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
   var arr=[];
@@ -564,6 +575,25 @@ function renderPublic(){
     },'No gallery items published yet.','gallery-card');
   }
   if(window.YYCObserveReveals) window.YYCObserveReveals(document);
+  var sg=$('#swagsGrid');
+  if(sg){
+    var swags=publicData.swags||[];
+    var defaultOrder=yycHttpUrl(s.whatsapp,'');
+    sg.innerHTML=yycLimitedSectionHTML('swags',swags,function(sw){
+      var image=sw.image_url ? '<img src="'+esc(sw.image_url)+'" alt="'+esc(sw.title||'YYC swag')+'" loading="lazy" decoding="async">' : '<div class="swag-image-placeholder"><span>YYC</span><small>SWAG</small></div>';
+      var status=sw.status==='coming-soon'?'COMING SOON':'AVAILABLE';
+      var order=yycHttpUrl(sw.order_url,defaultOrder);
+      var cta=order?'<a class="swag-order-btn" href="'+esc(order)+'" target="_blank" rel="noopener">ENQUIRE / ORDER <span>↗</span></a>':'<span class="swag-order-btn disabled">ENQUIRE SOON</span>';
+      var price=yycPrice(sw.price);
+      return '<article class="swag-card reveal">'+
+        '<div class="swag-media">'+image+'<span class="swag-status '+(sw.status==='coming-soon'?'soon':'')+'">'+esc(status)+'</span></div>'+
+        '<div class="swag-body"><span class="swag-category">'+esc(sw.category||'YYC OFFICIAL')+'</span><h3>'+esc(sw.title)+'</h3>'+
+        (price?'<div class="swag-price">'+esc(price)+'</div>':'')+
+        (sw.description?'<p>'+esc(sw.description)+'</p>':'')+
+        (sw.sizes?'<div class="swag-sizes"><span>SIZES</span><b>'+esc(sw.sizes)+'</b></div>':'')+
+        '<div class="swag-actions">'+cta+'</div></div></article>';
+    },'Swag collection coming soon.','swag-card');
+  }
   $('.yyc-read-more').forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
@@ -1224,7 +1254,7 @@ function adminPanel(tab,forceRefresh){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','YYC Swag'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
@@ -1342,6 +1372,28 @@ function renderAdminTab(tab,d){
     $$('[data-del-gallery]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
     return;
   }
+  if(tab==='swags'){
+    var swags=d.swags||[];
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC OFFICIAL COLLECTION</div><h2 class="modal-title">YYC Swag</h2><p class="admin-subline">Add jerseys, T-shirts, caps and other official YYC items.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addSwagBtn">+ Add swag</button></div></div>'+
+      (swags.length?'<div class="swag-admin-grid">'+swags.map(function(sw){
+        return '<article class="swag-admin-card">'+
+          '<div class="swag-admin-media">'+(sw.image_url?'<img src="'+esc(sw.image_url)+'" alt="'+esc(sw.title)+'">':'<span>YYC</span>')+'</div>'+
+          '<div class="swag-admin-body"><span>'+esc(sw.category||'YYC OFFICIAL')+'</span><strong>'+esc(sw.title)+'</strong>'+
+          '<small>'+(sw.price!==null&&sw.price!==undefined&&sw.price!==''?esc(yycPrice(sw.price))+' · ':'')+esc(sw.sizes||'Sizes not set')+'</small>'+
+          '<small class="swag-admin-status">'+esc(sw.status||'available')+'</small>'+
+          '<div class="admin-actions"><button type="button" class="mini-btn" data-edit-swag="'+sw.id+'">Edit</button><button type="button" class="mini-btn" data-del-swag="'+sw.id+'">Delete</button></div></div></article>';
+      }).join('')+'</div>':'<div class="empty">No YYC swag items yet. Add your first official item.</div>');
+    $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
+    $('[data-edit-swag]').forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
+    $('[data-del-swag]').forEach(function(b){b.addEventListener('click',async function(){
+      if(!confirm('Delete this YYC swag item?')) return;
+      var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
+      if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
+      toast('Swag item deleted'); adminPanel('swags');
+    });});
+    return;
+  }
+
   if(tab==='approvals'){
     var pendingMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';});
     var pUpdates=d.pending_updates||[], pGallery=d.pending_gallery||[];
@@ -1402,7 +1454,8 @@ function renderAdminTab(tab,d){
         ['Published Updates',published],
         ['Gallery Items',c.gallery||gallery.length],
         ['Events',c.events||events.length],
-        ['Volunteers',c.volunteers||volunteers.length]
+        ['Volunteers',c.volunteers||volunteers.length],
+        ['YYC Swag',c.swags||((d.swags||[]).length)]
       ];
       a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC INSIGHTS</div><h2 class="modal-title">Reports</h2><p class="admin-subline">Live operational summary from the current database.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="reportsRefresh">↻ Refresh</button></div></div>'+
         '<div class="report-grid">'+cards.map(function(x){return '<div class="report-card"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>';}).join('')+'</div>'+
@@ -1429,7 +1482,8 @@ function renderAdminTab(tab,d){
         ['announcements','Announcements',c.announcements||0,'▤'],
         ['gallery','Gallery',c.gallery||0,'▧'],
         ['events','Events',c.events||0,'◷'],
-        ['volunteers','Volunteers',c.volunteers||0,'✦']
+        ['volunteers','Volunteers',c.volunteers||0,'✦'],
+        ['swags','Swag Items',c.swags||0,'◇']
       ];
       function rows(arr,cols){
         if(!arr || !arr.length) return '<div class="storage-empty">No records yet.</div>';
@@ -1451,7 +1505,8 @@ function renderAdminTab(tab,d){
         '<div class="storage-section"><div class="storage-section-head"><h3>Announcements</h3><span>'+((s.announcements||[]).length)+' shown</span></div>'+rows(s.announcements,[['Title','title'],['Status','status'],['Published','published_at']])+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Gallery</h3><span>'+((s.gallery||[]).length)+' shown</span></div>'+rows(s.gallery,[['Title','title'],['Caption','caption'],['Status','status']])+'</div>'+
         '<div class="storage-section"><div class="storage-section-head"><h3>Events</h3><span>'+((s.events||[]).length)+' shown</span></div>'+rows(s.events,[['Title','title'],['Date','event_date'],['Location','location']])+'</div>'+
-        '<div class="storage-section"><div class="storage-section-head"><h3>Volunteers</h3><span>'+((s.volunteers||[]).length)+' shown</span></div>'+rows(s.volunteers,[['Name','name'],['Area','area'],['Approved','approved']])+'</div>';
+        '<div class="storage-section"><div class="storage-section-head"><h3>Volunteers</h3><span>'+((s.volunteers||[]).length)+' shown</span></div>'+rows(s.volunteers,[['Name','name'],['Area','area'],['Approved','approved']])+'</div>'+
+        '<div class="storage-section"><div class="storage-section-head"><h3>YYC Swag</h3><span>'+((s.swags||[]).length)+' shown</span></div>'+rows(s.swags,[['Title','title'],['Category','category'],['Price','price'],['Status','status']])+'</div>';
       $('#storageRefresh').addEventListener('click',function(){adminPanel('storage');});
       $('#exportStorageCSV').addEventListener('click',function(){exportYYCStorageCSV(s);});
     }).catch(function(e){
@@ -1590,6 +1645,70 @@ function adminGalleryForm(id){
   $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH PHOTO';}toast(err.message);}});
 }
 
+function adminSwagForm(id){
+  var existing=(adminData.swags||[]).find(function(sw){return String(sw.id)===String(id);}) || {
+    title:'',category:'JERSEY',price:'',sizes:'S · M · L · XL',description:'',
+    image_url:'',order_url:(adminData.settings&&adminData.settings.whatsapp)||'',status:'available',sort_order:0
+  };
+  var image=existing.image_url||'';
+  openModal(
+    '<div class="modal-kicker">ADMIN · YYC SWAG</div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminSwagBack">← YYC Swag</button></div>'+
+    '<h2 class="modal-title">'+(id?'Edit':'Add')+' Swag Item</h2>'+
+    '<p class="modal-sub">Add official YYC jerseys, T-shirts, caps, accessories or other club merchandise.</p>'+
+    '<form id="adminSwagForm"><div class="form-grid">'+
+      '<div class="field"><label>Item name</label><input id="swName" value="'+esc(existing.title||'')+'" placeholder="YYC Official Jersey" required></div>'+
+      '<div class="field"><label>Category</label><input id="swCategory" value="'+esc(existing.category||'')+'" placeholder="JERSEY / T-SHIRT / CAP" required></div>'+
+      '<div class="field"><label>Price <span class="field-note">(optional)</span></label><input id="swPrice" type="number" min="0" step="1" value="'+esc(existing.price==null?'':existing.price)+'" placeholder="999"></div>'+
+      '<div class="field"><label>Sizes <span class="field-note">(optional)</span></label><input id="swSizes" value="'+esc(existing.sizes||'')+'" placeholder="S · M · L · XL"></div>'+
+      '<div class="field"><label>Status</label><select id="swStatus"><option value="available" '+(existing.status==='available'?'selected':'')+'>Available</option><option value="coming-soon" '+(existing.status==='coming-soon'?'selected':'')+'>Coming soon</option><option value="hidden" '+(existing.status==='hidden'?'selected':'')+'>Hidden</option></select></div>'+
+      '<div class="field"><label>Display order</label><input id="swSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
+      '<div class="field full"><label>Swag image</label><input id="swFile" type="file" accept="image/*"><small class="field-help">Upload a product image; it will be stored in YYC media.</small></div>'+
+      '<div class="field full"><label>External image URL <span class="field-note">(optional)</span></label><input id="swImageUrl" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
+      '<div class="field full"><label>Description <span class="field-note">(optional)</span></label><textarea id="swDescription" placeholder="Premium YYC match jersey with club crest.">'+esc(existing.description||'')+'</textarea></div>'+
+      '<div class="field full"><label>Order / enquiry link <span class="field-note">(optional)</span></label><input id="swOrderUrl" value="'+esc(existing.order_url||'')+'" placeholder="https://wa.me/... or your order page"><small class="field-help">Leave blank to use the YYC WhatsApp link from Site Settings.</small></div>'+
+    '</div>'+
+    '<div class="crop-preview yyc-simple-preview admin-swag-image-preview"><img id="swPrev" src="'+esc(image||'assets/yyc-logo-clean.webp')+'" alt="Swag image preview"></div>'+
+    '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'ADD SWAG')+' <span>✓</span></button></div></form>'
+  );
+  $('#swFile').addEventListener('change',async function(){
+    try{var file=this.files&&this.files[0];if(!file)return;image=await readFile(file,1400);$('#swPrev').src=image;}
+    catch(e){toast('Could not read image');}
+  });
+  $('#swImageUrl').addEventListener('input',function(){
+    if(!String(image).startsWith('data:image/')) $('#swPrev').src=this.value.trim()||'assets/yyc-logo-clean.webp';
+  });
+  $('#adminSwagBack').addEventListener('click',function(){adminPanel('swags');});
+  $('#adminSwagForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
+    try{
+      btn.disabled=true; btn.dataset.originalText=btn.textContent;
+      var imageUrl=$('#swImageUrl').value.trim()||existing.image_url||'';
+      if(String(image).startsWith('data:image/')){
+        btn.textContent='UPLOADING IMAGE…';
+        imageUrl=await uploadYYCImage(image,'swag',adminToken,id||'',existing.image_url||'');
+      }
+      if(!imageUrl) throw new Error('Please add a swag image');
+      var payload={
+        title:$('#swName').value.trim(),
+        category:$('#swCategory').value.trim(),
+        price:$('#swPrice').value.trim(),
+        sizes:$('#swSizes').value.trim(),
+        description:$('#swDescription').value.trim(),
+        image_url:imageUrl,
+        order_url:$('#swOrderUrl').value.trim(),
+        status:$('#swStatus').value,
+        sort_order:$('#swSort').value||0
+      };
+      var rr=await rpc('admin_upsert_swag',{p_token:adminToken,p_id:id||null,p_payload:payload});
+      if(!rr||!rr.ok) throw new Error(rr&&rr.error||'Could not save swag item');
+      closeModal(); toast(id?'Swag item updated':'Swag item added'); adminPanel('swags');
+    }catch(err){
+      btn.disabled=false; btn.textContent=btn.dataset.originalText||'ADD SWAG ✓'; toast(err.message);
+    }
+  });
+}
 async function verifyFromUrl(){
   var role=new URLSearchParams(location.search).get('verify');
   if(!role) return;
