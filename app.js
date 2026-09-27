@@ -1254,7 +1254,7 @@ function adminPanel(tab,forceRefresh){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','YYC Swag'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','SWAGS'],['approvals','Approvals'],['events','Events'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
@@ -1374,7 +1374,7 @@ function renderAdminTab(tab,d){
   }
   if(tab==='swags'){
     var swags=d.swags||[];
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC OFFICIAL COLLECTION</div><h2 class="modal-title">YYC Swag</h2><p class="admin-subline">Add jerseys, T-shirts, caps and other official YYC items.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addSwagBtn">+ Add swag</button></div></div>'+
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">SWAGS</div><h2 class="modal-title">SWAGS</h2><p class="admin-subline">Add jerseys, T-shirts, caps and other official YYC items.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addSwagBtn">+ Add swag</button></div></div>'+
       (swags.length?'<div class="swag-admin-grid">'+swags.map(function(sw){
         return '<article class="swag-admin-card">'+
           '<div class="swag-admin-media">'+(sw.image_url?'<img src="'+esc(sw.image_url)+'" alt="'+esc(sw.title)+'">':'<span>YYC</span>')+'</div>'+
@@ -1382,7 +1382,7 @@ function renderAdminTab(tab,d){
           '<small>'+(sw.price!==null&&sw.price!==undefined&&sw.price!==''?esc(yycPrice(sw.price))+' · ':'')+esc(sw.sizes||'Sizes not set')+'</small>'+
           '<small class="swag-admin-status">'+esc(sw.status||'available')+'</small>'+
           '<div class="admin-actions"><button type="button" class="mini-btn" data-edit-swag="'+sw.id+'">Edit</button><button type="button" class="mini-btn" data-del-swag="'+sw.id+'">Delete</button></div></div></article>';
-      }).join('')+'</div>':'<div class="empty">No YYC swag items yet. Add your first official item.</div>');
+      }).join('')+'</div>':'<div class="empty">No swag items yet. Add your first item.</div>');
     $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
     $('[data-edit-swag]').forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
     $('[data-del-swag]').forEach(function(b){b.addEventListener('click',async function(){
@@ -1652,8 +1652,8 @@ function adminSwagForm(id){
   };
   var image=existing.image_url||'';
   openModal(
-    '<div class="modal-kicker">ADMIN · YYC SWAG</div>'+
-    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminSwagBack">← YYC Swag</button></div>'+
+    '<div class="modal-kicker">ADMIN · SWAGS</div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminSwagBack">← SWAGS</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Swag Item</h2>'+
     '<p class="modal-sub">Add official YYC jerseys, T-shirts, caps, accessories or other club merchandise.</p>'+
     '<form id="adminSwagForm"><div class="form-grid">'+
