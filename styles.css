@@ -2983,3 +2983,139 @@ body.yyC-opening .culture-panel{animation:yycOpeningCulture .9s cubic-bezier(.16
   .slogan{margin-top:11px}
   .social-row{margin-top:10px}
 }
+
+/* ===== PREMIUM HERO LOGO MOTION =====
+   Layered emblem animation: entrance + subtle ring sweep + soft shine.
+*/
+.hero-logo-stage{
+  width:150px;
+  height:150px;
+  position:relative;
+  margin:0 auto 15px;
+  display:grid;
+  place-items:center;
+  isolation:isolate;
+  border-radius:50%;
+  filter:drop-shadow(0 20px 54px rgba(0,0,0,.34));
+}
+.hero-logo-stage::before{
+  content:"";
+  position:absolute;
+  inset:-9px;
+  z-index:-2;
+  border-radius:50%;
+  background:conic-gradient(
+    from -36deg,
+    rgba(239,198,112,.05) 0deg,
+    rgba(239,198,112,.12) 50deg,
+    rgba(255,238,180,.95) 68deg,
+    rgba(209,150,53,.20) 82deg,
+    rgba(239,198,112,.05) 122deg,
+    rgba(239,198,112,.05) 360deg
+  );
+  -webkit-mask:radial-gradient(circle,transparent 66%,#000 67%,#000 71%,transparent 72%);
+  mask:radial-gradient(circle,transparent 66%,#000 67%,#000 71%,transparent 72%);
+  animation:yycLogoRingSweep 7.5s cubic-bezier(.45,0,.25,1) infinite;
+  opacity:.75;
+}
+.hero-logo-ring{
+  position:absolute;
+  inset:-2px;
+  border-radius:50%;
+  border:1px solid rgba(247,211,142,.48);
+  box-shadow:
+    0 0 0 7px rgba(7,10,13,.30),
+    0 0 0 8px rgba(221,174,83,.11),
+    0 0 22px rgba(231,184,83,.13);
+  pointer-events:none;
+  animation:yycLogoAura 4.8s ease-in-out infinite;
+}
+.hero-logo-shine{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  border-radius:50%;
+  overflow:hidden;
+  pointer-events:none;
+}
+.hero-logo-shine::before{
+  content:"";
+  position:absolute;
+  top:-30%;
+  left:-85%;
+  width:42%;
+  height:160%;
+  transform:rotate(21deg);
+  background:linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,239,190,.04) 30%,
+    rgba(255,244,204,.42) 50%,
+    rgba(255,239,190,.04) 70%,
+    transparent 100%
+  );
+  filter:blur(1px);
+  mix-blend-mode:screen;
+  animation:yycLogoShine 8.5s ease-in-out infinite;
+}
+.hero-logo{
+  width:150px;
+  height:150px;
+  margin:0;
+  position:relative;
+  z-index:1;
+  border-radius:50%;
+  object-fit:contain;
+  background:rgba(3,7,10,.16);
+  border:2px solid rgba(241,204,125,.82);
+  box-shadow:none;
+  animation:none;
+}
+body.yyC-opening .hero-logo-stage{
+  animation:yycLogoEntrance .9s cubic-bezier(.16,1,.3,1) .08s both;
+}
+body.yyC-opening .hero-logo{
+  animation:none;
+}
+@keyframes yycLogoEntrance{
+  0%{opacity:0;transform:scale(.78) translateY(18px);filter:blur(7px)}
+  58%{opacity:1;transform:scale(1.035) translateY(-2px);filter:blur(0)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+}
+@keyframes yycLogoRingSweep{
+  0%,18%{transform:rotate(-36deg);opacity:.10}
+  32%{opacity:.82}
+  62%{transform:rotate(324deg);opacity:.68}
+  75%,100%{transform:rotate(684deg);opacity:.10}
+}
+@keyframes yycLogoAura{
+  0%,100%{box-shadow:0 0 0 7px rgba(7,10,13,.30),0 0 0 8px rgba(221,174,83,.10),0 0 20px rgba(231,184,83,.10)}
+  50%{box-shadow:0 0 0 7px rgba(7,10,13,.30),0 0 0 8px rgba(221,174,83,.16),0 0 30px rgba(231,184,83,.21)}
+}
+@keyframes yycLogoShine{
+  0%,62%{left:-85%;opacity:0}
+  68%{opacity:.10}
+  78%{left:145%;opacity:.52}
+  86%,100%{left:145%;opacity:0}
+}
+@media(max-width:760px){
+  .hero-logo-stage{width:112px;height:112px;margin-bottom:11px}
+  .hero-logo{width:112px;height:112px}
+  .hero-logo-stage::before{
+    inset:-7px;
+    -webkit-mask:radial-gradient(circle,transparent 65%,#000 66%,#000 71%,transparent 72%);
+    mask:radial-gradient(circle,transparent 65%,#000 66%,#000 71%,transparent 72%);
+  }
+}
+@media(max-width:420px){
+  .hero-logo-stage{width:100px;height:100px}
+  .hero-logo{width:100px;height:100px}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-logo-stage,
+  .hero-logo-stage::before,
+  .hero-logo-ring,
+  .hero-logo-shine::before{
+    animation:none!important;
+  }
+}
