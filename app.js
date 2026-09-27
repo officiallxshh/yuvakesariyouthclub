@@ -431,6 +431,64 @@ function bindMotionSystem(){
   },false);
 }
 
+/* ===== YYC PREMIUM SCROLL REVEAL + SOFT PARALLAX ===== */
+var yycRevealObserver=null;
+var yycParallaxBound=false;
+
+function bindYYCScrollMotion(){
+  if(window.__yycScrollMotionBound) return;
+  window.__yycScrollMotionBound=true;
+
+  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(!reduce && 'IntersectionObserver' in window){
+    yycRevealObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('visible');
+          yycRevealObserver.unobserve(entry.target);
+        }
+      });
+    },{root:null,rootMargin:'0px 0px -8% 0px',threshold:.10});
+  }
+
+  function observeReveals(root){
+    root=root||document;
+    var items=root.querySelectorAll('.reveal:not(.visible)');
+    Array.prototype.forEach.call(items,function(el,index){
+      if(index<6) el.style.setProperty('--yyc-stagger-delay',(index*70)+'ms');
+      if(yycRevealObserver) yycRevealObserver.observe(el);
+      else el.classList.add('visible');
+    });
+  }
+
+  function updateParallax(){
+    if(reduce) return;
+    var img=document.querySelector('.glimpse-feature img');
+    if(!img) return;
+    var rect=img.parentElement.getBoundingClientRect();
+    var vh=window.innerHeight||1;
+    if(rect.bottom<0 || rect.top>vh) return;
+    var center=rect.top+rect.height/2;
+    var offset=((center-vh/2)/vh)*-18;
+    img.style.setProperty('--yyc-parallax-y',offset.toFixed(2)+'px');
+  }
+
+  if(!reduce && !yycParallaxBound){
+    yycParallaxBound=true;
+    var ticking=false;
+    window.addEventListener('scroll',function(){
+      if(ticking) return;
+      ticking=true;
+      requestAnimationFrame(function(){ticking=false;updateParallax();});
+    },{passive:true});
+    window.addEventListener('resize',updateParallax,{passive:true});
+    updateParallax();
+  }
+
+  window.YYCObserveReveals=observeReveals;
+  observeReveals(document);
+}
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
   var arr=[];
@@ -465,7 +523,7 @@ function renderPublic(){
   if(lg){
     lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
       var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'">' : '<span class="photo-placeholder">✦</span>';
-      return '<article class="leader-card compact-leader-card reveal visible"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
+      return '<article class="leader-card compact-leader-card reveal"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
 
@@ -474,7 +532,7 @@ function renderPublic(){
     var ups=publicData.updates||[];
     ug.innerHTML=yycLimitedSectionHTML('updates',ups,function(u){
       var image=u.image_url ? '<div class="update-card-media"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy"></div>' : '';
-      return '<article class="update-card '+(image?'has-image':'')+' reveal visible">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
+      return '<article class="update-card '+(image?'has-image':'')+' reveal">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
     },'No updates published yet.','update-card');
   }
 
@@ -489,7 +547,7 @@ function renderPublic(){
       var month=d&&!isNaN(d)?d.toLocaleDateString('en-IN',{month:'short'}).toUpperCase():'DATE TBC';
       var year=d&&!isNaN(d)?String(d.getFullYear()):'';
       var image=ev.image_url ? '<img src="'+esc(ev.image_url)+'" alt="'+esc(ev.title||'YYC event')+'" loading="lazy">' : '<div class="event-card-art"><span>YYC</span><b>EVENT</b></div>';
-      return '<article class="event-card reveal visible">'+
+      return '<article class="event-card reveal">'+
         '<div class="event-card-media">'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
         '<div class="event-card-body"><span class="event-kicker">YYC PROGRAMME</span><h3>'+esc(ev.title||'Untitled event')+'</h3>'+
         (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
@@ -502,9 +560,10 @@ function renderPublic(){
   if(gg){
     var gs=publicData.gallery||[];
     gg.innerHTML=yycLimitedSectionHTML('gallery',gs,function(g){
-      return '<figure class="gallery-card reveal visible"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
+      return '<figure class="gallery-card reveal"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
     },'No gallery items published yet.','gallery-card');
   }
+  if(window.YYCObserveReveals) window.YYCObserveReveals(document);
   $('.yyc-read-more').forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
@@ -1616,6 +1675,7 @@ function bindAdminActionDelegation(){
 }
 
 function bindUI(){
+  bindYYCScrollMotion();
   bindMotionSystem();
   bindAdminActionDelegation();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
