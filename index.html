@@ -99,7 +99,7 @@
     <a href="#glimpse" class="nav-link"><span class="nav-icon">◈</span>Tulunad Glimpse</a>
     <a href="#leaders" class="nav-link"><span class="nav-icon">♛</span>Leaders</a>
     <a href="#updates" class="nav-link"><span class="nav-icon">▤</span>Updates</a>
-    <a href="#events" class="nav-link"><span class="nav-icon">◷</span>Events</a><a href="#gallery" class="nav-link"><span class="nav-icon">▧</span>Gallery</a>
+    <a href="#events" class="nav-link"><span class="nav-icon">◷</span>Events</a><a href="#swags" class="nav-link"><span class="nav-icon">◇</span>YYC Swag</a><a href="#gallery" class="nav-link"><span class="nav-icon">▧</span>Gallery</a>
     <a href="#join" class="nav-link"><span class="nav-icon">✦</span>Join</a>
     <button class="nav-admin member-login-btn" id="memberLoginBtn"><span>◉</span> Member Login</button><button class="nav-admin leader-login-btn" id="leaderLoginBtn"><span>♛</span> Leader Login</button><button class="nav-admin" id="adminOpenBtn"><span>⌑</span> Admin Login</button>
   </nav>
@@ -110,7 +110,7 @@
   <a href="#glimpse">◈ <span>Tulunad Glimpse</span></a>
   <a href="#leaders">♛ <span>Leaders</span></a>
   <a href="#updates">▤ <span>Updates</span></a>
-  <a href="#events">◷ <span>Events</span></a><a href="#gallery">▧ <span>Gallery</span></a>
+  <a href="#events">◷ <span>Events</span></a><a href="#swags">◇ <span>YYC Swag</span></a><a href="#gallery">▧ <span>Gallery</span></a>
   <a href="#join">✦ <span>Join</span></a>
   <button type="button" class="nav-admin full member-login-btn" id="memberLoginMobile">◉ Member Login</button><button type="button" class="nav-admin full leader-login-btn" id="leaderLoginMobile">♛ Leader Login</button><button type="button" class="nav-admin full" id="adminOpenMobile">⌑ Admin Login</button>
 </div>
@@ -213,8 +213,19 @@
   </div>
 </section>
 
+<section class="section swag-section" id="swags">
+  <div class="section-kicker">06 / YYC OFFICIAL COLLECTION</div>
+  <div class="section-head reveal">
+    <div><h2>Wear the <span>YYC.</span></h2></div>
+    <p>Official club jerseys, T-shirts, caps and other YYC swags. Items, sizes, pricing and enquiry links are managed from the Admin Panel.</p>
+  </div>
+  <div class="swag-grid" id="swagsGrid">
+    <div class="empty">Swag collection coming soon.</div>
+  </div>
+</section>
+
 <section class="section join-section type-editorial" id="join">
-  <div class="join-card reveal"><div><div class="section-kicker">06 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
+  <div class="join-card reveal"><div><div class="section-kicker">07 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
 </section>
 </main>
 
@@ -242,73 +253,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="app.js?v=20260927-01"></script>
 <script>
-function initInertialScroll(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if('ontouchstart' in window || navigator.maxTouchPoints>0) return;
-
-  var targetY=window.scrollY, currentY=window.scrollY, raf=0, active=false;
-  document.documentElement.classList.add('yyc-inertial-scroll');
-  document.body.classList.add('yyc-inertial-scroll');
-
-  function clampTarget(){
-    var max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
-    targetY=Math.max(0,Math.min(max,targetY));
-  }
-  function tick(){
-    currentY += (targetY-currentY)*0.12;
-    if(Math.abs(targetY-currentY)<0.35){
-      currentY=targetY; active=false; raf=0;
-    }
-    window.scrollTo(0,currentY);
-    if(active) raf=requestAnimationFrame(tick);
-  }
-  function wake(){
-    if(active) return;
-    active=true;
-    raf=requestAnimationFrame(tick);
-  }
-
-  window.addEventListener('scroll',function(){
-    if(!active){
-      currentY=window.scrollY;
-      targetY=currentY;
-    }
-  },{passive:true});
-
-  window.addEventListener('wheel',function(e){
-    if(Math.abs(e.deltaY)<1) return;
-    var overModal=e.target && e.target.closest && e.target.closest('.modal,.modal-box,.admin-workspace,.mobile-panel');
-    if(overModal) return;
-    e.preventDefault();
-    targetY += e.deltaY*0.72;
-    clampTarget();
-    wake();
-  },{passive:false});
-
-  window.addEventListener('keydown',function(e){
-    var key=e.key;
-    var delta=0;
-    if(key==='ArrowDown') delta=140;
-    else if(key==='ArrowUp') delta=-140;
-    else if(key==='PageDown') delta=window.innerHeight*0.82;
-    else if(key==='PageUp') delta=-window.innerHeight*0.82;
-    else if(key===' ' && !e.shiftKey) delta=window.innerHeight*0.82;
-    else if(key===' ' && e.shiftKey) delta=-window.innerHeight*0.82;
-    else if(key==='Home') {targetY=0; clampTarget(); wake(); return;}
-    else if(key==='End') {targetY=document.documentElement.scrollHeight-window.innerHeight; clampTarget(); wake(); return;}
-    else return;
-    if(e.target && /input|textarea|select/i.test(e.target.tagName)) return;
-    e.preventDefault();
-    targetY += delta;
-    clampTarget();
-    wake();
-  });
-
-  window.addEventListener('resize',function(){targetY=window.scrollY;currentY=targetY;clampTarget();},{passive:true});
-}
-
-
-initInertialScroll();
 
 (function(){
   'use strict';
