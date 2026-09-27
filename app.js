@@ -304,54 +304,75 @@ function imageEditor(id,photo,scale,x,y){
   var z=(scale||1).toFixed(2);
   return '<div class="yyc-photo-editor ig-photo-editor">'+
     '<div class="ig-editor-head">'+
-      '<div><span class="ig-editor-kicker">MANUAL PHOTO CROP</span><h3>Crop your photo manually</h3><p>Drag the photo to choose the crop. Use the zoom slider or scroll to control the frame.</p></div>'+
-      '<span class="ig-editor-badge">MANUAL SQUARE CROP</span>'+
+      '<div><span class="ig-editor-kicker">PHOTO UPLOAD</span><h3>Choose your photo first</h3><p>Your full photo is shown first. Cropping starts only after you press Adjust Crop.</p></div>'+
+      '<span class="ig-editor-badge">NO AUTO CROP</span>'+
     '</div>'+
-    '<div class="ig-editor-body">'+
-      '<div class="ig-preview-wrap">'+
-        '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square photo adjustment area">'+
-          '<div class="ig-preview-topline"><span>LIVE PREVIEW</span><b>1:1</b></div>'+
-          '<div class="ig-crop-grid"></div>'+
-          '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
-          '<span class="ig-center-mark"></span>'+
-          '<div class="ig-preview-bottom"><span>DRAG TO CROP</span><span>SCROLL TO ZOOM</span></div>'+
+    '<div class="ig-full-photo-box" id="'+id+'FullBox">'+
+      '<img id="'+id+'FullPreview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Full photo preview">'+
+      '<div class="ig-full-photo-label">FULL PHOTO · NO CROP APPLIED</div>'+
+    '</div>'+
+    '<button type="button" class="ig-adjust-crop-btn" id="'+id+'AdjustCrop">ADJUST CROP <span>→</span></button>'+
+    '<div class="ig-crop-editor" id="'+id+'CropEditor" hidden>'+
+      '<div class="ig-crop-editor-head"><span>MANUAL SQUARE CROP</span><small>Drag and zoom to choose the exact framing.</small></div>'+
+      '<div class="ig-editor-body">'+
+        '<div class="ig-preview-wrap">'+
+          '<div class="yyc-photo-preview ig-photo-preview" id="'+id+'Stage" tabindex="0" aria-label="Square manual crop area">'+
+            '<div class="ig-preview-topline"><span>LIVE CROP</span><b>1:1</b></div>'+
+            '<div class="ig-crop-grid"></div>'+
+            '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Manual crop preview">'+
+            '<span class="ig-center-mark"></span>'+
+            '<div class="ig-preview-bottom"><span>DRAG TO CROP</span><span>SCROLL TO ZOOM</span></div>'+
+          '</div>'+
         '</div>'+
+        '<aside class="ig-adjust-panel">'+
+          '<div class="ig-adjust-block">'+
+            '<div class="ig-block-label"><span>ZOOM</span><output id="'+id+'ScaleOut">'+z+'×</output></div>'+
+            '<div class="ig-range-shell"><span>1×</span><input class="ig-zoom-range" id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'" aria-label="Zoom"><span>2.4×</span></div>'+
+          '</div>'+
+          '<div class="ig-adjust-divider"></div>'+
+          '<div class="ig-adjust-block ig-position-status">'+
+            '<div class="ig-block-label"><span>POSITION</span><small>Drag inside crop frame</small></div>'+
+            '<div class="ig-position-readout"><span>X <b id="'+id+'XOut">'+Math.round(x==null?50:x)+'%</b></span><span>Y <b id="'+id+'YOut">'+Math.round(y==null?50:y)+'%</b></span></div>'+
+          '</div>'+
+          '<div class="ig-adjust-actions">'+
+            '<button type="button" class="ig-secondary-btn" id="'+id+'Center"><span>◎</span> CENTER</button>'+
+            '<button type="button" class="ig-reset-btn" id="'+id+'Reset"><span>↺</span> RESET</button>'+
+          '</div>'+
+        '</aside>'+
       '</div>'+
-      '<aside class="ig-adjust-panel">'+
-        '<div class="ig-adjust-block">'+
-          '<div class="ig-block-label"><span>ZOOM</span><output id="'+id+'ScaleOut">'+z+'×</output></div>'+
-          '<div class="ig-range-shell"><span>1×</span><input class="ig-zoom-range" id="'+id+'Scale" type="range" min="1" max="2.4" step="0.01" value="'+(scale||1)+'" aria-label="Zoom"><span>2.4×</span></div>'+
-        '</div>'+
-        '<div class="ig-adjust-divider"></div>'+
-        '<div class="ig-adjust-block ig-position-status">'+
-          '<div class="ig-block-label"><span>POSITION</span><small>Drag inside preview</small></div>'+
-          '<div class="ig-position-readout"><span>X <b id="'+id+'XOut">'+Math.round(x==null?50:x)+'%</b></span><span>Y <b id="'+id+'YOut">'+Math.round(y==null?50:y)+'%</b></span></div>'+
-        '</div>'+
-        '<div class="ig-adjust-actions">'+
-          '<button type="button" class="ig-secondary-btn" id="'+id+'Center"><span>◎</span> CENTER</button>'+
-          '<button type="button" class="ig-reset-btn" id="'+id+'Reset"><span>↺</span> RESET</button>'+
-        '</div>'+
-      '</aside>'+
     '</div>'+
   '</div>';
 }
 function wireEditor(id,obj,fileInput){
   var stage=$('#'+id+'Stage'), img=$('#'+id+'Preview'), zoom=$('#'+id+'Scale');
+  var fullBox=$('#'+id+'FullBox'), fullImg=$('#'+id+'FullPreview');
+  var cropEditor=$('#'+id+'CropEditor'), adjust=$('#'+id+'AdjustCrop');
+
   function draw(){
+    if(!stage||!zoom) return;
     obj.scale=Number(zoom.value);
     obj.x=Math.max(0,Math.min(100,obj.x==null?50:Number(obj.x)));
     obj.y=Math.max(0,Math.min(100,obj.y==null?50:Number(obj.y)));
     var rect=stage.getBoundingClientRect();
     var w=rect.width||320, h=rect.height||320;
-    /* Translate the whole preview so vertical movement is always visible. */
-    var maxPanX=w*0.32*obj.scale;
-    var maxPanY=h*0.32*obj.scale;
-    var tx=((obj.x-50)/50)*maxPanX;
-    var ty=((obj.y-50)/50)*maxPanY;
+    var maxPanX=w*0.32*obj.scale, maxPanY=h*0.32*obj.scale;
+    var tx=((obj.x-50)/50)*maxPanX, ty=((obj.y-50)/50)*maxPanY;
     img.style.transform='translate3d('+tx.toFixed(2)+'px,'+ty.toFixed(2)+'px,0) scale('+obj.scale+')';
     img.style.objectPosition='50% 50%';
-    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×'; $('#'+id+'XOut').textContent=Math.round(obj.x)+'%'; $('#'+id+'YOut').textContent=Math.round(obj.y)+'%';
+    $('#'+id+'ScaleOut').textContent=obj.scale.toFixed(2)+'×';
+    $('#'+id+'XOut').textContent=Math.round(obj.x)+'%';
+    $('#'+id+'YOut').textContent=Math.round(obj.y)+'%';
   }
+
+  function openCrop(){
+    cropEditor.hidden=false;
+    fullBox.hidden=true;
+    adjust.hidden=true;
+    img.src=obj.photo||'assets/yyc-logo-clean.webp';
+    draw();
+  }
+
+  adjust.addEventListener('click',openCrop);
   zoom.addEventListener('input',draw);
 
   var drag={on:false,x:0,y:0,ox:50,oy:50};
@@ -360,14 +381,13 @@ function wireEditor(id,obj,fileInput){
     drag.on=true; drag.x=e.clientX; drag.y=e.clientY;
     drag.ox=obj.x==null?50:Number(obj.x); drag.oy=obj.y==null?50:Number(obj.y);
     stage.classList.add('is-dragging');
-    if(stage.setPointerCapture && e.pointerId!=null) stage.setPointerCapture(e.pointerId);
+    if(stage.setPointerCapture&&e.pointerId!=null) stage.setPointerCapture(e.pointerId);
     e.preventDefault();
   }
   function pointerMove(e){
     if(!drag.on) return;
     var rect=stage.getBoundingClientRect();
     var sensitivity=100/Math.max(120,Math.min(rect.width,rect.height));
-    /* Move the image in the same direction as the mouse/finger. */
     var zoomFactor=Math.max(1,Number(obj.scale)||1);
     obj.x=Math.max(0,Math.min(100,drag.ox+(e.clientX-drag.x)*sensitivity/zoomFactor*1.35));
     obj.y=Math.max(0,Math.min(100,drag.oy+(e.clientY-drag.y)*sensitivity/zoomFactor*1.35));
@@ -375,8 +395,9 @@ function wireEditor(id,obj,fileInput){
     e.preventDefault();
   }
   function pointerUp(e){
-    drag.on=false; stage.classList.remove('is-dragging');
-    if(stage.releasePointerCapture && e.pointerId!=null){try{stage.releasePointerCapture(e.pointerId)}catch(err){}}
+    drag.on=false;
+    stage.classList.remove('is-dragging');
+    if(stage.releasePointerCapture&&e.pointerId!=null){try{stage.releasePointerCapture(e.pointerId)}catch(err){}}
   }
   stage.addEventListener('pointerdown',pointerDown);
   stage.addEventListener('pointermove',pointerMove);
@@ -388,23 +409,33 @@ function wireEditor(id,obj,fileInput){
     draw();
   },{passive:false});
 
-  function resetPhoto(){
-    obj.scale=1; obj.x=50; obj.y=50; zoom.value='1'; draw();
-  }
-  function centerPhoto(){
-    obj.x=50; obj.y=50; draw();
-  }
+  function resetPhoto(){obj.scale=1;obj.x=50;obj.y=50;zoom.value='1';draw();}
+  function centerPhoto(){obj.x=50;obj.y=50;draw();}
   $('#'+id+'Reset').addEventListener('click',resetPhoto);
   $('#'+id+'Center').addEventListener('click',centerPhoto);
 
   $('#'+fileInput).addEventListener('change',async function(){
     try{
-      var d=await readFile(this.files[0],760);
+      var file=this.files&&this.files[0];
+      if(!file) return;
+      var d=await readFile(file,760);
       if(!d) return;
-      obj.photo=d; obj.scale=1; obj.x=50; obj.y=50;
-      zoom.value='1'; img.src=d; draw();
+      obj.photo=d;
+      obj.scale=1; obj.x=50; obj.y=50;
+      zoom.value='1';
+      fullImg.src=d;
+      img.src=d;
+      fullBox.hidden=false;
+      cropEditor.hidden=true;
+      adjust.hidden=false;
+      img.style.transform='none';
     }catch(err){toast('Could not load this photo');}
   });
+
+  if(fullImg&&obj.photo) fullImg.src=obj.photo;
+  fullBox.hidden=false;
+  cropEditor.hidden=true;
+  adjust.hidden=false;
   draw();
 }
 /* ===== YYC MOTION SYSTEM — SMOOTH, NO-LAYOUT-SHIFT ===== */
