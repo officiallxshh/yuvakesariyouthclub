@@ -3160,3 +3160,80 @@ body.yyC-opening .hero-logo{
     animation:none!important;
   }
 }
+
+/* ===== NO-AUTO-CROP PROFILE UPLOAD ===== */
+.ig-full-photo-box{
+  position:relative;
+  min-height:240px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  padding:18px;
+  border:1px solid rgba(237,193,105,.18);
+  border-radius:20px;
+  background:#070b0e;
+}
+.ig-full-photo-box[hidden]{display:none!important}
+.ig-full-photo-box img{
+  display:block;
+  width:100%;
+  max-width:520px;
+  max-height:420px;
+  height:auto;
+  object-fit:contain;
+  border-radius:14px;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.ig-full-photo-label{
+  position:absolute;
+  left:14px;
+  bottom:12px;
+  padding:7px 9px;
+  border-radius:999px;
+  background:rgba(4,7,9,.74);
+  border:1px solid rgba(255,255,255,.08);
+  color:rgba(239,229,208,.72);
+  font:700 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.ig-adjust-crop-btn{
+  width:100%;
+  margin-top:10px;
+  min-height:44px;
+  border:1px solid rgba(239,202,123,.24);
+  border-radius:12px;
+  background:rgba(239,202,123,.07);
+  color:#eacb8a;
+  font:800 9px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.16em;
+  cursor:pointer;
+}
+.ig-adjust-crop-btn:hover{
+  background:rgba(239,202,123,.12);
+  border-color:rgba(239,202,123,.42);
+}
+.ig-crop-editor[hidden]{display:none!important}
+.ig-crop-editor-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  margin:14px 0 8px;
+  color:#d9c89f;
+  font:800 8px/1.2 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.ig-crop-editor-head small{
+  color:#7d8784;
+  font:600 9px/1.4 Inter,sans-serif;
+  letter-spacing:0;
+  text-align:right;
+}
+@media(max-width:620px){
+  .ig-full-photo-box{min-height:210px;padding:12px}
+  .ig-full-photo-box img{max-height:360px}
+  .ig-adjust-crop-btn{min-height:42px}
+  .ig-crop-editor-head{display:block}
+  .ig-crop-editor-head small{display:block;margin-top:6px;text-align:left}
+}
