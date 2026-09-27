@@ -265,12 +265,47 @@ function readFile(file,maxSide){
     r.readAsDataURL(file);
   });
 }
+function yycManualSquareCrop(dataUrl,scale,x,y,maxSide){
+  return new Promise(function(resolve,reject){
+    if(!dataUrl || !String(dataUrl).startsWith('data:image/')){resolve(dataUrl||'');return;}
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var w=img.naturalWidth||img.width||1;
+        var h=img.naturalHeight||img.height||1;
+        var zoom=Math.max(1,Math.min(2.4,Number(scale)||1));
+        var cropSide=Math.min(w,h)/zoom;
+        var maxX=Math.max(0,w-cropSide);
+        var maxY=Math.max(0,h-cropSide);
+        var xv=Number(x), yv=Number(y);
+        if(!isFinite(xv)) xv=50;
+        if(!isFinite(yv)) yv=50;
+        xv=Math.max(0,Math.min(100,xv));
+        yv=Math.max(0,Math.min(100,yv));
+        var sx=maxX*(xv/100);
+        var sy=maxY*(yv/100);
+        var outSide=Math.max(1,Math.min(maxSide||760,Math.round(cropSide)));
+        var canvas=document.createElement('canvas');
+        canvas.width=outSide;
+        canvas.height=outSide;
+        var ctx=canvas.getContext('2d');
+        if(!ctx) throw new Error('Crop engine did not initialize');
+        ctx.imageSmoothingEnabled=true;
+        ctx.imageSmoothingQuality='high';
+        ctx.drawImage(img,sx,sy,cropSide,cropSide,0,0,outSide,outSide);
+        resolve(canvas.toDataURL('image/jpeg',0.90));
+      }catch(err){reject(err);}
+    };
+    img.onerror=function(){reject(new Error('Could not prepare the photo for cropping'));};
+    img.src=dataUrl;
+  });
+}
 function imageEditor(id,photo,scale,x,y){
   var z=(scale||1).toFixed(2);
   return '<div class="yyc-photo-editor ig-photo-editor">'+
     '<div class="ig-editor-head">'+
-      '<div><span class="ig-editor-kicker">PHOTO ADJUSTMENT</span><h3>Position your photo perfectly</h3><p>Drag the image to move it. Use the wheel or touch scroll to zoom.</p></div>'+
-      '<span class="ig-editor-badge">SQUARE ID CROP</span>'+
+      '<div><span class="ig-editor-kicker">MANUAL PHOTO CROP</span><h3>Crop your photo manually</h3><p>Drag the photo to choose the crop. Use the zoom slider or scroll to control the frame.</p></div>'+
+      '<span class="ig-editor-badge">MANUAL SQUARE CROP</span>'+
     '</div>'+
     '<div class="ig-editor-body">'+
       '<div class="ig-preview-wrap">'+
@@ -279,7 +314,7 @@ function imageEditor(id,photo,scale,x,y){
           '<div class="ig-crop-grid"></div>'+
           '<img id="'+id+'Preview" src="'+esc(photo || 'assets/yyc-logo-clean.webp')+'" alt="Photo preview">'+
           '<span class="ig-center-mark"></span>'+
-          '<div class="ig-preview-bottom"><span>DRAG TO POSITION</span><span>SCROLL TO ZOOM</span></div>'+
+          '<div class="ig-preview-bottom"><span>DRAG TO CROP</span><span>SCROLL TO ZOOM</span></div>'+
         '</div>'+
       '</div>'+
       '<aside class="ig-adjust-panel">'+
@@ -500,6 +535,17 @@ function yycPrice(value){
   if(!isFinite(n)) return '';
   return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n);
 }
+function yycProfilePhotoStyle(data){
+  var scale=Number(data&&data.photo_scale);
+  var xv=Number(data&&data.photo_pos_x), yv=Number(data&&data.photo_pos_y);
+  if(!isFinite(scale)) scale=1;
+  if(!isFinite(xv)) xv=50;
+  if(!isFinite(yv)) yv=50;
+  scale=Math.max(1,Math.min(2.4,scale));
+  xv=Math.max(0,Math.min(100,xv));
+  yv=Math.max(0,Math.min(100,yv));
+  return 'style="object-position:'+xv+'% '+yv+'%;transform:scale('+scale.toFixed(3)+');transform-origin:center center"';
+}
 function socialHTML(){
   var s=(publicData && publicData.settings) || {};
   var arr=[];
@@ -533,7 +579,7 @@ function renderPublic(){
   var lg=$('#leadersGrid');
   if(lg){
     lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
-      var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'">' : '<span class="photo-placeholder">✦</span>';
+      var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'" '+yycProfilePhotoStyle(l)+'>' : '<span class="photo-placeholder">✦</span>';
       return '<article class="leader-card compact-leader-card reveal"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
@@ -645,8 +691,9 @@ function memberRegister(){
       if(!obj.photo){toast('Please choose a photo');return;}
       var btn=e.currentTarget.querySelector('button[type="submit"]');
       if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
-      var storedPhoto=await uploadYYCImage(obj.photo,'member-registration','', '', '');
-      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:storedPhoto,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
+      var croppedPhoto=await yycManualSquareCrop(obj.photo,obj.scale,obj.x,obj.y,760);
+      var storedPhoto=await uploadYYCImage(croppedPhoto,'member-registration','', '', '');
+      var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:storedPhoto,photo_scale:1,photo_pos_x:50,photo_pos_y:50};
       var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
       if(!r.ok) throw new Error(r.error||'Registration failed');
       closeModal(); toast('Application submitted — wait for admin approval');
@@ -920,11 +967,11 @@ function portalAccountMenu(kind,data){
   var photo=data.photo_url||'assets/yyc-logo-clean.webp';
   return '<div class="yyc-portal-account">'+
     '<button type="button" class="yyc-portal-avatar-btn" id="'+id+'ProfileMenuBtn" aria-haspopup="true" aria-expanded="false" aria-label="Open '+id+' profile menu">'+
-      '<img src="'+esc(photo)+'" alt="'+esc(data.name|| (leader?'Leader':'Member'))+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
+      '<img src="'+esc(photo)+'" alt="'+esc(data.name|| (leader?'Leader':'Member'))+'" '+yycProfilePhotoStyle(data)+' onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
       '<span class="yyc-portal-avatar-caret">⌄</span>'+
     '</button>'+
     '<div class="yyc-portal-menu" id="'+id+'ProfileMenu" hidden>'+
-      '<div class="yyc-portal-menu-head"><img src="'+esc(photo)+'" alt=""><div><b>'+esc(data.name|| (leader?'Leader':'Member'))+'</b><small>'+esc(data.role_number||'YYC PROFILE')+'</small></div></div>'+
+      '<div class="yyc-portal-menu-head"><img src="'+esc(photo)+'" alt="" '+yycProfilePhotoStyle(data)+'><div><b>'+esc(data.name|| (leader?'Leader':'Member'))+'</b><small>'+esc(data.role_number||'YYC PROFILE')+'</small></div></div>'+
       '<button type="button" class="yyc-portal-menu-item" id="'+id+'ProfileViewBtn"><span>◉</span> MY PROFILE</button>'+
       '<button type="button" class="yyc-portal-menu-item" id="'+id+'IdCardBtn"><span>▣</span> ID CARD</button>'+
       '<button type="button" class="yyc-portal-menu-item '+(leader?'is-disabled':'')+'" id="'+id+'EditSubmissionBtn" '+(leader?'title="Leader details are managed by YYC Admin"':'')+'><span>✎</span> EDIT SUBMISSION</button>'+
@@ -959,7 +1006,7 @@ function portalProfileView(kind,data){
     '<div class="portal-profile-view">'+
       '<div class="portal-profile-top"><button type="button" class="mini-btn" id="portalProfileBack">← BACK</button><span class="portal-profile-kicker">'+(leader?'LEADER PROFILE':'MEMBER PROFILE')+'</span></div>'+
       '<div class="portal-profile-hero">'+
-        '<img class="portal-profile-large-photo" src="'+esc(photo)+'" alt="'+esc(data.name||'YYC Profile')+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
+        '<img class="portal-profile-large-photo" src="'+esc(photo)+'" alt="'+esc(data.name||'YYC Profile')+'" '+yycProfilePhotoStyle(data)+' onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'">'+
         '<div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">'+esc(data.name|| (leader?'Leader':'Member'))+'</h2><p class="modal-sub">'+esc(leader?(data.role||'LEADER'):(data.position||'MEMBER'))+'</p></div>'+
       '</div>'+
       '<div class="portal-profile-grid">'+
@@ -1024,7 +1071,9 @@ function memberEditSubmission(data){
       if(!obj.photo) throw new Error('Please keep or choose a member photo');
       if(String(obj.photo).startsWith('data:image/')){
         btn.textContent='UPLOADING PHOTO…';
-        payload.photo_data=await uploadYYCImage(obj.photo,'member-profile',memberToken,data.id||'',data.photo_url||'');
+        var croppedPhoto=await yycManualSquareCrop(obj.photo,obj.scale,obj.x,obj.y,760);
+        payload.photo_data=await uploadYYCImage(croppedPhoto,'member-profile',memberToken,data.id||'',data.photo_url||'');
+        payload.photo_scale=1; payload.photo_pos_x=50; payload.photo_pos_y=50;
       }else{
         payload.photo_data=data.photo_url||obj.photo;
       }
@@ -1530,7 +1579,7 @@ function adminMemberForm(id){
   openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
-  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';photo=await uploadYYCImage(photo,'member',adminToken,id||'',existing.photo_url||'');}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
+  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);photo=await uploadYYCImage(croppedPhoto,'member',adminToken,id||'',existing.photo_url||'');obj.scale=1;obj.x=50;obj.y=50;}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
 }
 
 function adminLeaderForm(id){
@@ -1560,7 +1609,9 @@ function adminLeaderForm(id){
       var photo=obj.photo;
       if(String(photo).startsWith('data:image/')){
         if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
-        photo=await uploadYYCImage(photo,'leader',adminToken,id||'',existing.photo_url||'');
+        var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);
+        photo=await uploadYYCImage(croppedPhoto,'leader',adminToken,id||'',existing.photo_url||'');
+        obj.scale=1; obj.x=50; obj.y=50;
       }else if(!photo){photo=existing.photo_url||'';}
       var payload={
         name:$('#alName').value.trim(),role:$('#alRole').value.trim(),line:$('#alLine').value.trim(),
