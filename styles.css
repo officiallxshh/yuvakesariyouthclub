@@ -3468,7 +3468,9 @@ body.yyC-opening .hero-logo{
   }
 }
 
-/* ===== YYC CONTENT IMAGE FORMAT PRESETS ===== */
+/* ===== YYC CONTENT IMAGE FORMAT PRESETS
+.event-card-media[data-yyc-format]:not([data-yyc-format="original"]){height:auto!important}
+ ===== */
 .yyc-media-frame,
 .update-card-media,
 .event-card-media,
