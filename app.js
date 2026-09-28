@@ -759,9 +759,198 @@ function renderPublic(){
     });
   });
 }
+function yycContentKindLabel(kind){
+  return kind==='event'?'EVENT':kind==='update'?'UPDATE':'GALLERY';
+}
+function yycIsNewItem(item){
+  var v=item&& (item.created_at||item.published_at);
+  if(!v) return false;
+  var t=new Date(v).getTime();
+  return isFinite(t) && (Date.now()-t)<=7*24*60*60*1000;
+}
+function yycPublicShareUrl(kind,item){
+  var url=new URL(window.location.href);
+  url.search='';
+  url.hash='';
+  var key=kind==='event'?'event':kind==='update'?'update':'gallery';
+  var slug=item&&item.slug;
+  if(slug) url.searchParams.set(key,slug);
+  else if(item&&item.id) url.searchParams.set(key,item.id);
+  return url.toString();
+}
+function yycCopyText(textValue){
+  return navigator.clipboard&&navigator.clipboard.writeText
+    ? navigator.clipboard.writeText(textValue)
+    : Promise.reject(new Error('Clipboard access is unavailable'));
+}
+function yycOpenContentDetail(kind,item){
+  if(!item) return;
+  var title=item.title||'YYC '+yycContentKindLabel(kind);
+  var image=kind==='gallery' ? (item.src||item.image_url||'') : (item.image_url||'');
+  var date=fmtDate(item.event_date||item.published_at||item.created_at);
+  var meta=[];
+  if(date) meta.push('<span><b>DATE</b>'+esc(date)+'</span>');
+  if(kind==='event' && item.location) meta.push('<span><b>LOCATION</b>'+esc(item.location)+'</span>');
+  if(kind==='event' && item.status && item.status!=='published') meta.push('<span><b>STATUS</b>'+esc(String(item.status).toUpperCase())+'</span>');
+  if(kind==='update' && item.category) meta.push('<span><b>CATEGORY</b>'+esc(item.category)+'</span>');
+  if(kind==='gallery' && item.album) meta.push('<span><b>ALBUM</b>'+esc(item.album)+'</span>');
+  var shareUrl=yycPublicShareUrl(kind,item);
+  var textBody=kind==='gallery' ? (item.caption||'') : (item.body||item.description||'');
+  openModal(
+    '<div class="yyc-detail-modal">'+
+      '<div class="yyc-detail-kicker">'+yycContentKindLabel(kind)+(item.featured?' · FEATURED':'')+(yycIsNewItem(item)?' · NEW':'')+'</div>'+
+      '<div class="yyc-detail-head"><div><h2 class="modal-title">'+esc(title)+'</h2><p class="modal-sub">Official Yuvakesari Youth Club content.</p></div><span class="yyc-detail-status">'+esc(String(item.status||'published').toUpperCase())+'</span></div>'+
+      (image?'<div class="yyc-detail-image"><img src="'+esc(image)+'" alt="'+esc(title)+'" loading="eager" decoding="async"></div>':'')+
+      (meta.length?'<div class="yyc-detail-meta">'+meta.join('')+'</div>':'')+
+      (textBody?'<div class="yyc-detail-copy">'+esc(textBody).replace(/\n/g,'<br>')+'</div>':'')+
+      '<div class="yyc-detail-actions"><button type="button" class="btn gold" id="yycDetailShare">SHARE <span>↗</span></button><button type="button" class="mini-btn" id="yycDetailCopy">COPY LINK</button></div>'+
+    '</div>'
+  );
+  var shareBtn=$('#yycDetailShare');
+  var copyBtn=$('#yycDetailCopy');
+  if(shareBtn) shareBtn.addEventListener('click',async function(){
+    try{
+      if(navigator.share){await navigator.share({title:title,text:textBody||title,url:shareUrl});}
+      else{await yycCopyText(shareUrl);toast('Share link copied');}
+    }catch(e){if(e&&e.name!=='AbortError')toast('Could not share this item');}
+  });
+  if(copyBtn) copyBtn.addEventListener('click',async function(){
+    try{await yycCopyText(shareUrl);copyBtn.textContent='COPIED ✓';setTimeout(function(){if(copyBtn)copyBtn.textContent='COPY LINK';},1500);}
+    catch(e){toast('Could not copy link');}
+  });
+  window.__yycDeepLinkKey=kind;
+  if(history.replaceState){
+    var u=new URL(window.location.href);
+    u.search='';
+    u.hash='';
+    var k=kind==='event'?'event':kind==='update'?'update':'gallery';
+    if(item.slug) u.searchParams.set(k,item.slug); else if(item.id) u.searchParams.set(k,item.id);
+    history.replaceState(null,'',u.toString());
+  }
+}
+function yycOpenGalleryLightbox(index){
+  var items=publicData&&publicData.gallery||[];
+  if(!items.length) return;
+  index=Math.max(0,Math.min(items.length-1,index));
+  window.__yycGalleryIndex=index;
+  var g=items[index]||{};
+  var image=g.src||g.image_url||'';
+  var shareUrl=yycPublicShareUrl('gallery',g);
+  openModal(
+    '<div class="yyc-lightbox">'+
+      '<div class="yyc-lightbox-top"><div><span class="yyc-detail-kicker">GALLERY</span><h2 class="modal-title">'+esc(g.title||'YYC Gallery')+'</h2></div><span class="yyc-lightbox-count">'+(index+1)+' / '+items.length+'</span></div>'+
+      '<div class="yyc-lightbox-stage"><button type="button" class="yyc-lightbox-nav yyc-lightbox-prev" data-yyc-lightbox="prev" aria-label="Previous photo">‹</button><img src="'+esc(image)+'" alt="'+esc(g.title||'YYC Gallery photo')+'" loading="eager" decoding="async"><button type="button" class="yyc-lightbox-nav yyc-lightbox-next" data-yyc-lightbox="next" aria-label="Next photo">›</button></div>'+
+      (g.caption?'<p class="yyc-lightbox-caption">'+esc(g.caption)+'</p>':'')+
+      '<div class="yyc-detail-actions"><button type="button" class="btn gold" id="yycLightboxShare">SHARE <span>↗</span></button><button type="button" class="mini-btn" id="yycLightboxCopy">COPY LINK</button></div>'+
+    '</div>'
+  );
+  var share=$('#yycLightboxShare'),copy=$('#yycLightboxCopy');
+  if(share) share.addEventListener('click',async function(){
+    try{if(navigator.share) await navigator.share({title:g.title||'YYC Gallery',text:g.caption||'',url:shareUrl});else{await yycCopyText(shareUrl);toast('Share link copied');}}
+    catch(e){if(e&&e.name!=='AbortError')toast('Could not share this photo');}
+  });
+  if(copy) copy.addEventListener('click',async function(){try{await yycCopyText(shareUrl);copy.textContent='COPIED ✓';setTimeout(function(){if(copy)copy.textContent='COPY LINK';},1500);}catch(e){toast('Could not copy link');}});
+  window.__yycDeepLinkKey='gallery';
+  if(history.replaceState){var u=new URL(window.location.href);u.search='';u.hash='';if(g.slug)u.searchParams.set('gallery',g.slug);else if(g.id)u.searchParams.set('gallery',g.id);history.replaceState(null,'',u.toString());}
+}
+function yycInstallPublicContentChrome(){
+  if(window.__yycPublicContentChrome) return;
+  window.__yycPublicContentChrome=true;
+  var nav=document.querySelector('.desktop-nav');
+  if(nav&&!$('#yycSearchBtn')){
+    var b=document.createElement('button');
+    b.type='button';b.className='nav-admin yyc-search-trigger';b.id='yycSearchBtn';b.innerHTML='<span>⌕</span> Search';
+    b.addEventListener('click',yycOpenSearch);
+    nav.appendChild(b);
+  }
+  var mobile=document.querySelector('#mobilePanel');
+  if(mobile&&!$('#yycSearchMobile')){
+    var mb=document.createElement('button');
+    mb.type='button';mb.className='nav-admin full yyc-search-trigger';mb.id='yycSearchMobile';mb.textContent='⌕ Search YYC';
+    mb.addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();yycOpenSearch();});
+    mobile.appendChild(mb);
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest('#modal')) return;
+    var eventCard=e.target.closest('.event-card'), updateCard=e.target.closest('.update-card'), galleryCard=e.target.closest('.gallery-card');
+    if(eventCard){
+      var cards=Array.prototype.slice.call(document.querySelectorAll('#eventsGrid .event-card'));
+      var index=cards.indexOf(eventCard);
+      if(index>=0 && publicData.events[index]){e.preventDefault();yycOpenContentDetail('event',publicData.events[index]);}
+      return;
+    }
+    if(updateCard){
+      var cardsU=Array.prototype.slice.call(document.querySelectorAll('#updatesGrid .update-card'));
+      var idx=cardsU.indexOf(updateCard);
+      if(idx>=0 && publicData.updates[idx]){e.preventDefault();yycOpenContentDetail('update',publicData.updates[idx]);}
+      return;
+    }
+    if(galleryCard){
+      var cardsG=Array.prototype.slice.call(document.querySelectorAll('#galleryGrid .gallery-card'));
+      var idxG=cardsG.indexOf(galleryCard);
+      if(idxG>=0){e.preventDefault();yycOpenGalleryLightbox(idxG);}
+    }
+  });
+  document.addEventListener('keydown',function(e){
+    if(!window.__yycGalleryIndex && window.__yycGalleryIndex!==0) return;
+    if(e.key==='ArrowRight'){yycOpenGalleryLightbox(window.__yycGalleryIndex+1);}
+    if(e.key==='ArrowLeft'){yycOpenGalleryLightbox(window.__yycGalleryIndex-1);}
+  });
+}
+function yycHandlePublicDeepLink(){
+  if(!publicData) return;
+  var q=new URLSearchParams(window.location.search);
+  var keys=[['event','event'],['update','update'],['gallery','gallery']];
+  for(var i=0;i<keys.length;i++){
+    var raw=q.get(keys[i][0]); if(!raw) continue;
+    var kind=keys[i][1];
+    var arr=kind==='event'?publicData.events||[]:kind==='update'?publicData.updates||[]:publicData.gallery||[];
+    var found=arr.find(function(x){return String(x.slug||x.id)===String(raw);});
+    if(found){setTimeout(function(k,x){return function(){if(k==='gallery')yycOpenGalleryLightbox(arr.indexOf(x));else yycOpenContentDetail(k,x);};}(kind,found),80);}
+    break;
+  }
+}
+function yycOpenSearch(){
+  var items=[];
+  (publicData&&publicData.events||[]).forEach(function(x){items.push({kind:'event',item:x,terms:[x.title,x.description,x.location,x.category]});});
+  (publicData&&publicData.updates||[]).forEach(function(x){items.push({kind:'update',item:x,terms:[x.title,x.body,x.category]});});
+  (publicData&&publicData.gallery||[]).forEach(function(x){items.push({kind:'gallery',item:x,terms:[x.title,x.caption,x.album]});});
+  (publicData&&publicData.leaders||[]).forEach(function(x){items.push({kind:'leader',item:x,terms:[x.name,x.role,x.line]});});
+  openModal(
+    '<div class="yyc-search-modal"><div class="yyc-detail-kicker">YYC SEARCH</div><h2 class="modal-title">Find something.</h2><p class="modal-sub">Search Events, Updates, Gallery and Leaders.</p>'+
+    '<input id="yycSearchInput" class="yyc-search-input" type="search" placeholder="Search YYC content..." autocomplete="off">'+
+    '<div id="yycSearchResults" class="yyc-search-results"></div></div>'
+  );
+  var input=$('#yycSearchInput'), results=$('#yycSearchResults');
+  function render(q){
+    q=q.trim().toLowerCase();
+    var found=!q?items.slice(0,8):items.filter(function(x){return x.terms.filter(Boolean).join(' ').toLowerCase().indexOf(q)>=0;}).slice(0,20);
+    results.innerHTML=found.length?found.map(function(x,index){
+      var t=x.item.title||x.item.name||'YYC content';
+      var sub=x.kind==='leader'?(x.item.role||'LEADER'):(x.item.category||x.item.album||yycContentKindLabel(x.kind));
+      return '<button type="button" class="yyc-search-result" data-search-index="'+index+'"><span class="yyc-search-result-kind">'+esc(yycContentKindLabel(x.kind))+'</span><b>'+esc(t)+'</b><small>'+esc(sub)+'</small></button>';
+    }).join(''):'<div class="empty">No matching YYC content.</div>';
+    results.__yycFound=found;
+  }
+  input.addEventListener('input',function(){render(this.value);});
+  results.addEventListener('click',function(e){
+    var b=e.target.closest('[data-search-index]');
+    if(!b) return;
+    var x=results.__yycFound[Number(b.getAttribute('data-search-index'))];
+    if(!x) return;
+    if(x.kind==='leader'){closeModal();var lg=document.querySelector('#leadersGrid');if(lg){var cs=Array.prototype.slice.call(lg.querySelectorAll('.leader-card'));var ix=(publicData.leaders||[]).indexOf(x.item);if(ix>=0&&cs[ix])cs[ix].scrollIntoView({behavior:'smooth',block:'center'});}return;}
+    if(x.kind==='gallery') yycOpenGalleryLightbox((publicData.gallery||[]).indexOf(x.item));
+    else yycOpenContentDetail(x.kind,x.item);
+  });
+  setTimeout(function(){input.focus();render('');},30);
+}
 async function loadPublic(){
-  try{ publicData=await rpc('public_site_data',{}); renderPublic(); }
-  catch(e){ toast('Public data is loading from the backup design.'); }
+  try{
+    publicData=await rpc('public_site_data',{});
+    renderPublic();
+    yycInstallPublicContentChrome();
+    yycHandlePublicDeepLink();
+  }catch(e){ toast('Public data is loading from the backup design.'); }
 }
 function activeNav(){
   var target=location.hash ? location.hash.slice(1) : 'home';
