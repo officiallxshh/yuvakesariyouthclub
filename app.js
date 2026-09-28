@@ -178,6 +178,18 @@ function fmtDate(v){
   var d=new Date(v+'T00:00:00');
   return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 }
+function yycLocalDateTime(value){
+  if(!value) return '';
+  var d=new Date(value);
+  if(isNaN(d)) return '';
+  function p(n){return String(n).padStart(2,'0');}
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function yycPublishAtIso(value){
+  if(!value) return '';
+  var d=new Date(value);
+  return isNaN(d)?'':d.toISOString();
+}
 function yycImageFormatMeta(value){
   var key=String(value||'original').toLowerCase().trim();
   var map={
@@ -1887,27 +1899,33 @@ function adminLeaderForm(id){
 }
 function adminEventForm(id){
   var events=adminData.events||[];
-  var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:'',image_format:'original'};
+  var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:'',image_format:'original',status:'published',featured:false,category:'GENERAL',publish_at:'',sort_order:0};
   var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · EVENTS</div>'+
     '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Event</h2>'+
-    '<p class="modal-sub">Upload any image size, then choose how it should be framed on the website.</p>'+
+    '<p class="modal-sub">Manage the event, visibility, scheduling and presentation from one place.</p>'+
     '<form id="adminEventForm">'+
       '<div class="form-grid">'+
         '<div class="field"><label>Event name</label><input id="aeTitle" value="'+esc(existing.title||'')+'" required></div>'+
         '<div class="field"><label>Date</label><input id="aeDate" type="date" value="'+esc(existing.event_date||'')+'"></div>'+
         '<div class="field"><label>Location</label><input id="aeLocation" value="'+esc(existing.location||'')+'" placeholder="Subrahmanya, Karnataka"></div>'+
-        '<div class="field"><label>Display format</label><select id="aeFormat">'+yycImageFormatOptions(existing.image_format)+'</select><small class="field-help">A4–A1 keep the standard paper ratio; Banner/Wide/Square are web layouts.</small></div>'+
-        '<div class="field full"><label>Event image <span class="field-note">(optional)</span></label><input id="aeFile" type="file" accept="image/*"><small class="field-help">Original proportions are preserved; the selected display format does not crop the upload.</small></div>'+
+        '<div class="field"><label>Category</label><input id="aeCategory" value="'+esc(existing.category||'GENERAL')+'" placeholder="SPORTS / CULTURE / COMMUNITY"></div>'+
+        '<div class="field"><label>Event status</label><select id="aeStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option><option value="ongoing">Ongoing</option><option value="cancelled">Cancelled</option><option value="postponed">Postponed</option></select></div>'+
+        '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="aePublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"><small class="field-help">Leave blank to publish according to status immediately.</small></div>'+
+        '<div class="field"><label>Display order</label><input id="aeSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
+        '<div class="field"><label class="yyc-check-field"><input id="aeFeatured" type="checkbox" '+(existing.featured?'checked':'')+'> <span>FEATURED EVENT</span></label><small class="field-help">Featured events appear first on the public site.</small></div>'+
+        '<div class="field"><label>Display format</label><select id="aeFormat">'+yycImageFormatOptions(existing.image_format)+'</select></div>'+
+        '<div class="field full"><label>Event image <span class="field-note">(optional)</span></label><input id="aeFile" type="file" accept="image/*"><small class="field-help">Upload a replacement only when needed; existing image is kept when left unchanged.</small></div>'+
         '<div class="field full"><label>External image URL <span class="field-note">(optional)</span></label><input id="aeImage" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
         '<div class="field full"><label>Description</label><textarea id="aeDescription" placeholder="What is happening at this programme?">'+esc(existing.description||'')+'</textarea></div>'+
       '</div>'+
       '<div class="crop-preview yyc-simple-preview admin-event-image-preview yyc-admin-media-preview" id="aePreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="aePrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Event image preview"></div>'+
-      '<div class="form-actions"><button class="btn gold">SAVE EVENT</button></div>'+
+      '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE EVENT')+'</button></div>'+
     '</form>'
   );
+  $('#aeStatus').value=existing.status||'published';
   yycApplyMediaPreview('#aePreviewFrame',$('#aeFormat').value);
   $('#aeFormat').addEventListener('change',function(){yycApplyMediaPreview('#aePreviewFrame',this.value);});
   $('#aeFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);$('#aePrev').src=obj.photo;}catch(err){toast('Could not read image');}});
@@ -1917,22 +1935,21 @@ function adminEventForm(id){
     e.preventDefault();
     var btn=this.querySelector('button[type="submit"]');
     try{
+      if(!$('#aeTitle').value.trim()) throw new Error('Event title is required');
       var image=$('#aeImage').value.trim()||existing.image_url||'';
       if(String(obj.photo).startsWith('data:image/')){
         if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
         image=await uploadYYCImage(obj.photo,'event',adminToken,id||'',existing.image_url||'');
       }
       var payload={
-        title:$('#aeTitle').value.trim(),
-        description:$('#aeDescription').value.trim(),
-        event_date:$('#aeDate').value,
-        location:$('#aeLocation').value.trim(),
-        image_url:image,
-        image_format:$('#aeFormat').value
+        title:$('#aeTitle').value.trim(),description:$('#aeDescription').value.trim(),event_date:$('#aeDate').value,
+        location:$('#aeLocation').value.trim(),image_url:image,image_format:$('#aeFormat').value,status:$('#aeStatus').value,
+        featured:$('#aeFeatured').checked,category:$('#aeCategory').value.trim(),publish_at:yycPublishAtIso($('#aePublishAt').value),
+        sort_order:Number($('#aeSort').value||0)
       };
       var r=await rpc('admin_upsert_event',{p_token:adminToken,p_id:id||null,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal(); toast('Event saved'); adminPanel('events');
+      closeModal();toast(payload.status==='draft'?'Event saved as draft':'Event saved');adminPanel('events');
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE EVENT';}toast(err.message);}
   });
 }
@@ -1946,22 +1963,28 @@ function adminDeleteEvent(id){
 }
 
 function adminUpdateForm(id){
-  var existing=(adminData.updates||[]).find(function(u){return String(u.id)===String(id);}) || {title:'',body:'',event_date:today(),image_url:'',image_format:'original'};
+  var existing=(adminData.updates||[]).find(function(u){return String(u.id)===String(id);}) || {title:'',body:'',event_date:today(),image_url:'',image_format:'original',status:'published',featured:false,category:'ANNOUNCEMENT',publish_at:'',sort_order:0};
   var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · UPDATES</div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2>'+
-    '<p class="modal-sub">Upload any image dimensions and choose the presentation format for the public update card.</p>'+
+    '<p class="modal-sub">Manage the update, publishing state and public presentation.</p>'+
     '<form id="adminUpdateForm"><div class="form-grid">'+
       '<div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div>'+
       '<div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div>'+
+      '<div class="field"><label>Category</label><input id="auCategory" value="'+esc(existing.category||'ANNOUNCEMENT')+'" placeholder="COMMUNITY / SPORTS / CULTURE"></div>'+
+      '<div class="field"><label>Status</label><select id="auStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
+      '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="auPublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"></div>'+
+      '<div class="field"><label>Display order</label><input id="auSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
+      '<div class="field"><label class="yyc-check-field"><input id="auFeatured" type="checkbox" '+(existing.featured?'checked':'')+'> <span>FEATURED UPDATE</span></label></div>'+
+      '<div class="field"><label>Display format</label><select id="auFormat">'+yycImageFormatOptions(existing.image_format)+'</select></div>'+
       '<div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div>'+
-      '<div class="field"><label>Display format</label><select id="auFormat">'+yycImageFormatOptions(existing.image_format)+'</select><small class="field-help">Choose Original, A4/A3/A2/A1, Banner, Wide, Square or other preset.</small></div>'+
-      '<div class="field"><label>Announcement image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"><small class="field-help">The website will not crop your upload.</small></div>'+
+      '<div class="field"><label>Update image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"></div>'+
     '</div>'+
     '<div class="crop-preview yyc-simple-preview admin-update-image-preview yyc-admin-media-preview" id="auPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div>'+
-    '<div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>'
+    '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE UPDATE')+'</button></div></form>'
   );
+  $('#auStatus').value=existing.status||'published';
   yycApplyMediaPreview('#auPreviewFrame',$('#auFormat').value);
   $('#auFormat').addEventListener('change',function(){yycApplyMediaPreview('#auPreviewFrame',this.value);});
   $('#auFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);if(obj.photo)$('#auPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
@@ -1974,32 +1997,57 @@ function adminUpdateForm(id){
         if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
         image=await uploadYYCImage(image,'announcement',adminToken,id||'',existing.image_url||'');
       }
-      var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:image,image_format:$('#auFormat').value}});
+      var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id||null,p_payload:{
+        title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:image,
+        image_format:$('#auFormat').value,status:$('#auStatus').value,featured:$('#auFeatured').checked,
+        category:$('#auCategory').value.trim(),publish_at:yycPublishAtIso($('#auPublishAt').value),sort_order:Number($('#auSort').value||0)
+      }});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast('Update published');adminPanel('updates');
-    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH UPDATE';}toast(err.message);}
+      closeModal();toast($('#auStatus').value==='draft'?'Update saved as draft':'Update saved');adminPanel('updates');
+    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE UPDATE';}toast(err.message);}
   });
 }
 function adminGalleryForm(id){
-  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original'};
+  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:'GENERAL',publish_at:'',sort_order:0};
   var obj={photo:existing.src||''};
   openModal(
     '<div class="modal-kicker">ADMIN · GALLERY</div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Publish')+' Gallery Photo</h2>'+
-    '<p class="modal-sub">Upload any image size and choose the format used to present it in the gallery.</p>'+
+    '<p class="modal-sub">Manage the image, album, visibility and public presentation.</p>'+
     '<form id="adminGalleryForm">'+
       '<div class="form-grid">'+
-        '<div class="field"><label>Caption</label><input id="agTitle" value="'+esc(existing.title)+'" required></div>'+
+        '<div class="field"><label>Caption / title</label><input id="agTitle" value="'+esc(existing.title)+'" required></div>'+
+        '<div class="field"><label>Album</label><input id="agAlbum" value="'+esc(existing.album||'GENERAL')+'" placeholder="EVENTS / SPORTS / CULTURE"></div>'+
+        '<div class="field"><label>Status</label><select id="agStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
+        '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="agPublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"></div>'+
+        '<div class="field"><label>Display order</label><input id="agSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
+        '<div class="field"><label class="yyc-check-field"><input id="agFeatured" type="checkbox" '+(existing.featured?'checked':'')+'> <span>FEATURED PHOTO</span></label></div>'+
         '<div class="field"><label>Display format</label><select id="agFormat">'+yycImageFormatOptions(existing.image_format)+'</select></div>'+
-        '<div class="field full"><label>Photo</label><input id="agFile" type="file" accept="image/*"><small class="field-help">The full upload is preserved; display formatting does not crop it.</small></div>'+
+        '<div class="field full"><label>Photo</label><input id="agFile" type="file" accept="image/*"><small class="field-help">Leave empty while editing to keep the current photo.</small></div>'+
+        '<div class="field full"><label>Caption <span class="field-note">(optional)</span></label><textarea id="agCaption">'+esc(existing.caption||'')+'</textarea></div>'+
       '</div>'+
       '<div class="crop-preview yyc-simple-preview yyc-admin-media-preview" id="agPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div>'+
-      '<div class="form-actions"><button class="btn gold">'+(id?'SAVE CHANGES':'PUBLISH PHOTO')+'</button></div></form>'
+      '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE PHOTO')+'</button></div></form>'
   );
+  $('#agStatus').value=existing.status||'published';
   yycApplyMediaPreview('#agPreviewFrame',$('#agFormat').value);
   $('#agFormat').addEventListener('change',function(){yycApplyMediaPreview('#agPreviewFrame',this.value);});
-  $('#agFile').addEventListener('change',async function(){try{obj.photo=await readFile(this.files[0],2400);if(obj.photo)$('#agPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
-  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:photo,image_format:$('#agFormat').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery photo saved');adminPanel('gallery');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH PHOTO';}toast(err.message);}});
+  $('#agFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);if(obj.photo)$('#agPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  $('#adminGalleryForm').addEventListener('submit',async function(e){
+    e.preventDefault();var btn=this.querySelector('button[type="submit"]');
+    try{
+      if(!obj.photo) throw new Error('Photo is required');
+      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
+      var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;
+      var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id||null,p_payload:{
+        title:$('#agTitle').value.trim(),src:photo,caption:$('#agCaption').value.trim(),image_format:$('#agFormat').value,
+        status:$('#agStatus').value,featured:$('#agFeatured').checked,album:$('#agAlbum').value.trim(),
+        publish_at:yycPublishAtIso($('#agPublishAt').value),sort_order:Number($('#agSort').value||0)
+      }});
+      if(!r.ok) throw new Error(r.error||'Failed');
+      closeModal();toast($('#agStatus').value==='draft'?'Gallery item saved as draft':'Gallery photo saved');adminPanel('gallery');
+    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE PHOTO';}toast(err.message);}
+  });
 }
 function adminSwagForm(id){
   var existing=(adminData.swags||[]).find(function(sw){return String(sw.id)===String(id);}) || {
