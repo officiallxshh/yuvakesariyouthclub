@@ -139,12 +139,21 @@ function exportYYCStorageCSV(s){
 }
 
 function openModal(html){
-  $('#modalContent').innerHTML=html;
-  $('#modal').classList.add('open');
-  $('#modal').setAttribute('aria-hidden','false');
+  var modal=$('#modal');
+  var content=$('#modalContent');
+  if(!modal||!content) return;
+  content.classList.remove('yyc-panel-swap-in','yyc-panel-swap-out');
+  content.innerHTML=html;
+  void content.offsetWidth;
+  content.classList.add('yyc-panel-swap-in');
+  modal.classList.remove('yyc-modal-closing');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
+  window.setTimeout(function(){content.classList.remove('yyc-panel-swap-in');},520);
 }
 function closeModal(){
+
   /* Closing a modal never logs out any account. Session state changes only via explicit Logout. */
   $('#modal').classList.remove('open');
   $('#modal').setAttribute('aria-hidden','true');
@@ -458,7 +467,7 @@ function yycAnimateNavigation(targetEl){
     targetEl.classList.remove('yyc-section-navigate');
     void targetEl.offsetWidth;
     targetEl.classList.add('yyc-section-navigate');
-    setTimeout(function(){targetEl.classList.remove('yyc-section-navigate');},700);
+    window.setTimeout(function(){targetEl.classList.remove('yyc-section-navigate');},760);
   }
 }
 
@@ -1392,12 +1401,20 @@ function adminPanel(tab,forceRefresh){
         $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
         renderAdminTab(selected,d);
         var workspace=$('#adminWorkspace');
-        if(workspace){workspace.classList.remove('yyc-admin-tab-enter');void workspace.offsetWidth;workspace.classList.add('yyc-admin-tab-enter');}
+        if(workspace){
+          workspace.setAttribute('data-yyc-active-tab',selected);
+          workspace.classList.remove('yyc-admin-tab-enter');
+          void workspace.offsetWidth;
+          workspace.classList.add('yyc-admin-tab-enter');
+          window.setTimeout(function(){workspace.classList.remove('yyc-admin-tab-enter');},520);
+        }
       });
     });
     renderAdminTab(tab,d);
     var workspace=$('#adminWorkspace');
     if(workspace){
+      workspace.setAttribute('data-yyc-active-tab',tab);
+
       workspace.addEventListener('click',function(e){
         var target=e.target.closest('button');
         if(!target || !workspace.contains(target)) return;
