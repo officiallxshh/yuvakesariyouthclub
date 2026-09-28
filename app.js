@@ -894,7 +894,7 @@ function yycInstallPublicContentChrome(){
   ['#eventsGrid','#updatesGrid','#galleryGrid'].forEach(function(sel){
     var grid=$(sel);
     if(grid && 'MutationObserver' in window){
-      new MutationObserver(function(){yycDecoratePublicCards();}).observe(grid,{childList:true,subtree:true});
+      new MutationObserver(function(){yycDecoratePublicCards();}).observe(grid,{childList:true,subtree:false});
     }
   });
   yycDecoratePublicCards();
