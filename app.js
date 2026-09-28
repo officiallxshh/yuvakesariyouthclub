@@ -1437,6 +1437,18 @@ function adminPanel(tab,forceRefresh){
       return;
     }
 
+    var resetLeader=target.closest('[data-reset-leader]');
+    if(resetLeader){
+      e.preventDefault();e.stopImmediatePropagation();
+      var rlid=resetLeader.getAttribute('data-reset-leader');
+      var rl=(d.leaders||[]).find(function(x){return String(x.id)===String(rlid);});
+      if(rl){
+        adminLeaderForm(rlid);
+        setTimeout(function(){var field=$('#alPass');if(field)field.focus();},80);
+      }else toast('Leader record not found');
+      return;
+    }
+
     var editLeader=target.closest('[data-edit-leader]');
         if(editLeader){
           e.preventDefault();e.stopPropagation();
@@ -1464,7 +1476,7 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button><button class="mini-btn" data-reset-member="'+m.id+'">PASSWORD</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
     $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
@@ -1474,7 +1486,7 @@ function renderAdminTab(tab,d){
 
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-download-leader="'+l.id+'">Download ID</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn">+ Add leader</button></div></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-download-leader="'+l.id+'">Download ID</button><button class="mini-btn" data-edit-leader="'+l.id+'">Edit</button><button class="mini-btn" data-reset-leader="'+l.id+'">PASSWORD</button><button class="mini-btn" data-del-leader="'+l.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
     /* Leader Card/Edit/Delete are handled by the admin workspace event delegation below. */
     return;
@@ -1695,7 +1707,7 @@ function adminReviewMember(id){
 function adminMemberForm(id){
   var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
-  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+'></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
+  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Set / Reset password '+(id?'(leave blank to keep current)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"><small class="field-help">Current password is never displayed. Enter a new password here to replace it.</small></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
   $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);photo=await uploadYYCImage(croppedPhoto,'member',adminToken,id||'',existing.photo_url||'');obj.scale=1;obj.x=50;obj.y=50;}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
@@ -1712,7 +1724,7 @@ function adminLeaderForm(id){
       '<div class="field"><label>Role / Position</label><input id="alRole" value="'+esc(existing.role||'')+'" placeholder="PRESIDENT / SECRETARY / CHAIRMAN" required></div>'+
       '<div class="field"><label>Phone</label><input id="alPhone" value="'+esc(existing.phone||'')+'"></div>'+
       '<div class="field"><label>Email</label><input id="alEmail" type="email" value="'+esc(existing.email||'')+'"></div>'+
-      '<div class="field"><label>Password '+(id?'(leave blank to keep)':'')+'</label><input id="alPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"></div>'+
+      '<div class="field"><label>Set / Reset password '+(id?'(leave blank to keep current)':'')+'</label><input id="alPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"><small class="field-help">Current password is never displayed. Enter a new password here to replace it.</small></div>'+
       '<div class="field"><label>Status</label><select id="alStatus"><option value="active" '+(existing.status!=='inactive'?'selected':'')+'>Active</option><option value="inactive" '+(existing.status==='inactive'?'selected':'')+'>Inactive</option></select></div>'+
       '<div class="field full"><label>Display line</label><input id="alLine" value="'+esc(existing.line||'')+'" placeholder="YUVAKESARI YOUTH CLUB · SUBRAHMANYA"></div>'+
       '<div class="field full"><label>Photo</label><input id="alFile" type="file" accept="image/*"></div>'+
@@ -1945,6 +1957,18 @@ function bindAdminActionDelegation(){
       var mid=downloadMember.getAttribute('data-download-member');
       var mm=(d.members||[]).find(function(x){return String(x.id)===String(mid);});
       if(mm) downloadAdminCard(mm,'member',downloadMember); else toast('Member record not found');
+      return;
+    }
+
+    var resetMember=target.closest('[data-reset-member]');
+    if(resetMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      var rmid=resetMember.getAttribute('data-reset-member');
+      var rm=(d.members||[]).find(function(x){return String(x.id)===String(rmid);});
+      if(rm){
+        adminMemberForm(rmid);
+        setTimeout(function(){var field=$('#amPass');if(field)field.focus();},80);
+      }else toast('Member record not found');
       return;
     }
 
