@@ -1475,10 +1475,19 @@ function renderAdminTab(tab,d){
     return;
   }
   if(tab==='members'){
-    var members=d.members||[];
+    /* Keep the admin member registry strictly ordered by YYC role number: 01, 02, 03… Pending/no-number records stay at the end. */
+    var members=(d.members||[]).slice().sort(function(a,b){
+      var ar=parseInt(String(a.role_number||'').replace(/[^0-9]/g,''),10);
+      var br=parseInt(String(b.role_number||'').replace(/[^0-9]/g,''),10);
+      var aHas=Number.isFinite(ar), bHas=Number.isFinite(br);
+      if(aHas&&bHas) return ar-br;
+      if(aHas&&!bHas) return -1;
+      if(!aHas&&bHas) return 1;
+      return String(a.name||'').localeCompare(String(b.name||'')); 
+    });
     a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button><button class="mini-btn" data-reset-member="'+m.id+'">PASSWORD</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
+    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
     $('#exportMembersCSV').addEventListener('click',function(){exportYYCMembersCSV(members);});
     return;
