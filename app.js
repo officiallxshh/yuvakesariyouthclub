@@ -1068,58 +1068,47 @@ function memberEditSubmission(data){
   var obj={photo:data.photo_url||'',scale:data.photo_scale||1,x:data.photo_pos_x==null?50:data.photo_pos_x,y:data.photo_pos_y==null?50:data.photo_pos_y};
   openModal(
     '<div class="portal-profile-view">'+
-      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="memberEditBack">← BACK</button><span class="portal-profile-kicker">MEMBER · EDIT SUBMISSION</span></div>'+
-      '<h2 class="modal-title">Edit your submission.</h2>'+
-      '<p class="modal-sub">You can update your personal contact details and photo. YYC Admin controls your Unique ID, position and approval status.</p>'+
+      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="memberEditBack">← BACK</button><span class="portal-profile-kicker">MEMBER · EDIT PROFILE</span></div>'+
+      '<h2 class="modal-title">Edit your profile.</h2>'+
+      '<p class="modal-sub">Change your name, date of birth, phone, email, profile photo or password. Unique ID, position and approval remain admin-controlled.</p>'+
       '<form id="memberEditSubmissionForm"><div class="form-grid">'+
         '<div class="field"><label>Full name</label><input id="meName" value="'+esc(data.name||'')+'" required></div>'+
         '<div class="field"><label>Date of birth</label><input id="meDob" type="date" value="'+esc(data.dob||'')+'" required></div>'+
         '<div class="field"><label>Phone</label><input id="mePhone" value="'+esc(data.phone||'')+'" required></div>'+
         '<div class="field"><label>Email</label><input id="meEmail" type="email" value="'+esc(data.email||'')+'" required></div>'+
-        '<div class="field full"><label>Change photo</label><input id="mePhoto" type="file" accept="image/*"></div>'+
+        '<div class="field"><label>Current password</label><input id="meCurrentPass" type="password" autocomplete="current-password" placeholder="Only needed to change password"></div>'+
+        '<div class="field"><label>New password</label><input id="meNewPass" type="password" autocomplete="new-password" minlength="8" placeholder="Leave blank to keep"></div>'+
+        '<div class="field"><label>Confirm new password</label><input id="meConfirmPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password"></div>'+
+        '<div class="field full"><label>Profile photo</label><input id="mePhoto" type="file" accept="image/*"></div>'+
       '</div>'+imageEditor('memberEditPhoto',obj.photo,obj.scale,obj.x,obj.y)+
-      '<div class="form-actions"><button type="submit" class="btn gold">SAVE CHANGES <span>✓</span></button></div></form>'+
+      '<div class="form-actions"><button type="submit" class="btn gold">SAVE PROFILE <span>✓</span></button></div></form>'+
     '</div>'
   );
   wireEditor('memberEditPhoto',obj,'mePhoto');
-  var back=$('#memberEditBack');
-  if(back) back.addEventListener('click',function(){memberDashboard(data);});
+  var back=$('#memberEditBack'); if(back) back.addEventListener('click',function(){memberDashboard(data);});
   $('#memberEditSubmissionForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var btn=this.querySelector('button[type="submit"]');
     try{
       btn.disabled=true;
-      var payload={
-        name:$('#meName').value.trim(),
-        dob:$('#meDob').value,
-        phone:$('#mePhone').value.trim(),
-        email:$('#meEmail').value.trim(),
-        photo_data:obj.photo,
-        photo_scale:obj.scale,
-        photo_pos_x:obj.x,
-        photo_pos_y:obj.y
-      };
+      var newPass=$('#meNewPass').value, confirmPass=$('#meConfirmPass').value;
+      if(newPass!==confirmPass) throw new Error('New password and confirmation do not match');
+      if(newPass && newPass.length<8) throw new Error('New password must be at least 8 characters');
+      var payload={name:$('#meName').value.trim(),dob:$('#meDob').value,phone:$('#mePhone').value.trim(),email:$('#meEmail').value.trim(),current_password:$('#meCurrentPass').value,new_password:newPass,photo_data:obj.photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y};
       if(!payload.name||!payload.dob||!payload.phone||!payload.email) throw new Error('Please complete all required fields');
       if(!obj.photo) throw new Error('Please keep or choose a member photo');
       if(String(obj.photo).startsWith('data:image/')){
-        btn.textContent='UPLOADING PHOTO…';
+        btn.textContent='UPDATING PROFILE…';
         var croppedPhoto=await yycManualSquareCrop(obj.photo,obj.scale,obj.x,obj.y,760);
         payload.photo_data=await uploadYYCImage(croppedPhoto,'member-profile',memberToken,data.id||'',data.photo_url||'');
         payload.photo_scale=1; payload.photo_pos_x=50; payload.photo_pos_y=50;
-      }else{
-        payload.photo_data=data.photo_url||obj.photo;
       }
       var r=await rpc('member_update_submission',{p_token:memberToken,p_payload:payload});
-      if(!r||!r.ok) throw new Error(r&&r.error||'Could not save changes');
-      memberToken=yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
+      if(!r||!r.ok) throw new Error(r&&r.error||'Could not save profile');
       yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member));
-      closeModal();
-      memberDashboard(r.member);
-      toast('Member submission updated');
-    }catch(err){
-      btn.disabled=false;
-      toast(err.message||'Could not save changes');
-    }
+      closeModal(); memberDashboard(r.member);
+      toast(r.password_changed?'Profile and password updated':'Profile updated');
+    }catch(err){btn.disabled=false;toast(err.message||'Could not save profile');}
   });
 }
 
@@ -1477,13 +1466,6 @@ function renderAdminTab(tab,d){
     var members=d.members||[];
     a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
-    $('[data-download-member]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-download-member');});if(m)downloadAdminCard(m,'member');});});
-    $('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
-    $('[data-review-member]').forEach(function(b){b.addEventListener('click',function(){adminReviewMember(b.getAttribute('data-review-member'));});});
-    $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
-    $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
-    $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
     $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
     $('#exportMembersCSV').addEventListener('click',function(){exportYYCMembersCSV(members);});
@@ -1936,51 +1918,108 @@ function bindAdminActionDelegation(){
   if(window.__yycAdminDelegationBound) return;
   window.__yycAdminDelegationBound=true;
   document.addEventListener('click',function(e){
-    var target=e.target && e.target.closest ? e.target.closest('button') : null;
+    var target=e.target&&e.target.closest?e.target.closest('button'):null;
     if(!target) return;
+    var modal=target.closest('#modal');
+    if(!modal) return;
+    var d=window.__yycAdminLastData||adminData||{};
+
+    var addMember=target.closest('#adminAddMember');
+    if(addMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      adminMemberForm(null);return;
+    }
+
+    var viewMember=target.closest('[data-view]');
+    if(viewMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      var id=viewMember.getAttribute('data-view');
+      var m=(d.members||[]).find(function(x){return String(x.id)===String(id);});
+      if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}else toast('Member record not found');
+      return;
+    }
+
+    var downloadMember=target.closest('[data-download-member]');
+    if(downloadMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      var mid=downloadMember.getAttribute('data-download-member');
+      var mm=(d.members||[]).find(function(x){return String(x.id)===String(mid);});
+      if(mm) downloadAdminCard(mm,'member',downloadMember); else toast('Member record not found');
+      return;
+    }
+
+    var editMember=target.closest('[data-edit-member]');
+    if(editMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      var eid=editMember.getAttribute('data-edit-member');
+      var em=(d.members||[]).find(function(x){return String(x.id)===String(eid);});
+      if(em) adminMemberForm(eid); else toast('Member record not found');
+      return;
+    }
+
+    var reviewMember=target.closest('[data-review-member]');
+    if(reviewMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      var rid=reviewMember.getAttribute('data-review-member');
+      var rm=(d.members||[]).find(function(x){return String(x.id)===String(rid);});
+      if(rm) adminReviewMember(rid); else toast('Member record not found');
+      return;
+    }
+
+    var approveMember=target.closest('[data-approve]');
+    if(approveMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      adminAction('admin_member_action',{p_member_id:approveMember.getAttribute('data-approve'),p_action:'approve'},'Member approved');return;
+    }
+
+    var denyMember=target.closest('[data-deny]');
+    if(denyMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      adminAction('admin_member_action',{p_member_id:denyMember.getAttribute('data-deny'),p_action:'deny'},'Member denied');return;
+    }
+
+    var removeMember=target.closest('[data-remove]');
+    if(removeMember){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(confirm('Remove this member?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
+      return;
+    }
 
     var cardLeader=target.closest('[data-card-leader]');
     if(cardLeader){
-      var modal=target.closest('#modal');
-      if(!modal) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      var id=cardLeader.getAttribute('data-card-leader');
-      var d=window.__yycAdminLastData || adminData;
-      var l=(d && d.leaders || []).find(function(x){return String(x.id)===String(id);});
-      if(l){
-        l.__adminView=true;
-        l.__adminTab='leaders';
-        leaderDashboard(l);
-      }else{
-        toast('Leader record not found');
-      }
+      e.preventDefault();e.stopImmediatePropagation();
+      var lid=cardLeader.getAttribute('data-card-leader');
+      var l=(d.leaders||[]).find(function(x){return String(x.id)===String(lid);});
+      if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}else toast('Leader record not found');
+      return;
+    }
+
+    var dlLeader=target.closest('[data-download-leader]');
+    if(dlLeader){
+      e.preventDefault();e.stopImmediatePropagation();
+      var dlid=dlLeader.getAttribute('data-download-leader');
+      var dl=(d.leaders||[]).find(function(x){return String(x.id)===String(dlid);});
+      if(dl) downloadAdminCard(dl,'leader',dlLeader); else toast('Leader record not found');
       return;
     }
 
     var editLeader=target.closest('[data-edit-leader]');
     if(editLeader){
-      var modal2=target.closest('#modal');
-      if(!modal2) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      adminLeaderForm(editLeader.getAttribute('data-edit-leader'));
+      e.preventDefault();e.stopImmediatePropagation();
+      var leid=editLeader.getAttribute('data-edit-leader');
+      var le=(d.leaders||[]).find(function(x){return String(x.id)===String(leid);});
+      if(le) adminLeaderForm(leid); else toast('Leader record not found');
       return;
     }
 
     var delLeader=target.closest('[data-del-leader]');
     if(delLeader){
-      var modal3=target.closest('#modal');
-      if(!modal3) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      var lid=delLeader.getAttribute('data-del-leader');
-      if(confirm('Delete this leader?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
+      e.preventDefault();e.stopImmediatePropagation();
+      if(confirm('Delete this leader?')) adminAction('admin_delete_leader',{p_id:delLeader.getAttribute('data-del-leader')},'Leader deleted');
       return;
     }
   },true);
 }
-
 function bindUI(){
   bindYYCScrollMotion();
   bindMotionSystem();
