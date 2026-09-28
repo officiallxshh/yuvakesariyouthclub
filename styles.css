@@ -3237,3 +3237,72 @@ body.yyC-opening .hero-logo{
   .ig-crop-editor-head{display:block}
   .ig-crop-editor-head small{display:block;margin-top:6px;text-align:left}
 }
+
+/* ===== YYC ADMIN APPLICATION REVIEW ===== */
+.yyc-admin-review{padding-bottom:4px}
+.yyc-admin-review-hero{
+  display:grid;
+  grid-template-columns:112px 1fr;
+  gap:18px;
+  align-items:center;
+  margin:12px 0 16px;
+}
+.yyc-admin-review-photo{
+  width:112px;
+  height:132px;
+  border-radius:22px;
+  overflow:hidden;
+  border:1px solid rgba(237,193,105,.22);
+  background:#070b0e;
+}
+.yyc-admin-review-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+.yyc-admin-review-status{
+  display:inline-flex;
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(237,193,105,.08);
+  border:1px solid rgba(237,193,105,.2);
+  color:#e8c77e;
+  font:800 7px/1 Inter,sans-serif;
+  letter-spacing:.13em;
+}
+.yyc-admin-review-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.yyc-admin-review-grid>div{
+  padding:13px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  background:rgba(255,255,255,.018);
+}
+.yyc-admin-review-grid span{
+  display:block;
+  color:#75807d;
+  font:800 7px/1 Inter,sans-serif;
+  letter-spacing:.14em;
+}
+.yyc-admin-review-grid b{
+  display:block;
+  margin-top:7px;
+  color:#e9dfc6;
+  font:700 12px/1.35 Inter,sans-serif;
+  word-break:break-word;
+}
+.yyc-admin-review-actions{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+@media(max-width:620px){
+  .yyc-admin-review-hero{grid-template-columns:78px 1fr;gap:12px}
+  .yyc-admin-review-photo{width:78px;height:94px;border-radius:17px}
+  .yyc-admin-review-grid{grid-template-columns:1fr}
+  .yyc-admin-review-actions>*{flex:1 1 100%}
+}
