@@ -4126,7 +4126,8 @@ body.yyC-opening .hero-logo{
   font:600 8px/1.3 Inter,sans-serif;
 }
 @media(max-width:760px){
-  .yyc-search-trigger{display:none!important}
+  #yycSearchBtn{display:none!important}
+  #yycSearchMobile{display:flex!important}
   .yyc-lightbox-stage{min-height:44vh;padding:8px 44px}
   .yyc-detail-head,.yyc-lightbox-top{display:block}
   .yyc-detail-status,.yyc-lightbox-count{display:inline-flex;margin-top:8px}
