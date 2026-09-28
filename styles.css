@@ -3595,3 +3595,254 @@ body.yyC-opening .hero-logo{
 @media(max-width:560px){
   .update-card.has-image .yyc-media-frame{width:62px}
 }
+
+
+/* ===== YYC FINAL PREMIUM MOTION PASS ===== */
+.yyc-scroll-progress{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:2px;
+  z-index:9999;
+  pointer-events:none;
+  overflow:hidden;
+  background:rgba(239,202,123,.07);
+}
+.yyc-scroll-progress span{
+  display:block;
+  width:100%;
+  height:100%;
+  transform:scaleX(0);
+  transform-origin:left center;
+  background:linear-gradient(90deg,#a47c32,#efd18e,#f6e2b2);
+  box-shadow:0 0 12px rgba(239,202,123,.35);
+  will-change:transform;
+}
+
+.desktop-nav>a,
+.nav-admin,
+.mobile-panel a{
+  will-change:color,background-color,box-shadow;
+}
+.desktop-nav>a.active{
+  text-shadow:0 0 20px rgba(239,202,123,.15);
+}
+.desktop-nav>a.active:after{
+  animation:yycNavLineIn .35s var(--yyc-ease) both;
+}
+@keyframes yycNavLineIn{
+  from{opacity:0;transform:scaleX(.45)}
+  to{opacity:1;transform:scaleX(1)}
+}
+
+/* Public section transitions: small lift + clarity, never full-section movement. */
+.section.yyc-section-navigate{
+  animation:yycSectionClarity .7s var(--yyc-ease) both!important;
+}
+.section.yyc-section-navigate .section-head{
+  animation:yycSectionHeadPremium .56s var(--yyc-ease) both!important;
+}
+.section.yyc-section-navigate .glimpse-grid,
+.section.yyc-section-navigate .events-grid,
+.section.yyc-section-navigate .gallery-grid,
+.section.yyc-section-navigate .swag-grid,
+.section.yyc-section-navigate .updates-list,
+.section.yyc-section-navigate .join-card,
+.section.yyc-section-navigate .leaders-grid{
+  animation:yycSectionBodyPremium .68s var(--yyc-ease) .04s both!important;
+}
+@keyframes yycSectionClarity{
+  0%{opacity:.82;filter:brightness(.93)}
+  55%{opacity:1;filter:brightness(1.025)}
+  100%{opacity:1;filter:none}
+}
+@keyframes yycSectionHeadPremium{
+  0%{opacity:0;transform:translate3d(0,12px,0);filter:blur(3px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes yycSectionBodyPremium{
+  0%{opacity:.35;transform:translate3d(0,14px,0);filter:blur(2px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+
+/* Card entrance stagger, kept short so content remains immediately usable. */
+.events-grid .event-card.reveal,
+.updates-grid .update-card.reveal,
+.gallery-grid .gallery-card.reveal,
+.leaders-grid .leader-card.reveal,
+.swag-grid .swag-card.reveal{
+  transition-delay:var(--yyc-stagger-delay,0ms),var(--yyc-stagger-delay,0ms);
+}
+.events-grid .event-card:hover,
+.updates-grid .update-card:hover,
+.gallery-grid .gallery-card:hover,
+.swag-grid .swag-card:hover{
+  border-color:rgba(239,202,123,.28);
+  box-shadow:0 20px 56px rgba(0,0,0,.28);
+}
+.event-card,
+.update-card,
+.gallery-card,
+.swag-card{
+  transition:box-shadow .42s var(--yyc-ease),border-color .32s ease,background-color .32s ease;
+}
+
+/* Modal entrance / exit. */
+.modal-backdrop{
+  transition:opacity .24s ease,backdrop-filter .24s ease;
+}
+.modal.open .modal-backdrop{
+  animation:yycBackdropIn .28s ease-out both;
+}
+.modal.yyc-modal-closing .modal-backdrop{
+  animation:yycBackdropOut .22s ease-in both;
+}
+.modal.open .modal-shell{
+  animation:yycModalPremiumIn .42s var(--yyc-ease) both!important;
+}
+.modal.yyc-modal-closing .modal-shell{
+  animation:yycModalPremiumOut .22s ease-in both!important;
+}
+#modalContent.yyc-panel-swap-out{
+  animation:yycPanelSwapOut .22s ease-in both;
+}
+@keyframes yycBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes yycBackdropOut{from{opacity:1}to{opacity:0}}
+@keyframes yycModalPremiumIn{
+  0%{opacity:0;transform:translate3d(0,16px,0) scale(.987);filter:blur(4px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes yycModalPremiumOut{
+  0%{opacity:1;transform:none;filter:none}
+  100%{opacity:0;transform:translate3d(0,8px,0) scale(.992);filter:blur(2px)}
+}
+@keyframes yycPanelSwapOut{
+  0%{opacity:1;transform:none;filter:none}
+  100%{opacity:0;transform:translate3d(0,7px,0);filter:blur(2px)}
+}
+
+/* Admin workspace travels horizontally according to tab direction. */
+.admin-workspace.yyc-admin-tab-enter{
+  animation-duration:.38s!important;
+  animation-timing-function:var(--yyc-ease)!important;
+}
+.admin-workspace.yyc-admin-tab-forward{
+  animation-name:yycAdminForward!important;
+}
+.admin-workspace.yyc-admin-tab-back{
+  animation-name:yycAdminBack!important;
+}
+@keyframes yycAdminForward{
+  0%{opacity:0;transform:translate3d(16px,0,0);filter:blur(2px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes yycAdminBack{
+  0%{opacity:0;transform:translate3d(-16px,0,0);filter:blur(2px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+
+/* Digital ID card: restrained depth and a moving highlight, without affecting layout. */
+.yyc-digital-card{
+  transform-style:preserve-3d;
+  transition:box-shadow .35s var(--yyc-ease),filter .35s ease;
+}
+.yyc-digital-card:not(.flipped):hover{
+  box-shadow:0 28px 70px rgba(0,0,0,.42),0 0 0 1px rgba(239,202,123,.08);
+  filter:saturate(1.02);
+}
+.yyc-digital-card .yyc-card-front:after,
+.yyc-digital-card .yyc-card-back:after{
+  content:"";
+  position:absolute;
+  inset:-20%;
+  pointer-events:none;
+  background:linear-gradient(112deg,transparent 38%,rgba(255,255,255,.06) 48%,transparent 58%);
+  transform:translate3d(-55%,0,0) skewX(-12deg);
+  opacity:0;
+}
+.yyc-digital-card:hover .yyc-card-front:after,
+.yyc-digital-card:hover .yyc-card-back:after{
+  opacity:1;
+  animation:yycCardLightSweep .85s var(--yyc-ease) both;
+}
+@keyframes yycCardLightSweep{
+  from{transform:translate3d(-55%,0,0) skewX(-12deg)}
+  to{transform:translate3d(55%,0,0) skewX(-12deg)}
+}
+
+/* Login / portal states feel connected to the same motion language. */
+.access-login-screen > *{
+  animation-duration:.44s!important;
+  animation-timing-function:var(--yyc-ease)!important;
+}
+.portal-summary-grid,
+.portal-action-row,
+.portal-note,
+.yyc-card-download-bar{
+  transition:box-shadow .35s var(--yyc-ease),border-color .28s ease,transform .28s ease;
+}
+.portal-summary-card:hover,
+.portal-action-row:hover,
+.portal-note:hover{
+  border-color:rgba(239,202,123,.17);
+  box-shadow:0 14px 34px rgba(0,0,0,.16);
+}
+
+/* Scroll cue subtly breathes at the bottom of the hero. */
+.scroll-cue{
+  animation:yycScrollCueBreathe 2.4s ease-in-out infinite;
+}
+@keyframes yycScrollCueBreathe{
+  0%,100%{opacity:.66;transform:translateY(0)}
+  50%{opacity:1;transform:translateY(3px)}
+}
+
+@media(max-width:760px){
+  .yyc-scroll-progress{height:2px}
+  .section.yyc-section-navigate .section-head{
+    animation-duration:.48s!important;
+  }
+  .section.yyc-section-navigate .glimpse-grid,
+  .section.yyc-section-navigate .events-grid,
+  .section.yyc-section-navigate .gallery-grid,
+  .section.yyc-section-navigate .swag-grid,
+  .section.yyc-section-navigate .updates-list,
+  .section.yyc-section-navigate .join-card,
+  .section.yyc-section-navigate .leaders-grid{
+    animation-duration:.55s!important;
+  }
+  .admin-workspace.yyc-admin-tab-forward,
+  .admin-workspace.yyc-admin-tab-back{
+    animation-duration:.3s!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .yyc-scroll-progress span{transition:none!important}
+  .desktop-nav>a.active:after,
+  .section.yyc-section-navigate,
+  .section.yyc-section-navigate .section-head,
+  .section.yyc-section-navigate .glimpse-grid,
+  .section.yyc-section-navigate .events-grid,
+  .section.yyc-section-navigate .gallery-grid,
+  .section.yyc-section-navigate .swag-grid,
+  .section.yyc-section-navigate .updates-list,
+  .section.yyc-section-navigate .join-card,
+  .section.yyc-section-navigate .leaders-grid,
+  .modal.open .modal-backdrop,
+  .modal.yyc-modal-closing .modal-backdrop,
+  .modal.open .modal-shell,
+  .modal.yyc-modal-closing .modal-shell,
+  #modalContent.yyc-panel-swap-out,
+  .admin-workspace.yyc-admin-tab-enter,
+  .access-login-screen > *,
+  .yyc-digital-card:hover .yyc-card-front:after,
+  .yyc-digital-card:hover .yyc-card-back:after,
+  .scroll-cue{
+    animation:none!important;
+    transition:none!important;
+    transform:none!important;
+    filter:none!important;
+  }
+}
