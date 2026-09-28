@@ -1475,11 +1475,12 @@ function renderAdminTab(tab,d){
   }
   if(tab==='members'){
     var members=d.members||[];
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ Add member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: '+esc(m.status||'pending')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
     $('[data-view]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-view');}); if(m){m.__adminView=true;m.__adminTab='members';memberDashboard(m);}});});
     $('[data-download-member]').forEach(function(b){b.addEventListener('click',function(){var m=members.find(function(x){return x.id===b.getAttribute('data-download-member');});if(m)downloadAdminCard(m,'member');});});
-    $$('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
+    $('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
+    $('[data-review-member]').forEach(function(b){b.addEventListener('click',function(){adminReviewMember(b.getAttribute('data-review-member'));});});
     $$('[data-approve]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-approve'),p_action:'approve'},'Member approved');});});
     $$('[data-deny]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-deny'),p_action:'deny'},'Member denied');});});
     $$('[data-remove]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove this member?')) await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-remove'),p_action:'remove'},'Member removed');});});
@@ -1662,6 +1663,53 @@ function renderAdminTab(tab,d){
 async function adminAction(name,args,msg){
   try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');}catch(e){toast(e.message);}
 }
+function adminReviewMember(id){
+  var m=(adminData.members||[]).find(function(x){return x.id===id;});
+  if(!m) return;
+  openModal(
+    '<div class="yyc-admin-review">'+
+      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="adminReviewBack">← BACK</button><span class="portal-profile-kicker">ADMIN · MEMBER APPLICATION</span></div>'+
+      '<div class="yyc-admin-review-hero">'+
+        '<div class="yyc-admin-review-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name||'Member photo')+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'"></div>'+
+        '<div><span class="yyc-admin-review-status">'+esc((m.status||'pending').toUpperCase())+'</span><h2 class="modal-title" style="margin-top:8px">'+esc(m.name||'Member application')+'</h2><p class="modal-sub">Review the submitted details before approving this YYC membership.</p></div>'+
+      '</div>'+
+      '<div class="yyc-admin-review-grid">'+
+        '<div><span>ROLE NUMBER</span><b>'+esc(m.role_number||'PENDING')+'</b></div>'+
+        '<div><span>DATE OF BIRTH</span><b>'+esc(m.dob?fmtDate(m.dob):'—')+'</b></div>'+
+        '<div><span>PHONE</span><b>'+esc(m.phone||'—')+'</b></div>'+
+        '<div><span>EMAIL</span><b>'+esc(m.email||'—')+'</b></div>'+
+        '<div><span>POSITION</span><b>'+esc(m.position||'MEMBER')+'</b></div>'+
+        '<div><span>CLUB</span><b>'+esc(m.club_name||'Yuvakesari Youth Club')+'</b></div>'+
+        '<div><span>APPLICATION STATUS</span><b>'+esc(m.status||'pending')+'</b></div>'+
+        '<div><span>SUBMITTED</span><b>'+esc(m.created_at?fmtDate(m.created_at):'—')+'</b></div>'+
+      '</div>'+
+      '<div class="notice" style="margin-top:14px">Password is hidden. Admin review shows only the application information needed for approval.</div>'+
+      '<div class="form-actions yyc-admin-review-actions">'+
+        '<button type="button" class="btn outline" id="adminReviewEdit">EDIT APPLICATION</button>'+
+        ((m.status||'pending')==='pending'?'<button type="button" class="btn gold" id="adminReviewApprove">APPROVE MEMBER</button><button type="button" class="btn outline" id="adminReviewDeny">DENY</button>':'')+
+      '</div>'+
+    '</div>'
+  );
+  var back=$('#adminReviewBack');
+  if(back) back.addEventListener('click',function(){closeModal();adminPanel('members');});
+  var edit=$('#adminReviewEdit');
+  if(edit) edit.addEventListener('click',function(){closeModal();adminMemberForm(id);});
+  var approve=$('#adminReviewApprove');
+  if(approve) approve.addEventListener('click',async function(){
+    approve.disabled=true;
+    try{
+      await adminAction('admin_member_action',{p_member_id:id,p_action:'approve'},'Member approved');
+    }catch(err){approve.disabled=false;}
+  });
+  var deny=$('#adminReviewDeny');
+  if(deny) deny.addEventListener('click',async function(){
+    deny.disabled=true;
+    try{
+      await adminAction('admin_member_action',{p_member_id:id,p_action:'deny'},'Member denied');
+    }catch(err){deny.disabled=false;}
+  });
+}
+
 function adminMemberForm(id){
   var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
