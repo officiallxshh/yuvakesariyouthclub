@@ -3306,3 +3306,164 @@ body.yyC-opening .hero-logo{
   .yyc-admin-review-grid{grid-template-columns:1fr}
   .yyc-admin-review-actions>*{flex:1 1 100%}
 }
+
+/* ===== YYC GLOBAL TRANSITION SYSTEM — POLISHED + NO LAYOUT SHIFT ===== */
+:root{
+  --yyc-ease:cubic-bezier(.16,1,.3,1);
+  --yyc-ease-soft:cubic-bezier(.22,1,.36,1);
+}
+
+/* Every dynamically swapped panel gets the same cinematic entrance. */
+#modalContent.yyc-panel-swap-in{
+  animation:yycPanelSwapIn .48s var(--yyc-ease) both;
+  transform-origin:50% 8%;
+}
+@keyframes yycPanelSwapIn{
+  0%{opacity:0;transform:translate3d(0,12px,0);filter:blur(5px)}
+  55%{opacity:1;transform:translate3d(0,-2px,0);filter:blur(0)}
+  100%{opacity:1;transform:none;filter:none}
+}
+
+/* Modal shell stays smooth while content changes underneath it. */
+.modal.open .modal-shell{
+  animation:yycModalShellIn .46s var(--yyc-ease) both;
+}
+@keyframes yycModalShellIn{
+  0%{opacity:0;transform:translate3d(0,18px,0) scale(.985)}
+  100%{opacity:1;transform:none}
+}
+
+/* Section-to-section navigation: animate inner content, never the section box itself. */
+.section.yyc-section-navigate .section-head{
+  animation:yycSectionHeadIn .58s var(--yyc-ease) both;
+}
+.section.yyc-section-navigate .section-head + *,
+.section.yyc-section-navigate .glimpse-grid,
+.section.yyc-section-navigate .card-grid,
+.section.yyc-section-navigate .events-grid,
+.section.yyc-section-navigate .gallery-grid,
+.section.yyc-section-navigate .swag-grid,
+.section.yyc-section-navigate .updates-list,
+.section.yyc-section-navigate .join-card{
+  animation:yycSectionBodyIn .68s var(--yyc-ease) .035s both;
+}
+@keyframes yycSectionHeadIn{
+  0%{opacity:.35;transform:translate3d(0,9px,0)}
+  100%{opacity:1;transform:none}
+}
+@keyframes yycSectionBodyIn{
+  0%{opacity:.3;transform:translate3d(0,12px,0);filter:blur(1.8px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+
+/* Dynamic admin workspace: a slightly faster panel transition than the public sections. */
+.admin-workspace.yyc-admin-tab-enter{
+  animation:yycAdminWorkspaceIn .44s var(--yyc-ease) both !important;
+  will-change:opacity,transform;
+}
+@keyframes yycAdminWorkspaceIn{
+  0%{opacity:0;transform:translate3d(0,10px,0);filter:blur(3px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+.admin-tab{
+  transition:
+    color .24s ease,
+    background-color .24s ease,
+    border-color .24s ease,
+    box-shadow .28s var(--yyc-ease);
+}
+.admin-tab.active{
+  box-shadow:inset 0 -2px 0 rgba(239,202,123,.75),0 8px 22px rgba(0,0,0,.14);
+}
+
+/* Login / portal panel content arrives in a quiet stagger. */
+.access-login-screen > *{
+  animation:yycAccessItemIn .5s var(--yyc-ease) both;
+}
+.access-login-screen > *:nth-child(2){animation-delay:.045s}
+.access-login-screen > *:nth-child(3){animation-delay:.09s}
+.access-login-screen > *:nth-child(4){animation-delay:.13s}
+@keyframes yycAccessItemIn{
+  0%{opacity:0;transform:translate3d(0,8px,0)}
+  100%{opacity:1;transform:none}
+}
+
+/* Forms and dashboard blocks use opacity/position only; no size growth. */
+.portal-profile-view > *,
+.premium-member-dashboard > .portal-action-row,
+.premium-member-dashboard > .notice,
+.premium-member-dashboard > .yyc-card-download-bar,
+.premium-member-dashboard > .portal-summary-grid{
+  animation:yycPortalItemIn .46s var(--yyc-ease) both;
+}
+.portal-profile-view > *:nth-child(2){animation-delay:.03s}
+.portal-profile-view > *:nth-child(3){animation-delay:.06s}
+.portal-profile-view > *:nth-child(4){animation-delay:.09s}
+@keyframes yycPortalItemIn{
+  0%{opacity:0;transform:translate3d(0,9px,0)}
+  100%{opacity:1;transform:none}
+}
+
+/* Menu open/close motion without pushing the page. */
+.yyc-portal-menu:not([hidden]){
+  animation:yycMenuIn .22s var(--yyc-ease) both;
+  transform-origin:100% 0;
+}
+@keyframes yycMenuIn{
+  0%{opacity:0;transform:translate3d(0,-5px,0) scale(.985)}
+  100%{opacity:1;transform:none}
+}
+
+/* Keep navigation/hover motion quiet and premium. */
+.desktop-nav .nav-link,
+.mobile-panel a,
+.btn,
+.mini-btn,
+.scroll-cue{
+  transition:
+    color .22s ease,
+    background-color .22s ease,
+    border-color .22s ease,
+    box-shadow .28s var(--yyc-ease),
+    opacity .22s ease;
+}
+.nav-link.active{
+  text-shadow:0 0 18px rgba(239,202,123,.12);
+}
+
+/* Loading/transition guard: make slow Supabase states feel deliberate. */
+.direct-access-loading .direct-loading-indicator{
+  animation:yycLoadingBreathe 1.25s ease-in-out infinite;
+}
+@keyframes yycLoadingBreathe{
+  0%,100%{opacity:.68}
+  50%{opacity:1}
+}
+
+/* Accessibility: remove added motion when reduced motion is requested. */
+@media(prefers-reduced-motion:reduce){
+  #modalContent.yyc-panel-swap-in,
+  .modal.open .modal-shell,
+  .section.yyc-section-navigate .section-head,
+  .section.yyc-section-navigate .section-head + *,
+  .section.yyc-section-navigate .glimpse-grid,
+  .section.yyc-section-navigate .card-grid,
+  .section.yyc-section-navigate .events-grid,
+  .section.yyc-section-navigate .gallery-grid,
+  .section.yyc-section-navigate .swag-grid,
+  .section.yyc-section-navigate .updates-list,
+  .section.yyc-section-navigate .join-card,
+  .admin-workspace.yyc-admin-tab-enter,
+  .access-login-screen > *,
+  .portal-profile-view > *,
+  .premium-member-dashboard > .portal-action-row,
+  .premium-member-dashboard > .notice,
+  .premium-member-dashboard > .yyc-card-download-bar,
+  .premium-member-dashboard > .portal-summary-grid,
+  .yyc-portal-menu:not([hidden]){
+    animation:none!important;
+    transform:none!important;
+    filter:none!important;
+    opacity:1!important;
+  }
+}
