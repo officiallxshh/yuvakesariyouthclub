@@ -125,13 +125,13 @@ function exportYYCMembersCSV(members){
 }
 
 function exportYYCStorageCSV(s){
-  var headers=['Record Type','ID','Name','Role Number','Role','Status','Approved','Date of Birth','Phone','Email','Club Name','Title','Message','Caption','Event Date','Location','Description','Area','Price','Sizes','Category','Order Link','Created At','Published At'];
+  var headers=['Record Type','ID','Name','Role Number','Role','Status','Approved','Date of Birth','Phone','Email','Club Name','Title','Message','Caption','Event Date','Location','Description','Image Format','Area','Price','Sizes','Category','Order Link','Created At','Published At'];
   var rows=[];
   (s.members||[]).forEach(function(m){rows.push({'Record Type':'Member','ID':m.id,'Name':m.name,'Role Number':m.role_number,'Status':m.status,'Approved':m.approved?'Approved':'Pending','Date of Birth':m.dob,'Phone':m.phone,'Email':m.email,'Club Name':m.club_name,'Role':m.position,'Created At':m.created_at});});
   (s.leaders||[]).forEach(function(l){rows.push({'Record Type':'Leader','ID':l.id,'Name':l.name,'Role':l.role,'Status':l.status,'Phone':l.phone,'Email':l.email,'Created At':l.created_at});});
-  (s.announcements||[]).forEach(function(x){rows.push({'Record Type':'Announcement','ID':x.id,'Title':x.title,'Message':x.body,'Status':x.status,'Published At':x.published_at,'Created At':x.created_at});});
-  (s.gallery||[]).forEach(function(x){rows.push({'Record Type':'Gallery','ID':x.id,'Title':x.title,'Caption':x.caption,'Status':x.status,'Created At':x.created_at});});
-  (s.events||[]).forEach(function(x){rows.push({'Record Type':'Event','ID':x.id,'Title':x.title,'Event Date':x.event_date,'Location':x.location,'Description':x.description,'Status':x.status,'Created At':x.created_at});});
+  (s.announcements||[]).forEach(function(x){rows.push({'Record Type':'Announcement','ID':x.id,'Title':x.title,'Message':x.body,'Image Format':x.image_format,'Status':x.status,'Published At':x.published_at,'Created At':x.created_at});});
+  (s.gallery||[]).forEach(function(x){rows.push({'Record Type':'Gallery','ID':x.id,'Title':x.title,'Caption':x.caption,'Image Format':x.image_format,'Status':x.status,'Created At':x.created_at});});
+  (s.events||[]).forEach(function(x){rows.push({'Record Type':'Event','ID':x.id,'Title':x.title,'Event Date':x.event_date,'Location':x.location,'Description':x.description,'Image Format':x.image_format,'Status':x.status,'Created At':x.created_at});});
   (s.volunteers||[]).forEach(function(x){rows.push({'Record Type':'Volunteer','ID':x.id,'Name':x.name,'Area':x.area,'Approved':x.approved?'Approved':'Pending','Created At':x.created_at});});
   (s.swags||[]).forEach(function(x){rows.push({'Record Type':'Swag','ID':x.id,'Title':x.title,'Category':x.category,'Price':x.price,'Sizes':x.sizes,'Description':x.description,'Status':x.status,'Order Link':x.order_url,'Created At':x.created_at});});
   downloadYYCAdminCSV('yyc-data-export.csv',headers,rows);
@@ -165,6 +165,47 @@ function fmtDate(v){
   var d=new Date(v+'T00:00:00');
   return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 }
+function yycImageFormatMeta(value){
+  var key=String(value||'original').toLowerCase().trim();
+  var map={
+    original:{key:'original',label:'ORIGINAL / AUTO',ratio:'auto'},
+    a4:{key:'a4',label:'A4 PORTRAIT',ratio:'1 / 1.4142'},
+    a3:{key:'a3',label:'A3 PORTRAIT',ratio:'1 / 1.4142'},
+    a2:{key:'a2',label:'A2 PORTRAIT',ratio:'1 / 1.4142'},
+    a1:{key:'a1',label:'A1 PORTRAIT',ratio:'1 / 1.4142'},
+    'a4-landscape':{key:'a4-landscape',label:'A4 LANDSCAPE',ratio:'1.4142 / 1'},
+    'a3-landscape':{key:'a3-landscape',label:'A3 LANDSCAPE',ratio:'1.4142 / 1'},
+    'a2-landscape':{key:'a2-landscape',label:'A2 LANDSCAPE',ratio:'1.4142 / 1'},
+    'a1-landscape':{key:'a1-landscape',label:'A1 LANDSCAPE',ratio:'1.4142 / 1'},
+    banner:{key:'banner',label:'BANNER · 3:1',ratio:'3 / 1'},
+    wide:{key:'wide',label:'WIDE · 16:9',ratio:'16 / 9'},
+    square:{key:'square',label:'SQUARE · 1:1',ratio:'1 / 1'},
+    'portrait-4-5':{key:'portrait-4-5',label:'PORTRAIT · 4:5',ratio:'4 / 5'},
+    'story-9-16':{key:'story-9-16',label:'STORY · 9:16',ratio:'9 / 16'}
+  };
+  return map[key]||map.original;
+}
+function yycImageFormatOptions(selected){
+  var current=yycImageFormatMeta(selected).key;
+  var order=['original','a4','a3','a2','a1','a4-landscape','a3-landscape','a2-landscape','a1-landscape','banner','wide','square','portrait-4-5','story-9-16'];
+  return order.map(function(key){
+    var m=yycImageFormatMeta(key);
+    return '<option value="'+m.key+'" '+(m.key===current?'selected':'')+'>'+m.label+'</option>';
+  }).join('');
+}
+function yycApplyMediaPreview(id,format){
+  var el=$(id);
+  if(!el) return;
+  var m=yycImageFormatMeta(format);
+  el.setAttribute('data-yyc-format',m.key);
+  el.style.setProperty('--yyc-media-ratio',m.ratio);
+}
+function yycMediaFrame(format,inner){
+  var m=yycImageFormatMeta(format);
+  var style=m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"';
+  return '<div class="yyc-media-frame" data-yyc-format="'+m.key+'"'+style+'>'+inner+'</div>';
+}
+
 async function rpc(name,args){
   var payload=args || {};
   var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/rest/v1/rpc/'+encodeURIComponent(name);
@@ -629,7 +670,7 @@ function renderPublic(){
   if(ug){
     var ups=publicData.updates||[];
     ug.innerHTML=yycLimitedSectionHTML('updates',ups,function(u){
-      var image=u.image_url ? '<div class="update-card-media"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy"></div>' : '';
+      var m=yycImageFormatMeta(u.image_format); var image=u.image_url ? yycMediaFrame(m.key,'<div class="update-card-media-inner"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy" decoding="async"></div>') : '';
       return '<article class="update-card '+(image?'has-image':'')+' reveal">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
     },'No updates published yet.','update-card');
   }
@@ -644,9 +685,9 @@ function renderPublic(){
       var day=d&&!isNaN(d)?String(d.getDate()).padStart(2,'0'):'—';
       var month=d&&!isNaN(d)?d.toLocaleDateString('en-IN',{month:'short'}).toUpperCase():'DATE TBC';
       var year=d&&!isNaN(d)?String(d.getFullYear()):'';
-      var image=ev.image_url ? '<img src="'+esc(ev.image_url)+'" alt="'+esc(ev.title||'YYC event')+'" loading="lazy">' : '<div class="event-card-art"><span>YYC</span><b>EVENT</b></div>';
+      var m=yycImageFormatMeta(ev.image_format); var image=ev.image_url ? '<div class="event-card-photo" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'><img src="'+esc(ev.image_url)+'" alt="'+esc(ev.title||'YYC event')+'" loading="lazy" decoding="async"></div>' : '<div class="event-card-art"><span>YYC</span><b>EVENT</b></div>';
       return '<article class="event-card reveal">'+
-        '<div class="event-card-media">'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
+        '<div class="event-card-media" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'>'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
         '<div class="event-card-body"><span class="event-kicker">YYC PROGRAMME</span><h3>'+esc(ev.title||'Untitled event')+'</h3>'+
         (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
         '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span></div></div>'+
@@ -658,7 +699,7 @@ function renderPublic(){
   if(gg){
     var gs=publicData.gallery||[];
     gg.innerHTML=yycLimitedSectionHTML('gallery',gs,function(g){
-      return '<figure class="gallery-card reveal"><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy"><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
+      var m=yycImageFormatMeta(g.image_format); return '<figure class="gallery-card reveal" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'><div class="gallery-card-media" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy" decoding="async"></div><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
     },'No gallery items published yet.','gallery-card');
   }
   if(window.YYCObserveReveals) window.YYCObserveReveals(document);
@@ -1784,27 +1825,30 @@ function adminLeaderForm(id){
 }
 function adminEventForm(id){
   var events=adminData.events||[];
-  var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:''};
+  var existing=events.find(function(e){return String(e.id)===String(id);}) || {title:'',description:'',event_date:'',location:'',image_url:'',image_format:'original'};
   var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · EVENTS</div>'+
     '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Event</h2>'+
-    '<p class="modal-sub">Publish a clean event card to the public YYC website.</p>'+
+    '<p class="modal-sub">Upload any image size, then choose how it should be framed on the website.</p>'+
     '<form id="adminEventForm">'+
       '<div class="form-grid">'+
         '<div class="field"><label>Event name</label><input id="aeTitle" value="'+esc(existing.title||'')+'" required></div>'+
         '<div class="field"><label>Date</label><input id="aeDate" type="date" value="'+esc(existing.event_date||'')+'"></div>'+
         '<div class="field"><label>Location</label><input id="aeLocation" value="'+esc(existing.location||'')+'" placeholder="Subrahmanya, Karnataka"></div>'+
-        '<div class="field full"><label>Event image <span class="field-note">(optional)</span></label><input id="aeFile" type="file" accept="image/*"><small class="field-help">Upload a clear event image; it will be stored in YYC media.</small></div>'+
+        '<div class="field"><label>Display format</label><select id="aeFormat">'+yycImageFormatOptions(existing.image_format)+'</select><small class="field-help">A4–A1 keep the standard paper ratio; Banner/Wide/Square are web layouts.</small></div>'+
+        '<div class="field full"><label>Event image <span class="field-note">(optional)</span></label><input id="aeFile" type="file" accept="image/*"><small class="field-help">Original proportions are preserved; the selected display format does not crop the upload.</small></div>'+
         '<div class="field full"><label>External image URL <span class="field-note">(optional)</span></label><input id="aeImage" value="'+esc(existing.image_url||'')+'" placeholder="https://..."></div>'+
         '<div class="field full"><label>Description</label><textarea id="aeDescription" placeholder="What is happening at this programme?">'+esc(existing.description||'')+'</textarea></div>'+
       '</div>'+
-      '<div class="crop-preview yyc-simple-preview admin-event-image-preview"><img id="aePrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Event image preview"></div>'+
+      '<div class="crop-preview yyc-simple-preview admin-event-image-preview yyc-admin-media-preview" id="aePreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="aePrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Event image preview"></div>'+
       '<div class="form-actions"><button class="btn gold">SAVE EVENT</button></div>'+
     '</form>'
   );
-  $('#aeFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,1200);$('#aePrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  yycApplyMediaPreview('#aePreviewFrame',$('#aeFormat').value);
+  $('#aeFormat').addEventListener('change',function(){yycApplyMediaPreview('#aePreviewFrame',this.value);});
+  $('#aeFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);$('#aePrev').src=obj.photo;}catch(err){toast('Could not read image');}});
   $('#aeImage').addEventListener('input',function(){if(!String(obj.photo).startsWith('data:image/')){$('#aePrev').src=this.value.trim()||'assets/yyc-logo-clean.webp';}});
   $('#adminEventBack').addEventListener('click',function(){adminPanel('events');});
   $('#adminEventForm').addEventListener('submit',async function(e){
@@ -1821,7 +1865,8 @@ function adminEventForm(id){
         description:$('#aeDescription').value.trim(),
         event_date:$('#aeDate').value,
         location:$('#aeLocation').value.trim(),
-        image_url:image
+        image_url:image,
+        image_format:$('#aeFormat').value
       };
       var r=await rpc('admin_upsert_event',{p_token:adminToken,p_id:id||null,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
@@ -1839,20 +1884,61 @@ function adminDeleteEvent(id){
 }
 
 function adminUpdateForm(id){
-  var existing=(adminData.updates||[]).find(function(u){return u.id===id;}) || {title:'',body:'',event_date:today(),image_url:''};
+  var existing=(adminData.updates||[]).find(function(u){return String(u.id)===String(id);}) || {title:'',body:'',event_date:today(),image_url:'',image_format:'original'};
   var obj={photo:existing.image_url||''};
-  openModal('<div class="modal-kicker">ADMIN · UPDATES</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2><form id="adminUpdateForm"><div class="form-grid"><div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div><div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div><div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div><div class="field full"><label>Announcement image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"><small class="field-help">Add a clear image to appear with this announcement.</small></div></div><div class="crop-preview yyc-simple-preview admin-update-image-preview"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div><div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>');
-  $('#auFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,1000);if(obj.photo)$('#auPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
-  $('#adminUpdateForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{var image=obj.photo||'';if(String(image).startsWith('data:image/')){if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}image=await uploadYYCImage(image,'announcement',adminToken,id||'',existing.image_url||'');}var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:image}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Update published');adminPanel('updates');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH UPDATE';}toast(err.message);}});
+  openModal(
+    '<div class="modal-kicker">ADMIN · UPDATES</div>'+
+    '<h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2>'+
+    '<p class="modal-sub">Upload any image dimensions and choose the presentation format for the public update card.</p>'+
+    '<form id="adminUpdateForm"><div class="form-grid">'+
+      '<div class="field"><label>Title</label><input id="auTitle" value="'+esc(existing.title)+'" required></div>'+
+      '<div class="field"><label>Date</label><input id="auDate" type="date" value="'+esc(existing.event_date||today())+'"></div>'+
+      '<div class="field full"><label>Message</label><textarea id="auBody" required>'+esc(existing.body||'')+'</textarea></div>'+
+      '<div class="field"><label>Display format</label><select id="auFormat">'+yycImageFormatOptions(existing.image_format)+'</select><small class="field-help">Choose Original, A4/A3/A2/A1, Banner, Wide, Square or other preset.</small></div>'+
+      '<div class="field"><label>Announcement image <span class="field-note">(optional)</span></label><input id="auFile" type="file" accept="image/*"><small class="field-help">The website will not crop your upload.</small></div>'+
+    '</div>'+
+    '<div class="crop-preview yyc-simple-preview admin-update-image-preview yyc-admin-media-preview" id="auPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div>'+
+    '<div class="form-actions"><button class="btn gold">PUBLISH UPDATE</button></div></form>'
+  );
+  yycApplyMediaPreview('#auPreviewFrame',$('#auFormat').value);
+  $('#auFormat').addEventListener('change',function(){yycApplyMediaPreview('#auPreviewFrame',this.value);});
+  $('#auFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);if(obj.photo)$('#auPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  $('#adminUpdateForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
+    try{
+      var image=obj.photo||'';
+      if(String(image).startsWith('data:image/')){
+        if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
+        image=await uploadYYCImage(image,'announcement',adminToken,id||'',existing.image_url||'');
+      }
+      var r=await rpc('admin_upsert_update',{p_token:adminToken,p_id:id,p_payload:{title:$('#auTitle').value.trim(),body:$('#auBody').value.trim(),event_date:$('#auDate').value,image_url:image,image_format:$('#auFormat').value}});
+      if(!r.ok) throw new Error(r.error||'Failed');
+      closeModal();toast('Update published');adminPanel('updates');
+    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH UPDATE';}toast(err.message);}
+  });
 }
 function adminGalleryForm(id){
-  var existing=(adminData.gallery||[]).find(function(g){return g.id===id;}) || {title:'',src:'',caption:''};
+  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original'};
   var obj={photo:existing.src||''};
-  openModal('<div class="modal-kicker">ADMIN · GALLERY</div><h2 class="modal-title">Publish Gallery Photo</h2><form id="adminGalleryForm"><div class="field"><label>Caption</label><input id="agTitle" value="'+esc(existing.title)+'" required></div><div class="field" style="margin-top:12px"><label>Photo</label><input id="agFile" type="file" accept="image/*"></div><div class="crop-preview yyc-simple-preview"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div><div class="form-actions"><button class="btn gold">PUBLISH PHOTO</button></div></form>');
-  $('#agFile').addEventListener('change',async function(){obj.photo=await readFile(this.files[0],860);if(obj.photo)$('#agPrev').src=obj.photo;});
-  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:photo}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery published');adminPanel('gallery');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH PHOTO';}toast(err.message);}});
+  openModal(
+    '<div class="modal-kicker">ADMIN · GALLERY</div>'+
+    '<h2 class="modal-title">'+(id?'Edit':'Publish')+' Gallery Photo</h2>'+
+    '<p class="modal-sub">Upload any image size and choose the format used to present it in the gallery.</p>'+
+    '<form id="adminGalleryForm">'+
+      '<div class="form-grid">'+
+        '<div class="field"><label>Caption</label><input id="agTitle" value="'+esc(existing.title)+'" required></div>'+
+        '<div class="field"><label>Display format</label><select id="agFormat">'+yycImageFormatOptions(existing.image_format)+'</select></div>'+
+        '<div class="field full"><label>Photo</label><input id="agFile" type="file" accept="image/*"><small class="field-help">The full upload is preserved; display formatting does not crop it.</small></div>'+
+      '</div>'+
+      '<div class="crop-preview yyc-simple-preview yyc-admin-media-preview" id="agPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div>'+
+      '<div class="form-actions"><button class="btn gold">'+(id?'SAVE CHANGES':'PUBLISH PHOTO')+'</button></div></form>'
+  );
+  yycApplyMediaPreview('#agPreviewFrame',$('#agFormat').value);
+  $('#agFormat').addEventListener('change',function(){yycApplyMediaPreview('#agPreviewFrame',this.value);});
+  $('#agFile').addEventListener('change',async function(){try{obj.photo=await readFile(this.files[0],2400);if(obj.photo)$('#agPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  $('#adminGalleryForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id,p_payload:{title:$('#agTitle').value.trim(),src:photo,image_format:$('#agFormat').value}});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Gallery photo saved');adminPanel('gallery');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'PUBLISH PHOTO';}toast(err.message);}});
 }
-
 function adminSwagForm(id){
   var existing=(adminData.swags||[]).find(function(sw){return String(sw.id)===String(id);}) || {
     title:'',category:'JERSEY',price:'',sizes:'S · M · L · XL',description:'',
