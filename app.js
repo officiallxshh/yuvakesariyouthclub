@@ -814,7 +814,7 @@ function yycDigitalCard(data,kind){
             '<span class="yyc-id-type">'+(leader?'LEADER ID CARD':'MEMBER ID CARD')+'</span>'+
           '</div>'+
           '<div class="yyc-idcard-content">'+
-            '<div class="yyc-id-photo"><div class="yyc-photo-frame"><img src="'+esc(photo)+'" alt="'+esc(name)+'"></div></div>'+
+            '<div class="yyc-id-photo"><div class="yyc-photo-frame"><img class="yyc-id-card-photo" src="'+esc(photo)+'" alt="'+esc(name)+'" style="width:100%;height:100%;display:block;object-fit:contain;object-position:center center;transform:none!important;transform-origin:center center;background:#0c1618;"></div></div>'+
             '<div class="yyc-id-details">'+
               '<div class="yyc-id-name">'+esc(name)+'</div>'+
               '<div class="yyc-id-position">'+esc(position)+'</div>'+
