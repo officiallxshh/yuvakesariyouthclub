@@ -205,7 +205,7 @@
 
   function refreshApp(){
     if(!confirm('Refresh the YYC app cache and reload the latest production build?'))return;
-    Promise.resolve().then(function(){return caches&&caches.keys?caches.keys():[];}).then(function(keys){return Promise.all((keys||[]).filter(function(k){return String(k).indexOf('yyc-')===0;}).map(function(k){return caches.delete(k);}));}).catch(function(){}).then(function(){
+    Promise.resolve().then(function(){return ('caches' in window&&window.caches&&window.caches.keys)?window.caches.keys():[];}).then(function(keys){return Promise.all((keys||[]).filter(function(k){return String(k).indexOf('yyc-')===0;}).map(function(k){return caches.delete(k);}));}).catch(function(){}).then(function(){
       if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){return navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));});}
     }).catch(function(){}).finally(function(){location.reload();});
   }
@@ -287,6 +287,20 @@
     });
   }
 
+  function installForgotPasswordLinks(){
+    if(window.__yycpForgotBound)return;
+    window.__yycpForgotBound=true;
+    if(!window.MutationObserver)return;
+    new MutationObserver(function(){
+      qa('.access-login-screen').forEach(function(screen){
+        if(screen.querySelector('.yycp-forgot'))return;
+        var p=document.createElement('div');p.className='yycp-static-note yycp-forgot';
+        p.innerHTML='Forgot your password? <a href="./contact.html" style="color:#d7b56e">Contact YYC Admin</a> for a supervised reset.';
+        var form=screen.querySelector('form');if(form)form.parentNode.appendChild(p);
+      });
+    }).observe(document.body,{childList:true,subtree:true});
+  }
+
   function installContactShortcut(){
     var footer=q('.footer');if(!footer||q('#yycpContactShortcut'))return;
     var b=document.createElement('a');b.id='yycpContactShortcut';b.className='link-btn';b.href='./contact.html';b.textContent='Contact YYC';footer.querySelector('.footer-main')?.appendChild(b);
@@ -294,7 +308,7 @@
 
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
-    installOffline();installSwUpdate();installTopSearch();installLangToggle();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();
+    installOffline();installSwUpdate();installTopSearch();installLangToggle();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();
     if(window.MutationObserver){
       new MutationObserver(function(){installAdminTools();installContactForm();renderLocalQr();updateAdminTools();}).observe(document.body,{childList:true,subtree:true});
     }
