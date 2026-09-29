@@ -1722,6 +1722,7 @@ function adminPanel(tab,forceRefresh){
         var selected=this.getAttribute('data-tab')||'overview';
         $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
         renderAdminTab(selected,d);
+        if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
         var workspace=$('#adminWorkspace');
         if(workspace){
           workspace.setAttribute('data-yyc-active-tab',selected);
@@ -1733,6 +1734,7 @@ function adminPanel(tab,forceRefresh){
       });
     });
     renderAdminTab(tab,d);
+    if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
     var workspace=$('#adminWorkspace');
     if(workspace){
       workspace.setAttribute('data-yyc-active-tab',tab);
@@ -2582,14 +2584,6 @@ function initYYCApp(){
   restorePersistentPortals();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(function(rs){
-      if(!rs.length)return;
-      return Promise.all(rs.map(function(r){return r.unregister();})).then(function(){
-        if(!yycSafeGet(sessionStorage,'yyc_sw_clean_v1')) yycSafeSet(sessionStorage,'yyc_sw_clean_v1','1');
-      });
-    }).catch(function(){});
-  }
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initYYCApp);
 else initYYCApp();
