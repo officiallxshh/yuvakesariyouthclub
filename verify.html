@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05080b"><meta name="robots" content="noindex,follow">
+<link rel="canonical" href="https://www.yuvakesariyouthclub.in/verify.html">
+<link rel="icon" href="./assets/yyc-lion-favicon-redesigned.svg">
+<title>YYC Verification | Yuvakesari Youth Club</title>
+<style>
+body{margin:0;background:#05080b;color:#ece4d2;font:14px Inter,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}
+main{width:min(620px,94vw);padding:32px;border:1px solid rgba(229,191,107,.2);border-radius:24px;background:#0a0f14;box-shadow:0 30px 90px rgba(0,0,0,.45)}
+img{width:70px;height:70px;object-fit:contain}.k{margin-top:18px;color:#bfa873;font-size:10px;letter-spacing:.22em}.t{font:600 52px/1 Georgia,serif;color:#f1d58f;margin:10px 0}.state{margin-top:20px;padding:13px;border-radius:14px;border:1px solid rgba(255,255,255,.08);color:#bfc7c1}.ok{color:#9fe0bb}.bad{color:#e9b59f}.profile{margin-top:18px;padding:18px;border-radius:16px;border:1px solid rgba(255,255,255,.08)}.photo{width:84px;height:84px;border-radius:16px;object-fit:cover;background:#10171b}.name{margin-top:12px;font:600 28px/1.1 Georgia,serif}.role{margin-top:7px;color:#d6bf8a;font-size:11px;text-transform:uppercase;letter-spacing:.12em}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.box{padding:12px;border-radius:12px;background:rgba(255,255,255,.03)}.box span{display:block;color:#7e8982;font-size:8px;letter-spacing:.12em}.box b{display:block;margin-top:5px;color:#e5dccb}.back{display:inline-block;margin-top:20px;color:#d7b56e;text-decoration:none;font-weight:800;font-size:11px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.t{font-size:42px}}
+</style>
+</head>
+<body><main>
+<img src="./assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo">
+<div class="k">YUVAKESARI YOUTH CLUB</div>
+<h1 class="t">ID Verification</h1>
+<div id="out" class="state">Checking YYC record…</div>
+<a class="back" href="./index.html">← Back to YYC</a>
+</main>
+<script>
+(function(){
+var key='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt',base='https://vrllozfzheikjbhxvpkx.supabase.co',out=document.getElementById('out');
+var id=(new URLSearchParams(location.search).get('uid')||new URLSearchParams(location.search).get('verify')||'').trim();
+function e(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+if(!id){out.innerHTML='<div class="bad">No Unique ID was supplied.</div>';return;}
+fetch(base+'/rest/v1/rpc/public_verify_identity',{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({p_role_number:id})})
+.then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error();return d;});})
+.then(function(d){
+if(!d||d.ok!==true){out.innerHTML='<div class="bad">YYC record not found or inactive.</div>';return;}
+var p=d.photo_url||'./assets/yyc-logo-clean.webp';
+out.innerHTML='<div class="ok">✓ VERIFIED · ACTIVE YYC RECORD</div><div class="profile"><img class="photo" src="'+e(p)+'" alt=""><div class="name">'+e(d.name)+'</div><div class="role">'+e(d.role||d.type)+'</div><div class="grid"><div class="box"><span>UNIQUE ID</span><b>'+e(d.role_number)+'</b></div><div class="box"><span>TYPE</span><b>'+e(d.type==='leader'?'LEADER':'MEMBER')+'</b></div><div class="box"><span>STATUS</span><b>ACTIVE</b></div><div class="box"><span>ORGANIZATION</span><b>Yuvakesari Youth Club</b></div></div></div>';
+document.title=d.name+' · YYC Verification';
+})
+.catch(function(){out.innerHTML='<div class="bad">Verification service is temporarily unavailable. Please try again.</div>';});
+})();
+</script>
+</body></html>
