@@ -2,7 +2,7 @@
 (function(){
   'use strict';
 
-  var PROD_VERSION='2026.09.29-r5';
+  var PROD_VERSION='2026.09.29-r6';
   var SUPA_URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var SUPA_KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -192,8 +192,13 @@
     var total=pendingMembers.length+pendingVol.length+newContacts.length;
     var html='<div class="modal-kicker">ADMIN · INBOX</div><h2 class="modal-title">Notifications & requests.</h2><p class="modal-sub">Pending member, volunteer and contact items from the current admin data.</p>'+
       (rows.length?'<div class="yycp-file-list">'+rows.join('')+'</div>':'<div class="empty">Nothing needs attention right now.</div>')+
-      '<div class="yycp-static-note">'+esc(total)+' item(s) currently need attention.</div>';
-    if(typeof window.openModal==='function')window.openModal(html);
+      '<div class="yycp-static-note">'+esc(total)+' item(s) currently need attention.</div>'+
+      '<div class="form-actions"><button type="button" class="btn outline yycp-back-admin">← BACK TO ADMIN</button></div>';
+    if(typeof window.openModal==='function'){
+      window.openModal(html);
+      var back=q('#modalContent .yycp-back-admin');
+      if(back) back.onclick=function(){if(typeof window.adminPanel==='function')window.adminPanel('overview');};
+    }
   }
 
   function showHealth(){
@@ -213,8 +218,13 @@
       '<div class="yycp-health-card"><b>'+esc(n.updates)+'</b><span>Updates</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.gallery)+'</b><span>Gallery</span></div>'+
       '<div class="yycp-health-card"><b class="'+(n.pending?'yycp-health-warn':'yycp-health-ok')+'">'+esc(n.pending)+'</b><span>Pending actions</span></div>'+
-      '</div><p class="yycp-static-note">Health indicators reflect the current browser session and deployed components; they are not a substitute for an infrastructure monitor.</p>';
-    if(typeof window.openModal==='function')window.openModal(html);
+      '</div><p class="yycp-static-note">Health indicators reflect the current browser session and deployed components; they are not a substitute for an infrastructure monitor.</p>'+
+      '<div class="form-actions"><button type="button" class="btn outline yycp-back-admin">← BACK TO ADMIN</button></div>';
+    if(typeof window.openModal==='function'){
+      window.openModal(html);
+      var back=q('#modalContent .yycp-back-admin');
+      if(back) back.onclick=function(){if(typeof window.adminPanel==='function')window.adminPanel('overview');};
+    }
   }
 
   function refreshApp(){
@@ -227,8 +237,10 @@
   function openBatchGallery(){
     if(typeof window.openModal!=='function'){toast('Admin module is still loading.');return;}
     window.openModal('<div class="modal-kicker">ADMIN · GALLERY</div><h2 class="modal-title">Batch Gallery Upload</h2><p class="modal-sub">Upload multiple photos into one album without changing the existing single-photo workflow.</p>'+
-      '<form id="yycpBatchForm"><div class="form-grid"><div class="field"><label>Album</label><input id="yycpAlbum" value="GENERAL" required></div><div class="field"><label>Status</label><select id="yycpStatus"><option value="published">Published</option><option value="draft">Draft</option></select></div><div class="field full"><label>Photos</label><input id="yycpFiles" type="file" accept="image/*" multiple required></div></div><div class="yycp-batch-drop" id="yycpDrop">Drop images here or use the file picker above.</div><div id="yycpFileList" class="yycp-file-list"></div><div class="form-actions"><button class="btn gold" type="submit">UPLOAD ALL PHOTOS</button></div></form>');
+      '<form id="yycpBatchForm"><div class="form-grid"><div class="field"><label>Album</label><input id="yycpAlbum" value="GENERAL" required></div><div class="field"><label>Status</label><select id="yycpStatus"><option value="published">Published</option><option value="draft">Draft</option></select></div><div class="field full"><label>Photos</label><input id="yycpFiles" type="file" accept="image/*" multiple required></div></div><div class="yycp-batch-drop" id="yycpDrop">Drop images here or use the file picker above.</div><div id="yycpFileList" class="yycp-file-list"></div><div class="form-actions"><button class="btn gold" type="submit">UPLOAD ALL PHOTOS</button><button type="button" class="btn outline yycp-back-admin">← BACK TO ADMIN</button></div></form>');
     var form=q('#yycpBatchForm'),filesInput=q('#yycpFiles'),drop=q('#yycpDrop'),list=q('#yycpFileList');
+    var back=q('#modalContent .yycp-back-admin');
+    if(back) back.onclick=function(){if(typeof window.adminPanel==='function')window.adminPanel('overview');};
     var files=[];
     function redraw(){list.innerHTML=files.map(function(f){return '<div class="yycp-file-item"><span>'+esc(f.name)+'</span><small>'+Math.round(f.size/1024)+' KB</small></div>';}).join('');}
     function add(fs){files=files.concat(Array.prototype.slice.call(fs||[])).slice(0,60);redraw();}
