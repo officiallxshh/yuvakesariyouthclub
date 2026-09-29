@@ -507,6 +507,7 @@
   }
 
   function renderCustomAdminTab90(tab){
+    if(tab==='mediaaudit'){renderMediaAudit90f();return;}
     if(tab==='sitepro'){
       var s=(window.__yycAdminLastData||{}).settings||{};
       q('#adminWorkspace').innerHTML=renderSitePro90(s);q('#spAnn').value=String(!!s.announcement_enabled);q('#spMaint').value=String(!!s.maintenance_mode);
