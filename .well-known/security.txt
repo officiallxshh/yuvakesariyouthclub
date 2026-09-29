@@ -1,0 +1,4 @@
+Contact: mailto:yyc@example.invalid
+Expires: 2027-09-29T00:00:00Z
+Preferred-Languages: en, kn
+Policy: https://www.yuvakesariyouthclub.in/privacy.html
