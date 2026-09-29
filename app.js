@@ -62,6 +62,93 @@ function toast(msg){
   window.__yycToast=setTimeout(function(){t.classList.remove('show');},2600);
 }
 
+function yycDeviceLabel(){
+  var ua=String(navigator.userAgent||'');
+  var platform='';
+  try{platform=String(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'');}catch(e){}
+  var os='Device';
+  if(/Android/i.test(ua)||/Android/i.test(platform)) os='Android';
+  else if(/iPhone|iPad|iPod/i.test(ua)) os='iPhone/iPad';
+  else if(/Windows/i.test(ua)||/Win/i.test(platform)) os='Windows PC';
+  else if(/Mac OS|Macintosh|MacIntel|MacPPC/i.test(ua)||/Mac/i.test(platform)) os='macOS';
+  else if(/Linux/i.test(ua)||/Linux/i.test(platform)) os='Linux';
+  var browser='Browser';
+  if(/Edg\//i.test(ua)) browser='Edge';
+  else if(/OPR\//i.test(ua)) browser='Opera';
+  else if(/Firefox\//i.test(ua)) browser='Firefox';
+  else if(/Chrome\//i.test(ua)) browser='Chrome';
+  else if(/Safari\//i.test(ua)) browser='Safari';
+  return os+' · '+browser;
+}
+
+function yycFormatSessionTime(value){
+  if(!value) return '—';
+  var d=new Date(value);
+  if(isNaN(d)) return '—';
+  return d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function yycSessionSection(kind,sessions){
+  var current=(sessions||[]).filter(function(s){return s.current;});
+  var rows=(sessions||[]).map(function(s){
+    var isCurrent=!!s.current;
+    return '<div class="yyc-session-row '+(isCurrent?'is-current':'')+'">'+
+      '<div class="yyc-session-device"><span class="yyc-session-icon">'+(isCurrent?'✓':'⌂')+'</span><div><b>'+esc(s.device_name||'Unknown device')+'</b><small>'+(
+        isCurrent?'THIS DEVICE · ACTIVE':'LAST ACTIVE · '+esc(yycFormatSessionTime(s.last_seen_at||s.created_at))
+      )+'</small></div></div>'+
+      '<div class="yyc-session-meta"><span>LOGIN · '+esc(yycFormatSessionTime(s.created_at))+'</span>'+
+      (isCurrent?'<span class="yyc-session-current">CURRENT</span>':'<button type="button" class="mini-btn yyc-revoke-session" data-session-kind="'+kind+'" data-session-id="'+esc(s.id)+'">LOG OUT DEVICE</button>')+
+      '</div></div>';
+  }).join('');
+  if(!rows) rows='<div class="yyc-session-empty">No active login sessions found.</div>';
+  return '<section class="yyc-session-panel" id="yycSessions-'+kind+'">'+
+    '<div class="yyc-session-head"><div><span class="portal-profile-kicker">ACCOUNT SECURITY</span><h3>Logged-in devices</h3><p>Review recent sessions and remotely log out a device you no longer use.</p></div>'+
+    '<span class="yyc-session-count">'+esc((sessions||[]).length)+' ACTIVE</span></div>'+
+    '<div class="yyc-session-list">'+rows+'</div>'+
+    '<div class="yyc-session-note">Device name is a browser-provided label such as Windows PC · Chrome or Android · Chrome. Exact hardware model is not exposed by the browser.</div>'+
+  '</section>';
+}
+
+async function yycLoadDeviceSessions(kind){
+  var token=kind==='member'?memberToken:leaderToken;
+  var fn=kind==='member'?'member_sessions_list':'leader_sessions_list';
+  var host=$('#yycSessions-'+kind);
+  if(!host||!token)return;
+  host.querySelector('.yyc-session-list').innerHTML='<div class="yyc-session-empty">Loading logged-in devices…</div>';
+  try{
+    var r=await rpc(fn,{p_token:token});
+    if(!r||!r.ok)throw new Error(r&&r.error||'Could not load active sessions');
+    host.outerHTML=yycSessionSection(kind,r.sessions||[]);
+    bindDeviceSessionActions(kind);
+  }catch(e){
+    host.querySelector('.yyc-session-list').innerHTML='<div class="yyc-session-empty">'+esc(e.message||'Could not load active sessions')+'</div>';
+  }
+}
+
+function bindDeviceSessionActions(kind){
+  qa('.yyc-revoke-session[data-session-kind="'+kind+'"]').forEach(function(btn){
+    if(btn.getAttribute('data-bound')==='1')return;
+    btn.setAttribute('data-bound','1');
+    btn.addEventListener('click',async function(){
+      var id=btn.getAttribute('data-session-id');
+      if(!id)return;
+      if(!confirm('Log out this device? It will lose access immediately.'))return;
+      btn.disabled=true;btn.textContent='LOGGING OUT…';
+      try{
+        var token=kind==='member'?memberToken:leaderToken;
+        var fn=kind==='member'?'member_session_revoke':'leader_session_revoke';
+        var r=await rpc(fn,{p_token:token,p_session_id:id});
+        if(!r||!r.ok)throw new Error(r&&r.error||'Could not log out device');
+        toast('Device logged out');
+        await yycLoadDeviceSessions(kind);
+      }catch(e){
+        btn.disabled=false;btn.textContent='LOG OUT DEVICE';
+        toast(e.message||'Could not log out device');
+      }
+    });
+  });
+}
+
 /* Admin data export — CSV only; intentionally excludes passwords, session tokens and raw photo URLs. */
 function downloadYYCAdminCSV(filename,headers,rows){
   function csv(v){
@@ -1450,6 +1537,7 @@ function memberDashboard(data){
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="memberEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
+    yycSessionSection('member',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'members');});
   bindPortalAccountMenu('member',data);
@@ -1458,6 +1546,7 @@ function memberDashboard(data){
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var download=$('#memberDownloadBtn');
   if(download) download.addEventListener('click',function(){downloadYYCDigitalCard(data,'member',download).catch(function(e){toast(e.message||'ID card download failed.');});});
+  if(!data.__adminView) yycLoadDeviceSessions('member');
   var logout=$('#memberLogout');
   if(logout) logout.addEventListener('click',async function(){
     logout.disabled=true;
@@ -1527,6 +1616,7 @@ function leaderDashboard(data){
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="leaderEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
+    yycSessionSection('leader',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
   bindPortalAccountMenu('leader',data);
@@ -1535,6 +1625,7 @@ function leaderDashboard(data){
   if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
   var download=$('#leaderDownloadBtn');
   if(download) download.addEventListener('click',function(){downloadYYCDigitalCard(data,'leader',download).catch(function(e){toast(e.message||'ID card download failed.');});});
+  if(!data.__adminView) yycLoadDeviceSessions('leader');
   var logout=$('#leaderLogout');
   if(logout) logout.addEventListener('click',async function(){
     logout.disabled=true;
@@ -1582,7 +1673,7 @@ function memberLogin(){
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
       setLoginStatus('memberLoginForm','Checking your YYC membership…',false);
-      var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value});
+      var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value,p_device_name:yycDeviceLabel()});
       if(!r.ok) throw new Error(r.error||'Login failed');
       setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{})); closeModal(); memberDashboard(r.member);
@@ -1632,7 +1723,7 @@ function leaderLogin(){
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
       setLoginStatus('leaderLoginForm','Checking your YYC leadership access…',false);
-      var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value});
+      var r=await rpc('leader_login',{p_identifier:$('#lIdent').value.trim(),p_password:$('#lPass').value,p_device_name:yycDeviceLabel()});
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
       setLoginStatus('leaderLoginForm','Login successful. Opening leadership portal…',false);
       leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(r.leader||{})); closeModal(); leaderDashboard(r.leader);
