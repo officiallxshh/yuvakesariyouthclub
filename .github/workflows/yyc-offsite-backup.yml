@@ -1,0 +1,33 @@
+name: YYC Encrypted Offsite Backup
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 1 * * *'
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate backup
+        env:
+          YYC_SUPABASE_URL: https://vrllozfzheikjbhxvpkx.supabase.co
+          YYC_SUPABASE_KEY: sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt
+          YYC_ADMIN_TOKEN: ${{ secrets.YYC_ADMIN_TOKEN }}
+        run: node scripts/backup-supabase.mjs
+      - name: Encrypt backup
+        env:
+          YYC_BACKUP_PASSWORD: ${{ secrets.YYC_BACKUP_PASSWORD }}
+        run: |
+          test -n "$YYC_BACKUP_PASSWORD"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in yyc-backup.json -out yyc-backup.json.enc -pass env:YYC_BACKUP_PASSWORD
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yyc-encrypted-backup-${{ github.run_number }}
+          path: yyc-backup.json.enc
+          retention-days: 90
