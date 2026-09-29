@@ -2,7 +2,7 @@
 (function(){
   'use strict';
 
-  var PROD_VERSION='2026.09.29-r3';
+  var PROD_VERSION='2026.09.29-r4';
   var SUPA_URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var SUPA_KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -92,7 +92,8 @@
   function installQrObserver(){
     if(window.__yycpQrObserver||!window.MutationObserver)return;
     window.__yycpQrObserver=new MutationObserver(function(){renderLocalQr();});
-    window.__yycpQrObserver.observe(document.body,{childList:true,subtree:true});
+    var qrRoot=q('#modalContent')||document.body;
+    window.__yycpQrObserver.observe(qrRoot,{childList:true,subtree:true});
     renderLocalQr();
   }
 
@@ -349,18 +350,18 @@
         bs[0].onclick=function(){Object.keys(d.fields||{}).forEach(function(id){var el=document.getElementById(id);if(!el)return;if(el.type==='checkbox')el.checked=!!d.fields[id];else el.value=d.fields[id];});toast('Draft restored');};
         bs[1].onclick=function(){try{localStorage.removeItem(prefix+form.id);}catch(_){ }bar.remove();toast('Draft discarded');};
       });
-    }).observe(document.body,{childList:true,subtree:true});
+    }).observe(q('#modalContent')||document.body,{childList:true,subtree:true});
   }
 
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
     installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
+      var adminRoot=q('#modalContent')||document.body;
       new MutationObserver(function(){
         if(q('#adminWorkspace') && !q('#yycpAdminTools')) installAdminTools();
         installContactForm();
-        renderLocalQr();
-      }).observe(document.body,{childList:true,subtree:true});
+      }).observe(adminRoot,{childList:true,subtree:true});
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
