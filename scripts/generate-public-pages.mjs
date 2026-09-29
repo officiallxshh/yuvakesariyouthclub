@@ -32,32 +32,24 @@ function date(v) {
 }
 function structuredData(type, item, image, canonical, title) {
   const org = {'@type':'Organization', name:'Yuvakesari Youth Club', url:'https://www.yuvakesariyouthclub.in/'};
-  const graph = [{ '@type':'BreadcrumbList', itemListElement:[
-    {'@type':'ListItem',position:1,name:'Home',item:'https://www.yuvakesariyouthclub.in/'},
-    {'@type':'ListItem',position:2,name:type[0].toUpperCase()+type.slice(1),item:'https://www.yuvakesariyouthclub.in/'+type+'/'},
-    {'@type':'ListItem',position:3,name:title,item:canonical}
-  ] }];
-  if (type === 'event') { graph.push({
-    '@context':'https://schema.org','@type':'Event',name:item.title || '',
-    startDate:item.event_date || undefined,
-    location:item.location ? {'@type':'Place',name:item.location} : undefined,
-    image:image || undefined,organizer:org
-  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
-  if (type === 'update') { graph.push({
-    '@context':'https://schema.org','@type':'Article',headline:item.title || '',
-    datePublished:item.published_at || item.created_at || undefined,
-    image:image || undefined,publisher:org
-  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
-  if (type === 'gallery') { graph.push({
-    '@context':'https://schema.org','@type':'ImageObject',name:item.title || '',
-    caption:item.caption || undefined,contentUrl:image || undefined
-  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
-  return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>';
+  const plural = type === 'event' ? 'events' : type === 'update' ? 'updates' : type === 'gallery' ? 'gallery' : type === 'leader' ? 'leaders' : type === 'achievement' ? 'achievements' : type;
+  const graph = [
+    {'@type':'BreadcrumbList','itemListElement':[
+      {'@type':'ListItem',position:1,name:'Home',item:'https://www.yuvakesariyouthclub.in/'},
+      {'@type':'ListItem',position:2,name:plural[0].toUpperCase()+plural.slice(1),item:'https://www.yuvakesariyouthclub.in/'+plural+'/'},
+      {'@type':'ListItem',position:3,name:title,item:canonical}
+    ]}
+  ];
+  if(type==='event') graph.push({'@type':'Event',name:item.title||'',startDate:item.event_date||undefined,location:item.location?{'@type':'Place',name:item.location}:undefined,image:image||undefined,organizer:org});
+  if(type==='update') graph.push({'@type':'Article',headline:item.title||'',datePublished:item.published_at||item.created_at||undefined,image:image||undefined,publisher:org});
+  if(type==='gallery') graph.push({'@type':'ImageObject',name:item.title||'',caption:item.caption||undefined,contentUrl:image||undefined});
+  return '<script type="application/ld+json">'+JSON.stringify({'@context':'https://schema.org','@graph':graph})+'</script>';
 }
 function page(title, desc, type, item) {
   const rawImage = item.image_url || item.photo_url || item.src || '';
   const image = /^https?:\/\//i.test(String(rawImage)) ? rawImage : '';
-  const canonical = 'https://www.yuvakesariyouthclub.in/' + type + '/' + slug(item.slug || item.id || item.title || item.name) + '.html';
+  const route = type === 'event' ? 'events' : type === 'update' ? 'updates' : type === 'gallery' ? 'gallery' : type === 'leader' ? 'leaders' : type === 'achievement' ? 'achievements' : type;
+  const canonical = 'https://www.yuvakesariyouthclub.in/' + route + '/' + slug(item.slug || item.id || item.title || item.name) + '.html';
   const body = item.body || item.description || item.bio || item.caption || '';
   const structured = structuredData(type, item, image, canonical, title);
   const metaImage = image ? '<meta property="og:image" content="' + esc(image) + '">' : '';
@@ -100,7 +92,10 @@ const dirs = {
   leader: path.join(ROOT, 'leaders'),
   achievement: path.join(ROOT, 'achievements')
 };
-for (const d of Object.values(dirs)) await fs.mkdir(d, {recursive:true});
+for (const d of Object.values(dirs)) {
+  await fs.rm(d, {recursive:true,force:true});
+  await fs.mkdir(d, {recursive:true});
+}
 
 const urls = [
   ['https://www.yuvakesariyouthclub.in/','2026-09-29','weekly'],
