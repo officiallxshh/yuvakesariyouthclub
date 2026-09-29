@@ -334,7 +334,7 @@
     'Premium branding','Responsive layout','Sticky navigation','Active tab highlight','Smooth scrolling',
     'Hero auto zoom','Scroll reveal','Soft parallax','Reduced motion support','Back-to-top',
     'Keyboard shortcuts','Offline indicator','PWA manifest','Service worker','Skip link',
-    'Tulunadu glimpse','Culture cards','Culture detail modal','Public leaders','Leader counter',
+    'Tulunadu glimpse','Culture cards','Culture detail modal','Public leaders',
     'Updates read-more system','Events read-more system','Gallery read-more system','Swag showcase','Update detail modal',
     'Event detail modal','Gallery lightbox','Share links','Copy links','Deep-link URLs',
     'Public search','Mobile search','Featured badges','NEW badges','Status badges',
