@@ -4244,3 +4244,34 @@ body.yyC-opening .hero-logo{
 .desktop-nav>a.nav-link.active .nav-label::after{opacity:1;transform:scaleX(1);}
 .desktop-nav>a.nav-link:hover:not(.active) .nav-label::after{opacity:0;transform:scaleX(.2);}
 @media(max-width:980px){.desktop-nav>a.nav-link .nav-label::after{display:none!important;}}
+
+/* ===== YYC NAV HIGHLIGHT — FINAL CLEAN STATE ===== */
+/* Ignore legacy link-level pseudo-elements/hover styling. The active underline belongs only to the label. */
+.desktop-nav>a.nav-link::before,
+.desktop-nav>a.nav-link::after{
+  display:none!important;
+  content:none!important;
+}
+.desktop-nav>a.nav-link:hover:not(.active){
+  background:transparent!important;
+  color:#ddd5c6!important;
+  text-shadow:none!important;
+}
+.desktop-nav>a.nav-link:hover:not(.active) .nav-label::after{
+  opacity:0!important;
+  transform:scaleX(.2)!important;
+}
+.desktop-nav>a.nav-link.active{
+  background:linear-gradient(180deg,rgba(236,193,105,.055),rgba(236,193,105,.015) 72%,transparent)!important;
+  color:#f5d58f!important;
+  text-shadow:0 0 20px rgba(239,202,123,.15)!important;
+}
+.desktop-nav>a.nav-link.active .nav-label::after{
+  opacity:1!important;
+  transform:scaleX(1)!important;
+}
+/* Remove the old special-case Glimpse positioning; every tab now uses the same label-relative underline. */
+@media(min-width:981px){
+  .desktop-nav>a:nth-child(2){margin-right:0!important;}
+  .desktop-nav>a:nth-child(2) .nav-label::after{left:0!important;right:0!important;width:auto!important;}
+}
