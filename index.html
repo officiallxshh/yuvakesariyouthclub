@@ -352,7 +352,8 @@
 
     pending();
     if(window.MutationObserver){
-      new MutationObserver(pending).observe(document.body,{childList:true,subtree:true});
+      var revealRoot=document.querySelector('main')||document.body;
+      new MutationObserver(pending).observe(revealRoot,{childList:true,subtree:true});
     }
   }
 
@@ -396,7 +397,7 @@
             animateCounter(el,parseInt(el.textContent,10)||0);
           }
         });
-      }).observe(document.body,{subtree:true,childList:true});
+      }).observe(document.querySelector('main')||document.body,{subtree:true,childList:true});
     }
   }
 
