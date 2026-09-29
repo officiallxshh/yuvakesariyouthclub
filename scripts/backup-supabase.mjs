@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+const url=process.env.YYC_SUPABASE_URL;
+const key=process.env.YYC_SUPABASE_KEY;
+const token=process.env.YYC_ADMIN_TOKEN;
+if(!url||!key||!token) throw new Error('Missing YYC backup secrets');
+const r=await fetch(url+'/rest/v1/rpc/admin_backup_snapshot',{method:'POST',headers:{apikey:key,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({p_token:token})});
+const d=await r.json();
+if(!r.ok||!d?.ok) throw new Error(d?.error||'Backup snapshot failed');
+await fs.writeFile('yyc-backup.json',JSON.stringify(d,null,2),'utf8');
+console.log('YYC backup generated');
