@@ -30,31 +30,36 @@ function slug(v) {
 function date(v) {
   return v ? new Date(v + 'T00:00:00').toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : '';
 }
-function structuredData(type, item, image) {
+function structuredData(type, item, image, canonical, title) {
   const org = {'@type':'Organization', name:'Yuvakesari Youth Club', url:'https://www.yuvakesariyouthclub.in/'};
-  if (type === 'event') return '<script type="application/ld+json">' + JSON.stringify({
+  const graph = [{ '@type':'BreadcrumbList', itemListElement:[
+    {'@type':'ListItem',position:1,name:'Home',item:'https://www.yuvakesariyouthclub.in/'},
+    {'@type':'ListItem',position:2,name:type[0].toUpperCase()+type.slice(1),item:'https://www.yuvakesariyouthclub.in/'+type+'/'},
+    {'@type':'ListItem',position:3,name:title,item:canonical}
+  ] }];
+  if (type === 'event') { graph.push({
     '@context':'https://schema.org','@type':'Event',name:item.title || '',
     startDate:item.event_date || undefined,
     location:item.location ? {'@type':'Place',name:item.location} : undefined,
     image:image || undefined,organizer:org
-  }) + '</script>';
-  if (type === 'update') return '<script type="application/ld+json">' + JSON.stringify({
+  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
+  if (type === 'update') { graph.push({
     '@context':'https://schema.org','@type':'Article',headline:item.title || '',
     datePublished:item.published_at || item.created_at || undefined,
     image:image || undefined,publisher:org
-  }) + '</script>';
-  if (type === 'gallery') return '<script type="application/ld+json">' + JSON.stringify({
+  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
+  if (type === 'gallery') { graph.push({
     '@context':'https://schema.org','@type':'ImageObject',name:item.title || '',
     caption:item.caption || undefined,contentUrl:image || undefined
-  }) + '</script>';
-  return '';
+  }); return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>'; }
+  return '<script type="application/ld+json">' + JSON.stringify({'@context':'https://schema.org','@graph':graph}) + '</script>';
 }
 function page(title, desc, type, item) {
   const rawImage = item.image_url || item.photo_url || item.src || '';
   const image = /^https?:\/\//i.test(String(rawImage)) ? rawImage : '';
   const canonical = 'https://www.yuvakesariyouthclub.in/' + type + '/' + slug(item.slug || item.id || item.title || item.name) + '.html';
   const body = item.body || item.description || item.bio || item.caption || '';
-  const structured = structuredData(type, item, image);
+  const structured = structuredData(type, item, image, canonical, title);
   const metaImage = image ? '<meta property="og:image" content="' + esc(image) + '">' : '';
   const html = '<!doctype html><html lang="en"><head>' +
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
@@ -67,7 +72,7 @@ function page(title, desc, type, item) {
     '<meta name="twitter:description" content="' + esc(desc).slice(0,320) + '">' +
     structured +
     '<title>' + esc(title) + ' | Yuvakesari Youth Club</title>' +
-    '<link rel="stylesheet" href="../yyc-seo.css"></head><body><main class="wrap">' +
+    '<link rel="stylesheet" href="../yyc-seo.css"><script src="../yyc-production.js?v=20260929-r1" defer></script></head><body><main class="wrap">' +
     '<a class="back" href="../index.html">← Back to Yuvakesari Youth Club</a>' +
     '<article class="card"><img class="logo" src="../assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo">' +
     '<div class="k">YUVAKESARI YOUTH CLUB · ' + esc(type.toUpperCase()) + '</div>' +
