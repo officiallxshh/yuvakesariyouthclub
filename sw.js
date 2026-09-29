@@ -1,5 +1,5 @@
-const CACHE='yyc-v36-90-complete';
-const SHELL=['./','./index.html','./styles.css','./app.js','./yyc90.js','./yyc90-final.js','./manifest.webmanifest','./sw.js'];
+const CACHE='yyc-v37-production-pass';
+const SHELL=['./','./index.html','./styles.css','./app.js','./yyc90.js','./yyc90-final.js','./yyc-production.js','./yyc-production.css','./about.html','./verify.html','./contact.html','./privacy.html','./terms.html','./yyc-seo.css','./manifest.webmanifest','./sw.js'];
 const STATIC=['./assets/tm-wxriorz.svg','./assets/yyc-lion-favicon.png','./assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp','./assets/dharma-daiva.webp','./assets/aati-kalenja.webp','./assets/yakshagana.webp','./assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.concat(STATIC))).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
