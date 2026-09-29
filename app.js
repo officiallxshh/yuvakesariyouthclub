@@ -1030,7 +1030,16 @@ function bindNavigation(){
     $$('.section[id]').forEach(function(section){sectionObserver.observe(section);});
   }
   window.addEventListener('hashchange',activeNav);
-  window.addEventListener('scroll',function(){updateYYCActiveSection();updateYYCScrollProgress();},{passive:true});
+  var navScrollTicking=false;
+  window.addEventListener('scroll',function(){
+    if(navScrollTicking)return;
+    navScrollTicking=true;
+    requestAnimationFrame(function(){
+      navScrollTicking=false;
+      updateYYCActiveSection();
+      updateYYCScrollProgress();
+    });
+  },{passive:true});
   window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();},{passive:true});
   activeNav();
   updateYYCScrollProgress();
