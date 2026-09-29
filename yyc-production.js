@@ -2,7 +2,7 @@
 (function(){
   'use strict';
 
-  var PROD_VERSION='2026.09.29-r2';
+  var PROD_VERSION='2026.09.29-r3';
   var SUPA_URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var SUPA_KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -157,7 +157,7 @@
 
   function installAdminTools(){
     var ws=q('#adminWorkspace');if(!ws||!window.adminToken)return;
-    if(q('#yycpAdminTools')){updateAdminTools();return;}
+    if(q('#yycpAdminTools')) return;
     var wrap=document.createElement('div');wrap.id='yycpAdminTools';wrap.className='yycp-tools';
     wrap.innerHTML='<strong style="color:#e5d9bf;font-size:10px;letter-spacing:.12em;margin-right:auto">YYC PRODUCTION TOOLS · '+esc(PROD_VERSION)+'</strong>'+
       '<button type="button" id="yycpHealthBtn">SYSTEM HEALTH</button>'+
@@ -356,7 +356,11 @@
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
     installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
-      new MutationObserver(function(){installAdminTools();installContactForm();renderLocalQr();updateAdminTools();}).observe(document.body,{childList:true,subtree:true});
+      new MutationObserver(function(){
+        if(q('#adminWorkspace') && !q('#yycpAdminTools')) installAdminTools();
+        installContactForm();
+        renderLocalQr();
+      }).observe(document.body,{childList:true,subtree:true});
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
