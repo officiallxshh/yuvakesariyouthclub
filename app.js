@@ -867,14 +867,26 @@ function yycDecoratePublicCards(){
     var grid=$(gridSelector); if(!grid) return;
     var cards=selector?Array.prototype.slice.call(grid.querySelectorAll(selector)):Array.prototype.slice.call(grid.children);
     cards.forEach(function(card,index){
-      card.querySelectorAll('.yyc-public-badges').forEach(function(x){x.remove();});
-      var item=items[index]; if(!item) return;
+      var item=items[index];
+      var existing=card.querySelector('.yyc-public-badges');
+      if(!item){
+        if(existing) existing.remove();
+        return;
+      }
       var labels=[];
       if(item.featured) labels.push('<span class="featured">FEATURED</span>');
       if(yycIsNewItem(item)) labels.push('<span class="new">NEW</span>');
       if(item.status && ['cancelled','postponed','ongoing'].indexOf(String(item.status))>=0) labels.push('<span class="status">'+esc(String(item.status).toUpperCase())+'</span>');
-      if(!labels.length) return;
-      var badge=document.createElement('div'); badge.className='yyc-public-badges'; badge.innerHTML=labels.join('');
+      var markup=labels.join('');
+      if(!markup){
+        if(existing) existing.remove();
+        return;
+      }
+      if(existing){
+        if(existing.innerHTML!==markup) existing.innerHTML=markup;
+        return;
+      }
+      var badge=document.createElement('div'); badge.className='yyc-public-badges'; badge.innerHTML=markup;
       card.appendChild(badge);
     });
   }
