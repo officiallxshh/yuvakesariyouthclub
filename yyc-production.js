@@ -385,7 +385,7 @@
 
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
-    installOffline();installSwUpdate();installTopSearch();installLangToggle();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
+    installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
       new MutationObserver(function(){installAdminTools();installContactForm();renderLocalQr();updateAdminTools();}).observe(document.body,{childList:true,subtree:true});
     }
