@@ -1,0 +1,42 @@
+/* YYC PRODUCTION PASS — additive styles */
+.yycp-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;padding:10px;border:1px solid rgba(229,191,107,.12);border-radius:16px;background:rgba(255,255,255,.025)}
+.yycp-tools button,.yycp-tools a{appearance:none;border:1px solid rgba(229,191,107,.16);background:rgba(255,255,255,.03);color:#d8cfbd;border-radius:999px;padding:9px 13px;font:700 9px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;text-decoration:none}
+.yycp-tools button:hover,.yycp-tools a:hover{border-color:rgba(229,191,107,.36);transform:translateY(-1px)}
+.yycp-health-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.yycp-health-card{padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.02)}
+.yycp-health-card b{display:block;font-size:12px;color:#e7d9bc}.yycp-health-card span{display:block;margin-top:5px;font-size:9px;color:#85908c}
+.yycp-health-ok{color:#8fd8b0!important}.yycp-health-warn{color:#e8c67f!important}
+.yycp-notice{position:fixed;right:18px;bottom:18px;z-index:2147482000;max-width:min(430px,calc(100vw - 36px));padding:13px 15px;border:1px solid rgba(229,191,107,.25);border-radius:16px;background:rgba(7,11,14,.94);backdrop-filter:blur(18px);box-shadow:0 18px 60px rgba(0,0,0,.42);transform:translateY(20px);opacity:0;pointer-events:none;transition:.28s ease;color:#e6ddca;font-size:12px}
+.yycp-notice.show{transform:none;opacity:1}
+.yycp-offline{position:fixed;left:50%;top:78px;z-index:2147481999;transform:translate(-50%,-16px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(235,150,110,.26);border-radius:999px;background:rgba(24,15,12,.92);color:#f0d1bd;font:800 9px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;transition:.25s ease}
+.yycp-offline.show{transform:translate(-50%,0);opacity:1}
+.yycp-update{position:fixed;left:50%;bottom:18px;z-index:2147482001;transform:translate(-50%,20px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid rgba(229,191,107,.22);border-radius:999px;background:rgba(7,11,14,.95);backdrop-filter:blur(18px);box-shadow:0 18px 60px rgba(0,0,0,.42)}
+.yycp-update.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.yycp-update button{border:0;border-radius:999px;padding:8px 12px;background:#d7b56e;color:#080a0c;font:800 9px/1 Inter,sans-serif;letter-spacing:.08em;cursor:pointer}
+.yycp-update span{color:#d8d1c2;font-size:11px}
+.yycp-search-top{margin-left:4px}
+.yycp-lang-btn{margin-left:4px}
+.yycp-inbox-badge{display:inline-flex;min-width:18px;height:18px;align-items:center;justify-content:center;padding:0 5px;border-radius:999px;background:#d7b56e;color:#080a0c;font:900 9px/1 Inter,sans-serif}
+.yycp-calendar-btn{margin-top:10px}
+.yycp-batch-drop{padding:20px;border:1px dashed rgba(229,191,107,.28);border-radius:18px;text-align:center;background:rgba(255,255,255,.02)}
+.yycp-batch-drop.drag{border-color:rgba(229,191,107,.7);background:rgba(229,191,107,.05)}
+.yycp-file-list{display:grid;gap:7px;margin-top:10px;max-height:260px;overflow:auto}
+.yycp-file-item{display:flex;justify-content:space-between;gap:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:11px;color:#bdc3be}
+.yycp-locale-kn{display:none}
+html[data-yycp-lang="kn"] .yycp-locale-en{display:none!important}
+html[data-yycp-lang="kn"] .yycp-locale-kn{display:inline!important}
+.yycp-contact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.yycp-static-note{font-size:11px;color:#8d9591;margin-top:6px}
+@media (max-width:800px){
+  .yycp-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .yycp-contact-grid{grid-template-columns:1fr}
+  .yycp-update{width:calc(100vw - 28px);justify-content:space-between}
+}
+@media (max-width:480px){
+  .yycp-tools{overflow:auto;flex-wrap:nowrap}
+  .yycp-tools button,.yycp-tools a{white-space:nowrap}
+  .yycp-health-grid{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .yycp-notice,.yycp-offline,.yycp-update{transition:none}
+}
