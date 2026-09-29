@@ -328,6 +328,7 @@ async function uploadYYCImage(dataUrl,type,token,recordId,oldUrl){
 function readFile(file,maxSide){
   return new Promise(function(resolve,reject){
     if(!file){resolve('');return;}
+    if(file.size>6*1024*1024){reject(new Error('Image is too large. Maximum upload size is 6 MB.'));return;}
     var r=new FileReader();
     r.onload=function(){
       var img=new Image();
@@ -1084,7 +1085,7 @@ function memberRegister(){
   });
 }
 function yycVerifyUrl(roleNumber){
-  return location.origin+location.pathname+'?verify='+encodeURIComponent(roleNumber||'');
+  return new URL('verify.html',location.href).href+'?uid='+encodeURIComponent(roleNumber||'');
 }
 function yycBarcode(){
   var a=[];
