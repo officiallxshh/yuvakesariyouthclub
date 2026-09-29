@@ -197,7 +197,7 @@
       '<div class="field full"><label>Message</label><textarea id="v90Message" maxlength="1000" placeholder="Tell YYC how you would like to contribute."></textarea></div>'+
       '</div><div class="form-actions"><button class="btn gold" type="submit">SUBMIT APPLICATION</button></div></form>');
     q('#yyc90VolunteerForm').addEventListener('submit',async function(e){
-      e.preventDefault();var b=this.querySelector('button[type="submit']');b.disabled=true;b.textContent='SUBMITTING…';
+      e.preventDefault();var b=this.querySelector('button[type="submit"]');b.disabled=true;b.textContent='SUBMITTING…';
       try{
         var r=await rpc90('public_submit_volunteer',{p_payload:{name:q('#v90Name').value.trim(),phone:q('#v90Phone').value.trim(),email:q('#v90Email').value.trim(),area:q('#v90Area').value.trim(),skills:q('#v90Skills').value.trim(),availability:q('#v90Avail').value.trim(),message:q('#v90Message').value.trim()}});
         if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit application');
