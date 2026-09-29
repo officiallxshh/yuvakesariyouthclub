@@ -96,6 +96,15 @@ for (const d of Object.values(dirs)) {
   await fs.rm(d, {recursive:true,force:true});
   await fs.mkdir(d, {recursive:true});
 }
+const indexPage = (title, description, route) => '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05080b"><meta name="robots" content="index,follow"><link rel="canonical" href="https://www.yuvakesariyouthclub.in/'+route+'/'+'"><link rel="icon" href="../assets/yyc-lion-favicon-redesigned.svg"><meta name="description" content="'+esc(description)+'"><title>'+esc(title)+' | Yuvakesari Youth Club</title><link rel="stylesheet" href="../yyc-seo.css"></head><body><main class="wrap"><a class="back" href="../index.html">← Back to Yuvakesari Youth Club</a><article class="card"><img class="logo" src="../assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo"><div class="k">YUVAKESARI YOUTH CLUB</div><h1 class="title">'+esc(title)+'</h1><div class="body">'+esc(description)+'</div></article></main><script src="../yyc-production.js?v=20260929-r1" defer></script></body></html>';
+for (const [route,title,description] of [
+  ['events','Events','Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.'],
+  ['updates','Updates','Latest approved news and announcements from Yuvakesari Youth Club.'],
+  ['gallery','Gallery','Community photos, programmes and youth activities.'],
+  ['leaders','Leaders','Public leadership profiles of Yuvakesari Youth Club.'],
+  ['achievements','Achievements','Published milestones and achievements of Yuvakesari Youth Club.']
+]) await fs.writeFile(path.join(ROOT, route, 'index.html'), indexPage(title, description, route));
+
 
 const urls = [
   ['https://www.yuvakesariyouthclub.in/','2026-09-29','weekly'],
