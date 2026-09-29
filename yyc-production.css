@@ -40,3 +40,26 @@ html[data-yycp-lang="kn"] .yycp-locale-kn{display:inline!important}
 @media (prefers-reduced-motion:reduce){
   .yycp-notice,.yycp-offline,.yycp-update{transition:none}
 }
+
+/* YYC logged-in device management */
+.yycp-back-admin{margin-top:10px}
+.yyc-session-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,.012));}
+.yyc-session-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.yyc-session-head h3{margin:5px 0 4px;font-size:20px;color:#eee7d8}
+.yyc-session-head p{margin:0;color:#8b9390;font-size:10px;line-height:1.6;max-width:560px}
+.yyc-session-count{white-space:nowrap;padding:7px 10px;border-radius:999px;border:1px solid rgba(229,191,107,.2);color:#d7b56e;font:800 9px/1 Inter,sans-serif;letter-spacing:.1em}
+.yyc-session-list{display:grid;gap:8px}
+.yyc-session-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02)}
+.yyc-session-row.is-current{border-color:rgba(139,216,176,.22);background:rgba(139,216,176,.045)}
+.yyc-session-device{display:flex;align-items:center;gap:10px;min-width:0}
+.yyc-session-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.08);color:#d7b56e;font-size:13px;flex:none}
+.yyc-session-row.is-current .yyc-session-icon{color:#8fd8b0;border-color:rgba(143,216,176,.2)}
+.yyc-session-device b{display:block;color:#d9d2c4;font-size:11px}
+.yyc-session-device small{display:block;color:#7f8985;font-size:8px;letter-spacing:.05em;margin-top:3px}
+.yyc-session-meta{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;color:#737c79;font-size:8px;text-align:right}
+.yyc-session-meta span:first-child{white-space:nowrap}
+.yyc-session-current{padding:6px 8px;border-radius:999px;background:rgba(143,216,176,.08);color:#8fd8b0;font:800 8px/1 Inter,sans-serif;letter-spacing:.08em}
+.yyc-revoke-session{border-color:rgba(232,170,150,.2)!important;color:#e0aaa0!important;padding:7px 10px!important}
+.yyc-session-empty{padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.08);border-radius:12px;color:#7f8985;font-size:10px}
+.yyc-session-note{margin-top:10px;color:#6f7976;font-size:8px;line-height:1.55}
+@media (max-width:700px){.yyc-session-head{flex-direction:column}.yyc-session-row{align-items:flex-start;flex-direction:column}.yyc-session-meta{width:100%;justify-content:flex-start;text-align:left}.yyc-session-meta span:first-child{white-space:normal}}
