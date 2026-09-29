@@ -159,7 +159,8 @@
   }
 
   function recordView(){
-    if(sessionStorage.getItem('yycp_view_sent')===location.href)return;
+    var sent='';try{sent=sessionStorage.getItem('yycp_view_sent')||'';}catch(e){}
+    if(sent===location.href)return;
     pubRpc('public_record_page_view',{p_path:location.pathname,p_referrer:document.referrer||null,p_device:window.innerWidth<700?'mobile':window.innerWidth<1100?'tablet':'desktop'}).catch(function(){}).finally(function(){try{sessionStorage.setItem('yycp_view_sent',location.href);}catch(e){}});
   }
 
