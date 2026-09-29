@@ -1063,8 +1063,21 @@ function updateYYCScrollProgress(){
   bar.style.transform='scaleX('+p.toFixed(4)+')';
 }
 function updateYYCActiveSection(){
-  var links=$$('.desktop-nav .nav-link');
+  var links=$('.desktop-nav .nav-link');
   if(!links.length) return;
+
+  /* During a click-triggered smooth scroll, keep the clicked tab highlighted
+     instead of letting the scroll observer temporarily select another section. */
+  if(window.__yycNavLockUntil && Date.now()<window.__yycNavLockUntil){
+    var locked=location.hash ? location.hash.slice(1) : 'home';
+    var hasLocked=links.some(function(a){return (a.getAttribute('href')||'').slice(1)===locked;});
+    if(!hasLocked) locked='home';
+    links.forEach(function(a){
+      a.classList.toggle('active',(a.getAttribute('href')||'').slice(1)===locked);
+    });
+    return;
+  }
+
   var sections=[];
   links.forEach(function(a){
     var id=(a.getAttribute('href')||'').slice(1);
@@ -1105,6 +1118,11 @@ function bindNavigation(){
       var header=document.querySelector('.topbar');
       var offset=header ? header.offsetHeight + 10 : 0;
       var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
+      /* Highlight the tab immediately and keep it locked during the smooth scroll. */
+      window.__yycNavLockUntil=Date.now()+1800;
+      $('.desktop-nav .nav-link').forEach(function(a){
+        a.classList.toggle('active',a===link);
+      });
       yycAnimateNavigation(target);
       window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
       if(history.pushState) history.pushState(null,'',href);
