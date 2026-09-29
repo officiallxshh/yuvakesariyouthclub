@@ -61,13 +61,35 @@
     nav.insertBefore(b,nav.querySelector('#memberLoginBtn')||null);
   }
 
+  function applyLang(){
+    var kn=document.documentElement.getAttribute('data-yycp-lang')==='kn';
+    var enMap={
+      '.desktop-nav .nav-link:nth-child(1)':'Home','.desktop-nav .nav-link:nth-child(2)':'Tulunad Glimpse','.desktop-nav .nav-link:nth-child(3)':'Leaders','.desktop-nav .nav-link:nth-child(4)':'Swags','.desktop-nav .nav-link:nth-child(5)':'Updates','.desktop-nav .nav-link:nth-child(6)':'Events','.desktop-nav .nav-link:nth-child(7)':'Gallery','.desktop-nav .nav-link:nth-child(8)':'Join',
+      '#memberLoginBtn':'◉ Member Login','#leaderLoginBtn':'♛ Leader Login','#adminOpenBtn':'⌑ Admin Login'
+    };
+    var knMap={
+      '.desktop-nav .nav-link:nth-child(1)':'⌂ Home','.desktop-nav .nav-link:nth-child(2)':'◈ ತುಳುನಾಡು ನೋಟ','.desktop-nav .nav-link:nth-child(3)':'♛ ನಾಯಕತ್ವ','.desktop-nav .nav-link:nth-child(4)':'◇ YYC ಉತ್ಪನ್ನಗಳು','.desktop-nav .nav-link:nth-child(5)':'▤ ನವೀಕರಣಗಳು','.desktop-nav .nav-link:nth-child(6)':'◷ ಕಾರ್ಯಕ್ರಮಗಳು','.desktop-nav .nav-link:nth-child(7)':'▧ ಗ್ಯಾಲರಿ','.desktop-nav .nav-link:nth-child(8)':'✦ ಸೇರಿ',
+      '#memberLoginBtn':'◉ ಸದಸ್ಯರ ಲಾಗಿನ್','#leaderLoginBtn':'♛ ನಾಯಕ ಲಾಗಿನ್','#adminOpenBtn':'⌑ ಆಡ್ಮಿನ್ ಲಾಗಿನ್'
+    };
+    var map=kn?knMap:enMap;
+    Object.keys(map).forEach(function(sel){var el=q(sel);if(el)el.textContent=map[sel];});
+    var mob=qa('#mobilePanel a');var mobEn=['⌂ Home','◈ Tulunad Glimpse','♛ Leaders','◇ Swags','▤ Updates','◷ Events','▧ Gallery','✦ Join'];var mobKn=['⌂ Home','◈ ತುಳುನಾಡು ನೋಟ','♛ ನಾಯಕತ್ವ','◇ YYC ಉತ್ಪನ್ನಗಳು','▤ ನವೀಕರಣಗಳು','◷ ಕಾರ್ಯಕ್ರಮಗಳು','▧ ಗ್ಯಾಲರಿ','✦ ಸೇರಿ'];
+    mob.forEach(function(el,i){var span=el.querySelector('span');if(span)span.textContent=(kn?mobKn:mobEn)[i]||span.textContent;});
+    var mi=q('#memberLoginMobile');var li=q('#leaderLoginMobile');var ai=q('#adminOpenMobile');
+    if(mi)mi.textContent=kn?'◉ ಸದಸ್ಯರ ಲಾಗಿನ್':'◉ Member Login';if(li)li.textContent=kn?'♛ ನಾಯಕ ಲಾಗಿನ್':'♛ Leader Login';if(ai)ai.textContent=kn?'⌑ ಆಡ್ಮಿನ್ ಲಾಗಿನ್':'⌑ Admin Login';
+  }
   function installLangToggle(){
-    if(!q('#yycpLang'))return;
-    if(q('#yycpLangBtn'))return;
-    var host=q('#yycpLang');var b=document.createElement('button');b.id='yycpLangBtn';b.type='button';b.className='yycp-lang-btn nav-admin';b.innerHTML='<span class="yycp-locale-en">ಕನ್ನಡ</span><span class="yycp-locale-kn">EN</span>';
-    b.onclick=function(){var kn=document.documentElement.getAttribute('data-yycp-lang')==='kn';document.documentElement.setAttribute('data-yycp-lang',kn?'en':'kn');try{localStorage.setItem('yyc_lang',kn?'en':'kn');}catch(e){};};
-    host.appendChild(b);
+    var host=q('#yycpLang');if(!host)return;
+    function make(id,parent){
+      if(q('#'+id))return;
+      var b=document.createElement('button');b.id=id;b.type='button';b.className='yycp-lang-btn nav-admin';b.textContent=document.documentElement.getAttribute('data-yycp-lang')==='kn'?'EN':'ಕನ್ನಡ';
+      b.onclick=function(){var kn=document.documentElement.getAttribute('data-yycp-lang')==='kn';document.documentElement.setAttribute('data-yycp-lang',kn?'en':'kn');b.textContent=kn?'ಕನ್ನಡ':'EN';var other=q(id==='yycpLangBtn'?'#yycpLangMobileBtn':'#yycpLangBtn');if(other)other.textContent=kn?'ಕನ್ನಡ':'EN';try{localStorage.setItem('yyc_lang',kn?'en':'kn');}catch(e){}applyLang();};
+      parent.appendChild(b);
+    }
+    make('yycpLangBtn',host);
+    var mobile=q('#mobilePanel');if(mobile)make('yycpLangMobileBtn',mobile);
     try{var saved=localStorage.getItem('yyc_lang');if(saved)document.documentElement.setAttribute('data-yycp-lang',saved);}catch(e){}
+    applyLang();
   }
 
   function injectFooterLinks(){
@@ -143,6 +165,7 @@
 
   function adminSnapshot(){
     var d=window.adminData||window.__yycAdminLastData||{};
+    var financeCount=(d.finance||[]).length;
     var nums={
       members:(d.members||[]).length,
       leaders:(d.leaders||[]).length,
@@ -153,7 +176,8 @@
       swags:(d.swags||[]).length,
       contacts:(d.contact_messages||d.contacts||[]).length,
       achievements:(d.achievements||[]).length,
-      history:(d.history||[]).length
+      history:(d.history||[]).length,
+      finance:financeCount
     };
     var pending=(d.members||[]).filter(function(x){return String(x.status||'').toLowerCase()==='pending'||x.approved===false;}).length+
       (d.volunteers||[]).filter(function(x){return String(x.status||'').toLowerCase()==='pending';}).length;
@@ -167,11 +191,13 @@
     var wrap=document.createElement('div');wrap.id='yycpAdminTools';wrap.className='yycp-tools';
     wrap.innerHTML='<strong style="color:#e5d9bf;font-size:10px;letter-spacing:.12em;margin-right:auto">YYC PRODUCTION TOOLS · '+esc(PROD_VERSION)+'</strong>'+
       '<button type="button" id="yycpHealthBtn">SYSTEM HEALTH</button>'+
+      '<button type="button" id="yycpInboxBtn">INBOX</button>'+
       '<button type="button" id="yycpBatchGalleryBtn">BATCH GALLERY</button>'+
       '<button type="button" id="yycpExportBtn">EXPORT ZIP</button>'+
       '<button type="button" id="yycpCacheBtn">REFRESH APP</button>';
     ws.prepend(wrap);
     q('#yycpHealthBtn').onclick=showHealth;
+    q('#yycpInboxBtn').onclick=showInbox;
     q('#yycpBatchGalleryBtn').onclick=openBatchGallery;
     q('#yycpExportBtn').onclick=exportZip;
     q('#yycpCacheBtn').onclick=refreshApp;
@@ -181,6 +207,22 @@
   function updateAdminTools(){
     var b=q('#yycpHealthBtn');if(!b)return;
     var n=adminSnapshot();b.innerHTML='SYSTEM HEALTH'+(n.pending?'<span class="yycp-inbox-badge">'+n.pending+'</span>':'');
+  }
+
+  function showInbox(){
+    var d=window.adminData||window.__yycAdminLastData||{};
+    var pendingMembers=(d.members||[]).filter(function(x){return x.approved===false||String(x.status||'').toLowerCase()==='pending';});
+    var pendingVol=(d.volunteers||[]).filter(function(x){return String(x.status||'').toLowerCase()==='pending';});
+    var newContacts=(d.contacts||d.contact_messages||[]).filter(function(x){return String(x.status||'new').toLowerCase()==='new';});
+    var rows=[];
+    pendingMembers.slice(0,8).forEach(function(x){rows.push('<div class="yycp-file-item"><span>MEMBER · '+esc(x.name||'Application')+'</span><small>PENDING</small></div>');});
+    pendingVol.slice(0,8).forEach(function(x){rows.push('<div class="yycp-file-item"><span>VOLUNTEER · '+esc(x.name||'Application')+'</span><small>PENDING</small></div>');});
+    newContacts.slice(0,8).forEach(function(x){rows.push('<div class="yycp-file-item"><span>CONTACT · '+esc(x.subject||x.name||'Message')+'</span><small>NEW</small></div>');});
+    var total=pendingMembers.length+pendingVol.length+newContacts.length;
+    var html='<div class="modal-kicker">ADMIN · INBOX</div><h2 class="modal-title">Notifications & requests.</h2><p class="modal-sub">Pending member, volunteer and contact items from the current admin data.</p>'+
+      (rows.length?'<div class="yycp-file-list">'+rows.join('')+'</div>':'<div class="empty">Nothing needs attention right now.</div>')+
+      '<div class="yycp-static-note">'+esc(total)+' item(s) currently need attention.</div>';
+    if(typeof window.openModal==='function')window.openModal(html);
   }
 
   function showHealth(){
@@ -193,6 +235,7 @@
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Backup</b><span>Automated snapshot system enabled</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ PWA</b><span>Service worker registered</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Analytics</b><span>Page-view recorder enabled</span></div>'+
+      '<div class="yycp-health-card"><b>'+esc((n.finance||0))+'</b><span>Finance entries</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.members)+'</b><span>Members</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.leaders)+'</b><span>Leaders</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.events)+'</b><span>Events</span></div>'+
@@ -306,9 +349,42 @@
     var b=document.createElement('a');b.id='yycpContactShortcut';b.className='link-btn';b.href='./contact.html';b.textContent='Contact YYC';footer.querySelector('.footer-main')?.appendChild(b);
   }
 
+
+  function installAdminDraftRecovery(){
+    if(window.__yycpDraftRecovery||!window.MutationObserver)return;
+    window.__yycpDraftRecovery=true;
+    var prefix='yycp_draft_';
+    document.addEventListener('input',function(e){
+      var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;if(!form)return;
+      try{
+        var data={saved_at:Date.now(),fields:{}};
+        qa('input,textarea,select').forEach(function(el){if(!el.id)return;if(el.type==='password'||el.type==='file')return;data.fields[el.id]=el.type==='checkbox'?el.checked:el.value;});
+        localStorage.setItem(prefix+form.id,JSON.stringify(data));
+      }catch(_){}
+    },true);
+    document.addEventListener('submit',function(e){
+      var form=e.target&&e.target.matches&&e.target.matches('#modalContent form[id^="admin"]')?e.target:null;
+      if(!form)return;try{localStorage.removeItem(prefix+form.id);}catch(_){}
+    },true);
+    new MutationObserver(function(){
+      qa('#modalContent form[id^="admin"]').forEach(function(form){
+        if(form.getAttribute('data-yycp-draft-bound')==='1')return;
+        form.setAttribute('data-yycp-draft-bound','1');
+        var raw=null;try{raw=localStorage.getItem(prefix+form.id);}catch(_){}
+        if(!raw)return;var d;try{d=JSON.parse(raw);}catch(_){d=null;}
+        if(!d||Date.now()-Number(d.saved_at||0)>1000*60*60*24)return;
+        var bar=document.createElement('div');bar.className='yycp-tools';bar.innerHTML='<span style="margin-right:auto;font-size:10px;color:#b9c0bb">A local draft from '+new Date(d.saved_at).toLocaleString('en-IN')+' is available.</span><button type="button">RESTORE DRAFT</button><button type="button">DISCARD</button>';
+        form.prepend(bar);
+        var bs=bar.querySelectorAll('button');
+        bs[0].onclick=function(){Object.keys(d.fields||{}).forEach(function(id){var el=document.getElementById(id);if(!el)return;if(el.type==='checkbox')el.checked=!!d.fields[id];else el.value=d.fields[id];});toast('Draft restored');};
+        bs[1].onclick=function(){try{localStorage.removeItem(prefix+form.id);}catch(_){ }bar.remove();toast('Draft discarded');};
+      });
+    }).observe(document.body,{childList:true,subtree:true});
+  }
+
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
-    installOffline();installSwUpdate();installTopSearch();installLangToggle();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();
+    installOffline();installSwUpdate();installTopSearch();installLangToggle();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
       new MutationObserver(function(){installAdminTools();installContactForm();renderLocalQr();updateAdminTools();}).observe(document.body,{childList:true,subtree:true});
     }
