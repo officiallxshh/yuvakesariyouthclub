@@ -61,37 +61,6 @@
     nav.insertBefore(b,nav.querySelector('#memberLoginBtn')||null);
   }
 
-  function applyLang(){
-    var kn=document.documentElement.getAttribute('data-yycp-lang')==='kn';
-    var enMap={
-      '.desktop-nav .nav-link:nth-child(1)':'Home','.desktop-nav .nav-link:nth-child(2)':'Tulunad Glimpse','.desktop-nav .nav-link:nth-child(3)':'Leaders','.desktop-nav .nav-link:nth-child(4)':'Swags','.desktop-nav .nav-link:nth-child(5)':'Updates','.desktop-nav .nav-link:nth-child(6)':'Events','.desktop-nav .nav-link:nth-child(7)':'Gallery','.desktop-nav .nav-link:nth-child(8)':'Join',
-      '#memberLoginBtn':'◉ Member Login','#leaderLoginBtn':'♛ Leader Login','#adminOpenBtn':'⌑ Admin Login'
-    };
-    var knMap={
-      '.desktop-nav .nav-link:nth-child(1)':'⌂ Home','.desktop-nav .nav-link:nth-child(2)':'◈ ತುಳುನಾಡು ನೋಟ','.desktop-nav .nav-link:nth-child(3)':'♛ ನಾಯಕತ್ವ','.desktop-nav .nav-link:nth-child(4)':'◇ YYC ಉತ್ಪನ್ನಗಳು','.desktop-nav .nav-link:nth-child(5)':'▤ ನವೀಕರಣಗಳು','.desktop-nav .nav-link:nth-child(6)':'◷ ಕಾರ್ಯಕ್ರಮಗಳು','.desktop-nav .nav-link:nth-child(7)':'▧ ಗ್ಯಾಲರಿ','.desktop-nav .nav-link:nth-child(8)':'✦ ಸೇರಿ',
-      '#memberLoginBtn':'◉ ಸದಸ್ಯರ ಲಾಗಿನ್','#leaderLoginBtn':'♛ ನಾಯಕ ಲಾಗಿನ್','#adminOpenBtn':'⌑ ಆಡ್ಮಿನ್ ಲಾಗಿನ್'
-    };
-    var map=kn?knMap:enMap;
-    Object.keys(map).forEach(function(sel){var el=q(sel);if(el)el.textContent=map[sel];});
-    var mob=qa('#mobilePanel a');var mobEn=['⌂ Home','◈ Tulunad Glimpse','♛ Leaders','◇ Swags','▤ Updates','◷ Events','▧ Gallery','✦ Join'];var mobKn=['⌂ Home','◈ ತುಳುನಾಡು ನೋಟ','♛ ನಾಯಕತ್ವ','◇ YYC ಉತ್ಪನ್ನಗಳು','▤ ನವೀಕರಣಗಳು','◷ ಕಾರ್ಯಕ್ರಮಗಳು','▧ ಗ್ಯಾಲರಿ','✦ ಸೇರಿ'];
-    mob.forEach(function(el,i){var span=el.querySelector('span');if(span)span.textContent=(kn?mobKn:mobEn)[i]||span.textContent;});
-    var mi=q('#memberLoginMobile');var li=q('#leaderLoginMobile');var ai=q('#adminOpenMobile');
-    if(mi)mi.textContent=kn?'◉ ಸದಸ್ಯರ ಲಾಗಿನ್':'◉ Member Login';if(li)li.textContent=kn?'♛ ನಾಯಕ ಲಾಗಿನ್':'♛ Leader Login';if(ai)ai.textContent=kn?'⌑ ಆಡ್ಮಿನ್ ಲಾಗಿನ್':'⌑ Admin Login';
-  }
-  function installLangToggle(){
-    var host=q('#yycpLang');if(!host)return;
-    function make(id,parent){
-      if(q('#'+id))return;
-      var b=document.createElement('button');b.id=id;b.type='button';b.className='yycp-lang-btn nav-admin';b.textContent=document.documentElement.getAttribute('data-yycp-lang')==='kn'?'EN':'ಕನ್ನಡ';
-      b.onclick=function(){var kn=document.documentElement.getAttribute('data-yycp-lang')==='kn';document.documentElement.setAttribute('data-yycp-lang',kn?'en':'kn');b.textContent=kn?'ಕನ್ನಡ':'EN';var other=q(id==='yycpLangBtn'?'#yycpLangMobileBtn':'#yycpLangBtn');if(other)other.textContent=kn?'ಕನ್ನಡ':'EN';try{localStorage.setItem('yyc_lang',kn?'en':'kn');}catch(e){}applyLang();};
-      parent.appendChild(b);
-    }
-    make('yycpLangBtn',host);
-    var mobile=q('#mobilePanel');if(mobile)make('yycpLangMobileBtn',mobile);
-    try{var saved=localStorage.getItem('yyc_lang');if(saved)document.documentElement.setAttribute('data-yycp-lang',saved);}catch(e){}
-    applyLang();
-  }
-
   function injectFooterLinks(){
     var footerLegal=q('.footer-legal');
     if(footerLegal&&!footerLegal.querySelector('a[href="./about.html"]')){
