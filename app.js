@@ -5,44 +5,6 @@ var YYC_CONFIG = {
   supabaseKey: 'sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt'
 };
 
-var sb = null;
-var yycSupabasePromise = null;
-function ensureSupabaseClient(){
-  if(sb) return Promise.resolve(sb);
-  if(window.supabase && typeof window.supabase.createClient==='function'){
-    sb=window.supabase.createClient(YYC_CONFIG.supabaseUrl, YYC_CONFIG.supabaseKey);
-    return Promise.resolve(sb);
-  }
-  if(yycSupabasePromise) return yycSupabasePromise;
-  yycSupabasePromise=new Promise(function(resolve,reject){
-    var sources=[
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-      'https://unpkg.com/@supabase/supabase-js@2'
-    ];
-    var index=0;
-    function next(){
-      if(window.supabase && typeof window.supabase.createClient==='function'){
-        sb=window.supabase.createClient(YYC_CONFIG.supabaseUrl,YYC_CONFIG.supabaseKey);
-        resolve(sb); return;
-      }
-      if(index>=sources.length){reject(new Error('Connection library failed to load. Please refresh and try again.'));return;}
-      var src=sources[index++];
-      var script=document.createElement('script');
-      script.src=src;
-      script.async=true;
-      script.onload=function(){
-        if(window.supabase && typeof window.supabase.createClient==='function'){
-          sb=window.supabase.createClient(YYC_CONFIG.supabaseUrl,YYC_CONFIG.supabaseKey);
-          resolve(sb);
-        }else next();
-      };
-      script.onerror=next;
-      document.head.appendChild(script);
-    }
-    next();
-  });
-  return yycSupabasePromise;
-}
 var ADMIN_TOKEN_KEY = 'yyc_admin_session_v1';
 var MEMBER_TOKEN_KEY = 'yyc_member_session_v1';
 var LEADER_TOKEN_KEY = 'yyc_leader_session_v1';
@@ -2604,7 +2566,6 @@ function initYYCApp(){
   }
   if(window.__yycAppInitialized) return;
   window.__yycAppInitialized=true;
-  ensureSupabaseClient().catch(function(){});
   document.body.classList.add('yyC-opening');
   setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
   bindUI();
