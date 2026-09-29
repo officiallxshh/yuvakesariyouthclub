@@ -4218,3 +4218,19 @@ body.yyC-opening .hero-logo{
 @media(max-width:620px){.yyc90-achievement-card{grid-template-columns:90px 1fr}.yyc90-achievement-media{height:90px}.yyc90-achievement-card h3{font-size:22px}.yyc90-history-item{grid-template-columns:52px 10px 1fr}.yyc90-filter-row{gap:5px}.yyc90-filter{font-size:7px;padding:7px 9px}.yyc90-backtop{right:12px;bottom:12px}.yyc90-contact-strip{display:grid;grid-template-columns:1fr}.yyc90-bar-row{grid-template-columns:1fr}.yyc90-bar-row>div{grid-column:1/-1}.yyc90-bar-row b{text-align:right}.yyc90-preview-frame.mobile .yyc90-content-preview{width:min(350px,100%)}}
 @media(prefers-reduced-motion:reduce){.yyc90-ann-dot{animation:none}.yyc90-backtop,.yyc90-announcement{transition:none}}
 @media print{.yyc90-backtop,.yyc90-skip,.yyc90-announcement{display:none!important}}
+
+/* ===== YYC ACTIVE NAV HIGHLIGHT FINAL FIX ===== */
+/* Only the selected navigation tab gets the gold glow/underline; hovering another tab must not move it. */
+.desktop-nav>a.nav-link:hover:not(.active)::before,
+.desktop-nav>a.nav-link:hover:not(.active)::after{
+  opacity:0!important;
+  transform:scaleX(.18)!important;
+}
+.desktop-nav>a.nav-link.active::before{
+  opacity:1!important;
+  transform:scaleX(1)!important;
+}
+.desktop-nav>a.nav-link.active::after{
+  opacity:1!important;
+  transform:scaleX(1)!important;
+}
