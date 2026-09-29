@@ -690,16 +690,18 @@
     };
   }
 
+  window.YYC90MountAdmin=function(){
+    mountAdmin90();
+    markForms90();
+  };
+
   function init90(){
-    bindGlobal90();wrapUpload90();addPwa90();recordView90();
-    var tries=0;
-    var timer=setInterval(function(){
-      tries++;
-      load90Public();
-      poll90();
-      wrapUpload90();
-      if(tries>12)clearInterval(timer);
-    },1200);
+    bindGlobal90();
+    wrapUpload90();
+    addPwa90();
+    // app.js already records the page view; avoid a duplicate RPC on every load.
+    setTimeout(load90Public,450);
+    setTimeout(function(){poll90();},900);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init90);else init90();
