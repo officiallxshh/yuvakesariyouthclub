@@ -4286,3 +4286,41 @@ body.yyC-opening .hero-logo{
 /* Leadership visibility guard: keep the public leader list visible independently of optional motion effects. */
 #leadersGrid{display:grid!important;visibility:visible!important;opacity:1!important;min-height:120px;}
 #leadersGrid .leader-card{visibility:visible!important;opacity:1!important;transform:none!important;}
+
+/* ===== YYC PUBLIC CONTENT VISIBILITY — PERMANENT STABILITY GUARD ===== */
+/* Keep all public sections rendered independently of optional motion/reveal scripts. */
+main > section.section{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  position:relative!important;
+}
+main > section.section > *{
+  visibility:visible;
+}
+#leaders,
+#leadersGrid,
+#swags,
+#updates,
+#events,
+#gallery,
+#join{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+#leadersGrid{
+  display:grid!important;
+}
+#leadersGrid .leader-card,
+#swagsGrid .swag-card,
+#updatesGrid .update-card,
+#eventsGrid .event-card,
+#galleryGrid .gallery-card,
+#join .join-card{
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+}
+/* ===== END PUBLIC CONTENT VISIBILITY GUARD ===== */
