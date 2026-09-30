@@ -245,13 +245,33 @@
 
 <script id="YYC_OPENING_BOOT">
 (function(){
+  /* Clear any legacy YYC service worker/cache once so GitHub Pages always loads
+     the live production files. The site does not use a service-worker cache. */
+  try{window.__YYC_DISABLE_SW=true;}catch(_){}
+  try{
+    var cleanupKey='yyc_sw_cleanup_v2';
+    if('serviceWorker' in navigator && sessionStorage.getItem(cleanupKey)!=='done'){
+      sessionStorage.setItem(cleanupKey,'done');
+      Promise.all([
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          return Promise.all((rs||[]).map(function(r){return r.unregister();}));
+        }).catch(function(){}),
+        ('caches' in window && caches.keys)?caches.keys().then(function(keys){
+          return Promise.all((keys||[]).map(function(k){return caches.delete(k);}));
+        }).catch(function(){}):Promise.resolve()
+      ]).finally(function(){
+        try{location.reload();}catch(_){}
+      });
+      return;
+    }
+  }catch(_){}
   var body=document.body;
   if(!body) return;
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     body.classList.remove('yyC-opening');
     return;
   }
-  window.setTimeout(function(){ body.classList.remove('yyC-opening'); }, 1500);
+  window.setTimeout(function(){ body.classList.remove('yyC-opening'); },1500);
 })();
 </script>
 <script src="app.js?v=20260930-03"></script>
