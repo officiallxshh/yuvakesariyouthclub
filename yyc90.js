@@ -665,11 +665,9 @@
     if(!q('#yyc90Manifest')){
       var link=document.createElement('link');link.id='yyc90Manifest';link.rel='manifest';link.href='./manifest.webmanifest';document.head.appendChild(link);
     }
-    if('serviceWorker' in navigator){
-      window.addEventListener('load',function(){
-        setTimeout(function(){navigator.serviceWorker.register('./sw.js').catch(function(){});},2200);
-      });
-    }
+    /* Service workers are intentionally disabled for production stability.
+       GitHub Pages + Supabase already provide the required app runtime. */
+    return;
   }
 
   function wrapUpload90(){
