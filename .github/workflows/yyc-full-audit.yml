@@ -108,7 +108,7 @@ jobs:
             return {status:res.status,data};
           }
 
-          const prod=await fetch(base+'yyc-production.js',{redirect:'follow'});
+          ;(async()=>{
           const js=await prod.text();
           const urlMatch=js.match(/SUPA_URL='([^']+)'/);
           const keyMatch=js.match(/SUPA_KEY='([^']+)'/);
@@ -123,6 +123,7 @@ jobs:
 
           fs.writeFileSync('yyc-full-audit.json',JSON.stringify(report,null,2));
           console.log(JSON.stringify(report,null,2));
+          })().catch(err=>{ console.error(err); process.exit(1); });
           EOF
           node audit.cjs
       - name: Upload audit report
