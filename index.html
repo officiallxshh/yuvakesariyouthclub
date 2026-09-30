@@ -82,7 +82,7 @@
 <link rel="shortcut icon" type="image/svg+xml" href="./assets/yyc-lion-favicon-redesigned.svg">
 <link rel="apple-touch-icon" sizes="64x64" href="./assets/yyc-lion-favicon.png">
 <link rel="preload" as="image" href="./assets/hero-tulunad.webp" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20260930-06">
+<link rel="stylesheet" href="styles.css?v=20260929-05">
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20260923-02">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-04">
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-12">\n<link rel="stylesheet" href="yyc-production.css?v=20260930-r1">
@@ -183,7 +183,7 @@
 <section class="section type-editorial" id="leaders">
   <div class="section-kicker">02 / LEADERSHIP</div>
   <div class="section-head tight reveal"><div><h2>People behind the movement.</h2><p>Leadership profiles and photos are managed from the admin panel.</p></div><span class="counter" id="leaderCount">01</span></div>
-  <div class="leaders-grid" id="leadersGrid">
+  <div class="card-grid" id="leadersGrid">
     <article class="leader-card reveal visible"><div class="leader-photo"><img src="./assets/dharma-daiva.webp" alt="YYC culture" loading="lazy"></div><div class="leader-info"><strong>Yuvakesari Team</strong><small>YOUTH & COMMUNITY</small><div class="micro">Working together through service, culture and youth initiatives.</div></div></article>
     <article class="leader-card reveal visible"><div class="leader-photo"><img src="./assets/hero-tulunad.webp" alt="Subrahmanya landscape" loading="lazy"></div><div class="leader-info"><strong>Subrahmanya</strong><small>OUR HOME</small><div class="micro">Rooted in the Western Ghats and the cultural spirit of Tulunadu.</div></div></article>
   </div>
@@ -245,26 +245,6 @@
 
 <script id="YYC_OPENING_BOOT">
 (function(){
-  /* One-time cleanup of the legacy service worker/cache that could serve an
-     incomplete stale shell. YYC now runs as a normal GitHub Pages app. */
-  try{window.__YYC_DISABLE_SW=true;}catch(_){}
-  try{
-    var cleanupKey='yyc_sw_cleanup_v1';
-    if('serviceWorker' in navigator && sessionStorage.getItem(cleanupKey)!=='done'){
-      sessionStorage.setItem(cleanupKey,'done');
-      Promise.all([
-        navigator.serviceWorker.getRegistrations().then(function(rs){
-          return Promise.all((rs||[]).map(function(r){return r.unregister();}));
-        }).catch(function(){ }),
-        ('caches' in window && caches.keys)?caches.keys().then(function(keys){
-          return Promise.all((keys||[]).map(function(k){return caches.delete(k);}));
-        }).catch(function(){ }):Promise.resolve()
-      ]).finally(function(){
-        try{location.reload();}catch(_){}
-      });
-      return;
-    }
-  }catch(_){}
   var body=document.body;
   if(!body) return;
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -274,9 +254,9 @@
   window.setTimeout(function(){ body.classList.remove('yyC-opening'); }, 1500);
 })();
 </script>
-<script src="app.js?v=20260930-06"></script>
-<script src="yyc90.js?v=20260930-05"></script>
-<script src="yyc90-final.js?v=20260930-03"></script>\n<script src="yyc-production.js?v=20260929-r7"></script>
+<script src="app.js?v=20260930-03"></script>
+<script src="yyc90.js?v=20260929-03"></script>
+<script src="yyc90-final.js?v=20260929-02"></script>\n<script src="yyc-production.js?v=20260929-r7"></script>
 <script>
 
 (function(){
