@@ -4324,3 +4324,47 @@ main > section.section > *{
   transform:none!important;
 }
 /* ===== END PUBLIC CONTENT VISIBILITY GUARD ===== */
+
+/* ===== PUBLIC PAGE FLOW RECOVERY ===== */
+main{
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:visible!important;
+}
+main > section.section{
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:620px!important;
+  max-height:none!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  overflow:hidden!important;
+  clear:both!important;
+  z-index:1!important;
+}
+#leaders,#swags,#updates,#events,#gallery,#join{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  height:auto!important;
+  min-height:620px!important;
+  max-height:none!important;
+  position:relative!important;
+  z-index:2!important;
+  clear:both!important;
+}
+#leadersGrid,#swagsGrid,#updatesGrid,#eventsGrid,#galleryGrid{
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+}
+#leadersGrid{display:grid!important;}
+#swagsGrid,#updatesGrid,#eventsGrid,#galleryGrid{display:grid!important;}
+#join .join-card{display:flex!important;visibility:visible!important;opacity:1!important;transform:none!important;}
+/* ===== END PUBLIC PAGE FLOW RECOVERY ===== */
