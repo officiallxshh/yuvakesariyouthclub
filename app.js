@@ -1652,7 +1652,7 @@ function leaderDashboard(data){
   });
 }
 
-function memberLegacyPasswordSetup(){
+function memberLegacyPasswordSetup(prefillEmail){
   openModal(
     '<div class="access-login-screen member-access-screen">'+
       '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC MEMBER ACCOUNT RECOVERY</span><h2 class="access-login-title">Set your member password.</h2><p class="access-login-sub">This is for older approved member accounts whose original password was not carried into the upgraded login system.</p></div><span class="access-login-badge">ONE-TIME SETUP</span></div>'+
@@ -1670,6 +1670,7 @@ function memberLegacyPasswordSetup(){
   );
   yycEnhanceLogin('memberLegacySetupForm','mlNewPass');
   yycEnhanceLogin('memberLegacySetupForm','mlConfirmPass');
+  if(prefillEmail) $('#mlEmail').value=prefillEmail;
   var back=$('#backToMemberLogin'); if(back) back.addEventListener('click',memberLogin);
   $('#memberLegacySetupForm').addEventListener('submit',async function(e){
     e.preventDefault();
@@ -1736,14 +1737,22 @@ function memberLogin(){
   );
   yycEnhanceLogin('memberLoginForm','mPass');
   $('#openRegisterFromLogin').addEventListener('click',memberRegister);
-  $('#openLegacyPasswordSetup').addEventListener('click',memberLegacyPasswordSetup);
+  $('#openLegacyPasswordSetup').addEventListener('click',function(){memberLegacyPasswordSetup($('#mIdent').value.trim().includes('@')?$('#mIdent').value.trim():'');});
   $('#memberLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
     try{
       setLoginStatus('memberLoginForm','Checking your YYC membership…',false);
-      var r=await rpc('member_login',{p_identifier:$('#mIdent').value.trim(),p_password:$('#mPass').value,p_device_name:yycDeviceLabel()});
-      if(!r.ok) throw new Error(r.error||'Login failed');
+      var identifier=$('#mIdent').value.trim();
+      var r=await rpc('member_login',{p_identifier:identifier,p_password:$('#mPass').value,p_device_name:yycDeviceLabel()});
+      if(!r.ok){
+        if(r.error_code==='PASSWORD_NOT_SET'){
+          closeModal();
+          window.setTimeout(function(){memberLegacyPasswordSetup(identifier.includes('@')?identifier:'');},80);
+          return;
+        }
+        throw new Error(r.error||'Login failed');
+      }
       setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{})); closeModal(); memberDashboard(r.member);
     }catch(err){
