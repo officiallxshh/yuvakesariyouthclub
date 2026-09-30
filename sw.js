@@ -1,4 +1,4 @@
-const CACHE='yyc-v38-smooth-runtime';
+const CACHE='yyc-v39-stable-runtime';
 const SHELL=['./','./index.html','./styles.css','./app.js','./yyc90.js','./yyc90-final.js','./yyc-production.js','./yyc-production.css','./about.html','./verify.html','./contact.html','./privacy.html','./terms.html','./yyc-seo.css','./manifest.webmanifest','./sw.js'];
 const STATIC=['./assets/tm-wxriorz.svg','./assets/yyc-lion-favicon.png','./assets/yyc-logo-clean.webp','./assets/yyc-logo.webp','./assets/hero-tulunad.webp','./assets/dharma-daiva.webp','./assets/aati-kalenja.webp','./assets/yakshagana.webp','./assets/social-whatsapp.png','./assets/social-instagram.png','./assets/social-x.png','./assets/social-facebook.png','./assets/yyc-tulunad-food-culture.webp'];
 
