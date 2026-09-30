@@ -20,9 +20,11 @@ jobs:
           BASE_URL: https://officiallxshh.github.io/yuvakesariyouthclub/
           CUSTOM_URL: https://www.yuvakesariyouthclub.in/
         run: |
-          cat > audit.cjs <<'EOF'
+          cat > audit.mjs <<'EOF'
+          import { createRequire } from 'node:module';
+          import fs from 'node:fs';
+          const require = createRequire(import.meta.url);
           const { chromium } = require('/tmp/yyc-audit/node_modules/playwright');
-          const fs = require('node:fs');
 
           const base = process.env.BASE_URL;
           const custom = process.env.CUSTOM_URL;
@@ -108,7 +110,7 @@ jobs:
             return {status:res.status,data};
           }
 
-          ;(async()=>{
+          const prod=await fetch(base+'yyc-production.js',{redirect:'follow'});
           const js=await prod.text();
           const urlMatch=js.match(/SUPA_URL='([^']+)'/);
           const keyMatch=js.match(/SUPA_KEY='([^']+)'/);
@@ -123,9 +125,9 @@ jobs:
 
           fs.writeFileSync('yyc-full-audit.json',JSON.stringify(report,null,2));
           console.log(JSON.stringify(report,null,2));
-          })().catch(err=>{ console.error(err); process.exit(1); });
+
           EOF
-          node audit.cjs
+          node audit.mjs
       - name: Upload audit report
         uses: actions/upload-artifact@v4
         with:
