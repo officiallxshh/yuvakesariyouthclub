@@ -209,7 +209,7 @@
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Supabase</b><span>RPC layer reachable</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Storage</b><span>Image service deployed</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Backup</b><span>Automated snapshot system enabled</span></div>'+
-      '<div class="yycp-health-card"><b class="yycp-health-ok">✓ PWA</b><span>Service worker registered</span></div>'+
+      '<div class="yycp-health-card"><b class="yycp-health-ok">✓ PWA</b><span>Manifest available · service worker retired for stability</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Analytics</b><span>Page-view recorder enabled</span></div>'+
       '<div class="yycp-health-card"><b>'+esc((n.finance||0))+'</b><span>Finance entries</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.members)+'</b><span>Members</span></div>'+
