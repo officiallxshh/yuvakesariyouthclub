@@ -63,3 +63,7 @@ html[data-yycp-lang="kn"] .yycp-locale-kn{display:inline!important}
 .yyc-session-empty{padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.08);border-radius:12px;color:#7f8985;font-size:10px}
 .yyc-session-note{margin-top:10px;color:#6f7976;font-size:8px;line-height:1.55}
 @media (max-width:700px){.yyc-session-head{flex-direction:column}.yyc-session-row{align-items:flex-start;flex-direction:column}.yyc-session-meta{width:100%;justify-content:flex-start;text-align:left}.yyc-session-meta span:first-child{white-space:normal}}
+
+/* Legacy member login recovery */
+.yyc-legacy-password-link{display:block;width:100%;margin:9px 0 0;border:0;background:transparent;color:#bfa976;font:800 9px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+.yyc-legacy-password-link:hover{color:#efd18e;text-decoration:underline;text-underline-offset:4px;}
