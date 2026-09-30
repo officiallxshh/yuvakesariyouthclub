@@ -665,8 +665,9 @@
     if(!q('#yyc90Manifest')){
       var link=document.createElement('link');link.id='yyc90Manifest';link.rel='manifest';link.href='./manifest.webmanifest';document.head.appendChild(link);
     }
-    /* Service workers are disabled for production stability.
-       GitHub Pages + Supabase serve the live YYC application directly. */
+    /* Service workers are intentionally disabled for production stability.
+       GitHub Pages + Supabase already provide the required app runtime. */
+    return;
   }
 
   function wrapUpload90(){
