@@ -639,6 +639,7 @@ var yycParallaxBound=false;
 function bindYYCScrollMotion(){
   if(window.__yycScrollMotionBound) return;
   window.__yycScrollMotionBound=true;
+  document.body.classList.add('yyc-reveal-ready');
 
   var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
