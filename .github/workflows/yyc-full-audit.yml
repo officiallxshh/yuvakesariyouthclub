@@ -13,16 +13,16 @@ jobs:
           node-version: 22
       - name: Install Playwright package and Chromium
         run: |
-          npm install --no-save playwright@1.52.0
-          npx playwright install chromium
+          npm install --prefix /tmp/yyc-audit playwright@1.52.0
+          /tmp/yyc-audit/node_modules/.bin/playwright install chromium
       - name: Run browser + Supabase audit
         env:
           BASE_URL: https://officiallxshh.github.io/yuvakesariyouthclub/
           CUSTOM_URL: https://www.yuvakesariyouthclub.in/
         run: |
-          cat > audit.mjs <<'EOF'
-          import { chromium } from 'playwright';
-          import fs from 'node:fs';
+          cat > audit.cjs <<'EOF'
+          const { chromium } = require('/tmp/yyc-audit/node_modules/playwright');
+          const fs = require('node:fs');
 
           const base = process.env.BASE_URL;
           const custom = process.env.CUSTOM_URL;
@@ -124,7 +124,7 @@ jobs:
           fs.writeFileSync('yyc-full-audit.json',JSON.stringify(report,null,2));
           console.log(JSON.stringify(report,null,2));
           EOF
-          node audit.mjs
+          node audit.cjs
       - name: Upload audit report
         uses: actions/upload-artifact@v4
         with:
