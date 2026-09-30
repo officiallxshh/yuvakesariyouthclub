@@ -1652,6 +1652,55 @@ function leaderDashboard(data){
   });
 }
 
+function memberLegacyPasswordSetup(){
+  openModal(
+    '<div class="access-login-screen member-access-screen">'+
+      '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC MEMBER ACCOUNT RECOVERY</span><h2 class="access-login-title">Set your member password.</h2><p class="access-login-sub">This is for older approved member accounts whose original password was not carried into the upgraded login system.</p></div><span class="access-login-badge">ONE-TIME SETUP</span></div>'+
+      '<form id="memberLegacySetupForm" class="access-login-form" novalidate>'+
+        '<div class="access-form-field"><label for="mlEmail">Registered email</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="mlEmail" type="email" autocomplete="email" placeholder="Enter registered email" required></div></div>'+
+        '<div class="access-form-field"><label for="mlDob">Date of birth</label><div class="access-input-wrap"><span class="access-input-icon">◷</span><input id="mlDob" type="date" autocomplete="bday" required></div></div>'+
+        '<div class="access-form-field"><label for="mlPhone4">Last 4 digits of registered phone</label><div class="access-input-wrap"><span class="access-input-icon">◉</span><input id="mlPhone4" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="1234" required></div></div>'+
+        '<div class="access-form-field"><label for="mlNewPass">New password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mlNewPass" type="password" autocomplete="new-password" minlength="8" placeholder="Minimum 8 characters" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
+        '<div class="access-form-field"><label for="mlConfirmPass">Confirm new password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mlConfirmPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
+        '<div class="access-login-meta"><span>✓ Approved member accounts only</span><span>One-time migration recovery</span></div>'+
+        '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">SET PASSWORD <span>✓</span></button><button type="button" class="btn outline access-secondary" id="backToMemberLogin">BACK TO LOGIN</button></div>'+
+        '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+      '</form>'+
+    '</div>'
+  );
+  yycEnhanceLogin('memberLegacySetupForm','mlNewPass');
+  yycEnhanceLogin('memberLegacySetupForm','mlConfirmPass');
+  var back=$('#backToMemberLogin'); if(back) back.addEventListener('click',memberLogin);
+  $('#memberLegacySetupForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var form=this,btn=form.querySelector('button[type="submit"]');
+    var p1=$('#mlNewPass').value,p2=$('#mlConfirmPass').value;
+    if(p1!==p2){setLoginStatus('memberLegacySetupForm','Passwords do not match',true);return;}
+    if(!/^\d{4}$/.test($('#mlPhone4').value.trim())){setLoginStatus('memberLegacySetupForm','Enter exactly the last 4 digits of your registered phone number',true);return;}
+    try{
+      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='SETTING PASSWORD…';}
+      setLoginStatus('memberLegacySetupForm','Verifying your old YYC member record…',false);
+      var r=await rpc('member_legacy_set_password',{
+        p_email:$('#mlEmail').value.trim(),
+        p_dob:$('#mlDob').value,
+        p_phone_last4:$('#mlPhone4').value.trim(),
+        p_new_password:p1,
+        p_device_name:yycDeviceLabel()
+      });
+      if(!r||!r.ok)throw new Error(r&&r.error||'Could not set member password');
+      memberToken=r.token;
+      yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken);
+      yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{}));
+      setLoginStatus('memberLegacySetupForm','Password set successfully. Opening your member portal…',false);
+      window.setTimeout(function(){closeModal();memberDashboard(r.member);},250);
+    }catch(err){
+      if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SET PASSWORD ✓';}
+      setLoginStatus('memberLegacySetupForm',err.message,true);
+      toast(err.message);
+    }
+  });
+}
+
 function memberLogin(){
   if(memberToken){
     var cachedMember=null;
@@ -1679,6 +1728,7 @@ function memberLogin(){
         '<div class="access-form-field"><label for="mPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>✓ Approved members only</span><span>Secure YYC access</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN <span>→</span></button><button type="button" class="btn outline access-secondary" id="openRegisterFromLogin">NEW MEMBER</button></div>'+
+        '<button type="button" class="yyc-legacy-password-link" id="openLegacyPasswordSetup">FIRST LOGIN / SET PASSWORD</button>'+
       '<div class="access-login-status" role="status" aria-live="polite"></div>'+
        '</form>'+
       '<div class="access-login-footer">Don’t have an account? Apply for membership and wait for admin approval.</div>'+
@@ -1686,6 +1736,7 @@ function memberLogin(){
   );
   yycEnhanceLogin('memberLoginForm','mPass');
   $('#openRegisterFromLogin').addEventListener('click',memberRegister);
+  $('#openLegacyPasswordSetup').addEventListener('click',memberLegacyPasswordSetup);
   $('#memberLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
