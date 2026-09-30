@@ -1,13 +1,13 @@
-/* YYC SW RETIRED — no production service-worker caching. */
+/* YYC SW RETIRED — service worker disabled for production stability. */
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{
-  try{
-    const keys=await caches.keys();
-    await Promise.all(keys.map(k=>caches.delete(k)));
-  }catch(_){}
-  try{await self.clients.claim();}catch(_){}
-  try{await self.registration.unregister();}catch(_){}
+  const keys=await caches.keys();
+  await Promise.all(keys.map(k=>caches.delete(k)));
+  const regs=await self.registration;
+  await self.clients.claim();
+  await regs.unregister();
 })()));
 self.addEventListener('fetch',event=>{
-  /* Intentionally pass through: GitHub Pages must serve the live files. */
+  /* No caching layer: let the browser request the live GitHub Pages resource. */
+  return;
 });
