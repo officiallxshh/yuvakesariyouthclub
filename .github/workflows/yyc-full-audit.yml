@@ -11,8 +11,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install Playwright Chromium
-        run: npx --yes playwright@1.52.0 install chromium
+      - name: Install Playwright package and Chromium
+        run: |
+          npm install --no-save playwright@1.52.0
+          npx playwright install chromium
       - name: Run browser + Supabase audit
         env:
           BASE_URL: https://officiallxshh.github.io/yuvakesariyouthclub/
