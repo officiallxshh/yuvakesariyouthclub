@@ -245,6 +245,26 @@
 
 <script id="YYC_OPENING_BOOT">
 (function(){
+  /* One-time cleanup of the legacy service worker/cache that could serve an
+     incomplete stale shell. YYC now runs as a normal GitHub Pages app. */
+  try{window.__YYC_DISABLE_SW=true;}catch(_){}
+  try{
+    var cleanupKey='yyc_sw_cleanup_v1';
+    if('serviceWorker' in navigator && sessionStorage.getItem(cleanupKey)!=='done'){
+      sessionStorage.setItem(cleanupKey,'done');
+      Promise.all([
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          return Promise.all((rs||[]).map(function(r){return r.unregister();}));
+        }).catch(function(){ }),
+        ('caches' in window && caches.keys)?caches.keys().then(function(keys){
+          return Promise.all((keys||[]).map(function(k){return caches.delete(k);}));
+        }).catch(function(){ }):Promise.resolve()
+      ]).finally(function(){
+        try{location.reload();}catch(_){}
+      });
+      return;
+    }
+  }catch(_){}
   var body=document.body;
   if(!body) return;
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
