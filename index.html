@@ -428,7 +428,7 @@
   }
 
   function ensureApp(name){
-    if(window.YYC && typeof window.YYC[name]==='function') return Promise.resolve();
+    if(window.__yycAppReady && window.YYC && typeof window.YYC[name]==='function') return Promise.resolve();
 
     if(window.__yycDirectBootPromise) return window.__yycDirectBootPromise;
 
@@ -437,15 +437,22 @@
       var deadline=window.setTimeout(function(){
         if(finished) return;
         finished=true;
-        reject(new Error('YYC application did not load. Please refresh the page once.'));
+        reject(new Error(window.__yycAppError||'YYC application did not load. Please refresh the page once.'));
       },8000);
 
       function check(){
-        if(window.YYC && typeof window.YYC[name]==='function'){
+        if(window.__yycAppReady && window.YYC && typeof window.YYC[name]==='function'){
           if(finished) return true;
           finished=true;
           window.clearTimeout(deadline);
           resolve();
+          return true;
+        }
+        if(window.__yycAppError && !window.__yycAppInitializing){
+          if(finished) return true;
+          finished=true;
+          window.clearTimeout(deadline);
+          reject(new Error(window.__yycAppError));
           return true;
         }
         return false;
@@ -453,28 +460,22 @@
 
       if(check()) return;
 
-      /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
-         broken/stale script tag from the browser or GitHub Pages cache. */
-      var sc=document.createElement('script');
-      sc.src='app.js?v=20260928-05'+Date.now();
-      sc.async=false;
-      sc.onload=function(){
-        if(check()) return;
-        window.setTimeout(function(){
-          if(!check() && !finished){
-            finished=true;
-            window.clearTimeout(deadline);
-            reject(new Error('YYC application loaded but the login module did not initialize.'));
-          }
-        },250);
-      };
-      sc.onerror=function(){
-        if(finished) return;
-        finished=true;
-        window.clearTimeout(deadline);
-        reject(new Error('Could not load the YYC application file.'));
-      };
-      document.head.appendChild(sc);
+      /* The normal app.js script is loaded by the page. Only inject a fallback
+         copy when the app has not started at all. Never load a second copy while
+         the first copy is still initializing. */
+      if(!window.YYC){
+        var sc=document.createElement('script');
+        sc.src='app.js?v=20260930-04-'+Date.now();
+        sc.async=false;
+        sc.onload=function(){check();};
+        sc.onerror=function(){
+          if(finished) return;
+          finished=true;
+          window.clearTimeout(deadline);
+          reject(new Error('Could not load the YYC application file.'));
+        };
+        document.head.appendChild(sc);
+      }
 
       var poll=window.setInterval(function(){
         if(check() || finished) window.clearInterval(poll);
