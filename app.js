@@ -2751,6 +2751,7 @@ function initYYCApp(){
   window.__yycAppInitialized=true;
   document.body.classList.add('yyC-opening');
   setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
+  installImageInputReset();
   bindUI();
   loadPublic();
   restorePersistentPortals();
