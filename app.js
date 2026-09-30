@@ -2751,7 +2751,7 @@ function initYYCApp(){
   window.__yycAppInitialized=true;
   document.body.classList.add('yyC-opening');
   setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
-  installImageInputReset();
+  /* Removed undefined legacy initializer; file inputs are bound by their form/editor handlers. */
   bindUI();
   loadPublic();
   restorePersistentPortals();
