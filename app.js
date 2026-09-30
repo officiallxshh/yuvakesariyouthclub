@@ -2739,39 +2739,24 @@ async function restorePersistentPortals(){
 }
 
 function initYYCApp(){
-  if(window.__yycAppReady || window.__yycAppInitializing) return;
-  window.__yycAppInitializing=true;
-  try{
-    if(!$('#yycScrollProgress')){
-      var progress=document.createElement('div');
-      progress.id='yycScrollProgress';
-      progress.className='yyc-scroll-progress';
-      progress.setAttribute('aria-hidden','true');
-      progress.innerHTML='<span id="yycScrollProgressBar"></span>';
-      document.body.appendChild(progress);
-    }
-    document.body.classList.add('yyC-opening');
-    setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
-    installImageInputReset();
-    bindUI();
-    loadPublic();
-    restorePersistentPortals();
-    verifyFromUrl();
-    if($('#year')) $('#year').textContent=new Date().getFullYear();
-    window.__yycAppInitialized=true;
-    window.__yycAppReady=true;
-    window.__yycAppError='';
-  }catch(err){
-    window.__yycAppError=String(err&&err.message||err||'YYC application failed to initialize');
-    window.__yycAppInitialized=false;
-    window.__yycAppReady=false;
-    document.body.classList.remove('yyC-opening');
-    try{console.error('[YYC] application initialization failed:',err);}catch(_){}
-  }finally{
-    window.__yycAppInitializing=false;
+  if(!$('#yycScrollProgress')){
+    var progress=document.createElement('div');
+    progress.id='yycScrollProgress';
+    progress.className='yyc-scroll-progress';
+    progress.setAttribute('aria-hidden','true');
+    progress.innerHTML='<span id="yycScrollProgressBar"></span>';
+    document.body.appendChild(progress);
   }
+  if(window.__yycAppInitialized) return;
+  window.__yycAppInitialized=true;
+  document.body.classList.add('yyC-opening');
+  setTimeout(function(){document.body.classList.remove('yyC-opening');},1700);
+  installImageInputReset();
+  bindUI();
+  loadPublic();
+  restorePersistentPortals();
+  verifyFromUrl();
+  if($('#year')) $('#year').textContent=new Date().getFullYear();
 }
-window.__yycAppReady=!!window.__yycAppReady;
-window.__yycAppError=window.__yycAppError||'';
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initYYCApp);
 else initYYCApp();
