@@ -746,7 +746,7 @@ function renderPublic(){
   if(lg){
     lg.innerHTML=(publicData.leaders||[]).length ? publicData.leaders.map(function(l){
       var img=l.photo_url ? '<img src="'+esc(l.photo_url)+'" alt="'+esc(l.name)+'" '+yycProfilePhotoStyle(l)+'>' : '<span class="photo-placeholder">✦</span>';
-      return '<article class="leader-card compact-leader-card reveal"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
+      return '<article class="leader-card compact-leader-card reveal visible"><div class="leader-profile-row"><div class="leader-avatar">'+img+'</div><div class="leader-info"><span class="leader-kicker">LEADERSHIP</span><strong>'+esc(l.name)+'</strong><small>'+esc(l.role||'LEADER')+'</small><div class="micro">'+esc(l.line||'YUVAKESARI YOUTH CLUB · SUBRAHMANYA')+'</div></div></div><div class="leader-card-line"></div></article>';
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
 
