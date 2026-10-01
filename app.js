@@ -1,5 +1,8 @@
 'use strict';
 
+var YYC_APP_BUILD='20261001-01';
+try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
+
 var YYC_CONFIG = {
   supabaseUrl: 'https://vrllozfzheikjbhxvpkx.supabase.co',
   supabaseKey: 'sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt'
@@ -287,35 +290,52 @@ function yycMediaFrame(format,inner){
   return '<div class="yyc-media-frame" data-yyc-format="'+m.key+'"'+style+'>'+inner+'</div>';
 }
 
-async function rpc(name,args){
+async function rpc(name,args,options){
+  options=options||{};
   var payload=args || {};
   var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/rest/v1/rpc/'+encodeURIComponent(name);
-  var controller=window.AbortController?new AbortController():null;
-  var timer=window.setTimeout(function(){if(controller)controller.abort();},15000);
-  try{
-    var res=await fetch(endpoint,{
-      method:'POST',
-      headers:{
-        'apikey':YYC_CONFIG.supabaseKey,
-        'Content-Type':'application/json',
-        'Accept':'application/json'
-      },
-      body:JSON.stringify(payload),
-      signal:controller?controller.signal:undefined
-    });
-    var text=await res.text();
-    var data=null;
-    try{data=text?JSON.parse(text):null;}catch(parseErr){data=null;}
-    if(!res.ok){
-      var msg=(data&&(data.message||data.error||data.hint||data.details))||('Supabase request failed ('+res.status+')');
-      throw new Error(String(msg));
+  var timeoutMs=Math.max(8000,Number(options.timeoutMs)||30000);
+  var retries=Math.max(0,Math.min(2,Number(options.retries)||0));
+  var attempt=0;
+  while(true){
+    var controller=window.AbortController?new AbortController():null;
+    var timer=window.setTimeout(function(){if(controller)controller.abort();},timeoutMs);
+    try{
+      var res=await fetch(endpoint,{
+        method:'POST',
+        cache:'no-store',
+        credentials:'omit',
+        headers:{
+          'apikey':YYC_CONFIG.supabaseKey,
+          'Content-Type':'application/json',
+          'Accept':'application/json',
+          'Cache-Control':'no-cache, no-store, max-age=0',
+          'Pragma':'no-cache'
+        },
+        body:JSON.stringify(payload),
+        signal:controller?controller.signal:undefined
+      });
+      var responseText=await res.text();
+      var data=null;
+      try{data=responseText?JSON.parse(responseText):null;}catch(parseErr){data=null;}
+      if(!res.ok){
+        var msg=(data&&(data.message||data.error||data.hint||data.details))||('Supabase request failed ('+res.status+')');
+        throw new Error(String(msg));
+      }
+      return data;
+    }catch(err){
+      var transient=!!err && (err.name==='AbortError' || err.name==='TypeError');
+      if(transient && attempt<retries){
+        attempt++;
+        await new Promise(function(resolve){window.setTimeout(resolve,750*attempt);});
+        continue;
+      }
+      if(err&&err.name==='AbortError') throw new Error('YYC server timed out. Please try again.');
+      if(err&&err.name==='TypeError') throw new Error('Could not reach the YYC server. Please check your internet connection and try again.');
+      throw err;
+    }finally{
+      window.clearTimeout(timer);
     }
-    return data;
-  }catch(err){
-    if(err&&err.name==='AbortError') throw new Error('YYC server timed out. Please try again.');
-    throw err;
-  }finally{
-    window.clearTimeout(timer);
   }
 }
 function setLoginStatus(formId,msg,isError){
@@ -1044,7 +1064,7 @@ function yycOpenSearch(){
 }
 async function loadPublic(){
   try{
-    publicData=await rpc('public_site_data',{});
+    publicData=await rpc('public_site_data',{}, {timeoutMs:30000,retries:2});
     renderPublic();
     yycInstallPublicContentChrome();
     yycHandlePublicDeepLink();
