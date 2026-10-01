@@ -254,17 +254,27 @@
      incomplete stale shell. YYC now runs as a normal GitHub Pages app. */
   try{window.__YYC_DISABLE_SW=true;}catch(_){}
   try{
-    var cleanupKey='yyc_sw_cleanup_v2';
-    if('serviceWorker' in navigator && sessionStorage.getItem(cleanupKey)!=='done'){
-      sessionStorage.setItem(cleanupKey,'done');
+    var cleanupKey='yyc_sw_cleanup_v3';
+    var cleanupAlreadyDone=false;
+    try{cleanupAlreadyDone=sessionStorage.getItem(cleanupKey)==='done';}catch(_){}
+    if(!cleanupAlreadyDone){
       Promise.all([
-        navigator.serviceWorker.getRegistrations().then(function(rs){
-          return Promise.all((rs||[]).map(function(r){return r.unregister();}));
-        }).catch(function(){ }),
-        ('caches' in window && caches.keys)?caches.keys().then(function(keys){
-          return Promise.all((keys||[]).map(function(k){return caches.delete(k);}));
-        }).catch(function(){ }):Promise.resolve()
-      ]).finally(function(){
+        ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations)
+          ? navigator.serviceWorker.getRegistrations().then(function(rs){
+              return Promise.all((rs||[]).map(function(reg){
+                try{return reg.update().catch(function(){}).then(function(){return reg.unregister();});}
+                catch(_){return Promise.resolve(false);}
+              }));
+            }).catch(function(){return [];})
+          : Promise.resolve([]),
+        ('caches' in window && caches.keys)
+          ? caches.keys().then(function(keys){
+              var list=keys||[];
+              return Promise.all(list.map(function(k){return caches.delete(k);}));
+            }).catch(function(){return [];})
+          : Promise.resolve([])
+      ]).then(function(){
+        try{sessionStorage.setItem(cleanupKey,'done');}catch(_){}
         try{location.reload();}catch(_){}
       });
       return;
