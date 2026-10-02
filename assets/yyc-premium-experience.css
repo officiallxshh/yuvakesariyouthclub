@@ -779,3 +779,101 @@ body.yyc-premium-scrolled .topbar{
   }
   .hero-glow{opacity:.72}
 }
+
+
+/* =========================================================
+   YYC PERFORMANCE PASS — smooth 60fps feel
+   ========================================================= */
+
+/* Avoid expensive full-page compositing layers. */
+body::before{
+  opacity:.022;
+  mix-blend-mode:normal;
+}
+.topbar{
+  backdrop-filter:blur(9px) saturate(112%);
+  -webkit-backdrop-filter:blur(9px) saturate(112%);
+}
+
+/* One calm hero camera move; atmospheric layers stay static. */
+.hero-photo{
+  animation-duration:42s;
+  will-change:transform;
+}
+.hero-photo::before,
+.hero-photo::after{
+  animation:none!important;
+  will-change:auto;
+}
+.hero-grid-line{
+  animation:none!important;
+}
+
+/* Remove unnecessary GPU promotion from every card/image. */
+.glimpse-card,
+.glimpse-feature,
+.leader-card,
+.gallery-card,
+.event-card,
+.update-card{
+  will-change:auto;
+}
+.glimpse-card img,
+.glimpse-feature img,
+.leader-photo img,
+.gallery-card img{
+  will-change:auto;
+}
+
+/* Keep hover polish, but don't animate expensive image filters. */
+.glimpse-card img,
+.glimpse-feature img,
+.leader-photo img,
+.gallery-card img{
+  transition:transform .55s cubic-bezier(.16,1,.3,1);
+}
+.glimpse-card:hover img,
+.glimpse-feature:hover img,
+.leader-card:hover img,
+.gallery-card:hover img{
+  filter:none;
+}
+
+/* Cheaper glass surfaces. */
+.culture-panel,
+.join-card,
+.gallery-card::after,
+.yyc-premium-backtop{
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+
+/* Scroll progress should update without a visible transition. */
+.yyc-premium-progress span{
+  transition:none;
+}
+
+/* Reduce continuous glow animation on the main CTA. */
+.hero-actions .btn:first-child{
+  animation:none!important;
+}
+
+/* Disable decorative motion on low-power / touch devices. */
+@media (hover:none), (max-width:760px){
+  .hero-photo{
+    animation-duration:55s;
+  }
+  .hero-photo::before,
+  .hero-photo::after{
+    animation:none!important;
+  }
+  .culture-panel img:hover{
+    transform:none;
+    filter:none;
+  }
+}
+
+/* Users who prefer reduced motion get a fully static composition. */
+@media(prefers-reduced-motion:reduce){
+  .hero-photo{animation:none!important}
+}
