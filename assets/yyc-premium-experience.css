@@ -490,3 +490,114 @@ body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
   58%{opacity:0;transform:translateX(430%) rotate(20deg)}
   100%{opacity:0;transform:translateX(430%) rotate(20deg)}
 }
+
+
+/* =========================================================
+   YYC HERO CINEMATIC LANDSCAPE MOTION
+   Slow camera drift + atmospheric light + subtle water flow
+   ========================================================= */
+.hero{
+  overflow:hidden;
+}
+.hero-photo{
+  transform-origin:50% 55%;
+  animation:yycHeroCinematic 28s cubic-bezier(.45,0,.25,1) infinite alternate;
+  will-change:transform,background-position;
+}
+.hero-photo::before,
+.hero-photo::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+/* Very soft atmospheric light drifting across the sky */
+.hero-photo::before{
+  background:
+    radial-gradient(ellipse 42% 24% at 72% 25%,rgba(255,204,111,.12),transparent 68%),
+    radial-gradient(ellipse 34% 20% at 25% 34%,rgba(255,236,180,.055),transparent 72%);
+  mix-blend-mode:screen;
+  opacity:.62;
+  animation:yycHeroAtmosphere 18s ease-in-out infinite alternate;
+}
+
+/* Water-only shimmer/flow near the lower landscape.
+   Kept extremely subtle so it reads as moving water, not an overlay. */
+.hero-photo::after{
+  inset:52% -12% -8%;
+  background:
+    repeating-linear-gradient(
+      168deg,
+      transparent 0 18px,
+      rgba(235,211,163,.025) 19px 21px,
+      transparent 22px 39px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(214,191,142,.055) 46%,
+      rgba(240,221,177,.09) 66%,
+      transparent 100%
+    );
+  background-size:100% 100%,100% 100%;
+  mix-blend-mode:screen;
+  opacity:.48;
+  transform:translate3d(0,0,0) skewX(-2deg);
+  animation:yycRiverFlow 11s linear infinite;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 25%,#000 78%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0%,#000 25%,#000 78%,transparent 100%);
+}
+
+/* Slight depth drift on the culture side without moving the actual panel */
+.hero-grid-line{
+  animation:yycHeroLineBreath 9s ease-in-out infinite;
+}
+.hero-grid-line.line-b{animation-delay:-4.5s}
+
+@media(max-width:760px){
+  .hero-photo{
+    animation-duration:32s;
+  }
+  .hero-photo::after{
+    inset:58% -18% -5%;
+    opacity:.34;
+  }
+  .hero-photo::before{
+    opacity:.42;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-photo,
+  .hero-photo::before,
+  .hero-photo::after,
+  .hero-grid-line{
+    animation:none!important;
+  }
+}
+
+@keyframes yycHeroCinematic{
+  0%{
+    transform:scale(1.035) translate3d(-.35%,0,0);
+  }
+  50%{
+    transform:scale(1.06) translate3d(.35%,-.25%,0);
+  }
+  100%{
+    transform:scale(1.08) translate3d(-.1%,-.45%,0);
+  }
+}
+@keyframes yycHeroAtmosphere{
+  0%{transform:translate3d(-3%,0,0) scale(1);opacity:.40}
+  50%{transform:translate3d(2%,1%,0) scale(1.05);opacity:.72}
+  100%{transform:translate3d(5%,-1%,0) scale(1.08);opacity:.48}
+}
+@keyframes yycRiverFlow{
+  0%{background-position:0 0,0 0;transform:translate3d(-1.5%,0,0) skewX(-2deg)}
+  50%{background-position:5% 13px,0 2px;transform:translate3d(1%,1px,0) skewX(-2deg)}
+  100%{background-position:10% 26px,0 0;transform:translate3d(4%,0,0) skewX(-2deg)}
+}
+@keyframes yycHeroLineBreath{
+  0%,100%{opacity:.12;transform:scaleY(1)}
+  50%{opacity:.28;transform:scaleY(1.02)}
+}
