@@ -4400,3 +4400,6 @@ body.yyc-reduced-motion .ambient{
     scroll-behavior:auto!important;
   }
 }
+
+
+.yyc-calendar-btn{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:inherit;border-radius:999px;padding:9px 13px;font:inherit;font-size:.72rem;font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;transition:transform .2s ease,background .2s ease,border-color .2s ease}.yyc-calendar-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.08);border-color:rgba(255,196,92,.45)}.yyc-calendar-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}
