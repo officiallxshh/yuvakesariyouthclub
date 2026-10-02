@@ -874,3 +874,38 @@
     padding:5px!important;
   }
 }
+
+/* ===== LOGIN CLOSE + SEARCH FINAL FIX ===== */
+.modal-shell:has(.access-login-screen)>.modal-close{display:none!important}
+.access-login-screen{position:relative}
+.access-panel-close{
+  position:absolute!important;
+  top:16px!important;
+  right:16px!important;
+  z-index:100!important;
+  width:44px!important;
+  height:44px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border:1px solid rgba(229,193,111,.24)!important;
+  border-radius:14px!important;
+  background:rgba(3,7,10,.82)!important;
+  color:#ead29c!important;
+  font:400 28px/1 Inter,sans-serif!important;
+  cursor:pointer!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.34);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.access-panel-close:hover{
+  transform:rotate(3deg) scale(1.04);
+  border-color:rgba(229,193,111,.52)!important;
+  background:rgba(229,193,111,.07)!important;
+}
+#yycpSearchTop{display:none!important}
+@media(max-width:620px){
+  .access-panel-close{top:12px!important;right:12px!important;width:42px!important;height:42px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .access-panel-close{transition:none!important}
+}
