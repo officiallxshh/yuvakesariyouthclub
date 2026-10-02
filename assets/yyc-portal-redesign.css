@@ -838,3 +838,44 @@
 /* ===== SEARCH CONTROL SINGLETON ===== */
 #yycpSearchTop{flex:0 0 auto;}
 .desktop-nav #yycpSearchTop + #yycpSearchTop{display:none!important;}
+
+/* ===== LOGIN VIEWPORT FIX =====
+   The access screen should occupy the available modal viewport without clipping.
+   Internal scrolling remains available on short screens and mobile. */
+.modal-shell:has(.access-login-screen){
+  height:calc(100svh - 24px)!important;
+  min-height:min(620px,calc(100svh - 24px))!important;
+  max-height:calc(100svh - 24px)!important;
+  overflow:auto!important;
+}
+.modal-shell:has(.access-login-screen) .access-login-screen{
+  min-height:100%!important;
+  height:auto;
+}
+.modal-shell:has(.access-login-screen) .access-login-hero,
+.modal-shell:has(.access-login-screen) .access-login-form{
+  align-self:stretch;
+}
+@media(min-width:901px){
+  .modal-shell:has(.access-login-screen) .access-login-form{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+}
+@media(max-width:900px){
+  .modal-shell:has(.access-login-screen){
+    min-height:calc(100svh - 24px)!important;
+  }
+  .access-login-screen{min-height:100%!important;}
+}
+@media(max-width:620px){
+  .modal-shell:has(.access-login-screen){
+    width:calc(100vw - 10px)!important;
+    max-width:calc(100vw - 10px)!important;
+    height:calc(100svh - 10px)!important;
+    min-height:calc(100svh - 10px)!important;
+    max-height:calc(100svh - 10px)!important;
+    margin:5px auto!important;
+  }
+}
