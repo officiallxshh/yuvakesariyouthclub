@@ -601,3 +601,104 @@ body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
   0%,100%{opacity:.12;transform:scaleY(1)}
   50%{opacity:.28;transform:scaleY(1.02)}
 }
+
+
+/* =========================================================
+   YYC HERO RECREATION — cinematic landscape grade
+   Uses the existing hero photograph, but recreates the
+   premium photographic treatment in layers so no source
+   asset is lost.
+   ========================================================= */
+
+/* Natural dark-gold cinematic grade */
+.hero-photo{
+  background-position:50% 46%;
+  filter:saturate(1.06) contrast(1.075) brightness(.93);
+}
+
+/* Layered photographic atmosphere:
+   warm sky glow + cool mountain separation + foreground depth */
+.hero-photo::before{
+  background:
+    radial-gradient(ellipse 48% 30% at 72% 18%,rgba(255,205,119,.15),transparent 70%),
+    radial-gradient(ellipse 36% 22% at 28% 28%,rgba(255,229,181,.065),transparent 74%),
+    linear-gradient(180deg,rgba(7,12,16,.02) 0%,rgba(7,12,16,.04) 42%,rgba(3,7,10,.22) 100%);
+  mix-blend-mode:screen;
+  opacity:.68;
+  animation:yycHeroRecreatedLight 20s ease-in-out infinite alternate;
+}
+
+/* Soft mist separation across the distant hills */
+.hero-photo::after{
+  inset:28% -8% 18%;
+  background:
+    radial-gradient(ellipse 58% 26% at 50% 52%,rgba(225,213,185,.055),transparent 72%),
+    linear-gradient(180deg,transparent 0%,rgba(206,194,168,.035) 52%,transparent 100%);
+  mix-blend-mode:screen;
+  opacity:.72;
+  filter:blur(3px);
+  transform:translate3d(0,0,0) scale(1.04);
+  animation:yycHeroMistDrift 16s ease-in-out infinite alternate;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 78%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 78%,transparent 100%);
+}
+
+/* Keep the center visually clean for the YYC identity */
+.hero-main{
+  position:relative;
+  z-index:2;
+}
+.hero-main::before{
+  content:"";
+  position:absolute;
+  inset:8% -10% 4%;
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(2,6,9,.16),transparent 68%);
+  filter:blur(16px);
+}
+
+/* Extra edge falloff gives the landscape more depth without
+   making the image look artificially edited. */
+.hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(2,5,7,.28),transparent 25%,transparent 75%,rgba(2,5,7,.20)),
+    linear-gradient(180deg,rgba(2,5,7,.10),transparent 24%,transparent 72%,rgba(2,5,7,.32));
+}
+
+/* Slightly wider, slower camera movement for the recreated composition */
+@keyframes yycHeroCinematic{
+  0%{transform:scale(1.045) translate3d(-.30%,0,0)}
+  50%{transform:scale(1.065) translate3d(.28%,-.18%,0)}
+  100%{transform:scale(1.09) translate3d(-.08%,-.38%,0)}
+}
+@keyframes yycHeroRecreatedLight{
+  0%{transform:translate3d(-2%,0,0) scale(1);opacity:.48}
+  50%{transform:translate3d(1.5%,.5%,0) scale(1.045);opacity:.72}
+  100%{transform:translate3d(4%,-.5%,0) scale(1.075);opacity:.54}
+}
+@keyframes yycHeroMistDrift{
+  0%{transform:translate3d(-1.5%,0,0) scale(1.04);opacity:.38}
+  100%{transform:translate3d(2%,1%,0) scale(1.075);opacity:.64}
+}
+
+@media(max-width:760px){
+  .hero-photo{
+    background-position:50% 48%;
+    filter:saturate(1.04) contrast(1.055) brightness(.95);
+  }
+  .hero-photo::before{opacity:.48}
+  .hero-photo::after{inset:34% -15% 20%;opacity:.48}
+  .hero-main::before{inset:4% -18% 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-photo::before,
+  .hero-photo::after{
+    animation:none!important;
+  }
+}
