@@ -4403,3 +4403,35 @@ body.yyc-reduced-motion .ambient{
 
 
 .yyc-calendar-btn{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:inherit;border-radius:999px;padding:9px 13px;font:inherit;font-size:.72rem;font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;transition:transform .2s ease,background .2s ease,border-color .2s ease}.yyc-calendar-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.08);border-color:rgba(255,196,92,.45)}.yyc-calendar-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+
+/* YYC member notifications + event RSVP */
+.yyc-member-card-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.yyc-notification-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;margin-left:6px;border-radius:999px;font-size:10px;line-height:1;font-weight:800;border:1px solid rgba(255,196,92,.4);background:rgba(255,196,92,.12)}
+.yyc-member-notifications{max-width:900px;margin:0 auto}
+.yyc-notification-list{display:grid;gap:10px;margin-top:18px;max-height:62vh;overflow:auto;padding-right:3px}
+.yyc-notification-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.025)}
+.yyc-notification-item.unread{border-color:rgba(255,196,92,.3);background:rgba(255,196,92,.045)}
+.yyc-notification-dot{width:8px;height:8px;border-radius:50%;margin-top:8px;background:rgba(255,255,255,.2)}
+.yyc-notification-item.unread .yyc-notification-dot{background:currentColor;box-shadow:0 0 0 4px rgba(255,196,92,.08)}
+.yyc-notification-main>span{display:block;font-size:9px;letter-spacing:.12em;opacity:.65}
+.yyc-notification-main h3{margin:7px 0 5px;font-size:17px}
+.yyc-notification-main p{margin:0;color:#a6afac;font-size:12px;line-height:1.55}
+.yyc-notification-main a{display:inline-block;margin-top:9px;font-size:10px;font-weight:700;letter-spacing:.08em}
+.yyc-event-rsvp{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:18px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.025)}
+.yyc-event-rsvp>div:first-child{display:flex;flex-direction:column;gap:5px}
+.yyc-event-rsvp strong{font-size:15px}
+.yyc-event-rsvp small{color:#7d8784;font-size:11px}
+.yyc-rsvp-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.yyc-rsvp-buttons .active-rsvp{border-color:rgba(255,196,92,.55);background:rgba(255,196,92,.13)}
+.yyc-rsvp-status{grid-column:1/-1;font-size:9px;letter-spacing:.12em;opacity:.6}
+.yyc-event-rsvp{flex-wrap:wrap}
+@media (max-width:700px){
+  .yyc-member-card-actions,.yyc-event-rsvp{align-items:stretch}
+  .yyc-member-card-actions>*{flex:1 1 180px}
+  .yyc-event-rsvp{display:grid;grid-template-columns:1fr}
+  .yyc-rsvp-buttons{justify-content:flex-start}
+  .yyc-rsvp-buttons .mini-btn{flex:1 1 140px}
+  .yyc-notification-item{grid-template-columns:auto 1fr}
+  .yyc-notification-item>.mini-btn{grid-column:2;justify-self:start}
+}
