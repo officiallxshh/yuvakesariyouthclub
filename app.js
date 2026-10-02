@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261002-04';
+var YYC_APP_BUILD='20261002-05';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -793,7 +793,7 @@ function renderPublic(){
         '<div class="event-card-media" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'>'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
         '<div class="event-card-body"><span class="event-kicker">YYC PROGRAMME</span><h3>'+esc(ev.title||'Untitled event')+'</h3>'+
         (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
-        '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span></div></div>'+
+        '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span><button type="button" class="yyc-calendar-btn" data-yyc-calendar="'+esc(ev.id||'')+'">ADD TO CALENDAR <span>＋</span></button></div></div>'+
       '</article>';
     },'No upcoming events published yet.','event-card');
   }
@@ -835,6 +835,21 @@ function renderPublic(){
       if(target) target.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
   });
+}
+function yycDownloadEventCalendar(ev){
+  if(!ev || !ev.event_date){toast('Event date is not available yet.');return;}
+  var d=new Date(ev.event_date+'T00:00:00');
+  if(isNaN(d.getTime())){toast('Invalid event date.');return;}
+  var y=String(d.getFullYear()),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  var next=new Date(d);next.setDate(next.getDate()+1);
+  var ny=String(next.getFullYear()),nm=String(next.getMonth()+1).padStart(2,'0'),nd=String(next.getDate()).padStart(2,'0');
+  function icsEsc(v){return String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+  var now=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+  var uid=(ev.id||((ev.title||'yyc-event')+'-'+ev.event_date))+'@yuvakesariyouthclub.in';
+  var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Yuvakesari Youth Club//YYC Events//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT','UID:'+icsEsc(uid),'DTSTAMP:'+now,'DTSTART;VALUE=DATE:'+y+m+day,'DTEND;VALUE=DATE:'+ny+nm+nd,'SUMMARY:'+icsEsc(ev.title||'YYC Event'),'DESCRIPTION:'+icsEsc(ev.description||'Community programme by Yuvakesari Youth Club.'),'LOCATION:'+icsEsc(ev.location||''),'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  var blob=new Blob([ics+'\r\n'],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=(String(ev.title||'YYC Event').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'yyc-event')+'.ics';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 function yycContentKindLabel(kind){
   return kind==='event'?'EVENT':kind==='update'?'UPDATE':kind==='leader'?'LEADER':'GALLERY';
@@ -989,6 +1004,14 @@ function yycInstallPublicContentChrome(){
     mobile.appendChild(mb);
   }
   document.addEventListener('click',function(e){
+    var cal=e.target.closest('[data-yyc-calendar]');
+    if(cal){
+      e.preventDefault();e.stopPropagation();
+      var cid=cal.getAttribute('data-yyc-calendar');
+      var cev=(publicData&&publicData.events||[]).find(function(x){return String(x.id||'')===String(cid);});
+      if(cev) yycDownloadEventCalendar(cev); else toast('Event not found.');
+      return;
+    }
     if(e.target.closest('#modal')) return;
     var eventCard=e.target.closest('.event-card'), updateCard=e.target.closest('.update-card'), galleryCard=e.target.closest('.gallery-card');
     if(eventCard){
