@@ -801,3 +801,40 @@
   .access-input-wrap,.access-password-field,.access-submit,
   .premium-member-dashboard .btn,.admin-shell .btn,.admin-shell .mini-btn{transition:none!important}
 }
+
+/* ===== FULL LOGIN VIEWPORT FIX ===== */
+.modal-shell:has(.access-login-screen){
+  width:min(1240px,calc(100vw - 24px))!important;
+  max-width:1240px!important;
+  max-height:calc(100svh - 24px)!important;
+  height:auto!important;
+  margin:12px auto!important;
+  padding:10px!important;
+  overflow:auto!important;
+}
+.modal-shell:has(.access-login-screen) .access-login-screen{
+  width:100%!important;
+  min-height:min(680px,calc(100svh - 56px))!important;
+}
+@media(max-width:900px){
+  .modal-shell:has(.access-login-screen){
+    max-height:calc(100svh - 16px)!important;
+    margin:8px auto!important;
+  }
+  .modal-shell:has(.access-login-screen) .access-login-screen{
+    min-height:0!important;
+  }
+}
+@media(max-width:620px){
+  .modal-shell:has(.access-login-screen){
+    width:calc(100vw - 8px)!important;
+    max-width:calc(100vw - 8px)!important;
+    max-height:calc(100svh - 8px)!important;
+    margin:4px auto!important;
+    padding:6px!important;
+  }
+}
+
+/* ===== SEARCH CONTROL SINGLETON ===== */
+#yycpSearchTop{flex:0 0 auto;}
+.desktop-nav #yycpSearchTop + #yycpSearchTop{display:none!important;}
