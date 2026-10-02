@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261002-05';
+var YYC_APP_BUILD='20261002-06';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -25,6 +25,8 @@ var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
 var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
 var adminData = null;
+var yycMemberRsvpMap={};
+var yycMemberNotificationCache=[];
 
 var $ = function(s){ return document.querySelector(s); };
 var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -887,6 +889,17 @@ function yycOpenContentDetail(kind,item){
   if(kind==='update' && item.category) meta.push('<span><b>CATEGORY</b>'+esc(item.category)+'</span>');
   if(kind==='gallery' && item.album) meta.push('<span><b>ALBUM</b>'+esc(item.album)+'</span>');
   var shareUrl=yycPublicShareUrl(kind,item);
+  var eventRsvpHtml='';
+  if(kind==='event'){
+    if(memberToken){
+      var currentRsvp=yycMemberRsvpMap[String(item.id||'')]||'';
+      eventRsvpHtml='<div class="yyc-event-rsvp"><div><span class="portal-profile-kicker">MEMBER RSVP</span><strong>Will you attend this YYC programme?</strong><small>Select your response. You can change it later.</small></div><div class="yyc-rsvp-buttons">'+
+        ['attending','maybe','not_attending'].map(function(st){return '<button type="button" class="mini-btn '+(currentRsvp===st?'active-rsvp':'')+'" data-yyc-rsvp="'+st+'">'+(st==='attending'?"I'M ATTENDING":st==='maybe'?'MAYBE':"CAN'T ATTEND")+'</button>';}).join('')+
+      '</div><div class="yyc-rsvp-status" id="yycRsvpStatus">'+(currentRsvp?'CURRENT RESPONSE · '+String(currentRsvp).replace('_',' ').toUpperCase():'NO RESPONSE YET')+'</div></div>';
+    }else{
+      eventRsvpHtml='<div class="yyc-event-rsvp guest"><div><span class="portal-profile-kicker">MEMBER RSVP</span><strong>Members can reserve their place.</strong><small>Log in to record your response for this event.</small></div><button type="button" class="btn outline" id="yycEventRsvpLogin">MEMBER LOGIN</button></div>';
+    }
+  }
   var textBody=kind==='gallery' ? (item.caption||'') : (item.body||item.description||'');
   openModal(
     '<div class="yyc-detail-modal">'+
@@ -1619,11 +1632,69 @@ function memberEditSubmission(data){
   });
 }
 
+
+function yycOpenMemberNotifications(){
+  if(!memberToken){toast('Please log in as a member first.');return;}
+  openModal('<div class="yyc-member-notifications"><div class="yyc-detail-kicker">MEMBER NOTIFICATIONS</div><div class="yyc-detail-head"><div><h2 class="modal-title">Your notifications.</h2><p class="modal-sub">YYC account updates and event notices sent to you.</p></div><button type="button" class="mini-btn" id="yycMarkAllNotifications">MARK ALL READ</button></div><div id="yycNotificationList" class="yyc-notification-list"><div class="storage-loading"><strong>Loading notifications…</strong></div></div></div>');
+  var list=$('#yycNotificationList');
+  function render(items){
+    items=items||[];
+    if(!items.length){list.innerHTML='<div class="empty">No notifications yet.</div>';return;}
+    list.innerHTML=items.map(function(n){
+      return '<article class="yyc-notification-item '+(!n.is_read?'unread':'')+'"><div class="yyc-notification-dot"></div><div class="yyc-notification-main"><span>'+esc(String(n.type||'general').toUpperCase())+' · '+esc(fmtDate(n.created_at))+'</span><h3>'+esc(n.title||'YYC notification')+'</h3>'+(n.body?'<p>'+esc(n.body)+'</p>':'')+(n.link?'<a href="'+esc(n.link)+'" target="_blank" rel="noopener">OPEN LINK ↗</a>':'')+'</div>'+(!n.is_read?'<button type="button" class="mini-btn" data-mark-notification="'+esc(n.id)+'">READ</button>':'')+'</article>';
+    }).join('');
+    $('#yycNotificationList [data-mark-notification]').forEach(function(btn){
+      btn.addEventListener('click',async function(){
+        btn.disabled=true;
+        try{
+          var r=await rpc('member_portal',{p_token:memberToken,p_action:'notifications_read',p_payload:{notification_id:btn.getAttribute('data-mark-notification')}});
+          if(!r||!r.ok)throw new Error(r&&r.error||'Could not update notification');
+          var fresh=await rpc('member_portal',{p_token:memberToken,p_action:'notifications'});
+          render(fresh&&fresh.ok?fresh.notifications:[]);
+        }catch(e){toast(e.message||'Could not update notification');btn.disabled=false;}
+      });
+    });
+  }
+  rpc('member_portal',{p_token:memberToken,p_action:'notifications'}).then(function(r){
+    if(!r||!r.ok)throw new Error(r&&r.error||'Could not load notifications');
+    yycMemberNotificationCache=r.notifications||[];
+    render(yycMemberNotificationCache);
+  }).catch(function(e){list.innerHTML='<div class="storage-error"><strong>Could not load notifications.</strong><span>'+esc(e.message)+'</span></div>';});
+  var all=$('#yycMarkAllNotifications');
+  if(all)all.addEventListener('click',async function(){
+    all.disabled=true;
+    try{
+      var r=await rpc('member_portal',{p_token:memberToken,p_action:'notifications_read_all'});
+      if(!r||!r.ok)throw new Error(r&&r.error||'Could not mark notifications');
+      all.textContent='ALL READ ✓';
+      var fresh=await rpc('member_portal',{p_token:memberToken,p_action:'notifications'});
+      yycMemberNotificationCache=fresh&&fresh.ok?(fresh.notifications||[]):[];
+      render(yycMemberNotificationCache);
+    }catch(e){toast(e.message||'Could not update notifications');all.disabled=false;}
+  });
+}
+async function yycLoadMemberPortalExtras(){
+  if(!memberToken)return;
+  try{
+    var r=await rpc('member_portal',{p_token:memberToken,p_action:'rsvps'});
+    yycMemberRsvpMap={};
+    if(r&&r.ok)(r.rsvps||[]).forEach(function(x){yycMemberRsvpMap[String(x.event_id)]=x.status;});
+  }catch(e){}
+  try{
+    var n=await rpc('member_portal',{p_token:memberToken,p_action:'notifications'});
+    yycMemberNotificationCache=n&&n.ok?(n.notifications||[]):[];
+    var b=$('#memberNotificationsBtn');
+    if(b){
+      var unread=yycMemberNotificationCache.filter(function(x){return !x.is_read;}).length;
+      b.innerHTML='NOTIFICATIONS '+(unread?'<span class="yyc-notification-badge">'+unread+'</span>':'');
+    }
+  }catch(e){}
+}
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
     yycDigitalCard(data,'member')+
-    '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
+    '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="memberEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
     yycSessionSection('member',[])+
@@ -1952,7 +2023,7 @@ function adminPanel(tab,forceRefresh){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Notifications'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
@@ -2167,6 +2238,23 @@ function renderAdminTab(tab,d){
     return;
   }
 
+  if(tab==='notifications'){
+    var approvedMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='approved';}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''));});
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">MEMBER MESSAGES</div><h2 class="modal-title">Notifications</h2><p class="admin-subline">Send a private notification to one approved member. Credentials and session tokens are never exposed.</p></div><button class="mini-btn" data-admin-overview>← Back to Admin</button></div>'+
+      '<form id="adminNotificationForm" class="admin-form"><div class="form-grid"><div class="field"><label>Member</label><select id="anMember" required><option value="">Select approved member</option>'+approvedMembers.map(function(m){return '<option value="'+esc(m.id)+'">'+esc(m.name)+' · '+esc(m.role_number||'PENDING')+'</option>';}).join('')+'</select></div><div class="field"><label>Type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div><div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="Notification title"></div><div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="5" placeholder="Write the notification…"></textarea></div><div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://…"></div></div><div class="form-actions"><button type="submit" class="btn gold">SEND NOTIFICATION <span>→</span></button></div></form>';
+    var nf=$('#adminNotificationForm');
+    nf.addEventListener('submit',async function(e){
+      e.preventDefault();
+      var btn=nf.querySelector('button[type="submit]')||nf.querySelector('button[type="submit"]');btn.disabled=true;
+      try{
+        var r=await rpc('admin_portal',{p_token:adminToken,p_action:'send_notification',p_payload:{member_id:$('#anMember').value,title:$('#anTitle').value.trim(),body:$('#anBody').value.trim(),type:$('#anType').value,link:$('#anLink').value.trim()}});
+        if(!r||!r.ok)throw new Error(r&&r.error||'Could not send notification');
+        nf.reset();toast('Notification sent');
+      }catch(e){toast(e.message||'Could not send notification');}
+      finally{btn.disabled=false;}
+    });
+    return;
+  }
   if(tab==='activity'){
     a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading activity…</strong><span>Reading recent admin actions</span></div>';
     rpc('admin_recent_activity',{p_token:adminToken}).then(function(s){
