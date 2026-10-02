@@ -16,6 +16,8 @@
     modal=el('modal'); contentBox=el('modalContent');
     if(!modal||!contentBox) return false;
     contentBox.innerHTML=html;
+    var closeBtn=contentBox.querySelector('[data-access-close]');
+    if(closeBtn) closeBtn.addEventListener('click',closeShell);
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     document.body.style.overflow='hidden';
@@ -126,7 +128,7 @@
       }
 
       var s=document.createElement('script');
-      s.src='app.js?v=20260923-16-'+Date.now();
+      s.src='app.js?v=20261002-07&access-cache='+Date.now();
       s.async=false;
       s.dataset.yycAccessApp='1';
       s.onload=function(){
@@ -156,6 +158,7 @@
 
     openShell(
       '<div class="access-login-screen direct-access-screen '+(member?'member-access-screen':leader?'leader-access-screen':'admin-access-screen')+'">'+
+        '<button type="button" class="access-panel-close" data-access-close aria-label="Close login panel">×</button>'+
         '<div class="access-login-hero"><div class="access-login-icon">'+(member?'◉':leader?'♛':'⌑')+'</div><div><span class="access-login-kicker">YUVAKESARI YOUTH CLUB</span><h2 class="access-login-title">'+title+'</h2><p class="access-login-sub">Secure access to your YYC portal.</p></div><span class="access-login-badge '+(leader?'leader':kind==='adminLogin'?'admin':'')+'">'+badge+'</span></div>'+
         '<form id="yycDirectAccessForm" class="access-login-form" novalidate>'+
           '<div class="access-form-field"><label for="'+identifierId+'">'+identifierLabel+'</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="'+identifierId+'" type="text" autocomplete="username" placeholder="Enter '+identifierLabel.toLowerCase()+'" required></div></div>'+
