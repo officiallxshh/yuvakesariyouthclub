@@ -1,0 +1,39 @@
+name: YYC Production Monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yyc-production-monitor
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check yyc90.js
+          node --check yyc90-final.js
+          node --check yyc-production.js
+          node --check scripts/generate-public-pages.mjs
+          node --check scripts/backup-supabase.mjs
+          node --check scripts/production-monitor.mjs
+
+      - name: Production health and live-data check
+        run: node scripts/production-monitor.mjs
