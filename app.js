@@ -995,11 +995,11 @@ function yycInstallPublicContentChrome(){
   if(window.__yycPublicContentChrome) return;
   window.__yycPublicContentChrome=true;
   var nav=document.querySelector('.desktop-nav');
-  if(nav&&!$('#yycSearchBtn')){
-    var b=document.createElement('button');
-    b.type='button';b.className='nav-admin yyc-search-trigger';b.id='yycSearchBtn';b.innerHTML='<span>⌕</span> Search';
-    b.addEventListener('click',yycOpenSearch);
-    nav.appendChild(b);
+  /* Primary desktop Search is injected by the production UI layer before Member Login.
+     Prevent this layer from adding a second Search control at the far right. */
+  if(nav){
+    var rightSearch=$('#yycSearchBtn');
+    if(rightSearch) rightSearch.remove();
   }
   ['#eventsGrid','#updatesGrid','#galleryGrid'].forEach(function(sel){
     var grid=$(sel);
