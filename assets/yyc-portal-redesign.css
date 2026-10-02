@@ -989,44 +989,51 @@
 }
 
 
-/* ===== BUILD 6 — LOGIN CLOSE BUTTON CLEARLY VISIBLE ===== */
-.access-login-screen{overflow:auto!important;}
-.access-login-screen .access-panel-close{
+/* ===== BUILD 6 — LOGIN CLOSE BUTTON: SHELL-LEVEL + ALWAYS VISIBLE ===== */
+/* The shell has its own close handler and is the stable scroll container.
+   Keep the login-specific close buttons hidden and use the shell close button,
+   so the X never moves behind the form, scroll area, or mobile viewport. */
+.modal:has(.access-login-screen){
+  z-index:1000!important;
+}
+.modal-shell:has(.access-login-screen)>#modalContent .access-panel-close,
+.modal-shell:has(.access-login-screen)>#modalContent .access-inline-close{
+  display:none!important;
+  pointer-events:none!important;
+}
+.modal-shell:has(.access-login-screen)> .modal-close{
   position:sticky!important;
-  top:12px!important;
+  top:0!important;
   right:auto!important;
-  grid-column:1 / -1!important;
-  grid-row:1!important;
-  justify-self:end!important;
-  align-self:start!important;
-  margin:12px 16px -60px 0!important;
-  width:48px!important;
-  height:48px!important;
   display:grid!important;
   place-items:center!important;
-  z-index:9999!important;
+  float:none!important;
+  margin:0 4px -54px auto!important;
+  width:48px!important;
+  height:48px!important;
+  z-index:100000!important;
   pointer-events:auto!important;
-  flex:none!important;
-  border:1px solid rgba(229,193,111,.42)!important;
+  border:1px solid rgba(229,193,111,.48)!important;
   border-radius:14px!important;
-  background:rgba(6,10,13,.96)!important;
-  color:#f1d89e!important;
+  background:rgba(5,9,12,.98)!important;
+  color:#f4dc9f!important;
   font:500 30px/1 Inter,sans-serif!important;
-  box-shadow:0 12px 30px rgba(0,0,0,.48),0 0 0 3px rgba(229,193,111,.035)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.58),0 0 0 3px rgba(229,193,111,.045)!important;
+  transform:none!important;
 }
-.access-login-screen .access-panel-close:hover{
+.modal-shell:has(.access-login-screen)> .modal-close:hover{
   transform:scale(1.05)!important;
-  border-color:rgba(229,193,111,.68)!important;
-  background:rgba(229,193,111,.10)!important;
+  border-color:rgba(229,193,111,.74)!important;
+  background:rgba(229,193,111,.11)!important;
 }
-.access-login-screen .access-panel-close:focus-visible{
-  outline:2px solid rgba(229,193,111,.82)!important;
+.modal-shell:has(.access-login-screen)> .modal-close:focus-visible{
+  outline:2px solid rgba(229,193,111,.88)!important;
   outline-offset:3px!important;
 }
 @media(max-width:620px){
-  .access-login-screen .access-panel-close{
-    top:8px!important;
-    margin:8px 10px -52px 0!important;
+  .modal-shell:has(.access-login-screen)> .modal-close{
+    top:0!important;
+    margin:0 2px -50px auto!important;
     width:44px!important;
     height:44px!important;
     font-size:28px!important;
