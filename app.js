@@ -2165,7 +2165,7 @@ function renderAdminTab(tab,d){
     $$('#adminWorkspace [data-admin-tab]').forEach(function(btn){
       btn.addEventListener('click',function(){
         var target=btn.getAttribute('data-admin-tab');
-        $('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
+        $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
         renderAdminTab(target,d);
       });
     });
