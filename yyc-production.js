@@ -23,7 +23,7 @@
 
   function installOffline(){
     if(q('#yycpOffline')) return;
-    var el=document.createElement('div');el.id='yycpOffline';el.className='yycp-offline';el.textContent='OFFLINE · CACHED YYC CONTENT AVAILABLE';document.body.appendChild(el);
+    var el=document.createElement('div');el.id='yycpOffline';el.className='yycp-offline';el.textContent='OFFLINE · RECONNECT TO YYC FOR LIVE DATA';document.body.appendChild(el);
     function sync(){el.classList.toggle('show',!navigator.onLine);}
     window.addEventListener('online',sync);window.addEventListener('offline',sync);sync();
   }
