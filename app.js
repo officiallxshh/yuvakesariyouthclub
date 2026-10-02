@@ -1803,7 +1803,7 @@ function leaderDashboard(data){
 
 function memberLegacyPasswordSetup(prefillEmail){
   openModal(
-    '<div class="access-login-screen member-access-screen">'+
+    '<div class="access-login-screen member-access-screen"><button type="button" class="access-inline-close" data-access-close aria-label="Close member login">×</button>'+
       '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC MEMBER ACCOUNT RECOVERY</span><h2 class="access-login-title">Set your member password.</h2><p class="access-login-sub">This is for older approved member accounts whose original password was not carried into the upgraded login system.</p></div><span class="access-login-badge">ONE-TIME SETUP</span></div>'+
       '<form id="memberLegacySetupForm" class="access-login-form" novalidate>'+
         '<div class="access-form-field"><label for="mlEmail">Registered email</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="mlEmail" type="email" autocomplete="email" placeholder="Enter registered email" required></div></div>'+
@@ -1932,7 +1932,7 @@ function leaderLogin(){
     }).catch(function(e){toast(e.message||'Could not restore leader session');});
   }
   openModal(
-    '<div class="access-login-screen leader-access-screen">'+
+    '<div class="access-login-screen leader-access-screen"><button type="button" class="access-inline-close" data-access-close aria-label="Close leader login">×</button>'+
       '<div class="access-login-hero"><div class="access-login-icon">♛</div><div><span class="access-login-kicker">YYC LEADERSHIP PORTAL</span><h2 class="access-login-title">Leadership access.</h2><p class="access-login-sub">Use the email or phone number created for you by YYC administration.</p></div><span class="access-login-badge leader">LEADER</span></div>'+
       '<form id="leaderLoginForm" class="access-login-form" novalidate>'+
         '<div class="access-form-field"><label for="lIdent">Email or phone</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="lIdent" type="text" autocomplete="username" inputmode="email" placeholder="Enter email or phone" required></div></div>'+
@@ -1968,7 +1968,7 @@ function adminLogin(){
     return;
   }
   openModal(
-    '<div class="access-login-screen admin-access-screen">'+
+    '<div class="access-login-screen admin-access-screen"><button type="button" class="access-inline-close" data-access-close aria-label="Close admin login">×</button>'+
       '<div class="access-login-hero"><div class="access-login-icon">⌑</div><div><span class="access-login-kicker">YYC PRIVATE CONTROL</span><h2 class="access-login-title">Admin sign in.</h2><p class="access-login-sub">Enter the administrator credentials to access the complete YYC management system.</p></div><span class="access-login-badge admin">PRIVATE</span></div>'+
       '<form id="adminLoginForm" class="access-login-form" novalidate>'+
         '<div class="access-form-field"><label for="aUser">Admin ID</label><div class="access-input-wrap"><span class="access-input-icon">◉</span><input id="aUser" type="text" autocomplete="username" placeholder="Enter admin ID" required></div></div>'+
