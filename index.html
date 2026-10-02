@@ -679,5 +679,27 @@
   else activeFromScroll();
 })();
 </script>
-<script id="YYC_LUXURY_LOADER">\n(function(){\n  var loader=document.getElementById("yycPageLoader");\n  if(!loader)return;\n  var start=Date.now();\n  function finish(){\n    var wait=Math.max(0,850-(Date.now()-start));\n    window.setTimeout(function(){\n      loader.classList.add("is-done");\n      window.setTimeout(function(){if(loader.parentNode)loader.parentNode.removeChild(loader);},900);\n    },wait);\n  }\n  if(document.readyState==="complete") finish();\n  else window.addEventListener("load",finish,{once:true});\n  window.setTimeout(finish,3200);\n})();\n</script>\n</body>
+<script id="YYC_LUXURY_LOADER">
+(function(){
+  var loader=document.getElementById("yycPageLoader");
+  if(!loader)return;
+  var start=Date.now();
+  var finished=false;
+  function finish(){
+    if(finished)return;
+    finished=true;
+    var wait=Math.max(0,850-(Date.now()-start));
+    window.setTimeout(function(){
+      loader.classList.add("is-done");
+      window.setTimeout(function(){
+        if(loader.parentNode)loader.parentNode.removeChild(loader);
+      },900);
+    },wait);
+  }
+  if(document.readyState==="complete") finish();
+  else window.addEventListener("load",finish,{once:true});
+  window.setTimeout(finish,3200);
+})();
+</script>
+</body>
 </html>
