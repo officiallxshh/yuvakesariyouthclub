@@ -26,7 +26,7 @@ jobs:
           test -n "$YYC_BACKUP_PASSWORD"
           openssl enc -aes-256-cbc -pbkdf2 -salt -in yyc-backup.json -out yyc-backup.json.enc -pass env:YYC_BACKUP_PASSWORD
       - name: Upload encrypted backup artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: yyc-encrypted-backup-${{ github.run_number }}
           path: yyc-backup.json.enc
