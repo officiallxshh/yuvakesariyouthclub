@@ -60,3 +60,6 @@ Latest hero-label correction: “YUVAKESARI YOUTH CLUB” is shown above “SUBR
 
 ## Real backend
 Supabase project: `Yuvakesari Youth Club` (Asia South). Member registration, approval, login, sessions, digital cards, QR verification, leaders, updates, gallery and site settings use the hosted database. The frontend uses the Supabase publishable key; no secret/service-role key is included in GitHub.
+
+
+<!-- Preflight verification: 2026-10-02T16:57:51.698Z -->
