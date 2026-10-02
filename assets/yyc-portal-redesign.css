@@ -976,3 +976,16 @@
     max-width:1360px!important;
   }
 }
+
+
+/* ===== PR #10 RESOLUTION — LOGIN VIEWPORT HEIGHT =====
+   Preserve Build 6 desktop width proportions while allowing the login
+   surface to use the available viewport height. */
+@media (min-width: 901px){
+  .modal-shell:has(.access-login-screen){
+    max-height:calc(100svh - 20px)!important;
+  }
+  .modal-shell:has(.access-login-screen) .access-login-screen{
+    min-height:calc(100svh - 44px)!important;
+  }
+}
