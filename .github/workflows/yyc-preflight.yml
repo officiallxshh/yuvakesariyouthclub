@@ -37,5 +37,8 @@ jobs:
           node --check scripts/backup-supabase.mjs
           node --check scripts/production-monitor.mjs
 
+      - name: Full repository audit
+        run: node scripts/yyc-full-audit.mjs
+
       - name: Public site smoke test
         run: node scripts/smoke-http.mjs
