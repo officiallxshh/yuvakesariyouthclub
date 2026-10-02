@@ -987,3 +987,23 @@
     min-height:calc(100svh - 44px)!important;
   }
 }
+
+
+/* ===== BUILD 6 — LOGIN CLOSE BUTTON ALWAYS ACCESSIBLE ===== */
+.access-login-screen{overflow:auto!important;}
+.access-login-screen .access-panel-close{
+  position:sticky!important;
+  top:10px!important;
+  right:auto!important;
+  margin:0 0 -44px auto!important;
+  display:grid!important;
+  z-index:9999!important;
+  pointer-events:auto!important;
+  flex:none!important;
+}
+@media(max-width:620px){
+  .access-login-screen .access-panel-close{
+    top:8px!important;
+    margin-bottom:-42px!important;
+  }
+}
