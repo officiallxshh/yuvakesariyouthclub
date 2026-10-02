@@ -2037,10 +2037,10 @@ function adminPanel(tab,forceRefresh){
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
-    $$('.admin-tab').forEach(function(b){
+    $$$('.admin-tab').forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
-        $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
+        $$$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
         renderAdminTab(selected,d);
         if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
         var workspace=$('#adminWorkspace');
@@ -2165,7 +2165,7 @@ function renderAdminTab(tab,d){
     $$('#adminWorkspace [data-admin-tab]').forEach(function(btn){
       btn.addEventListener('click',function(){
         var target=btn.getAttribute('data-admin-tab');
-        $('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
+        $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
         renderAdminTab(target,d);
       });
     });
