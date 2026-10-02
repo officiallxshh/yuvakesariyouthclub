@@ -976,3 +976,14 @@
     max-width:1360px!important;
   }
 }
+
+
+/* ===== PORTAL LOGIN VIEWPORT — RESOLVED ON BUILD 6 ===== */
+@media (min-width:901px){
+  .modal-shell:has(.access-login-screen){
+    max-height:calc(100svh - 20px)!important;
+  }
+  .modal-shell:has(.access-login-screen) .access-login-screen{
+    min-height:calc(100svh - 44px)!important;
+  }
+}
