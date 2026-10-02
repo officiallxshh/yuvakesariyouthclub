@@ -702,3 +702,80 @@ body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
     animation:none!important;
   }
 }
+
+
+/* =========================================================
+   YYC HERO BACKGROUND VISIBILITY — richer landscape, less crush
+   ========================================================= */
+
+/* Let the actual Tulunad landscape read clearly instead of
+   getting buried under the existing dark treatment. */
+.hero-photo{
+  filter:saturate(1.08) contrast(1.045) brightness(.99);
+  background-position:50% 44%;
+}
+
+/* Softer side falloff: keeps text readable while revealing
+   the hills/sky and foreground of the photograph. */
+.hero-vignette{
+  background:
+    linear-gradient(90deg,
+      rgba(2,4,7,.48) 0%,
+      rgba(3,5,8,.24) 32%,
+      rgba(3,5,8,.08) 60%,
+      rgba(3,5,8,.46) 100%),
+    linear-gradient(180deg,
+      rgba(2,4,7,.34) 0%,
+      rgba(2,4,7,.02) 30%,
+      rgba(2,5,8,.05) 67%,
+      rgba(2,5,8,.58) 100%);
+}
+
+/* A restrained warm daylight lift across the upper landscape. */
+.hero-glow{
+  background:
+    radial-gradient(ellipse 42% 32% at 72% 18%,rgba(255,205,119,.18),transparent 68%),
+    radial-gradient(ellipse 35% 25% at 30% 26%,rgba(255,229,181,.08),transparent 72%),
+    radial-gradient(circle at 50% 48%,rgba(245,195,92,.045),transparent 34%);
+}
+
+/* Make the fixed navigation feel integrated with the hero,
+   rather than like a separate black bar. */
+.topbar{
+  background:linear-gradient(180deg,rgba(2,5,8,.82),rgba(4,8,11,.66));
+  border-bottom-color:rgba(239,196,100,.14);
+}
+body.yyc-premium-scrolled .topbar{
+  background:rgba(5,9,12,.84);
+}
+
+/* Add a very subtle atmospheric horizon bloom. */
+.hero::before{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  bottom:7%;
+  height:30%;
+  z-index:-2;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(220,200,160,.055),transparent 68%);
+  filter:blur(18px);
+  opacity:.8;
+}
+
+@media(max-width:760px){
+  .hero-photo{
+    filter:saturate(1.06) contrast(1.035) brightness(1.01);
+    background-position:50% 46%;
+  }
+  .hero-vignette{
+    background:
+      linear-gradient(180deg,
+        rgba(2,4,7,.28) 0%,
+        rgba(2,4,7,.04) 28%,
+        rgba(2,5,8,.12) 64%,
+        rgba(2,5,8,.64) 100%);
+  }
+  .hero-glow{opacity:.72}
+}
