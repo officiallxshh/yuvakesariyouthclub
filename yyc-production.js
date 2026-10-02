@@ -2,7 +2,7 @@
 (function(){
   'use strict';
 
-  var PROD_VERSION='2026.09.29-r7';
+  var PROD_VERSION='2026.10.02-r8';
   var SUPA_URL='https://vrllozfzheikjbhxvpkx.supabase.co';
   var SUPA_KEY='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -365,9 +365,46 @@
     }).observe(q('#modalContent')||document.body,{childList:true,subtree:true});
   }
 
+
+  /* Adaptive motion: keep the premium animation system, but automatically tone down
+     decorative effects on Save-Data / slow mobile connections. This never changes
+     application logic, Supabase requests, login flows, or content rendering. */
+  function installAdaptiveMotion(){
+    if(window.__yycpAdaptiveMotionInstalled)return;
+    window.__yycpAdaptiveMotionInstalled=true;
+
+    function sync(){
+      var reduce=false, lowData=false;
+      try{ reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
+      try{
+        var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+        if(c){
+          var slow=/^(slow-2g|2g)$/i.test(String(c.effectiveType||''));
+          var down=Number(c.downlink);
+          lowData=!!c.saveData||slow||(!isNaN(down)&&down>0&&down<0.8);
+        }
+      }catch(e){}
+      document.body.classList.toggle('yyc-reduced-motion',reduce);
+      document.body.classList.toggle('yyc-low-data',!reduce&&lowData);
+    }
+
+    sync();
+    try{
+      var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+      if(c&&typeof c.addEventListener==='function')c.addEventListener('change',sync,{passive:true});
+    }catch(e){}
+    try{
+      var mq=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)');
+      if(mq){
+        if(typeof mq.addEventListener==='function')mq.addEventListener('change',sync);
+        else if(typeof mq.addListener==='function')mq.addListener(sync);
+      }
+    }catch(e){}
+  }
+
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
-    installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
+    installAdaptiveMotion();installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
       var adminRoot=q('#modalContent')||document.body;
       new MutationObserver(function(){
