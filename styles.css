@@ -4368,3 +4368,35 @@ main > section.section{
 #swagsGrid,#updatesGrid,#eventsGrid,#galleryGrid{display:grid!important;}
 #join .join-card{display:flex!important;visibility:visible!important;opacity:1!important;transform:none!important;}
 /* ===== END PUBLIC PAGE FLOW RECOVERY ===== */
+
+
+/* ===== YYC ADAPTIVE MOTION / LOW-DATA SAFETY =====
+   Decorative motion only. Content, navigation, auth and data loading are untouched. */
+body.yyc-low-data .hero-photo,
+body.yyc-low-data .hero-vignette,
+body.yyc-low-data .hero-logo,
+body.yyc-low-data .ambient{
+  animation:none!important;
+}
+body.yyc-low-data .hero-photo{
+  transform:scale(1.028)!important;
+}
+body.yyc-low-data .ambient{
+  opacity:.12!important;
+  filter:blur(42px)!important;
+}
+body.yyc-low-data .yyc-scroll-progress span{
+  transition:none!important;
+}
+body.yyc-reduced-motion .hero-photo,
+body.yyc-reduced-motion .hero-vignette,
+body.yyc-reduced-motion .hero-logo,
+body.yyc-reduced-motion .ambient{
+  animation:none!important;
+  transition:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  body.yyc-reduced-motion *{
+    scroll-behavior:auto!important;
+  }
+}
