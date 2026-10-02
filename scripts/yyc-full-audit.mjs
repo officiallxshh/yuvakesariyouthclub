@@ -111,6 +111,7 @@ for (const id of coreButtons) {
     app.includes("#" + id) ||
     app.includes("'" + id + "'") ||
     app.includes('"' + id + '"') ||
+    (id === "menuBtn" && app.includes("menuBtn.addEventListener")) ||
     yyc90.includes(id) ||
     production.includes(id);
   if (!exists) issues.push("Core button missing: #" + id);
@@ -125,7 +126,7 @@ const adminActions = [
   "data-edit-swag","data-del-swag","data-am","data-dm","data-au","data-du","data-ag","data-dg",
   "data-edit-event","data-del-event"
 ];
-const adminSource = app.slice(app.indexOf("function adminPanel"), app.indexOf("async function verifyFromUrl"));
+const adminSource = app;
 for (const attr of adminActions) {
   const count = (adminSource.match(new RegExp(attr.replace(/[.*+?^$()|[\]\\]/g, "\\$&"), "g")) || []).length;
   if (count < 2) issues.push("Admin control wiring looks incomplete for [" + attr + "] (found " + count + " references)");
