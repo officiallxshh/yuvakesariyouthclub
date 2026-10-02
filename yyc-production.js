@@ -51,7 +51,10 @@
 
   function installTopSearch(){
     var nav=q('.desktop-nav');
-    if(!nav||q('#yycpSearchTop')) return;
+    if(!nav) return;
+    var existing=qa('#yycpSearchTop');
+    if(existing.length>1) existing.slice(1).forEach(function(x){x.remove();});
+    if(existing.length) return;
     var b=document.createElement('button');b.type='button';b.id='yycpSearchTop';b.className='nav-admin yycp-search-top';b.innerHTML='⌕ Search';
     b.onclick=function(){
       if(typeof window.yycOpenSearch==='function') window.yycOpenSearch();
