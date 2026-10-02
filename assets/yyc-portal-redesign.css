@@ -936,3 +936,43 @@
 }
 @media(max-width:460px){.modal-shell:has(.access-login-screen){max-height:calc(100svh - 6px)!important}}
 @media(prefers-reduced-motion:reduce){.access-inline-close{transition:none!important}}
+
+
+/* ===== YYC BUILD 6 — DESKTOP PORTAL REFERENCE FIT =====
+   Match the supplied Build 6 login/admin screenshots only.
+   No auth, data, content, navigation or mobile behavior changes. */
+@media (min-width: 1200px){
+  .modal-shell:has(.access-login-screen){
+    width:min(82vw,1568px)!important;
+    max-width:1568px!important;
+  }
+
+  .modal-shell:has(.admin-shell){
+    width:min(92vw,1760px)!important;
+    max-width:1760px!important;
+  }
+
+  .modal-shell:has(.admin-shell) .admin-shell{
+    width:100%;
+  }
+
+  .modal-shell:has(.admin-shell) .admin-tabs,
+  .modal-shell:has(.admin-shell) .admin-workspace,
+  .modal-shell:has(.admin-shell) .admin-header,
+  .modal-shell:has(.admin-shell) .admin-session-footer{
+    width:min(100%,1560px);
+  }
+}
+
+/* Keep the reference proportions on medium desktop screens without affecting mobile. */
+@media (min-width: 901px) and (max-width: 1199px){
+  .modal-shell:has(.access-login-screen){
+    width:min(92vw,1240px)!important;
+    max-width:1240px!important;
+  }
+
+  .modal-shell:has(.admin-shell){
+    width:min(96vw,1360px)!important;
+    max-width:1360px!important;
+  }
+}
