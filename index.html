@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080b">
-<meta name="yyc-build" content="20261002-10">
+<meta name="yyc-build" content="20261002-11">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -92,6 +92,7 @@
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20260923-12">
 <link rel="stylesheet" href="yyc-production.css?v=20261002-07">
 <link rel="stylesheet" href="assets/yyc-portal-redesign.css?v=20261002-10">
+<link rel="stylesheet" href="assets/yyc-premium-experience.css?v=20261002-11">
 </head>
 <body class="yyC-opening">
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
@@ -592,6 +593,32 @@
 })();
 </script>
 
+<div class="yyc-premium-progress" aria-hidden="true"><span></span></div><button class="yyc-premium-backtop" id="yycPremiumBacktop" type="button" aria-label="Back to top">↑</button>
+<script id="YYC_PREMIUM_EXPERIENCE">
+(function(){
+  'use strict';
+  var progress=document.querySelector('.yyc-premium-progress span');
+  var back=document.getElementById('yycPremiumBacktop');
+  var ticking=false;
+  function update(){
+    var max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
+    var pct=Math.min(100,Math.max(0,(window.scrollY/max)*100));
+    if(progress) progress.style.width=pct+'%';
+    document.body.classList.toggle('yyc-premium-scrolled',window.scrollY>36);
+    if(back) back.classList.toggle('visible',window.scrollY>520);
+    ticking=false;
+  }
+  function requestUpdate(){
+    if(ticking)return;
+    ticking=true;
+    window.requestAnimationFrame(update);
+  }
+  window.addEventListener('scroll',requestUpdate,{passive:true});
+  window.addEventListener('resize',requestUpdate,{passive:true});
+  if(back) back.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  update();
+})();
+</script>
 <script id="YYC_NAV_ACTIVE_STATE">
 (function(){
   'use strict';
