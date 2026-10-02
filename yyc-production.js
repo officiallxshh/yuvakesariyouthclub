@@ -337,13 +337,22 @@
     if(window.__yycpDraftRecovery||!window.MutationObserver)return;
     window.__yycpDraftRecovery=true;
     var prefix='yycp_draft_';
-    document.addEventListener('input',function(e){
-      var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;if(!form)return;
+    function saveDraft(form){
+      if(!form)return;
       try{
         var data={saved_at:Date.now(),fields:{}};
-        qa('input,textarea,select').forEach(function(el){if(!el.id)return;if(el.type==='password'||el.type==='file')return;data.fields[el.id]=el.type==='checkbox'?el.checked:el.value;});
+        Array.prototype.slice.call(form.querySelectorAll('input,textarea,select')).forEach(function(el){if(!el.id)return;if(el.type==='password'||el.type==='file')return;data.fields[el.id]=el.type==='checkbox'?el.checked:el.value;});
         localStorage.setItem(prefix+form.id,JSON.stringify(data));
       }catch(_){}
+    }
+    document.addEventListener('input',function(e){
+      var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;if(!form)return;
+      clearTimeout(form.__yycpDraftTimer);
+      form.__yycpDraftTimer=setTimeout(function(){saveDraft(form);},350);
+    },true);
+    document.addEventListener('change',function(e){
+      var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;if(!form)return;
+      saveDraft(form);
     },true);
     document.addEventListener('submit',function(e){
       var form=e.target&&e.target.matches&&e.target.matches('#modalContent form[id^="admin"]')?e.target:null;
