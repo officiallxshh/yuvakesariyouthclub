@@ -1064,7 +1064,7 @@ function yycOpenSearch(){
 }
 
 async function yycInitRealtime(){
-  if(window.__yycRealtimeInitStarted||!window.supabaseConfigForRealtime)return;
+  if(window.__yycRealtimeInitStarted)return;
   window.__yycRealtimeInitStarted=true;
   try{
     await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.91.0/dist/umd/supabase.min.js');
