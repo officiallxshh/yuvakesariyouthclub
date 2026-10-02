@@ -2245,7 +2245,7 @@ function renderAdminTab(tab,d){
     var nf=$('#adminNotificationForm');
     nf.addEventListener('submit',async function(e){
       e.preventDefault();
-      var btn=nf.querySelector('button[type="submit]')||nf.querySelector('button[type="submit"]');btn.disabled=true;
+      var btn=nf.querySelector('button[type="submit"]');btn.disabled=true;
       try{
         var r=await rpc('admin_portal',{p_token:adminToken,p_action:'send_notification',p_payload:{member_id:$('#anMember').value,title:$('#anTitle').value.trim(),body:$('#anBody').value.trim(),type:$('#anType').value,link:$('#anLink').value.trim()}});
         if(!r||!r.ok)throw new Error(r&&r.error||'Could not send notification');
