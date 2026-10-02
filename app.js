@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261002-06';
+var YYC_APP_BUILD='20261002-07';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -827,7 +827,7 @@ function renderPublic(){
         '<div class="swag-actions">'+cta+'</div></div></article>';
     },'Swag collection coming soon.','swag-card');
   }
-  $('.yyc-read-more').forEach(function(btn){
+  $$('.yyc-read-more').forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
       if(!key) return;
@@ -1204,7 +1204,7 @@ function bindNavigation(){
       var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
       /* Highlight the tab immediately and keep it locked during the smooth scroll. */
       window.__yycNavLockUntil=Date.now()+1800;
-      $('.desktop-nav .nav-link').forEach(function(a){
+      $$('.desktop-nav .nav-link').forEach(function(a){
         a.classList.toggle('active',a===link);
       });
       yycAnimateNavigation(target);
@@ -1643,7 +1643,7 @@ function yycOpenMemberNotifications(){
     list.innerHTML=items.map(function(n){
       return '<article class="yyc-notification-item '+(!n.is_read?'unread':'')+'"><div class="yyc-notification-dot"></div><div class="yyc-notification-main"><span>'+esc(String(n.type||'general').toUpperCase())+' · '+esc(fmtDate(n.created_at))+'</span><h3>'+esc(n.title||'YYC notification')+'</h3>'+(n.body?'<p>'+esc(n.body)+'</p>':'')+(n.link?'<a href="'+esc(n.link)+'" target="_blank" rel="noopener">OPEN LINK ↗</a>':'')+'</div>'+(!n.is_read?'<button type="button" class="mini-btn" data-mark-notification="'+esc(n.id)+'">READ</button>':'')+'</article>';
     }).join('');
-    $('#yycNotificationList [data-mark-notification]').forEach(function(btn){
+    $$('#yycNotificationList [data-mark-notification]').forEach(function(btn){
       btn.addEventListener('click',async function(){
         btn.disabled=true;
         try{
@@ -2142,7 +2142,7 @@ function renderAdminTab(tab,d){
     $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
     $('#exportMembersCSV').addEventListener('click',function(){exportYYCMembersCSV(members);});
-    $('[data-mark-duplicate]').forEach(function(b){b.addEventListener('click',async function(){
+    $$('[data-mark-duplicate]').forEach(function(b){b.addEventListener('click',async function(){
       await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-mark-duplicate'),p_action:'mark_duplicate'},'Duplicate application marked');
     });});
     return;
@@ -2186,8 +2186,8 @@ function renderAdminTab(tab,d){
           '<div class="admin-actions"><button type="button" class="mini-btn" data-edit-swag="'+sw.id+'">Edit</button><button type="button" class="mini-btn" data-del-swag="'+sw.id+'">Delete</button></div></div></article>';
       }).join('')+'</div>':'<div class="empty">No swag items yet. Add your first item.</div>');
     $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
-    $('[data-edit-swag]').forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
-    $('[data-del-swag]').forEach(function(b){b.addEventListener('click',async function(){
+    $$('[data-edit-swag]').forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
+    $$('[data-del-swag]').forEach(function(b){b.addEventListener('click',async function(){
       if(!confirm('Delete this YYC swag item?')) return;
       var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
       if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
@@ -2229,7 +2229,7 @@ function renderAdminTab(tab,d){
         }).join('')+'</div>':'<div class="empty">No events stored yet. Add the first YYC programme.</div>');
       $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
       $$('[data-edit-event]').forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
-      $('[data-del-event]').forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
+      $$('[data-del-event]').forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
       (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value,rows=$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();
     }).catch(function(e){
       a.innerHTML='<div class="storage-error"><strong>Could not load events.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="eventsRetry">Retry</button></div>';
