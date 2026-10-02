@@ -1,0 +1,803 @@
+/* YYC PORTAL REDESIGN — 20261002-08
+   UI-only enhancement for member, leader and admin access surfaces.
+   Keeps existing auth/session/data wiring unchanged. */
+
+/* ===== PORTAL MODAL STAGE ===== */
+.modal-shell:has(.access-login-screen),
+.modal-shell:has(.premium-member-dashboard),
+.modal-shell:has(.admin-shell){
+  width:min(1180px,calc(100vw - 40px));
+  max-width:1180px;
+  padding:18px;
+  border:1px solid rgba(229,193,111,.20);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 14% 8%,rgba(229,193,111,.07),transparent 28%),
+    radial-gradient(circle at 90% 80%,rgba(85,150,124,.045),transparent 24%),
+    linear-gradient(145deg,rgba(7,12,16,.985),rgba(3,7,10,.985));
+  box-shadow:0 40px 130px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.018) inset;
+  overflow:auto;
+}
+.modal-shell:has(.access-login-screen) .modal-close,
+.modal-shell:has(.premium-member-dashboard) .modal-close,
+.modal-shell:has(.admin-shell) .modal-close{
+  width:42px!important;
+  height:42px!important;
+  top:13px!important;
+  right:13px!important;
+  border:1px solid rgba(229,193,111,.16)!important;
+  background:rgba(3,7,10,.92)!important;
+  color:#e6d3a7!important;
+  border-radius:14px!important;
+  font-size:23px!important;
+}
+
+/* ===== LOGIN — PREMIUM TWO-COLUMN ACCESS ===== */
+.access-login-screen{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(340px,.92fr) minmax(360px,1.08fr);
+  grid-template-rows:1fr auto;
+  min-height:520px;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid rgba(238,200,118,.10);
+  border-radius:22px;
+  background:
+    linear-gradient(105deg,rgba(8,14,18,.97) 0%,rgba(8,14,18,.985) 45%,rgba(5,9,12,.985) 45%,rgba(5,9,12,.985) 100%);
+}
+.access-login-screen::before{
+  content:"";
+  position:absolute;
+  left:-110px;
+  top:-120px;
+  width:460px;
+  height:460px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle,rgba(225,184,96,.12) 0,rgba(225,184,96,.025) 35%,transparent 67%);
+  pointer-events:none;
+}
+.access-login-screen::after{
+  content:"";
+  position:absolute;
+  top:20px;
+  bottom:20px;
+  left:45%;
+  width:1px;
+  background:linear-gradient(transparent,rgba(229,193,111,.15),transparent);
+  pointer-events:none;
+}
+.access-login-hero{
+  position:relative;
+  z-index:1;
+  grid-column:1;
+  grid-row:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:470px;
+  padding:56px 46px 42px;
+  border-right:1px solid rgba(255,255,255,.035);
+  background:
+    radial-gradient(circle at 22% 30%,rgba(220,177,90,.075),transparent 34%),
+    radial-gradient(circle at 8% 88%,rgba(64,130,105,.05),transparent 27%),
+    linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.004));
+}
+.access-login-hero::after{
+  content:"YUVAKESARI  /  PRIVATE PORTAL";
+  position:absolute;
+  left:46px;
+  bottom:28px;
+  color:rgba(227,209,170,.34);
+  font:700 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.22em;
+}
+.access-login-icon{
+  width:100px;
+  height:100px;
+  margin:0 0 26px;
+  display:grid;
+  place-items:center;
+  border-radius:28px;
+  overflow:hidden;
+  border:1px solid rgba(229,193,111,.38);
+  background:
+    radial-gradient(circle at 50% 28%,rgba(246,214,150,.11),transparent 50%),
+    rgba(2,6,9,.74);
+  color:transparent;
+  font-size:0;
+  box-shadow:0 20px 54px rgba(0,0,0,.28),0 0 0 8px rgba(229,193,111,.035);
+}
+.access-login-icon::before{
+  content:"";
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  background:url('./yyc-logo-clean.webp') center/contain no-repeat;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.3));
+}
+.access-login-kicker{
+  display:block;
+  margin-bottom:10px;
+  color:#9f9688;
+  font:800 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.24em;
+}
+.access-login-title{
+  margin:0;
+  max-width:430px;
+  color:#f3e7d1;
+  font:600 clamp(42px,4.4vw,64px)/.94 "Cormorant Garamond",serif;
+  letter-spacing:.01em;
+}
+.access-login-sub{
+  max-width:430px;
+  margin:15px 0 0;
+  color:#8f9693;
+  font:500 12px/1.75 "Space Grotesk",sans-serif;
+}
+.access-login-badge{
+  order:10;
+  margin-top:25px;
+  padding:9px 12px;
+  border:1px solid rgba(229,193,111,.20);
+  border-radius:999px;
+  color:#dbc28f;
+  background:rgba(229,193,111,.045);
+  font:900 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.20em;
+}
+.member-access-screen .access-login-badge{color:#a9dbbf;border-color:rgba(113,207,160,.20);background:rgba(113,207,160,.035)}
+.admin-access-screen .access-login-badge{color:#f1cb80}
+
+.access-login-form{
+  position:relative;
+  z-index:2;
+  grid-column:2;
+  grid-row:1;
+  align-self:center;
+  width:min(100%,520px);
+  margin:0 auto;
+  padding:55px 52px 40px;
+}
+.access-login-form::before{
+  content:"SIGN IN";
+  display:block;
+  margin-bottom:19px;
+  color:#d6b978;
+  font:900 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.24em;
+}
+.access-form-field{
+  margin-top:17px;
+}
+.access-form-field label{
+  display:block;
+  margin:0 0 7px 2px;
+  color:#c5bcac;
+  font:800 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.access-input-wrap,
+.access-password-field{
+  position:relative;
+  display:flex;
+  align-items:center;
+  min-height:54px;
+  border:1px solid rgba(231,200,137,.14);
+  border-radius:15px;
+  background:rgba(255,255,255,.028);
+  transition:border-color .22s ease,background .22s ease,box-shadow .22s ease,transform .22s ease;
+}
+.access-input-wrap:focus-within,
+.access-password-field:focus-within{
+  border-color:rgba(232,195,111,.50);
+  background:rgba(232,195,111,.035);
+  box-shadow:0 0 0 4px rgba(232,195,111,.05),0 14px 30px rgba(0,0,0,.15);
+}
+.access-input-icon{
+  width:44px;
+  flex:0 0 44px;
+  display:grid;
+  place-items:center;
+  color:#b89b61;
+  font-size:13px;
+}
+.access-input-wrap input,
+.access-password-field input{
+  width:100%;
+  min-width:0;
+  height:52px;
+  padding:0 15px 0 0;
+  border:0;
+  outline:0;
+  color:#eee7db;
+  background:transparent;
+  font:600 12px/1 "Inter",sans-serif;
+}
+.access-input-wrap input::placeholder,
+.access-password-field input::placeholder{color:#69716f}
+.access-password-toggle{
+  flex:0 0 auto;
+  margin-right:8px;
+  min-width:52px;
+  min-height:34px;
+  padding:0 10px;
+  border:1px solid rgba(231,200,137,.10);
+  border-radius:10px;
+  background:rgba(255,255,255,.028);
+  color:#bfa875;
+  font:900 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.10em;
+}
+.access-password-toggle:hover{border-color:rgba(231,200,137,.26);background:rgba(231,200,137,.055)}
+.access-login-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:17px;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:12px;
+  background:rgba(255,255,255,.015);
+  color:#6e7774;
+  font:700 7px/1.35 "Space Grotesk",sans-serif;
+  letter-spacing:.05em;
+}
+.access-login-meta span:first-child{color:#86c9a2}
+.admin-access-screen .access-login-meta span:first-child{color:#d9ba75}
+.access-login-actions{
+  margin-top:17px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+}
+.access-submit{
+  width:100%;
+  min-height:54px!important;
+  border-radius:15px!important;
+  font-size:9px!important;
+  letter-spacing:.16em!important;
+  box-shadow:0 16px 32px rgba(135,93,27,.17)!important;
+}
+.access-submit:hover{transform:translateY(-2px)!important;box-shadow:0 20px 40px rgba(135,93,27,.24)!important}
+.access-login-status{
+  min-height:20px;
+  margin-top:12px;
+  padding:0 2px;
+  color:#7d8885;
+  font:700 8px/1.45 "Space Grotesk",sans-serif;
+  letter-spacing:.04em;
+}
+.access-login-status.is-error{
+  padding:10px 12px;
+  border:1px solid rgba(225,122,108,.18);
+  border-radius:11px;
+  background:rgba(225,122,108,.04);
+  color:#dba69d;
+}
+.access-login-status.is-success{
+  padding:10px 12px;
+  border:1px solid rgba(107,208,159,.15);
+  border-radius:11px;
+  background:rgba(107,208,159,.03);
+  color:#8ed2ad;
+}
+.access-login-footer{
+  position:relative;
+  z-index:2;
+  grid-column:1 / -1;
+  grid-row:2;
+  margin:0 30px;
+  padding:14px 18px 16px;
+  border-top:1px solid rgba(255,255,255,.055);
+  color:#5e6765;
+  font:600 7px/1.4 "Space Grotesk",sans-serif;
+  letter-spacing:.08em;
+  text-align:center;
+}
+.admin-access-screen{background:linear-gradient(105deg,rgba(10,11,12,.98) 0%,rgba(10,11,12,.98) 45%,rgba(7,8,9,.985) 45%,rgba(7,8,9,.985) 100%)}
+.admin-access-screen::after{background:linear-gradient(transparent,rgba(231,190,99,.24),transparent)}
+.admin-access-screen .access-login-form::before{content:"ADMINISTRATOR SIGN IN"}
+.leader-access-screen .access-login-form::before{content:"LEADERSHIP SIGN IN"}
+.member-access-screen .access-login-form::before{content:"MEMBER SIGN IN"}
+
+/* ===== LOGGED-IN MEMBER / LEADER PORTAL ===== */
+.modal-shell:has(.premium-member-dashboard){
+  width:min(1240px,calc(100vw - 32px));
+  max-width:1240px;
+}
+.premium-member-dashboard{
+  position:relative;
+  padding:2px 4px 8px;
+  color:#eee7db;
+}
+.premium-member-dashboard::before{
+  content:"";
+  position:absolute;
+  top:-16px;
+  right:-16px;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(218,174,83,.075),transparent 66%);
+  pointer-events:none;
+}
+.premium-member-dashboard .portal-ribbon{
+  margin:0 0 18px;
+  padding:11px 13px;
+  border-radius:15px;
+  background:linear-gradient(120deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  backdrop-filter:blur(12px);
+}
+.premium-member-dashboard .portal-ribbon .portal-icon{
+  width:38px;
+  height:38px;
+  border-radius:12px;
+}
+.premium-member-dashboard .portal-session-state{
+  font-size:7px;
+}
+.premium-member-dashboard .member-dashboard-head{
+  position:relative;
+  margin:0 auto 16px;
+  width:min(100%,1120px);
+  padding:10px 10px 8px;
+}
+.premium-member-dashboard .member-dashboard-head::after{
+  content:"";
+  display:block;
+  width:100%;
+  height:1px;
+  margin-top:18px;
+  background:linear-gradient(90deg,rgba(229,193,111,.35),rgba(229,193,111,.07),transparent);
+}
+.premium-member-dashboard .yyc-portal-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+}
+.premium-member-dashboard .modal-kicker{
+  margin-bottom:6px;
+  color:#a99878;
+  font:900 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.22em;
+}
+.premium-member-dashboard .modal-title{
+  margin:0;
+  color:#f1e7d6;
+  font:600 clamp(34px,4vw,56px)/.98 "Cormorant Garamond",serif;
+}
+.premium-member-dashboard .modal-sub{
+  margin:10px 0 0;
+  max-width:680px;
+  color:#818a87;
+  font-size:10px;
+  line-height:1.6;
+}
+.yyc-portal-account{position:relative;flex:0 0 auto}
+.yyc-portal-avatar-btn{
+  position:relative;
+  width:64px;
+  height:64px;
+  padding:3px;
+  border:1px solid rgba(229,193,111,.30);
+  border-radius:20px;
+  background:rgba(255,255,255,.025);
+  box-shadow:0 12px 30px rgba(0,0,0,.20);
+  overflow:visible;
+}
+.yyc-portal-avatar-btn img{
+  width:100%;
+  height:100%;
+  border-radius:16px;
+  object-fit:cover;
+  display:block;
+}
+.yyc-portal-avatar-caret{
+  position:absolute;
+  right:-5px;
+  bottom:-5px;
+  width:21px;
+  height:21px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(229,193,111,.26);
+  border-radius:50%;
+  background:#090e11;
+  color:#d9be7d;
+  font-size:11px;
+}
+.yyc-portal-menu{
+  position:absolute;
+  right:0;
+  top:74px;
+  width:min(290px,calc(100vw - 42px));
+  z-index:30;
+  padding:8px;
+  border:1px solid rgba(229,193,111,.17);
+  border-radius:18px;
+  background:rgba(6,10,13,.98);
+  box-shadow:0 24px 70px rgba(0,0,0,.56);
+}
+.yyc-portal-menu-head{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+}
+.yyc-portal-menu-head img{
+  width:39px;
+  height:39px;
+  flex:0 0 39px;
+  border-radius:12px;
+  object-fit:cover;
+}
+.yyc-portal-menu-head b{display:block;color:#e7dece;font-size:11px}
+.yyc-portal-menu-head small{display:block;margin-top:4px;color:#7e8683;font-size:7px;letter-spacing:.08em}
+.yyc-portal-menu-item{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:3px;
+  padding:10px 11px;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  color:#b9b2a4;
+  text-align:left;
+  font:800 8px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.07em;
+}
+.yyc-portal-menu-item:hover{background:rgba(229,193,111,.055);color:#efd49b}
+.yyc-portal-menu-item span{color:#c5a969}
+
+.premium-member-dashboard .portal-summary-grid{
+  width:min(100%,1120px)!important;
+  margin:0 auto 16px!important;
+  gap:10px!important;
+}
+.premium-member-dashboard .portal-summary-card{
+  position:relative;
+  min-height:86px;
+  padding:15px 16px!important;
+  border-radius:16px!important;
+  overflow:hidden;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.042),rgba(255,255,255,.012));
+  box-shadow:0 10px 24px rgba(0,0,0,.10);
+}
+.premium-member-dashboard .portal-summary-card::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:linear-gradient(180deg,#dcb76e,transparent);
+  opacity:.7;
+}
+.premium-member-dashboard .portal-summary-card small{
+  font-size:7px!important;
+  letter-spacing:.16em!important;
+}
+.premium-member-dashboard .portal-summary-card b{
+  font-size:14px!important;
+  margin-top:8px!important;
+}
+
+.premium-member-dashboard .yyc-digital-card-wrap{
+  width:min(100%,980px);
+  margin:18px auto 0;
+}
+.premium-member-dashboard .yyc-card-hint{
+  margin-top:9px;
+  color:#646e6b;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.14em;
+}
+.premium-member-dashboard .yyc-digital-card{
+  border-radius:25px!important;
+  box-shadow:0 26px 70px rgba(0,0,0,.34),0 0 0 1px rgba(229,193,111,.06);
+}
+.premium-member-dashboard .yyc-card-download-bar{
+  width:min(100%,980px);
+  margin:15px auto 0;
+  padding:14px 16px;
+  border-radius:16px;
+  background:linear-gradient(110deg,rgba(229,193,111,.045),rgba(255,255,255,.018));
+}
+.premium-member-dashboard .yyc-card-download-bar b{font-size:9px}
+.premium-member-dashboard .yyc-card-download-bar span{font-size:8px}
+
+.premium-member-dashboard .portal-action-row{
+  width:min(100%,980px);
+  margin:14px auto 0!important;
+  padding:14px 16px!important;
+  border-radius:16px!important;
+  background:linear-gradient(110deg,rgba(255,255,255,.024),rgba(255,255,255,.011));
+}
+.premium-member-dashboard .portal-action-row>div:first-child b{
+  color:#dfcea6;
+  font-size:8px;
+}
+.premium-member-dashboard .portal-action-row>div:first-child span{font-size:8px!important}
+.premium-member-dashboard .portal-action-row .form-actions{gap:7px}
+.premium-member-dashboard .portal-action-row .btn{min-height:40px!important}
+
+.premium-member-dashboard .portal-note{
+  width:min(100%,980px);
+  border-radius:13px;
+  background:rgba(103,192,148,.024);
+}
+.premium-member-dashboard .yyc-session-panel{
+  width:min(100%,980px);
+  margin:15px auto 0;
+  border-radius:17px;
+  background:linear-gradient(145deg,rgba(255,255,255,.028),rgba(255,255,255,.01));
+}
+
+/* ===== ADMIN CONTROL CENTER ===== */
+.modal-shell:has(.admin-shell){
+  width:min(1360px,calc(100vw - 28px));
+  max-width:1360px;
+  padding:15px;
+}
+.admin-shell{
+  position:relative;
+  min-height:650px;
+  padding:0 2px 4px;
+}
+.admin-portal-ribbon{
+  position:sticky;
+  top:-15px;
+  z-index:25;
+  margin:0 0 14px!important;
+  padding:10px 13px!important;
+  border-radius:15px!important;
+  background:rgba(7,11,14,.92)!important;
+  backdrop-filter:blur(18px);
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
+.admin-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:20px;
+  width:min(100%,1240px);
+  margin:0 auto;
+  padding:10px 5px 8px;
+}
+.admin-header .modal-kicker{
+  color:#a99878;
+  font:900 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.23em;
+}
+.admin-header .modal-title{
+  margin:7px 0 0;
+  color:#f2e5cd;
+  font:600 clamp(38px,4.2vw,58px)/.95 "Cormorant Garamond",serif;
+}
+.admin-header .modal-sub{
+  max-width:760px;
+  margin:10px 0 0;
+  color:#7f8985;
+  font-size:9px;
+  line-height:1.55;
+}
+.admin-tabs{
+  position:sticky;
+  top:59px;
+  z-index:20;
+  display:flex;
+  gap:5px;
+  width:min(100%,1240px);
+  margin:12px auto 15px;
+  padding:6px;
+  overflow:auto;
+  scrollbar-width:thin;
+  border:1px solid rgba(229,193,111,.11);
+  border-radius:14px;
+  background:rgba(7,11,14,.90);
+  backdrop-filter:blur(18px);
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+.admin-tab{
+  flex:0 0 auto;
+  min-height:37px;
+  padding:0 13px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:#7f8884;
+  font:800 7px/1 "Space Grotesk",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  transition:.2s ease;
+}
+.admin-tab:hover{color:#d5c49f;background:rgba(229,193,111,.04)}
+.admin-tab.active{
+  color:#15110a;
+  background:linear-gradient(180deg,#e3bd70,#c89946);
+  border-color:rgba(240,208,139,.58);
+  box-shadow:0 7px 18px rgba(159,110,34,.18);
+}
+.admin-workspace{
+  width:min(100%,1240px);
+  margin:0 auto;
+  padding:2px 2px 9px;
+}
+.admin-workspace > *{
+  animation:yycPortalRise .32s cubic-bezier(.16,1,.3,1) both;
+}
+.admin-workspace .card,
+.admin-workspace .panel,
+.admin-workspace .notice,
+.admin-workspace .table-wrap,
+.admin-workspace .form-shell,
+.admin-workspace .admin-section,
+.admin-workspace .admin-card,
+.admin-workspace .yyc90-card{
+  border-radius:16px;
+}
+.admin-session-footer{
+  width:min(100%,1240px);
+  margin:12px auto 0;
+  padding:12px 4px 3px;
+}
+
+@keyframes yycPortalRise{
+  from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:none}
+}
+
+/* ===== FORM / CONTROL POLISH ACROSS PORTALS ===== */
+.access-login-screen button,
+.premium-member-dashboard button,
+.admin-shell button{
+  -webkit-tap-highlight-color:transparent;
+}
+.access-login-screen input:focus-visible,
+.access-login-screen button:focus-visible,
+.premium-member-dashboard button:focus-visible,
+.admin-shell button:focus-visible,
+.admin-shell input:focus-visible,
+.admin-shell select:focus-visible,
+.admin-shell textarea:focus-visible{
+  outline:2px solid rgba(224,190,106,.66);
+  outline-offset:2px;
+}
+.premium-member-dashboard .btn,
+.admin-shell .btn,
+.admin-shell .mini-btn{
+  transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.premium-member-dashboard .btn:hover,
+.admin-shell .btn:hover,
+.admin-shell .mini-btn:hover{transform:translateY(-1px)}
+.admin-shell .mini-btn{
+  border-radius:10px;
+  background:rgba(255,255,255,.022);
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:900px){
+  .access-login-screen{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 1fr auto;
+    min-height:0;
+    background:linear-gradient(180deg,rgba(8,14,18,.985),rgba(5,9,12,.985));
+  }
+  .access-login-screen::after{display:none}
+  .access-login-hero{
+    grid-column:1;
+    grid-row:1;
+    min-height:0;
+    padding:34px 28px 25px;
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.05);
+  }
+  .access-login-hero::after{
+    left:28px;
+    bottom:14px;
+  }
+  .access-login-icon{
+    width:76px;
+    height:76px;
+    margin-bottom:19px;
+    border-radius:22px;
+  }
+  .access-login-icon::before{width:58px;height:58px}
+  .access-login-title{font-size:45px}
+  .access-login-sub{max-width:640px}
+  .access-login-badge{margin-top:18px}
+  .access-login-form{
+    grid-column:1;
+    grid-row:2;
+    width:100%;
+    padding:29px 28px 24px;
+  }
+  .access-login-footer{
+    grid-column:1;
+    grid-row:3;
+    margin:0 18px;
+  }
+  .admin-tabs{top:54px}
+}
+@media(max-width:620px){
+  .modal-shell:has(.access-login-screen),
+  .modal-shell:has(.premium-member-dashboard),
+  .modal-shell:has(.admin-shell){
+    width:calc(100vw - 14px);
+    max-width:calc(100vw - 14px);
+    padding:9px;
+    border-radius:20px;
+  }
+  .access-login-screen{border-radius:17px}
+  .access-login-hero{padding:29px 20px 22px}
+  .access-login-hero::after{left:20px}
+  .access-login-form{padding:25px 20px 21px}
+  .access-login-footer{margin:0 12px;padding:12px 8px 13px}
+  .access-login-meta{flex-direction:column;align-items:flex-start}
+  .premium-member-dashboard .yyc-portal-heading{
+    align-items:flex-start;
+  }
+  .premium-member-dashboard .member-dashboard-head{
+    padding-right:0!important;
+  }
+  .premium-member-dashboard .modal-title{font-size:38px}
+  .premium-member-dashboard .portal-summary-grid{
+    grid-template-columns:1fr!important;
+  }
+  .premium-member-dashboard .yyc-portal-account{
+    position:absolute;
+    top:5px;
+    right:6px;
+  }
+  .premium-member-dashboard .yyc-portal-account .yyc-portal-avatar-btn{width:54px;height:54px}
+  .premium-member-dashboard .modal-sub{padding-right:62px}
+  .premium-member-dashboard .portal-action-row{
+    display:block!important;
+  }
+  .premium-member-dashboard .portal-action-row .form-actions{
+    margin-top:11px!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+  }
+  .premium-member-dashboard .portal-action-row .btn{
+    width:100%;
+  }
+  .admin-header{
+    align-items:flex-start;
+    padding-right:52px;
+  }
+  .admin-header .modal-title{font-size:41px}
+  .admin-tabs{top:51px}
+}
+@media(max-width:460px){
+  .access-login-title{font-size:39px}
+  .access-login-form{padding-left:15px;padding-right:15px}
+  .access-login-hero{padding-left:15px;padding-right:15px}
+  .access-login-hero::after{left:15px}
+  .admin-shell{min-height:0}
+  .admin-header .modal-title{font-size:35px}
+  .admin-header .modal-sub{font-size:8px}
+  .admin-tabs{padding:5px;gap:4px}
+  .admin-tab{min-height:36px;padding:0 11px;font-size:6.5px}
+  .premium-member-dashboard .portal-action-row .form-actions{grid-template-columns:1fr}
+  .premium-member-dashboard .portal-action-row .btn{min-height:46px!important}
+  .yyc-portal-menu{right:-5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .admin-workspace > *{animation:none}
+  .access-input-wrap,.access-password-field,.access-submit,
+  .premium-member-dashboard .btn,.admin-shell .btn,.admin-shell .mini-btn{transition:none!important}
+}
