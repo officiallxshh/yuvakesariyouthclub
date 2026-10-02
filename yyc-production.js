@@ -50,18 +50,9 @@
   }
 
   function installTopSearch(){
-    var nav=q('.desktop-nav');
-    if(!nav) return;
-    var existing=qa('#yycpSearchTop');
-    if(existing.length>1) existing.slice(1).forEach(function(x){x.remove();});
-    if(existing.length) return;
-    var b=document.createElement('button');b.type='button';b.id='yycpSearchTop';b.className='nav-admin yycp-search-top';b.innerHTML='⌕ Search';
-    b.onclick=function(){
-      if(typeof window.yycOpenSearch==='function') window.yycOpenSearch();
-      else if(window.YYC90&&typeof window.YYC90.openSearch==='function')window.YYC90.openSearch();
-      else toast('Search is loading. Please try again.');
-    };
-    nav.insertBefore(b,nav.querySelector('#memberLoginBtn')||null);
+    /* A desktop Search control is already supplied by the primary YYC header.
+       Do not inject a second far-right Search button. */
+    qa('#yycpSearchTop').forEach(function(x){x.remove();});
   }
 
   function injectFooterLinks(){
