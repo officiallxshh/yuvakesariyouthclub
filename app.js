@@ -650,7 +650,7 @@ function bindMotionSystem(){
   document.addEventListener('click',function(e){
     var tab=e.target && e.target.closest ? e.target.closest('.admin-tab') : null;
     if(!tab) return;
-    var tabs=$$('.admin-tab');
+    var tabs=$$$('.admin-tab');
     var current=tabs.indexOf ? tabs.indexOf(tab) : Array.prototype.indexOf.call(tabs,tab);
     var previous=window.__yycLastAdminTabIndex;
     var direction=(previous==null || current<0 || previous===current)?'forward':(current>previous?'forward':'back');
@@ -2162,7 +2162,7 @@ function renderAdminTab(tab,d){
         '<button type="button" class="yyc-admin-quick" data-admin-tab="reports"><span>▤</span><b>Reports</b><small>Open detailed live reports</small></button>'+
       '</div>'+
       '<div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, notifications, event RSVP responses, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
-    $('#adminWorkspace [data-admin-tab]').forEach(function(btn){
+    $$('#adminWorkspace [data-admin-tab]').forEach(function(btn){
       btn.addEventListener('click',function(){
         var target=btn.getAttribute('data-admin-tab');
         $('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
