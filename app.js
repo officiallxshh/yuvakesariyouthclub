@@ -995,11 +995,11 @@ function yycInstallPublicContentChrome(){
   if(window.__yycPublicContentChrome) return;
   window.__yycPublicContentChrome=true;
   var nav=document.querySelector('.desktop-nav');
-  if(nav&&!$('#yycSearchBtn')){
-    var b=document.createElement('button');
-    b.type='button';b.className='nav-admin yyc-search-trigger';b.id='yycSearchBtn';b.innerHTML='<span>⌕</span> Search';
-    b.addEventListener('click',yycOpenSearch);
-    nav.appendChild(b);
+  /* Search is supplied by the production UI layer in its intended position.
+     Do not append a duplicate Search control to the far right. */
+  if(nav){
+    var rightSearch=$('#yycSearchBtn');
+    if(rightSearch) rightSearch.remove();
   }
   ['#eventsGrid','#updatesGrid','#galleryGrid'].forEach(function(sel){
     var grid=$(sel);
