@@ -341,7 +341,7 @@
       if(!form)return;
       try{
         var data={saved_at:Date.now(),fields:{}};
-        qa('input,textarea,select',form).forEach(function(el){if(!el.id)return;if(el.type==='password'||el.type==='file')return;data.fields[el.id]=el.type==='checkbox'?el.checked:el.value;});
+        Array.prototype.slice.call(form.querySelectorAll('input,textarea,select')).forEach(function(el){if(!el.id)return;if(el.type==='password'||el.type==='file')return;data.fields[el.id]=el.type==='checkbox'?el.checked:el.value;});
         localStorage.setItem(prefix+form.id,JSON.stringify(data));
       }catch(_){}
     }
