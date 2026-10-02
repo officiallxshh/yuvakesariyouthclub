@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261002-01';
+var YYC_APP_BUILD='20261002-04';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1062,12 +1062,40 @@ function yycOpenSearch(){
   });
   setTimeout(function(){input.focus();render('');},30);
 }
+
+async function yycInitRealtime(){
+  if(window.__yycRealtimeInitStarted||!window.supabaseConfigForRealtime)return;
+  window.__yycRealtimeInitStarted=true;
+  try{
+    await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.91.0/dist/umd/supabase.min.js');
+    if(!window.supabase||typeof window.supabase.createClient!=='function')return;
+    if(window.__yycRealtimeClient)return;
+    var client=window.supabase.createClient(YYC_CONFIG.supabaseUrl,YYC_CONFIG.supabaseKey,{
+      auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
+    });
+    window.__yycRealtimeClient=client;
+    var channel=client.channel('yyc:public');
+    window.__yycRealtimeChannel=channel;
+    channel.on('broadcast',{event:'public_data_changed'},function(){
+      if(window.__yycRealtimeRefreshTimer)return;
+      window.__yycRealtimeRefreshTimer=window.setTimeout(function(){
+        window.__yycRealtimeRefreshTimer=null;
+        loadPublic();
+      },1200);
+    });
+    channel.subscribe(function(){});
+  }catch(e){
+    /* Realtime is an enhancement only. The normal RPC data path remains authoritative. */
+  }
+}
+
 async function loadPublic(){
   try{
     publicData=await rpc('public_site_data',{}, {timeoutMs:30000,retries:2});
     renderPublic();
     yycInstallPublicContentChrome();
     yycHandlePublicDeepLink();
+    yycInitRealtime();
   }catch(e){ toast('Public data is loading from the backup design.'); }
 }
 function activeNav(){
