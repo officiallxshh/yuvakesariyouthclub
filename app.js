@@ -2130,9 +2130,45 @@ function adminPanel(tab,forceRefresh){
 function renderAdminTab(tab,d){
   var a=$('#adminWorkspace'); if(!a) return;
   if(tab==='overview'){
-    var pm=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length;
+    var members=d.members||[], leaders=d.leaders||[], updates=d.updates||[], gallery=d.gallery||[], events=d.events||[];
+    var pm=members.filter(function(m){return (m.status||'pending')==='pending';}).length;
     var pu=(d.pending_updates||[]).length, pg=(d.pending_gallery||[]).length;
-    a.innerHTML='<div class="admin-stats"><div><b>'+((d.members||[]).length)+'</b><span>Members</span></div><div><b>'+((d.leaders||[]).length)+'</b><span>Leaders</span></div><div><b>'+((d.updates||[]).filter(function(x){return x.status==='published';}).length)+'</b><span>Updates</span></div><div><b>'+((d.gallery||[]).length)+'</b><span>Gallery</span></div><div class="pending-stat"><b>'+(pm+pu+pg)+'</b><span>Pending approvals</span></div></div><div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
+    var approvedMembers=members.filter(function(m){return (m.status||'').toLowerCase()==='approved';}).length;
+    var publishedUpdates=updates.filter(function(x){return (x.status||'published').toLowerCase()==='published';}).length;
+    var publishedGallery=gallery.filter(function(x){return (x.status||'published').toLowerCase()==='published';}).length;
+    var publishedEvents=events.filter(function(x){return (x.status||'published').toLowerCase()==='published';}).length;
+    var pendingTotal=pm+pu+pg;
+    var memberRate=members.length?Math.round((approvedMembers/members.length)*100):0;
+    var maxContent=Math.max(1,publishedUpdates,publishedGallery,publishedEvents);
+    function analyticsBar(label,value){
+      var pct=Math.max(4,Math.round((value/maxContent)*100));
+      return '<div class="yyc-analytics-row"><div class="yyc-analytics-label"><span>'+label+'</span><b>'+value+'</b></div><div class="yyc-analytics-track"><span style="width:'+pct+'%"></span></div></div>';
+    }
+    a.innerHTML=
+      '<div class="admin-stats"><div><b>'+members.length+'</b><span>Members</span></div><div><b>'+leaders.length+'</b><span>Leaders</span></div><div><b>'+publishedUpdates+'</b><span>Published updates</span></div><div><b>'+publishedGallery+'</b><span>Gallery</span></div><div class="pending-stat"><b>'+pendingTotal+'</b><span>Pending approvals</span></div></div>'+
+      '<div class="yyc-admin-analytics-grid">'+
+        '<section class="yyc-analytics-panel"><div class="yyc-analytics-head"><div><span class="modal-kicker">LIVE ANALYTICS</span><h3>YYC activity snapshot</h3><p>Calculated from the current admin dataset.</p></div><span class="yyc-analytics-chip">'+memberRate+'% APPROVED</span></div>'+
+          '<div class="yyc-analytics-bars">'+analyticsBar('Published updates',publishedUpdates)+analyticsBar('Published gallery',publishedGallery)+analyticsBar('Published events',publishedEvents)+'</div>'+
+        '</section>'+
+        '<section class="yyc-analytics-panel"><div class="yyc-analytics-head"><div><span class="modal-kicker">MEMBERSHIP</span><h3>Member health</h3><p>Approval pipeline and active records.</p></div><span class="yyc-analytics-chip">'+approvedMembers+' ACTIVE</span></div>'+
+          '<div class="yyc-analytics-metrics"><div><b>'+approvedMembers+'</b><span>Approved</span></div><div><b>'+pm+'</b><span>Pending</span></div><div><b>'+members.filter(function(m){return (m.status||'').toLowerCase()==='duplicate';}).length+'</b><span>Duplicates</span></div></div>'+
+          '<div class="yyc-analytics-note">'+(pendingTotal?'There are '+pendingTotal+' items waiting for review.':'Everything is currently up to date.')+'</div>'+
+        '</section>'+
+      '</div>'+
+      '<div class="yyc-admin-quick-grid">'+
+        '<button type="button" class="yyc-admin-quick" data-admin-tab="members"><span>◉</span><b>Members</b><small>Manage member records</small></button>'+
+        '<button type="button" class="yyc-admin-quick" data-admin-tab="events"><span>◷</span><b>Events & RSVP</b><small>Publish programmes and member responses</small></button>'+
+        '<button type="button" class="yyc-admin-quick" data-admin-tab="notifications"><span>🔔</span><b>Notifications</b><small>Send private member messages</small></button>'+
+        '<button type="button" class="yyc-admin-quick" data-admin-tab="reports"><span>▤</span><b>Reports</b><small>Open detailed live reports</small></button>'+
+      '</div>'+
+      '<div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, notifications, event RSVP responses, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
+    $('#adminWorkspace [data-admin-tab]').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var target=btn.getAttribute('data-admin-tab');
+        $('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
+        renderAdminTab(target,d);
+      });
+    });
     return;
   }
   if(tab==='members'){
