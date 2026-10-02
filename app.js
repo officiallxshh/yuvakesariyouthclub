@@ -233,6 +233,15 @@ function closeModal(){
     window.__yycModalCloseTimer=null;
   },240);
 }
+/* Login-panel X button: closes only the current login modal. */
+document.addEventListener('click',function(e){
+  var close=e.target&&e.target.closest?e.target.closest('[data-access-close]'):null;
+  if(!close)return;
+  e.preventDefault();
+  e.stopPropagation();
+  closeModal();
+},true);
+
 function today(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(v){
   if(!v) return '';
