@@ -837,3 +837,40 @@
 /* ===== SEARCH CONTROL SINGLETON ===== */
 #yycpSearchTop{flex:0 0 auto;}
 .desktop-nav #yycpSearchTop + #yycpSearchTop{display:none!important;}
+
+/* FINAL PORTAL LOGIN VIEWPORT FIX */
+.modal-shell:has(.access-login-screen){
+  width:min(1240px,calc(100vw - 20px))!important;
+  max-width:1240px!important;
+  height:calc(100svh - 20px)!important;
+  min-height:calc(100svh - 20px)!important;
+  max-height:calc(100svh - 20px)!important;
+  margin:10px auto!important;
+  padding:12px!important;
+  overflow:auto!important;
+}
+.modal-shell:has(.access-login-screen) .access-login-screen{
+  width:100%!important;
+  min-height:100%!important;
+}
+@media(max-width:900px){
+  .modal-shell:has(.access-login-screen){
+    width:calc(100vw - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+    height:calc(100svh - 12px)!important;
+    min-height:calc(100svh - 12px)!important;
+    max-height:calc(100svh - 12px)!important;
+    margin:6px auto!important;
+  }
+}
+@media(max-width:620px){
+  .modal-shell:has(.access-login-screen){
+    width:calc(100vw - 6px)!important;
+    max-width:calc(100vw - 6px)!important;
+    height:calc(100svh - 6px)!important;
+    min-height:calc(100svh - 6px)!important;
+    max-height:calc(100svh - 6px)!important;
+    margin:3px auto!important;
+    padding:5px!important;
+  }
+}
