@@ -909,3 +909,30 @@
 @media(prefers-reduced-motion:reduce){
   .access-panel-close{transition:none!important}
 }
+
+/* ===== FINAL LOGIN CLOSE + VIEWPORT ===== */
+.modal-shell:has(.access-login-screen)>.modal-close{display:none!important}
+.access-login-screen{position:relative}
+.access-inline-close{
+ position:absolute;top:16px;right:16px;z-index:50;width:42px;height:42px;
+ display:grid;place-items:center;padding:0;border:1px solid rgba(229,193,111,.25);
+ border-radius:13px;background:rgba(4,8,11,.88);color:#ead5a6;
+ font:500 25px/1 Inter,sans-serif;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.3);
+ transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.access-inline-close:hover{transform:scale(1.04);border-color:rgba(229,193,111,.52);background:rgba(229,193,111,.08)}
+.access-inline-close:focus-visible{outline:2px solid rgba(224,190,106,.72);outline-offset:2px}
+#yycpSearchTop{display:none!important}
+@media(max-width:900px){
+ .access-login-screen{height:auto!important;min-height:calc(100svh - 50px)!important;max-height:none!important;overflow:auto!important}
+ .access-inline-close{top:13px;right:13px;width:42px;height:42px}
+ .access-login-hero{padding-top:66px!important}
+}
+@media(max-width:620px){
+ .modal-shell:has(.access-login-screen){width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important;max-height:calc(100svh - 8px)!important;margin:4px auto!important}
+ .access-login-screen{min-height:calc(100svh - 30px)!important}
+ .access-inline-close{top:10px;right:10px;width:40px;height:40px;border-radius:12px}
+ .access-login-hero{padding-right:68px!important}
+}
+@media(max-width:460px){.modal-shell:has(.access-login-screen){max-height:calc(100svh - 6px)!important}}
+@media(prefers-reduced-motion:reduce){.access-inline-close{transition:none!important}}
