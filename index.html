@@ -481,7 +481,7 @@
       /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
          broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20261002-08&cachebust='+Date.now();
+      sc.src='app.js?v=20261003-06&cachebust='+Date.now();
       sc.async=false;
       sc.onload=function(){
         if(check()) return;
@@ -570,13 +570,48 @@
         window.YYCAccess.open(name);
         return;
       }
-      if(window.YYC&&typeof window.YYC[name]==='function')window.YYC[name]();
-      else if(name==='memberLogin'||name==='leaderLogin'||name==='adminLogin')openRealAccess(name);
-      else ensureApp(name);
+      if(window.YYC&&typeof window.YYC[name]==='function'){
+        try{window.YYC[name]();}catch(err){showAccessLoadError(err.message||'YYC action could not start.',name);}
+      }else if(name==='memberLogin'||name==='leaderLogin'||name==='adminLogin'){
+        openRealAccess(name);
+      }else{
+        ensureApp(name).then(function(){
+          if(window.YYC&&typeof window.YYC[name]==='function') return window.YYC[name]();
+          throw new Error('YYC action is unavailable.');
+        }).catch(function(err){showAccessLoadError(err.message||'YYC action could not start.',name);});
+      }
       return;
     }
     var a=e.target&&e.target.closest?e.target.closest('a[href^="#"]'):null;
-    if(a){var href=a.getAttribute('href')||'';if(href&&href!=='#'){var t;try{t=document.querySelector(href);}catch(err){t=null;}if(t){e.preventDefault();e.stopImmediatePropagation();var header=document.getElementById('topbar'),off=header?header.offsetHeight+10:0;window.scrollTo({top:Math.max(0,t.getBoundingClientRect().top+window.pageYOffset-off),behavior:'smooth'});if(history.pushState)history.pushState(null,'',href);closeMobile();}}}
+    if(a){
+      var href=a.getAttribute('href')||'';
+      if(href&&href!=='#'){
+        var t;
+        try{t=document.querySelector(href);}catch(err){t=null;}
+        if(t){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          /* The direct interaction layer owns navigation clicks so the clicked
+             tab is highlighted immediately and remains active during smooth scroll. */
+          var navLinks=document.querySelectorAll('.desktop-nav .nav-link');
+          Array.prototype.forEach.call(navLinks,function(link){
+            var active=(link.getAttribute('href')||'')===href;
+            link.classList.toggle('active',active);
+            if(active) link.setAttribute('aria-current','page');
+            else link.removeAttribute('aria-current');
+          });
+          window.__yycNavLockUntil=Date.now()+1400;
+
+          var header=document.getElementById('topbar'),off=header?header.offsetHeight+10:0;
+          var top=Math.max(0,t.getBoundingClientRect().top+window.pageYOffset-off);
+          var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+          if(history.pushState)history.pushState(null,'',href);
+          closeMobile();
+        }
+      }
+    }
   },true);
 })();
 </script>
