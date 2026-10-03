@@ -183,3 +183,16 @@ main > section.section,
   transform:none!important;
   filter:none!important;
 }
+
+
+/* ===== HOME HERO — DEFAULT PLACEMENT, NO AUTO ZOOM =====
+   The hero background stays at its authored/default placement.
+   No continuous zoom, navigation zoom, parallax transform, or opening scale is applied. */
+.hero-photo,
+.hero-photo.yyc-bg-navigate,
+body.yyC-opening .hero-photo{
+  animation:none!important;
+  transform:none!important;
+  scale:1!important;
+  background-position:center center!important;
+}
