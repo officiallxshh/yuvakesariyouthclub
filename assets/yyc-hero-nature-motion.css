@@ -1,0 +1,83 @@
+/* =========================================================
+   YYC HERO NATURE MOTION
+   Very slow bell swing + gentle tree branch/leaf sway.
+   Decorative only; no content or interaction changes.
+   ========================================================= */
+
+.hero{
+  position:relative;
+}
+
+/* Full-size copies of the hero photo let us animate only
+   the small natural elements while the main landscape stays still. */
+.hero-nature-motion{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:-2;
+  background:url('./hero-tulunad.webp') center 44% / cover no-repeat;
+  will-change:transform;
+}
+
+/* Hanging temple bell: slow, damped swing with tiny pauses. */
+.hero-bell-motion{
+  transform-origin:92.1% 29.4%;
+  clip-path:polygon(88.7% 24.8%,96.8% 24.8%,97% 43%,89% 43%);
+  -webkit-mask-image:radial-gradient(ellipse 4.8% 10% at 92.5% 34%,#000 34%,rgba(0,0,0,.86) 63%,transparent 100%);
+  mask-image:radial-gradient(ellipse 4.8% 10% at 92.5% 34%,#000 34%,rgba(0,0,0,.86) 63%,transparent 100%);
+  animation:yycBellRing 8.8s ease-in-out infinite;
+}
+
+/* Upper-right branch + leaves: barely-there natural breeze. */
+.hero-branch-motion{
+  clip-path:polygon(79% 0,100% 0,100% 34%,94% 31%,88% 24%,83% 17%,80% 10%);
+  -webkit-mask-image:radial-gradient(ellipse 15% 19% at 90% 11%,#000 34%,rgba(0,0,0,.70) 66%,transparent 100%);
+  mask-image:radial-gradient(ellipse 15% 19% at 90% 11%,#000 34%,rgba(0,0,0,.70) 66%,transparent 100%);
+  transform-origin:88% 4%;
+  opacity:.94;
+  animation:yycBranchSway 7.6s ease-in-out infinite;
+}
+
+/* Bell motion reads like one gentle ring, then settles. */
+@keyframes yycBellRing{
+  0%,9%,100%{transform:rotate(0deg) translate3d(0,0,0)}
+  20%{transform:rotate(-4.2deg) translate3d(-.1%,.05%,0)}
+  32%{transform:rotate(3.2deg) translate3d(.08%,-.02%,0)}
+  44%{transform:rotate(-2.4deg) translate3d(-.05%,.02%,0)}
+  55%{transform:rotate(1.55deg) translate3d(.03%,0,0)}
+  66%{transform:rotate(-.85deg)}
+  77%{transform:rotate(.38deg)}
+}
+
+/* Leaves move more softly and asynchronously from the bell. */
+@keyframes yycBranchSway{
+  0%,100%{transform:rotate(0deg) translate3d(0,0,0)}
+  24%{transform:rotate(-1.15deg) translate3d(-.05%,.08%,0)}
+  51%{transform:rotate(.95deg) translate3d(.06%,-.04%,0)}
+  74%{transform:rotate(-.55deg) translate3d(-.03%,.03%,0)}
+}
+
+@media(max-width:900px){
+  /* Keep the effect subtle on smaller screens where the photo
+     crop is tighter and the right-side source elements are reduced. */
+  .hero-bell-motion,
+  .hero-branch-motion{
+    opacity:.72;
+  }
+}
+
+@media(max-width:760px){
+  /* The mobile hero crop can move the original bell/branch out of
+     frame, so avoid showing a detached duplicate patch. */
+  .hero-bell-motion,
+  .hero-branch-motion{
+    display:none;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .hero-bell-motion,
+  .hero-branch-motion{
+    animation:none!important;
+  }
+}
