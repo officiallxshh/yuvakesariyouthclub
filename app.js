@@ -1278,18 +1278,15 @@ function submitUpdate(){
   );
   $('#memberSubmitUpdateForm').addEventListener('submit',async function(e){
     e.preventDefault();
-    var form=this,btn=form.querySelector('button[type="submit"]');
+    var btn=this.querySelector('button[type="submit"]');
     if(btn&&btn.disabled)return;
     try{
       if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='SUBMITTING…';}
       var r=await rpc('member_submit_update',{p_token:memberToken,p_payload:{
-        title:$('#msuTitle').value.trim(),
-        body:$('#msuBody').value.trim(),
-        event_date:$('#msuDate').value
+        title:$('#msuTitle').value.trim(),body:$('#msuBody').value.trim(),event_date:$('#msuDate').value
       }});
       if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit update');
-      closeModal();
-      toast('Update submitted for admin approval.');
+      closeModal();toast('Update submitted for admin approval.');
     }catch(err){
       if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SUBMIT FOR REVIEW →';}
       toast(err.message||'Could not submit update');
@@ -1314,18 +1311,15 @@ function submitGallery(){
   );
   $('#memberSubmitGalleryForm').addEventListener('submit',async function(e){
     e.preventDefault();
-    var form=this,btn=form.querySelector('button[type="submit"]');
+    var btn=this.querySelector('button[type="submit"]');
     if(btn&&btn.disabled)return;
     try{
       if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='SUBMITTING…';}
       var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{
-        title:$('#msgTitle').value.trim(),
-        src:$('#msgSrc').value.trim(),
-        caption:$('#msgCaption').value.trim()
+        title:$('#msgTitle').value.trim(),src:$('#msgSrc').value.trim(),caption:$('#msgCaption').value.trim()
       }});
       if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit gallery item');
-      closeModal();
-      toast('Gallery item submitted for admin approval.');
+      closeModal();toast('Gallery item submitted for admin approval.');
     }catch(err){
       if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SUBMIT FOR REVIEW →';}
       toast(err.message||'Could not submit gallery item');
