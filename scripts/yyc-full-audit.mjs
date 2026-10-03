@@ -90,7 +90,7 @@ for (const file of files.filter(f => /\.html?$/i.test(f))) {
   }
 }
 
-const sourceText = files.filter(f => /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
+const sourceText = files.filter(f => f !== "scripts/yyc-full-audit.mjs" && /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
 if (/(?<!\$)\$\((["'])[^"']+\1\)\.forEach/g.test(sourceText)) {
   issues.push("Single-element $().forEach() runtime pattern found.");
 }
