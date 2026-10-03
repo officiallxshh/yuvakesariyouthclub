@@ -90,13 +90,9 @@
   }
 
   function addSearchTrigger(){
-    if(q('#yycMaxSearchNav'))return;
-    var nav=q('.desktop-nav');if(!nav)return;
-    var btn=document.createElement('button');
-    btn.type='button';btn.className='nav-admin yyc-max-search-trigger';btn.id='yycMaxSearchNav';btn.innerHTML='⌕ Search';
-    btn.addEventListener('click',openSearch);
-    var target=nav.querySelector('#memberLoginBtn');
-    if(target)nav.insertBefore(btn,target);else nav.appendChild(btn);
+    /* Deliberately do not add another desktop Search button.
+       The existing site already has search access paths; the floating launcher
+       below provides a single extra, non-invasive shortcut. */
   }
 
   function addPrintTrigger(){
@@ -112,6 +108,8 @@
       if(!img.getAttribute('alt')&&img.getAttribute('src'))img.setAttribute('alt','YYC image');
       if(!img.closest('.hero'))img.setAttribute('decoding','async');
       if(!img.closest('.hero')&&!img.closest('.topbar'))img.setAttribute('loading','lazy');
+      if(img.getAttribute('data-yyc-max-error-bound')==='1')return;
+      img.setAttribute('data-yyc-max-error-bound','1');
       img.addEventListener('error',function(){
         img.classList.add('yyc-max-image-error');
         img.alt=img.alt||'YYC image unavailable';
@@ -318,7 +316,23 @@
       wrap.appendChild(label);wrap.appendChild(saved);wrap.appendChild(clear);
       grid.parentNode.insertBefore(wrap,grid);
       clear.onclick=function(){qa('.yyc-max-card-action',grid).forEach(function(x){x.remove();});addPublicCardActions();saved.classList.remove('active');};
-      saved.onclick=function(){saved.classList.toggle('active');var on=saved.classList.contains('active');qa('article,figure',grid).forEach(function(card){card.style.display='';if(on&&!card.querySelector('.yyc-max-favorite.saved')){var title=(card.querySelector('h3,h2,strong')||{}).textContent||'';card.style.display=title?'':'none';}});safeToast(on?'Saved-only filter enabled':'Saved-only filter cleared');};
+      saved.onclick=function(){
+        saved.classList.toggle('active');
+        var on=saved.classList.contains('active');
+        qa('article,figure',grid).forEach(function(card){
+          var itemTitle=(card.querySelector('h3,h2,strong')||{}).textContent||'';
+          var kind=grid.id==='eventsGrid'?'event':grid.id==='updatesGrid'?'update':'gallery';
+          var itemId='';
+          var list=(window.publicData&&window.publicData[kind==='event'?'events':kind==='update'?'updates':'gallery'])||[];
+          var items=qa('article,figure',grid);
+          var ix=items.indexOf(card);
+          var it=list[ix]||{};
+          var key='yyc_max_fav_'+kind+'_'+String(it.id||it.slug||itemTitle).replace(/\W+/g,'_');
+          var isSaved=false;try{isSaved=localStorage.getItem(key)==='1';}catch(e){}
+          card.style.display=(!on||isSaved)?'':'none';
+        });
+        safeToast(on?'Saved-only filter enabled':'Saved-only filter cleared');
+      };
     });
   }
 
