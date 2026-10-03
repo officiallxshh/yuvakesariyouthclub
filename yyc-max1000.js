@@ -121,8 +121,7 @@
     var groups=[
       {sel:'#eventsGrid .event-card',kind:'event'},
       {sel:'#updatesGrid .update-card',kind:'update'},
-      {sel:'#galleryGrid .gallery-card',kind:'gallery'},
-      {sel:'#leadersGrid .leader-card',kind:'leader'}
+      {sel:'#galleryGrid .gallery-card',kind:'gallery'}
     ];
     groups.forEach(function(g){
       qa(g.sel).forEach(function(card,index){
