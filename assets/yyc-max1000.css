@@ -135,3 +135,51 @@
   #yycMaxSkip{transition:none}
   .yyc-max-float button,.yyc-max-card-action,.yyc-max-highlight{animation:none!important;transition:none!important}
 }
+
+
+/* ===== YYC PUBLIC FLOW SAFETY — FINAL LAST-LOADED GUARD =====
+   This stylesheet is loaded last. Public sections and their dynamic content
+   must never become invisible because an optional reveal/motion observer fails. */
+main,
+main > section,
+main > section.section,
+#leaders,
+#swags,
+#updates,
+#events,
+#gallery,
+#join{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  transform:none!important;
+  filter:none!important;
+  clear:both!important;
+}
+#leadersGrid,
+#swagsGrid,
+#updatesGrid,
+#eventsGrid,
+#galleryGrid{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+  min-height:0!important;
+  max-height:none!important;
+  transform:none!important;
+  filter:none!important;
+}
+#leadersGrid > *,
+#swagsGrid > *,
+#updatesGrid > *,
+#eventsGrid > *,
+#galleryGrid > *,
+#join .join-card{
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  filter:none!important;
+}
