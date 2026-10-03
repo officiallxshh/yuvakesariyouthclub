@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261002-07';
+var YYC_APP_BUILD='20261003-04';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -852,7 +852,7 @@ function renderPublic(){
         '<div class="swag-actions">'+cta+'</div></div></article>';
     },'Swag collection coming soon.','swag-card');
   }
-  $Array.prototype.slice.call(document.querySelectorAll('.yyc-read-more')).forEach(function(btn){
+  $('.yyc-read-more').forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
       if(!key) return;
