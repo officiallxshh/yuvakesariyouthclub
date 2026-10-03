@@ -1104,3 +1104,48 @@ body::before{
   .yyc-analytics-chip{display:inline-block;margin-top:10px}
   .yyc-admin-quick-grid{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   YYC ADMIN LIVE SYNC — automatic backend refresh
+   ========================================================= */
+.yyc-admin-syncbar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  min-width:300px;
+  margin-top:4px;
+}
+.yyc-admin-syncbar > span:not(.yyc-admin-sync-dot){
+  color:#7f8a86;
+  font:700 8px/1 Inter,sans-serif;
+  letter-spacing:.09em;
+  white-space:nowrap;
+}
+.yyc-admin-sync-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#d6b76b;
+  box-shadow:0 0 12px rgba(231,191,112,.45);
+  flex:0 0 auto;
+}
+.yyc-admin-sync-dot.offline{
+  background:#8b6f57;
+  box-shadow:none;
+}
+.yyc-admin-syncbar .mini-btn{
+  white-space:nowrap;
+  padding:8px 11px;
+  font-size:8px;
+}
+@media(max-width:760px){
+  .yyc-admin-syncbar{
+    width:100%;
+    min-width:0;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+}
