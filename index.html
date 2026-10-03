@@ -604,9 +604,9 @@
           window.__yycNavLockUntil=Date.now()+1400;
 
           var header=document.getElementById('topbar'),off=header?header.offsetHeight+10:0;
-          var top=Math.max(0,t.getBoundingClientRect().top+window.pageYOffset-off);
+          t.style.scrollMarginTop=off+'px';
           var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+          try{t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}catch(err){window.scrollTo({top:Math.max(0,t.getBoundingClientRect().top+window.pageYOffset-off),behavior:reduce?'auto':'smooth'});}
           if(history.pushState)history.pushState(null,'',href);
           closeMobile();
         }
