@@ -852,7 +852,7 @@ function renderPublic(){
         '<div class="swag-actions">'+cta+'</div></div></article>';
     },'Swag collection coming soon.','swag-card');
   }
-  $$('.yyc-read-more').forEach(function(btn){
+  $Array.prototype.slice.call(document.querySelectorAll('.yyc-read-more')).forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
       if(!key) return;
@@ -1161,7 +1161,7 @@ async function loadPublic(){
 }
 function activeNav(){
   var target=location.hash ? location.hash.slice(1) : 'home';
-  $$('.desktop-nav .nav-link').forEach(function(a){var h=(a.getAttribute('href')||'').slice(1);a.classList.toggle('active',h===target);});
+  $Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link')).forEach(function(a){var h=(a.getAttribute('href')||'').slice(1);a.classList.toggle('active',h===target);});
 }
 function updateYYCScrollProgress(){
   var bar=$('#yycScrollProgressBar');
@@ -1172,7 +1172,7 @@ function updateYYCScrollProgress(){
   bar.style.transform='scaleX('+p.toFixed(4)+')';
 }
 function updateYYCActiveSection(){
-  var links=$('.desktop-nav .nav-link');
+  var links=Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link'));
   if(!links.length) return;
 
   /* During a click-triggered smooth scroll, keep the clicked tab highlighted
@@ -1229,7 +1229,7 @@ function bindNavigation(){
       var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
       /* Highlight the tab immediately and keep it locked during the smooth scroll. */
       window.__yycNavLockUntil=Date.now()+1800;
-      $$('.desktop-nav .nav-link').forEach(function(a){
+      $Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link')).forEach(function(a){
         a.classList.toggle('active',a===link);
       });
       yycAnimateNavigation(target);
@@ -1238,10 +1238,10 @@ function bindNavigation(){
       setTimeout(activeNav,40);
     });
   });
-  $$('.desktop-nav .nav-link').forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,140);});});
+  $Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link')).forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,140);});});
   if('IntersectionObserver' in window){
     var sectionObserver=new IntersectionObserver(function(){updateYYCActiveSection();},{root:null,rootMargin:'-22% 0px -62% 0px',threshold:[0,.01,.1,.3]});
-    $$('.section[id]').forEach(function(section){sectionObserver.observe(section);});
+    $Array.prototype.slice.call(document.querySelectorAll('.section[id]')).forEach(function(section){sectionObserver.observe(section);});
   }
   window.addEventListener('hashchange',activeNav);
   var navScrollTicking=false;
@@ -1668,7 +1668,7 @@ function yycOpenMemberNotifications(){
     list.innerHTML=items.map(function(n){
       return '<article class="yyc-notification-item '+(!n.is_read?'unread':'')+'"><div class="yyc-notification-dot"></div><div class="yyc-notification-main"><span>'+esc(String(n.type||'general').toUpperCase())+' · '+esc(fmtDate(n.created_at))+'</span><h3>'+esc(n.title||'YYC notification')+'</h3>'+(n.body?'<p>'+esc(n.body)+'</p>':'')+(n.link?'<a href="'+esc(n.link)+'" target="_blank" rel="noopener">OPEN LINK ↗</a>':'')+'</div>'+(!n.is_read?'<button type="button" class="mini-btn" data-mark-notification="'+esc(n.id)+'">READ</button>':'')+'</article>';
     }).join('');
-    $$('#yycNotificationList [data-mark-notification]').forEach(function(btn){
+    $Array.prototype.slice.call(document.querySelectorAll('#yycNotificationList [data-mark-notification]')).forEach(function(btn){
       btn.addEventListener('click',async function(){
         btn.disabled=true;
         try{
@@ -2119,10 +2119,10 @@ function adminPanel(tab,forceRefresh){
       adminRefreshBtn.disabled=true;adminRefreshBtn.textContent='REFRESHING…';
       yycAdminAutoSync().finally(function(){adminRefreshBtn.disabled=false;adminRefreshBtn.textContent='REFRESH NOW';});
     });
-    $$('.admin-tab').forEach(function(b){
+    $Array.prototype.slice.call(document.querySelectorAll('.admin-tab')).forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
-        $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x===b);});
+        $Array.prototype.slice.call(document.querySelectorAll('.admin-tab')).forEach(function(x){x.classList.toggle('active',x===b);});
         renderAdminTab(selected,d);
         if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
         var workspace=$('#adminWorkspace');
@@ -2246,10 +2246,10 @@ function renderAdminTab(tab,d){
         '<button type="button" class="yyc-admin-quick" data-admin-tab="reports"><span>▤</span><b>Reports</b><small>Open detailed live reports</small></button>'+
       '</div>'+
       '<div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, notifications, event RSVP responses, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
-    $$('#adminWorkspace [data-admin-tab]').forEach(function(btn){
+    $Array.prototype.slice.call(document.querySelectorAll('#adminWorkspace [data-admin-tab]')).forEach(function(btn){
       btn.addEventListener('click',function(){
         var target=btn.getAttribute('data-admin-tab');
-        $$('.admin-tab').forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
+        $Array.prototype.slice.call(document.querySelectorAll('.admin-tab')).forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
         renderAdminTab(target,d);
       });
     });
@@ -2268,10 +2268,10 @@ function renderAdminTab(tab,d){
     });
     a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember">+ New member</button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: <span class="yyc-member-status '+((m.status||'pending')==='duplicate'?'yyc-member-status-duplicate':((m.status||'pending')==='approved'?'yyc-member-status-approved':''))+'">'+esc(m.status||'pending')+'</span>'+(m.duplicate_of?' · DUPLICATE OF '+esc(m.duplicate_of):'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'">Edit</button><button class="mini-btn" data-reset-member="'+m.id+'">PASSWORD</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-mark-duplicate="'+m.id+'">Duplicate</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'">Delete</button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
-    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$('.admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
+    $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=Array.prototype.slice.call(document.querySelectorAll('.admin-card-list .approval-card'));var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
     $('#exportMembersCSV').addEventListener('click',function(){exportYYCMembersCSV(members);});
-    $$('[data-mark-duplicate]').forEach(function(b){b.addEventListener('click',async function(){
+    $Array.prototype.slice.call(document.querySelectorAll('[data-mark-duplicate]')).forEach(function(b){b.addEventListener('click',async function(){
       await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-mark-duplicate'),p_action:'mark_duplicate'},'Duplicate application marked');
     });});
     return;
@@ -2290,8 +2290,8 @@ function renderAdminTab(tab,d){
     var ups=d.updates||[];
     a.innerHTML='<div class="admin-top"><h2>Updates</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addUpdateBtn">+ New update</button></div></div><div class="admin-toolbar"><input id="adminUpdateSearch" class="admin-search" placeholder="Search updates" autocomplete="off"><select id="adminUpdateStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminUpdateCount"></span></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card" data-content-status="'+esc(u.status||'published')+'"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+(u.featured?' · FEATURED':'')+(u.image_format?' · Photo: '+esc(yycImageFormatMeta(u.image_format).label):'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-edit-update="'+u.id+'">Edit</button><button class="mini-btn" data-del-update="'+u.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
     $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
-    $$('[data-edit-update]').forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
-    $$('[data-del-update]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
     (function(){function filterUpdates(){var q=$('#adminUpdateSearch').value.trim().toLowerCase(),st=$('#adminUpdateStatus').value,rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminUpdateCount').textContent=shown+' of '+rows.length+' shown';}$('#adminUpdateSearch').addEventListener('input',filterUpdates);$('#adminUpdateStatus').addEventListener('change',filterUpdates);filterUpdates();})();
     return;
   }
@@ -2299,8 +2299,8 @@ function renderAdminTab(tab,d){
     var gs=d.gallery||[];
     a.innerHTML='<div class="admin-top"><h2>Gallery</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addGalleryBtn">+ New photo</button></div></div><div class="admin-toolbar"><input id="adminGallerySearch" class="admin-search" placeholder="Search photos or captions" autocomplete="off"><input id="adminGalleryAlbum" class="admin-search" placeholder="Filter album" autocomplete="off"><select id="adminGalleryStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminGalleryCount"></span></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card" data-content-status="'+esc(g.status||'published')+'" data-content-album="'+esc(g.album||'GENERAL')+'">'+yycMediaFrame(g.image_format,'<img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'">')+'<figcaption><strong>'+esc(g.title)+'</strong><small>'+esc(g.album||'GENERAL')+' · '+esc(yycImageFormatMeta(g.image_format).label)+(g.featured?' · FEATURED':'')+'</small><div class="admin-actions"><button class="mini-btn gold" data-edit-gallery="'+g.id+'">Edit</button><button class="mini-btn" data-del-gallery="'+g.id+'">Delete</button></div></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
     $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
-    $$('[data-edit-gallery]').forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
-    $$('[data-del-gallery]').forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
     (function(){function filterGallery(){var q=$('#adminGallerySearch').value.trim().toLowerCase(),alb=$('#adminGalleryAlbum').value.trim().toLowerCase(),st=$('#adminGalleryStatus').value,rows=$$('#adminWorkspace .admin-gallery-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!alb||String(row.getAttribute('data-content-album')||'').toLowerCase().indexOf(alb)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminGalleryCount').textContent=shown+' of '+rows.length+' shown';}$('#adminGallerySearch').addEventListener('input',filterGallery);$('#adminGalleryAlbum').addEventListener('input',filterGallery);$('#adminGalleryStatus').addEventListener('change',filterGallery);filterGallery();})();
     return;
   }
@@ -2316,8 +2316,8 @@ function renderAdminTab(tab,d){
           '<div class="admin-actions"><button type="button" class="mini-btn" data-edit-swag="'+sw.id+'">Edit</button><button type="button" class="mini-btn" data-del-swag="'+sw.id+'">Delete</button></div></div></article>';
       }).join('')+'</div>':'<div class="empty">No swag items yet. Add your first item.</div>');
     $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
-    $$('[data-edit-swag]').forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
-    $$('[data-del-swag]').forEach(function(b){b.addEventListener('click',async function(){
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-swag]')).forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-del-swag]')).forEach(function(b){b.addEventListener('click',async function(){
       if(!confirm('Delete this YYC swag item?')) return;
       var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
       if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
@@ -2335,16 +2335,16 @@ function renderAdminTab(tab,d){
       pUpdates.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+' · UPDATE</strong><small>'+esc(u.body)+'</small></div><div class="admin-actions"><button class="mini-btn" data-edit-update="'+u.id+'">Edit</button><button class="mini-btn gold" data-au="'+u.id+'">Publish</button><button class="mini-btn" data-du="'+u.id+'">Deny</button></div></div>';}).join('')+
       pGallery.map(function(g){return '<div class="approval-card"><div class="meta"><strong>'+esc(g.title)+' · GALLERY</strong><small>Photo submission</small></div><div class="admin-actions"><button class="mini-btn" data-edit-gallery="'+g.id+'">Edit</button><button class="mini-btn gold" data-ag="'+g.id+'">Publish</button><button class="mini-btn" data-dg="'+g.id+'">Deny</button></div></div>'}).join('')
       +'</div>' : '<div class="empty">No pending submissions.</div>');
-    $$('[data-review-member]').forEach(function(b){b.addEventListener('click',function(){adminReviewMember(b.getAttribute('data-review-member'));});});
-    $$('[data-edit-member]').forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
-    $$('[data-edit-update]').forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
-    $$('[data-edit-gallery]').forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
-    $$('[data-am]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-am'),p_action:'approve'},'Member approved and ID assigned');});});
-    $$('[data-dm]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-dm'),p_action:'deny'},'Member denied');});});
-    $$('[data-au]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-au'),p_action:'approve'},'Update published');});});
-    $$('[data-du]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-du'),p_action:'deny'},'Update denied');});});
-    $$('[data-ag]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-ag'),p_action:'approve'},'Gallery published');});});
-    $$('[data-dg]').forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-dg'),p_action:'deny'},'Gallery denied');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-review-member]')).forEach(function(b){b.addEventListener('click',function(){adminReviewMember(b.getAttribute('data-review-member'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-member]')).forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-am]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-am'),p_action:'approve'},'Member approved and ID assigned');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-dm]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-dm'),p_action:'deny'},'Member denied');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-au]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-au'),p_action:'approve'},'Update published');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-du]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-du'),p_action:'deny'},'Update denied');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-ag]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-ag'),p_action:'approve'},'Gallery published');});});
+    $Array.prototype.slice.call(document.querySelectorAll('[data-dg]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'gallery',p_id:b.getAttribute('data-dg'),p_action:'deny'},'Gallery denied');});});
     $('#approvalRefresh').addEventListener('click',function(){adminPanel('approvals',true);});
     return;
   }
@@ -2363,8 +2363,8 @@ function renderAdminTab(tab,d){
           return '<article class="event-admin-card" data-content-status="'+esc(ev.status||'published')+'"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span><small>'+esc(ev.category||'GENERAL')+' · '+esc(ev.status||'published')+(ev.featured?' · FEATURED':'')+'</small>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'<div class="admin-actions event-admin-actions"><button class="mini-btn" data-edit-event="'+ev.id+'">Edit</button><button class="mini-btn" data-del-event="'+ev.id+'">Delete</button></div></div></article>';
         }).join('')+'</div>':'<div class="empty">No events stored yet. Add the first YYC programme.</div>');
       $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
-      $$('[data-edit-event]').forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
-      $$('[data-del-event]').forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
+      $Array.prototype.slice.call(document.querySelectorAll('[data-edit-event]')).forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
+      $Array.prototype.slice.call(document.querySelectorAll('[data-del-event]')).forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
       (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value,rows=$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();
     }).catch(function(e){
       a.innerHTML='<div class="storage-error"><strong>Could not load events.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="eventsRetry">Retry</button></div>';
