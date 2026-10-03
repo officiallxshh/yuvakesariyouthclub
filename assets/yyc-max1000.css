@@ -185,9 +185,7 @@ main > section.section,
 }
 
 
-/* ===== HOME HERO — DEFAULT PLACEMENT, NO AUTO ZOOM =====
-   The hero background stays at its authored/default placement.
-   No continuous zoom, navigation zoom, parallax transform, or opening scale is applied. */
+/* ===== HOME HERO — DEFAULT PLACEMENT, NO AUTO ZOOM ===== */
 .hero-photo,
 .hero-photo.yyc-bg-navigate,
 body.yyC-opening .hero-photo{
@@ -197,9 +195,7 @@ body.yyC-opening .hero-photo{
   background-position:center center!important;
 }
 
-/* ===== DESKTOP NAV — ACTIVE HIGHLIGHT LIGHT =====
-   Keep the indicator centered on whichever tab is actually active.
-   Never pin it to a specific tab or let it stretch from an edge. */
+/* ===== DESKTOP NAV — ACTIVE HIGHLIGHT LIGHT ===== */
 @media(min-width:981px){
   .desktop-nav>a.nav-link::after{
     left:50%!important;
