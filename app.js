@@ -668,7 +668,7 @@ function bindMotionSystem(){
   document.addEventListener('click',function(e){
     var tab=e.target && e.target.closest ? e.target.closest('.admin-tab') : null;
     if(!tab) return;
-    var tabs=$('.admin-tab');
+    var tabs=Array.prototype.slice.call(document.querySelectorAll('.admin-tab'));
     var current=tabs.indexOf(tab);
     var previous=window.__yycLastAdminTabIndex;
     var direction=(previous==null || current<0 || previous===current)?'forward':(current>previous?'forward':'back');
