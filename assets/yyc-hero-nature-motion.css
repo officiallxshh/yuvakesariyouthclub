@@ -81,3 +81,82 @@
     animation:none!important;
   }
 }
+
+
+/* River: gentle moving reflection limited to the actual water area. */
+.hero-river-motion{
+  clip-path:polygon(57% 58%,73% 52%,83% 61%,94% 76%,93% 88%,78% 86%,70% 78%,61% 73%);
+  opacity:.52;
+  mix-blend-mode:screen;
+  transform-origin:62% 66%;
+  animation:yycRiverShimmer 11s ease-in-out infinite;
+  filter:saturate(.9) brightness(1.08);
+}
+
+/* Sunlight pulse: a tiny breathing glow around the existing sun. */
+.hero-sun-motion{
+  position:absolute;
+  left:0;
+  top:0;
+  right:0;
+  bottom:0;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(ellipse 13% 11% at 75.8% 28.4%,rgba(255,224,155,.17),transparent 58%),
+    radial-gradient(ellipse 31% 15% at 72% 31%,rgba(255,205,105,.055),transparent 72%);
+  mix-blend-mode:screen;
+  animation:yycSunBreath 8.5s ease-in-out infinite;
+}
+
+/* Distant hill mist: almost static, slow lateral drift. */
+.hero-mist-motion{
+  position:absolute;
+  left:-8%;
+  right:-8%;
+  top:29%;
+  height:23%;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(ellipse 28% 36% at 34% 50%,rgba(236,226,202,.075),transparent 72%),
+    radial-gradient(ellipse 32% 34% at 53% 44%,rgba(236,226,202,.055),transparent 72%),
+    radial-gradient(ellipse 26% 30% at 69% 55%,rgba(236,226,202,.045),transparent 72%);
+  filter:blur(8px);
+  opacity:.58;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 24%,#000 72%,transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 24%,#000 72%,transparent);
+  animation:yycMistDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes yycRiverShimmer{
+  0%,100%{transform:translate3d(-.4%,0,0) scaleX(1);opacity:.38}
+  35%{transform:translate3d(.7%,.35%,0) scaleX(1.012);opacity:.58}
+  68%{transform:translate3d(-.25%,-.15%,0) scaleX(1.006);opacity:.46}
+}
+
+@keyframes yycSunBreath{
+  0%,100%{opacity:.45;transform:scale(1)}
+  50%{opacity:.82;transform:scale(1.025)}
+}
+
+@keyframes yycMistDrift{
+  0%{transform:translate3d(-1.2%,0,0) scale(1);opacity:.34}
+  100%{transform:translate3d(1.8%,-.4%,0) scale(1.035);opacity:.56}
+}
+
+@media(max-width:760px){
+  .hero-river-motion,
+  .hero-sun-motion,
+  .hero-mist-motion{
+    display:none;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .hero-river-motion,
+  .hero-sun-motion,
+  .hero-mist-motion{
+    animation:none!important;
+  }
+}
