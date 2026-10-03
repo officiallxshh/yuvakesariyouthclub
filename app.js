@@ -2026,6 +2026,67 @@ function getAdmin(force){
     return null;
   });
 }
+function yycAdminDataSignature(d){
+  d=d||{};
+  function countByStatus(list,status){
+    var target=String(status||'').toLowerCase();
+    return (list||[]).filter(function(x){return String(x.status||'').toLowerCase()===target;}).length;
+  }
+  return JSON.stringify({
+    members:(d.members||[]).length,
+    leaders:(d.leaders||[]).length,
+    updates:(d.updates||[]).length,
+    gallery:(d.gallery||[]).length,
+    events:(d.events||[]).length,
+    swags:(d.swags||[]).length,
+    pendingMembers:countByStatus(d.members,'pending'),
+    pendingUpdates:(d.pending_updates||[]).length,
+    pendingGallery:(d.pending_gallery||[]).length
+  });
+}
+function yycAdminSyncLabel(message,online){
+  var text=$('#yycAdminSyncText'),dot=$('#yycAdminSyncDot');
+  if(text) text.textContent=message||'LIVE SYNC';
+  if(dot) dot.classList.toggle('offline',online===false);
+}
+async function yycAdminAutoSync(){
+  if(window.__yycAdminSyncBusy)return;
+  var workspace=$('#adminWorkspace');
+  if(!workspace || !adminToken){
+    if(window.__yycAdminSyncTimer){clearInterval(window.__yycAdminSyncTimer);window.__yycAdminSyncTimer=null;}
+    return;
+  }
+  /* Never replace an open editor/form while the admin is typing. */
+  if(document.querySelector('#modalContent form[id^="admin"]') || document.querySelector('#modalContent #yycpBatchForm')){
+    yycAdminSyncLabel('LIVE SYNC · editor open',true);
+    return;
+  }
+  window.__yycAdminSyncBusy=true;
+  try{
+    var d=await rpc('admin_dashboard',{p_token:adminToken,},{timeoutMs:18000,retries:1});
+    if(!d || d.ok===false)throw new Error(d&&d.error||'Admin sync failed');
+    var previous=window.__yycAdminLastData||adminData||{};
+    var prevSig=yycAdminDataSignature(previous);
+    var nextSig=yycAdminDataSignature(d);
+    adminData=d;
+    window.__yycAdminLastData=d;
+    yycAdminSyncLabel('LIVE SYNC · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),true);
+    var active=window.__yycAdminActiveTab||workspace.getAttribute('data-yyc-active-tab')||'overview';
+    if(prevSig!==nextSig && prevSig!=='{}'){
+      renderAdminTab(active,d);
+      toast('YYC data updated automatically.');
+      if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
+    }
+  }catch(e){
+    yycAdminSyncLabel('LIVE SYNC · retrying',false);
+  }finally{
+    window.__yycAdminSyncBusy=false;
+  }
+}
+function yycAdminStartAutoSync(){
+  if(window.__yycAdminSyncTimer)clearInterval(window.__yycAdminSyncTimer);
+  window.__yycAdminSyncTimer=window.setInterval(yycAdminAutoSync,20000);
+}
 function adminPanel(tab,forceRefresh){
   /* FIXED SELECTOR MODE */
   getAdmin(!!forceRefresh).then(function(d){
@@ -2035,8 +2096,13 @@ function adminPanel(tab,forceRefresh){
     var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Notifications'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
-    openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
+    openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
+    var adminRefreshBtn=$('#yycAdminRefresh');
+    if(adminRefreshBtn) adminRefreshBtn.addEventListener('click',function(){
+      adminRefreshBtn.disabled=true;adminRefreshBtn.textContent='REFRESHING…';
+      yycAdminAutoSync().finally(function(){adminRefreshBtn.disabled=false;adminRefreshBtn.textContent='REFRESH NOW';});
+    });
     $$('.admin-tab').forEach(function(b){
       b.addEventListener('click',function(){
         var selected=this.getAttribute('data-tab')||'overview';
@@ -2055,6 +2121,8 @@ function adminPanel(tab,forceRefresh){
     });
     renderAdminTab(tab,d);
     if(typeof window.YYC90MountAdmin==='function') window.setTimeout(window.YYC90MountAdmin,0);
+    yycAdminSyncLabel('LIVE SYNC · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),true);
+    yycAdminStartAutoSync();
     var workspace=$('#adminWorkspace');
     if(workspace){
       workspace.setAttribute('data-yyc-active-tab',tab);
