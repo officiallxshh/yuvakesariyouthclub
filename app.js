@@ -40,7 +40,9 @@ window.YYC = {
   leaderLogin: function(){ return leaderLogin(); },
   leaderDashboard: function(data){ return leaderDashboard(data); },
   adminLogin: function(){ return adminLogin(); },
-  adminPanel: function(tab,forceRefresh){ return adminPanel(tab,forceRefresh); }
+  adminPanel: function(tab,forceRefresh){ return adminPanel(tab,forceRefresh); },
+  submitUpdate: function(){ return submitUpdate(); },
+  submitGallery: function(){ return submitGallery(); }
 };
 
 /* Premium membership-card interaction: delegated so member and leader cards both flip reliably. */
@@ -1257,6 +1259,78 @@ function bindNavigation(){
   window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();},{passive:true});
   activeNav();
   updateYYCScrollProgress();
+}
+function submitUpdate(){
+  if(!memberToken){
+    toast('Member login is required to submit an update.');
+    memberLogin();
+    return;
+  }
+  openModal(
+    '<div class="modal-kicker">YYC · MEMBER SUBMISSION</div>'+
+    '<h2 class="modal-title">Submit an update.</h2>'+
+    '<p class="modal-sub">Your update goes to the YYC admin team for review before it appears publicly.</p>'+
+    '<form id="memberSubmitUpdateForm"><div class="form-grid">'+
+      '<div class="field"><label>Title</label><input id="msuTitle" maxlength="160" required placeholder="Update title"></div>'+
+      '<div class="field"><label>Date</label><input id="msuDate" type="date" value="'+today()+'" required></div>'+
+      '<div class="field full"><label>Message</label><textarea id="msuBody" maxlength="3000" rows="6" required placeholder="Write the update…"></textarea></div>'+
+    '</div><div class="form-actions"><button type="button" class="btn outline" data-modal-close-only>CANCEL</button><button type="submit" class="btn gold">SUBMIT FOR REVIEW <span>→</span></button></div></form>'
+  );
+  $('#memberSubmitUpdateForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var form=this,btn=form.querySelector('button[type="submit"]');
+    if(btn&&btn.disabled)return;
+    try{
+      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='SUBMITTING…';}
+      var r=await rpc('member_submit_update',{p_token:memberToken,p_payload:{
+        title:$('#msuTitle').value.trim(),
+        body:$('#msuBody').value.trim(),
+        event_date:$('#msuDate').value
+      }});
+      if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit update');
+      closeModal();
+      toast('Update submitted for admin approval.');
+    }catch(err){
+      if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SUBMIT FOR REVIEW →';}
+      toast(err.message||'Could not submit update');
+    }
+  });
+}
+function submitGallery(){
+  if(!memberToken){
+    toast('Member login is required to submit a gallery item.');
+    memberLogin();
+    return;
+  }
+  openModal(
+    '<div class="modal-kicker">YYC · MEMBER SUBMISSION</div>'+
+    '<h2 class="modal-title">Submit a gallery item.</h2>'+
+    '<p class="modal-sub">Add a publicly reachable image URL and caption. The submission stays pending until an admin reviews it.</p>'+
+    '<form id="memberSubmitGalleryForm"><div class="form-grid">'+
+      '<div class="field"><label>Title</label><input id="msgTitle" maxlength="160" required placeholder="Photo title"></div>'+
+      '<div class="field full"><label>Image URL</label><input id="msgSrc" type="url" maxlength="1200" required placeholder="https://…"></div>'+
+      '<div class="field full"><label>Caption</label><textarea id="msgCaption" maxlength="1200" rows="5" placeholder="Optional caption"></textarea></div>'+
+    '</div><div class="form-actions"><button type="button" class="btn outline" data-modal-close-only>CANCEL</button><button type="submit" class="btn gold">SUBMIT FOR REVIEW <span>→</span></button></div></form>'
+  );
+  $('#memberSubmitGalleryForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var form=this,btn=form.querySelector('button[type="submit"]');
+    if(btn&&btn.disabled)return;
+    try{
+      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='SUBMITTING…';}
+      var r=await rpc('member_submit_gallery',{p_token:memberToken,p_payload:{
+        title:$('#msgTitle').value.trim(),
+        src:$('#msgSrc').value.trim(),
+        caption:$('#msgCaption').value.trim()
+      }});
+      if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit gallery item');
+      closeModal();
+      toast('Gallery item submitted for admin approval.');
+    }catch(err){
+      if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SUBMIT FOR REVIEW →';}
+      toast(err.message||'Could not submit gallery item');
+    }
+  });
 }
 function memberRegister(){
   var obj={photo:'',scale:1,x:50,y:50};
@@ -3000,7 +3074,7 @@ function bindUI(){
   bindNavigation();
   window.__yycAppCoreBound=true;
 }
-window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel};
+window.YYC={memberLogin:memberLogin,memberRegister:memberRegister,leaderLogin:leaderLogin,leaderDashboard:leaderDashboard,adminLogin:adminLogin,adminPanel:adminPanel,submitUpdate:submitUpdate,submitGallery:submitGallery};
 window.__yycAppCoreBound=false;
 async function restorePersistentPortals(){
   /* Keep saved sessions alive across refresh/reopen, but NEVER open a portal
