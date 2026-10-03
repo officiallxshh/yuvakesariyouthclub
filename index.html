@@ -663,6 +663,7 @@
   }
 
   function activeFromScroll(){
+    if(window.__yycNavLockUntil && Date.now()<window.__yycNavLockUntil) return;
     var offset=(document.getElementById('topbar')||{}).offsetHeight||76;
     var probe=offset+120;
     var current=sections[0];
