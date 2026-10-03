@@ -228,23 +228,43 @@
   function modalAccessibility(){
     var modal=q('#modal');if(!modal)return;
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
-    var lastFocus=null;
-    var observer=new MutationObserver(function(){
+    var lastFocus=null,focusTimer=null;
+    function focusFirst(){
+      focusTimer=null;
+      if(!modal.classList.contains('open'))return;
+      var shell=q('.modal-shell',modal);
+      var first=q('button,input,textarea,select,a[href],[tabindex]:not([tabindex="-1"])',shell||modal);
+      if(first&&typeof first.focus==='function'){
+        try{first.focus({preventScroll:true});}catch(e){try{first.focus();}catch(_e){}}
+      }
+    }
+    function scheduleFocus(){
+      if(focusTimer) return;
+      focusTimer=window.setTimeout(focusFirst,20);
+    }
+    var observer=new MutationObserver(function(records){
       var open=modal.classList.contains('open');
-      if(open){
-        lastFocus=document.activeElement;
-        var shell=q('.modal-shell',modal);if(shell)shell.setAttribute('tabindex','-1');
-        setTimeout(function(){
-          var first=q('button,input,textarea,select,a[href],[tabindex]:not([tabindex="-1"])',shell||modal);
-          if(first)first.focus();
-        },20);
-        decorateModal();
-      }else if(lastFocus&&typeof lastFocus.focus==='function'){try{lastFocus.focus();}catch(e){}}
+      if(!open){
+        if(focusTimer){clearTimeout(focusTimer);focusTimer=null;}
+        if(lastFocus&&typeof lastFocus.focus==='function'){
+          try{lastFocus.focus({preventScroll:true});}catch(e){try{lastFocus.focus();}catch(_e){}}
+        }
+        lastFocus=null;
+        return;
+      }
+      if(!lastFocus) lastFocus=document.activeElement;
+      var shell=q('.modal-shell',modal);
+      /* Set tabindex only when it actually changes. Re-writing the same
+         attribute inside this observer creates a self-triggering mutation loop. */
+      if(shell&&shell.getAttribute('tabindex')!=='-1') shell.setAttribute('tabindex','-1');
+      scheduleFocus();
+      /* Keep the existing lightweight modal decoration hook. */
+      if(records&&records.length) decorateModal();
     });
-    observer.observe(modal,{attributes:true,childList:true,subtree:true});
+    observer.observe(modal,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
     document.addEventListener('keydown',function(e){
       if(e.key!=='Escape'||!modal.classList.contains('open'))return;
-      var close=modal.querySelector('.modal-close,[data-modal-close-only]');
+      var close=modal.querySelector('.modal-close,[data-modal-close-only],[data-access-close]');
       if(close)close.click();else closeModalSafe();
     });
     modal.addEventListener('keydown',function(e){
