@@ -1957,7 +1957,7 @@ function memberLogin(){
     }).catch(function(e){toast(e.message||'Could not restore member session');});
   }
   openModal(
-    '<div class="access-login-screen member-access-screen">'+
+    '<div class="access-login-screen member-access-screen"><button type="button" class="access-inline-close" data-access-close aria-label="Close member login">×</button>'+
       '<div class="access-login-hero"><div class="access-login-icon">◉</div><div><span class="access-login-kicker">YYC MEMBER PORTAL</span><h2 class="access-login-title">Welcome back.</h2><p class="access-login-sub">Sign in with the email or phone number registered with Yuvakesari Youth Club.</p></div><span class="access-login-badge">MEMBER</span></div>'+
       '<form id="memberLoginForm" class="access-login-form" novalidate>'+
         '<div class="access-form-field"><label for="mIdent">Email or phone</label><div class="access-input-wrap"><span class="access-input-icon">◎</span><input id="mIdent" type="text" autocomplete="username" inputmode="email" placeholder="Enter email or phone" required></div></div>'+
