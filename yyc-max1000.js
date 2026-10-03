@@ -118,9 +118,7 @@
   }
 
   function addPublicCardActions(){
-    /* Leader cards must remain clean; remove any legacy three-dot controls from older cached builds. */
     qa('#leadersGrid .yyc-max-card-action').forEach(function(x){x.remove();});
-
     var groups=[
       {sel:'#eventsGrid .event-card',kind:'event'},
       {sel:'#updatesGrid .update-card',kind:'update'},
