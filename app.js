@@ -804,6 +804,119 @@ function yycLimitedSectionHTML(key,items,renderer,emptyText,itemClass){
   }
   return html;
 }
+function yycRenderAnnouncementTicker(){
+  var bar=$('#yycAnnouncementTicker');
+  var win=$('#yycTickerWindow');
+  if(!bar||!win) return;
+
+  if(window.__yycTickerTimer){
+    clearInterval(window.__yycTickerTimer);
+    window.__yycTickerTimer=null;
+  }
+
+  var dismissed=false;
+  try{dismissed=sessionStorage.getItem('yyc_announcement_ticker_hidden_v1')==='1';}catch(e){}
+  if(dismissed){
+    bar.hidden=true;
+    return;
+  }
+
+  var now=Date.now();
+  var items=(publicData&&Array.isArray(publicData.updates)?publicData.updates:[])
+    .filter(function(u){
+      var status=String(u&&u.status||'published').toLowerCase();
+      if(status!=='published') return false;
+      if(u&&u.publish_at){
+        var ts=new Date(u.publish_at).getTime();
+        if(isFinite(ts)&&ts>now) return false;
+      }
+      return !!(u&&String(u.title||'').trim());
+    })
+    .slice()
+    .sort(function(a,b){
+      var af=a&&a.featured?1:0, bf=b&&b.featured?1:0;
+      if(af!==bf) return bf-af;
+      var ad=new Date((a&& (a.published_at||a.event_date))||0).getTime();
+      var bd=new Date((b&& (b.published_at||b.event_date))||0).getTime();
+      return (isFinite(bd)?bd:0)-(isFinite(ad)?ad:0);
+    })
+    .slice(0,8);
+
+  if(!items.length){
+    bar.hidden=true;
+    return;
+  }
+  bar.hidden=false;
+
+  var index=0;
+  var paused=false;
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function paint(){
+    var u=items[index];
+    var date=fmtDate(u.event_date||u.published_at)||'LATEST';
+    var prefix=u.featured?'★ FEATURED':'ANNOUNCEMENT';
+    win.innerHTML=
+      '<button type="button" class="yyc-ticker-message" data-yyc-ticker-update>'+
+        '<span class="yyc-ticker-type">'+esc(prefix)+'</span>'+
+        '<strong>'+esc(u.title)+'</strong>'+
+        '<small>'+esc(date)+'</small>'+
+        '<span class="yyc-ticker-arrow">→</span>'+
+      '</button>';
+    var msg=win.querySelector('[data-yyc-ticker-update]');
+    if(msg){
+      msg.addEventListener('click',function(){
+        var target=document.getElementById('updates');
+        if(!target) return;
+        var header=document.querySelector('.topbar');
+        var offset=(header?header.offsetHeight:76)+58;
+        var top=Math.max(0,target.getBoundingClientRect().top+window.pageYOffset-offset);
+        if(typeof closeMobile==='function') closeMobile();
+        window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+      });
+    }
+    if(!reduce){
+      win.classList.remove('yyc-ticker-swap');
+      void win.offsetWidth;
+      win.classList.add('yyc-ticker-swap');
+    }
+  }
+
+  paint();
+
+  var pauseBtn=$('#yycTickerPause');
+  var closeBtn=$('#yycTickerClose');
+
+  if(pauseBtn){
+    pauseBtn.textContent='Ⅱ';
+    pauseBtn.setAttribute('aria-label','Pause announcements');
+    pauseBtn.addEventListener('click',function(){
+      paused=!paused;
+      this.textContent=paused?'▶':'Ⅱ';
+      this.setAttribute('aria-label',paused?'Resume announcements':'Pause announcements');
+      this.classList.toggle('is-paused',paused);
+    });
+  }
+
+  if(closeBtn){
+    closeBtn.addEventListener('click',function(){
+      try{sessionStorage.setItem('yyc_announcement_ticker_hidden_v1','1');}catch(e){}
+      bar.hidden=true;
+      if(window.__yycTickerTimer){
+        clearInterval(window.__yycTickerTimer);
+        window.__yycTickerTimer=null;
+      }
+    });
+  }
+
+  if(items.length>1){
+    window.__yycTickerTimer=setInterval(function(){
+      if(paused) return;
+      index=(index+1)%items.length;
+      paint();
+    },5500);
+  }
+}
 function renderPublic(){
   if(!publicData) return;
   var s=publicData.settings || {};
@@ -822,6 +935,7 @@ function renderPublic(){
     }).join('') : '<div class="empty">Leadership profiles will appear here.</div>';
   }
 
+  yycRenderAnnouncementTicker();
   var ug=$('#updatesGrid');
   if(ug){
     var ups=publicData.updates||[];
