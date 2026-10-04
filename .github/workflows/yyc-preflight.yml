@@ -33,7 +33,6 @@ jobs:
           node --check yyc90.js
           node --check yyc90-final.js
           node --check yyc-production.js
-          node --check yyc-max1000.js
           node --check access.js
           node --check scripts/generate-public-pages.mjs
           node --check scripts/backup-supabase.mjs
