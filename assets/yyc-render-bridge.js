@@ -16,17 +16,31 @@
   function say(msg){
     if(typeof window.toast==='function') window.toast(msg);
   }
-  function localDownload(cardButton){
+  function localDownload(cardButton,card){
     try{
-      if(cardButton && cardButton.id==='memberDownloadBtn' && typeof window.memberDashboard==='function'){
-        /* Existing listener already owns the local fallback; invoke the original function directly when exposed. */
-      }
-      if(typeof window.downloadYYCDigitalCard==='function'){
-        var kind=cardButton && cardButton.id==='leaderDownloadBtn'?'leader':'member';
-        return window.downloadYYCDigitalCard(window.__yycRenderCurrentData||{},kind,cardButton);
-      }
-    }catch(e){}
-    return Promise.reject(new Error('Local ID-card renderer is unavailable.'));
+      if(typeof window.downloadYYCDigitalCard!=='function') return Promise.reject(new Error('Local ID-card renderer is unavailable.'));
+      var kind=cardButton && cardButton.id==='leaderDownloadBtn'?'leader':'member';
+      var fields=card ? Array.prototype.slice.call(card.querySelectorAll('.yyc-id-field b')) : [];
+      var nameEl=card && card.querySelector('.yyc-id-name');
+      var positionEl=card && card.querySelector('.yyc-id-position');
+      var photoEl=card && card.querySelector('.yyc-id-card-photo');
+      var emailEl=card && card.querySelector('.yyc-back-contact span:first-child');
+      var phoneEl=card && card.querySelector('.yyc-back-contact span:nth-child(2)');
+      var dobEl=card && card.querySelector('.yyc-back-details div:nth-child(3) b');
+      var data={
+        name:nameEl ? nameEl.textContent.trim() : '',
+        position:positionEl ? positionEl.textContent.trim() : '',
+        role:positionEl ? positionEl.textContent.trim() : '',
+        role_number:fields[0] ? fields[0].textContent.trim() : '',
+        photo_url:photoEl ? photoEl.getAttribute('src') : '',
+        email:emailEl ? emailEl.textContent.trim() : '',
+        phone:phoneEl ? phoneEl.textContent.trim() : '',
+        dob:dobEl ? dobEl.textContent.trim() : ''
+      };
+      return window.downloadYYCDigitalCard(data,kind,cardButton);
+    }catch(e){
+      return Promise.reject(e);
+    }
   }
 
   function imageData(canvas){
@@ -182,11 +196,8 @@
       /* Never leave the user stuck: fall back to the existing renderer. */
       say('Server rendering unavailable — using local renderer.');
       try{
-        var current=button.id==='leaderDownloadBtn' ? window.__yycLeaderRenderData : window.__yycMemberRenderData;
-        if(typeof window.downloadYYCDigitalCard==='function'){
-          await window.downloadYYCDigitalCard(current||{},button.id==='leaderDownloadBtn'?'leader':'member',button);
-          return;
-        }
+        await localDownload(button,card);
+        return;
       }catch(fallbackError){}
       say(e && e.name==='AbortError' ? 'Rendering timed out. Please try again.' : (e.message||'ID card rendering failed.'));
     }finally{
