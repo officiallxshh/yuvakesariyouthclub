@@ -755,6 +755,11 @@ function bindYYCScrollMotion(){
 
   function updateParallax(){
     if(reduce) return;
+    if(window.innerWidth<=820) return;
+    try{
+      var conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+      if(document.body.classList.contains('yyc-low-data') || (conn&&conn.saveData)) return;
+    }catch(e){}
     var img=document.querySelector('.glimpse-feature img');
     if(!img) return;
     var rect=img.parentElement.getBoundingClientRect();
