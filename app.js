@@ -2620,7 +2620,7 @@ function adminReviewMember(id){
   if(!m) return;
   openModal(
     '<div class="yyc-admin-review">'+
-      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="adminReviewBack">← BACK</button><span class="portal-profile-kicker">ADMIN · MEMBER APPLICATION</span></div>'+
+      '<div class="portal-profile-top"><button type="button" class="mini-btn" id="adminReviewBack">← BACK</button><button type="button" class="mini-btn" id="adminReviewAdminBack">← BACK TO ADMIN</button><span class="portal-profile-kicker">ADMIN · MEMBER APPLICATION</span></div>'+
       '<div class="yyc-admin-review-hero">'+
         '<div class="yyc-admin-review-photo"><img src="'+esc(m.photo_url||'assets/yyc-logo-clean.webp')+'" alt="'+esc(m.name||'Member photo')+'" onerror="this.onerror=null;this.src=\'assets/yyc-logo-clean.webp\'"></div>'+
         '<div><span class="yyc-admin-review-status">'+esc((m.status||'pending').toUpperCase())+'</span><h2 class="modal-title" style="margin-top:8px">'+esc(m.name||'Member application')+'</h2><p class="modal-sub">Review the submitted details before approving this YYC membership.</p></div>'+
@@ -2644,6 +2644,8 @@ function adminReviewMember(id){
   );
   var back=$('#adminReviewBack');
   if(back) back.addEventListener('click',function(){closeModal();adminPanel('members');});
+  var adminBack=$('#adminReviewAdminBack');
+  if(adminBack) adminBack.addEventListener('click',function(){closeModal();adminPanel('overview');});
   var edit=$('#adminReviewEdit');
   if(edit) edit.addEventListener('click',function(){closeModal();adminMemberForm(id);});
   var approve=$('#adminReviewApprove');
@@ -2665,9 +2667,10 @@ function adminReviewMember(id){
 function adminMemberForm(id){
   var existing=(adminData.members||[]).find(function(m){return m.id===id;}) || {name:'',dob:'',phone:'',email:'',club_name:'Yuvakesari Youth Club',position:'MEMBER',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
-  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Set / Reset password '+(id?'(leave blank to keep current)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"><small class="field-help">Current password is never displayed. Enter a new password here to replace it.</small></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
+  openModal('<div class="modal-kicker">ADMIN · MEMBER</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminMemberBack">← Members</button><button type="button" class="mini-btn" id="adminMemberAdminBack">← BACK TO ADMIN</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Member</h2><form id="adminMemberForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="amName" value="'+esc(existing.name)+'" required></div><div class="field"><label>Date of birth</label><input id="amDob" type="date" value="'+esc(existing.dob||'')+'" required></div><div class="field"><label>Phone</label><input id="amPhone" value="'+esc(existing.phone||'')+'"></div><div class="field"><label>Position</label><input id="amPosition" value="'+esc(existing.position||'MEMBER')+'"></div><div class="field"><label>Email</label><input id="amEmail" type="email" value="'+esc(existing.email||'')+'"></div><div class="field"><label>Set / Reset password '+(id?'(leave blank to keep current)':'')+'</label><input id="amPass" type="password" minlength="8" '+(id?'':'required')+' placeholder="Minimum 8 characters"><small class="field-help">Current password is never displayed. Enter a new password here to replace it.</small></div><div class="field full"><label>Photo '+(id?'(leave empty to keep)':'')+'</label><input id="amFile" type="file" accept="image/*"></div></div>'+imageEditor('adminM',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SAVE MEMBER</button></div></form>');
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
+  $('#adminMemberAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);photo=await uploadYYCImage(croppedPhoto,'member',adminToken,id||'',existing.photo_url||'');obj.scale=1;obj.x=50;obj.y=50;}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
 }
 
@@ -2675,7 +2678,7 @@ function adminLeaderForm(id){
   var existing=(adminData.leaders||[]).find(function(l){return l.id===id;}) || {name:'',role:'',line:'YUVAKESARI YOUTH CLUB · SUBRAHMANYA',phone:'',email:'',login_enabled:false,status:'active',photo_url:'',photo_scale:1,photo_pos_x:50,photo_pos_y:50,sort_order:0};
   var obj={photo:existing.photo_url||'',scale:existing.photo_scale||1,x:existing.photo_pos_x==null?50:existing.photo_pos_x,y:existing.photo_pos_y==null?50:existing.photo_pos_y};
   openModal(
-    '<div class="modal-kicker">ADMIN · LEADERS</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminLeaderBack">← Leaders</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2>'+
+    '<div class="modal-kicker">ADMIN · LEADERS</div><div class="admin-form-top"><button type="button" class="mini-btn" id="adminLeaderBack">← Leaders</button><button type="button" class="mini-btn" id="adminLeaderAdminBack">← BACK TO ADMIN</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Leader</h2>'+
     '<p class="modal-sub">Leader accounts are separate from members and are created only by the admin.</p>'+
     '<form id="adminLeaderForm"><div class="form-grid">'+
       '<div class="field"><label>Name</label><input id="alName" value="'+esc(existing.name)+'" required></div>'+
@@ -2691,6 +2694,7 @@ function adminLeaderForm(id){
   );
   wireEditor('adminL',obj,'alFile');
   $('#adminLeaderBack').addEventListener('click',function(){adminPanel('leaders');});
+  $('#adminLeaderAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#adminLeaderForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var btn=this.querySelector('button[type="submit"]');
@@ -2720,7 +2724,7 @@ function adminEventForm(id){
   var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · EVENTS</div>'+
-    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button></div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminEventBack">← Events</button><button type="button" class="mini-btn" id="adminEventAdminBack">← BACK TO ADMIN</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Event</h2>'+
     '<p class="modal-sub">Manage the event, visibility, scheduling and presentation from one place.</p>'+
     '<form id="adminEventForm">'+
@@ -2748,6 +2752,7 @@ function adminEventForm(id){
   $('#aeFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);$('#aePrev').src=obj.photo;}catch(err){toast('Could not read image');}});
   $('#aeImage').addEventListener('input',function(){if(!String(obj.photo).startsWith('data:image/')){$('#aePrev').src=this.value.trim()||'assets/yyc-logo-clean.webp';}});
   $('#adminEventBack').addEventListener('click',function(){adminPanel('events');});
+  $('#adminEventAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#adminEventForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var btn=this.querySelector('button[type="submit"]');
@@ -2784,6 +2789,7 @@ function adminUpdateForm(id){
   var obj={photo:existing.image_url||''};
   openModal(
     '<div class="modal-kicker">ADMIN · UPDATES</div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminUpdateAdminBack">← BACK TO ADMIN</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Update</h2>'+
     '<p class="modal-sub">Manage the update, publishing state and public presentation.</p>'+
     '<form id="adminUpdateForm"><div class="form-grid">'+
@@ -2801,6 +2807,7 @@ function adminUpdateForm(id){
     '<div class="crop-preview yyc-simple-preview admin-update-image-preview yyc-admin-media-preview" id="auPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="auPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="Announcement image preview"></div>'+
     '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE UPDATE')+'</button></div></form>'
   );
+  $('#adminUpdateAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#auStatus').value=existing.status||'published';
   yycApplyMediaPreview('#auPreviewFrame',$('#auFormat').value);
   $('#auFormat').addEventListener('change',function(){yycApplyMediaPreview('#auPreviewFrame',this.value);});
@@ -2829,6 +2836,7 @@ function adminGalleryForm(id){
   var obj={photo:existing.src||''};
   openModal(
     '<div class="modal-kicker">ADMIN · GALLERY</div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminGalleryAdminBack">← BACK TO ADMIN</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Publish')+' Gallery Photo</h2>'+
     '<p class="modal-sub">Manage the image, album, visibility and public presentation.</p>'+
     '<form id="adminGalleryForm">'+
@@ -2846,6 +2854,7 @@ function adminGalleryForm(id){
       '<div class="crop-preview yyc-simple-preview yyc-admin-media-preview" id="agPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div>'+
       '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE PHOTO')+'</button></div></form>'
   );
+  $('#adminGalleryAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#agStatus').value=existing.status||'published';
   yycApplyMediaPreview('#agPreviewFrame',$('#agFormat').value);
   $('#agFormat').addEventListener('change',function(){yycApplyMediaPreview('#agPreviewFrame',this.value);});
@@ -2874,7 +2883,7 @@ function adminSwagForm(id){
   var image=existing.image_url||'';
   openModal(
     '<div class="modal-kicker">ADMIN · Swags</div>'+
-    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminSwagBack">← Swags</button></div>'+
+    '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminSwagBack">← Swags</button><button type="button" class="mini-btn" id="adminSwagAdminBack">← BACK TO ADMIN</button></div>'+
     '<h2 class="modal-title">'+(id?'Edit':'Add')+' Swag Item</h2>'+
     '<p class="modal-sub">Add official YYC jerseys, T-shirts, caps, accessories or other club merchandise.</p>'+
     '<form id="adminSwagForm"><div class="form-grid">'+
@@ -2900,6 +2909,7 @@ function adminSwagForm(id){
     if(!String(image).startsWith('data:image/')) $('#swPrev').src=this.value.trim()||'assets/yyc-logo-clean.webp';
   });
   $('#adminSwagBack').addEventListener('click',function(){adminPanel('swags');});
+  $('#adminSwagAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#adminSwagForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var btn=this.querySelector('button[type="submit"]');
