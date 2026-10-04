@@ -72,3 +72,133 @@ html[data-yycp-lang="kn"] .yycp-locale-kn{display:inline!important}
 .yyc-member-status{font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .yyc-member-status-approved{color:#8fd8b0}
 .yyc-member-status-duplicate{color:#e5b29b}
+
+
+/* YYC automatic announcement ticker — additive, data-safe */
+.yyc-announcement-ticker{
+  position:sticky;
+  top:76px;
+  z-index:74;
+  display:block;
+  width:100%;
+  border-bottom:1px solid rgba(229,191,107,.14);
+  background:linear-gradient(180deg,rgba(7,11,15,.96),rgba(8,12,16,.90));
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 28px rgba(0,0,0,.14);
+}
+.yyc-announcement-ticker[hidden]{display:none!important}
+.yyc-ticker-inner{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  max-width:1440px;
+  margin:0 auto;
+  padding:0 20px;
+}
+.yyc-ticker-label{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding-right:10px;
+  border-right:1px solid rgba(229,191,107,.18);
+  color:#e5c47f;
+  font:800 9px/1 Inter,sans-serif;
+  letter-spacing:.14em;
+  white-space:nowrap;
+}
+.yyc-ticker-label i{font-style:normal;font-size:10px}
+.yyc-ticker-window{
+  min-width:0;
+  flex:1 1 auto;
+  overflow:hidden;
+}
+.yyc-ticker-message{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  border:0;
+  padding:6px 0;
+  margin:0;
+  background:transparent;
+  color:#e8dfcf;
+  text-align:left;
+  cursor:pointer;
+}
+.yyc-ticker-message:hover strong{color:#f2d490}
+.yyc-ticker-type{
+  flex:0 0 auto;
+  color:#8eaa9c;
+  font:800 8px/1 Inter,sans-serif;
+  letter-spacing:.09em;
+  white-space:nowrap;
+}
+.yyc-ticker-message strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#ddd5c6;
+  font:700 12px/1.2 Inter,sans-serif;
+  transition:color .2s ease;
+}
+.yyc-ticker-message small{
+  flex:0 0 auto;
+  color:#777f7d;
+  font:600 8px/1 Inter,sans-serif;
+  letter-spacing:.05em;
+  white-space:nowrap;
+}
+.yyc-ticker-arrow{
+  flex:0 0 auto;
+  margin-left:auto;
+  color:#cda961;
+  font-size:14px;
+  transition:transform .2s ease;
+}
+.yyc-ticker-message:hover .yyc-ticker-arrow{transform:translateX(3px)}
+.yyc-ticker-pause,.yyc-ticker-close{
+  flex:0 0 auto;
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(229,191,107,.16);
+  border-radius:50%;
+  background:rgba(255,255,255,.025);
+  color:#a9a39a;
+  font:800 10px/1 Inter,sans-serif;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.yyc-ticker-pause:hover,.yyc-ticker-close:hover{
+  color:#efd28d;
+  border-color:rgba(229,191,107,.40);
+  background:rgba(229,191,107,.07);
+}
+.yyc-ticker-pause.is-paused{color:#e4c77e}
+.yyc-ticker-swap{animation:yycTickerSwap .34s ease both}
+@keyframes yycTickerSwap{
+  from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:none}
+}
+@media (max-width:980px){
+  .yyc-announcement-ticker{top:64px}
+  .yyc-ticker-inner{padding:0 12px;gap:8px}
+  .yyc-ticker-label{padding-right:8px}
+  .yyc-ticker-message strong{font-size:11px}
+}
+@media (max-width:600px){
+  .yyc-ticker-type{display:none}
+  .yyc-ticker-message{gap:7px}
+  .yyc-ticker-message small{display:none}
+  .yyc-ticker-pause,.yyc-ticker-close{width:26px;height:26px}
+}
+@media (prefers-reduced-motion:reduce){
+  .yyc-ticker-swap{animation:none}
+  .yyc-ticker-arrow{transition:none}
+}
