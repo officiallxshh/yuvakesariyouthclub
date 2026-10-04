@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "engines": { "node": "22.x" },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "sharp": "^0.34.3"
+  }
+}
