@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080b">
-<meta name="yyc-build" content="20261003-33-public-flow-fix">
+<meta name="yyc-build" content="20261004-34-announcement-ticker">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -90,7 +90,7 @@
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20260923-02">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-04">
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20261003-02">
-<link rel="stylesheet" href="yyc-production.css?v=20261002-07">
+<link rel="stylesheet" href="yyc-production.css?v=20261004-04">
 <link rel="stylesheet" href="assets/yyc-portal-redesign.css?v=20261002-10">
 <link rel="stylesheet" href="assets/yyc-premium-experience.css?v=20261003-01">
 </head>
@@ -125,6 +125,14 @@
   <a href="#gallery">▧ <span>Gallery</span></a>
   <a href="#join">✦ <span>Join</span></a>
   <button type="button" class="nav-admin full member-login-btn" id="memberLoginMobile">◉ Member Login</button><button type="button" class="nav-admin full leader-login-btn" id="leaderLoginMobile">♛ Leader Login</button><button type="button" class="nav-admin full" id="adminOpenMobile">⌑ Admin Login</button>
+</div>
+<div class="yyc-announcement-ticker" id="yycAnnouncementTicker" aria-label="YYC announcements" hidden>
+  <div class="yyc-ticker-inner">
+    <span class="yyc-ticker-label"><i>✦</i> YYC LIVE</span>
+    <div class="yyc-ticker-window" id="yycTickerWindow" aria-live="polite"></div>
+    <button type="button" class="yyc-ticker-pause" id="yycTickerPause" aria-label="Pause announcements">Ⅱ</button>
+    <button type="button" class="yyc-ticker-close" id="yycTickerClose" aria-label="Hide announcements">×</button>
+  </div>
 </div>
 
 <main>
@@ -278,7 +286,7 @@
   }catch(_){}
 })();
 </script>
-<script src="app.js?v=20261004-03"></script>
+<script src="app.js?v=20261004-04"></script>
 <script src="yyc90.js?v=20261002-07"></script>
 <script src="yyc90-final.js?v=20261002-07"></script>
 <script src="yyc-production.js?v=20261002-07"></script>
