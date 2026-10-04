@@ -202,3 +202,15 @@ html[data-yycp-lang="kn"] .yycp-locale-kn{display:inline!important}
   .yyc-ticker-swap{animation:none}
   .yyc-ticker-arrow{transition:none}
 }
+
+/* YYC PERFORMANCE: keep below-the-fold sections cheap to paint until they are near view. */
+@supports (content-visibility: auto){
+  main > .section:not(.hero){
+    content-visibility:auto;
+    contain-intrinsic-size: 760px;
+  }
+  footer.footer{
+    content-visibility:auto;
+    contain-intrinsic-size: 420px;
+  }
+}
