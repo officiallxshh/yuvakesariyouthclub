@@ -24,6 +24,23 @@ var adminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
 var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
 var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
+var YYC_PUBLIC_CACHE_KEY='yyc_public_cache_v2';
+function yycReadPublicCache(){
+  try{
+    var raw=localStorage.getItem(YYC_PUBLIC_CACHE_KEY);
+    if(!raw)return null;
+    var parsed=JSON.parse(raw);
+    if(!parsed||!parsed.data)return null;
+    return parsed;
+  }catch(e){return null;}
+}
+function yycWritePublicCache(data){
+  try{
+    var raw=JSON.stringify({savedAt:Date.now(),data:data});
+    /* Keep the browser cache bounded so large galleries never crowd out app storage. */
+    if(raw.length<=3500000)localStorage.setItem(YYC_PUBLIC_CACHE_KEY,raw);
+  }catch(e){}
+}
 var adminData = null;
 var yycMemberRsvpMap={};
 var yycMemberNotificationCache=[];
@@ -1298,13 +1315,36 @@ async function yycInitRealtime(){
 }
 
 async function loadPublic(){
+  /* Render the last known public snapshot immediately, then refresh in the background. */
+  var cached=yycReadPublicCache();
+  var renderedCached=false;
+  if(cached&&cached.data){
+    publicData=cached.data;
+    renderedCached=true;
+    try{
+      renderPublic();
+      yycInstallPublicContentChrome();
+      yycHandlePublicDeepLink();
+    }catch(e){}
+  }
+
   try{
-    publicData=await rpc('public_site_data',{}, {timeoutMs:30000,retries:2});
-    renderPublic();
-    yycInstallPublicContentChrome();
-    yycHandlePublicDeepLink();
+    var fresh=await rpc('public_site_data',{}, {timeoutMs:12000,retries:1});
+    var changed=!renderedCached;
+    if(renderedCached){
+      try{changed=JSON.stringify(fresh)!==JSON.stringify(publicData);}catch(e){changed=true;}
+    }
+    yycWritePublicCache(fresh);
+    publicData=fresh;
+    if(changed){
+      renderPublic();
+      yycInstallPublicContentChrome();
+      yycHandlePublicDeepLink();
+    }
     yycInitRealtime();
-  }catch(e){ toast('Public data is loading from the backup design.'); }
+  }catch(e){
+    if(!renderedCached) toast('Public data is loading from the backup design.');
+  }
 }
 function activeNav(){
   var target=location.hash ? location.hash.slice(1) : 'home';
