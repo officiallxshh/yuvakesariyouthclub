@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261004-02';
+var YYC_APP_BUILD='20261004-03';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1211,15 +1211,25 @@ function updateYYCActiveSection(){
   var links=Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link'));
   if(!links.length) return;
 
-  /* During a click-triggered smooth scroll, keep the clicked tab highlighted
-     instead of letting the scroll observer temporarily select another section. */
-  if(window.__yycNavLockUntil && Date.now()<window.__yycNavLockUntil){
-    var locked=location.hash ? location.hash.slice(1) : 'home';
-    var hasLocked=links.some(function(a){return (a.getAttribute('href')||'').slice(1)===locked;});
-    if(!hasLocked) locked='home';
-    var lockedLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)===locked;});
-    setYYCNavActive(lockedLink||links[0]);
+  var header=document.querySelector('.topbar');
+  var headerHeight=header ? header.offsetHeight : 76;
+  var hero=document.getElementById('home');
+
+  /* Fresh page / top of page is always Home. */
+  if(window.scrollY <= 12){
+    var homeLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)==='home';});
+    setYYCNavActive(homeLink||links[0]);
     return;
+  }
+
+  /* Keep Home active while the hero is still the main visible area. */
+  if(hero){
+    var heroBottom=hero.getBoundingClientRect().bottom;
+    if(heroBottom > headerHeight + Math.min(180,window.innerHeight*0.28)){
+      var heroLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)==='home';});
+      setYYCNavActive(heroLink||links[0]);
+      return;
+    }
   }
 
   var sections=[];
@@ -1228,14 +1238,22 @@ function updateYYCActiveSection(){
     var el=id&&document.getElementById(id);
     if(el) sections.push({id:id,el:el});
   });
-  var probe=(document.querySelector('.topbar')?.offsetHeight||76)+18;
-  var active='home';
+
+  /* Once the page has left the hero, the active tab is the section whose
+     top edge is nearest to the header, while remaining above the probe line. */
+  var probe=headerHeight+115;
+  var active='glimpse';
   var best=-Infinity;
   sections.forEach(function(item){
+    if(item.id==='home') return;
     var top=item.el.getBoundingClientRect().top;
-    var score=top<=probe ? top : top-420;
-    if(score>=best){best=score;active=item.id;}
+    var score=top<=probe ? top : -100000-(top-probe);
+    if(score>best){
+      best=score;
+      active=item.id;
+    }
   });
+
   var activeLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)===active;});
   setYYCNavActive(activeLink||links[0]);
 }
