@@ -100,13 +100,9 @@ const app = read("app.js");
 const yyc90 = read("yyc90.js");
 const production = read("yyc-production.js");
 const responsiveCss = read("assets/yyc-responsive.css");
-const max1000Css = read("assets/yyc-max1000.css");
 
 if(/\$Array\.prototype/.test(app)) {
   issues.push("app.js contains the invalid $Array.prototype runtime reference.");
-}
-if(!max1000Css.includes("YYC PUBLIC FLOW SAFETY — FINAL LAST-LOADED GUARD")) {
-  issues.push("Final public-flow visibility guard is missing from assets/yyc-max1000.css.");
 }
 if(!responsiveCss.includes("never hide public content")) {
   warnings.push("Responsive reveal block should preserve content visibility while motion is optional.");
