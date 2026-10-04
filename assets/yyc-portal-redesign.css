@@ -701,6 +701,27 @@
   }
 }
 
+/* ===== ADMIN ACTION ICONS ===== */
+.admin-shell .yyc-admin-action-icon{
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  width:16px;
+  height:16px;
+  align-items:center;
+  justify-content:center;
+  margin-right:6px;
+  font:700 14px/1 Arial,sans-serif;
+  color:currentColor;
+  flex:0 0 16px;
+}
+.admin-shell .yyc-icon-add{font-size:16px;}
+.admin-shell .yyc-icon-edit{font-size:15px;}
+.admin-shell .yyc-icon-remove{font-size:18px;line-height:.8;}
+.admin-shell .admin-actions .mini-btn,
+.admin-shell .admin-top-actions .mini-btn{
+  gap:0;
+}
 /* ===== FORM / CONTROL POLISH ACROSS PORTALS ===== */
 .access-login-screen button,
 .premium-member-dashboard button,
