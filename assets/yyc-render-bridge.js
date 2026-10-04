@@ -67,12 +67,13 @@
     clone.style.visibility='visible';
     clone.style.opacity='1';
     clone.style.transform='none';
+    var qrJobs=[];
     clone.querySelectorAll('.yyc-live-qr').forEach(function(box){
       var a=box.closest('.yyc-qr-link');
       var href=a ? a.getAttribute('href') : '';
       if(typeof window.yycLoadQrGenerator==='function' && href){
         /* Inline QR SVG removes a network dependency from the export. */
-        return window.yycLoadQrGenerator().then(function(qrcodeGenerator){
+        qrJobs.push(window.yycLoadQrGenerator().then(function(qrcodeGenerator){
           var qr=qrcodeGenerator(0,'M');
           qr.addData(String(href));
           qr.make();
@@ -88,11 +89,10 @@
           box.style.display='grid';
           box.style.placeItems='center';
           box.style.overflow='hidden';
-        });
+        }).catch(function(){}));
       }
-      return Promise.resolve();
     });
-    return clone;
+    return Promise.all(qrJobs).then(function(){return clone;});
   }
 
   async function render(button){
