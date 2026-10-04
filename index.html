@@ -280,7 +280,7 @@
   }catch(_){}
 })();
 </script>
-<script src="app.js?v=20261004-02"></script>
+<script src="app.js?v=20261004-03"></script>
 <script src="yyc90.js?v=20261002-07"></script>
 <script src="yyc90-final.js?v=20261002-07"></script>
 <script src="yyc-production.js?v=20261002-07"></script>
@@ -483,7 +483,7 @@
       /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
          broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20261004-02&cachebust='+Date.now();
+      sc.src='app.js?v=20261004-03&cachebust='+Date.now();
       sc.async=false;
       sc.onload=function(){
         if(check()) return;
@@ -609,65 +609,8 @@
   update();
 })();
 </script>
-<script id="YYC_NAV_ACTIVE_STATE">
-(function(){
-  'use strict';
-  var nav=document.querySelector('.desktop-nav');
-  if(!nav) return;
+<!-- Active desktop navigation is managed centrally by app.js so Home starts active
+     and the highlight follows the visible section while scrolling. -->
 
-  var links=[].slice.call(nav.querySelectorAll('a.nav-link[href^="#"]'));
-  var sections=links.map(function(link){
-    var id=link.getAttribute('href');
-    return {link:link,el:document.querySelector(id)};
-  }).filter(function(x){return x.el;});
-
-  function setActive(link){
-    links.forEach(function(item){
-      item.classList.toggle('active',item===link);
-      if(item===link) item.setAttribute('aria-current','page');
-      else item.removeAttribute('aria-current');
-    });
-  }
-
-  function activeFromScroll(){
-    var offset=(document.getElementById('topbar')||{}).offsetHeight||76;
-    var probe=offset+120;
-    var current=sections[0];
-
-    sections.forEach(function(item){
-      var top=item.el.getBoundingClientRect().top;
-      if(top<=probe) current=item;
-    });
-
-    if(current) setActive(current.link);
-  }
-
-  nav.addEventListener('click',function(e){
-    var link=e.target.closest && e.target.closest('a.nav-link[href^="#"]');
-    if(!link) return;
-    setActive(link);
-  },false);
-
-  var ticking=false;
-  window.addEventListener('scroll',function(){
-    if(ticking) return;
-    ticking=true;
-    requestAnimationFrame(function(){
-      ticking=false;
-      activeFromScroll();
-    });
-  },{passive:true});
-
-  window.addEventListener('hashchange',function(){
-    var link=links.find(function(item){return item.getAttribute('href')===location.hash;});
-    if(link) setActive(link);
-    else activeFromScroll();
-  });
-
-  var initial=links.find(function(item){return item.getAttribute('href')===location.hash;});
-  if(initial) setActive(initial.link);
-  else activeFromScroll();
-})();
-</script>
 \n</body>
 </html>
