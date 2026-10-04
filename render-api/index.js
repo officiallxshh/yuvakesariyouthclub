@@ -4,8 +4,25 @@ import sharp from "sharp";
 import QRCode from "qrcode";
 
 const PORT = Number(process.env.PORT || 10000);
-const MAX_BODY = 256 * 1024;
+const MAX_BODY = 18 * 1024 * 1024;
 const MAX_REMOTE = 12 * 1024 * 1024;
+const requestLog = new Map();
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT = 20;
+
+function rateLimited(req) {
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const now = Date.now();
+  const current = requestLog.get(ip) || { start: now, count: 0 };
+  if (now - current.start > RATE_WINDOW_MS) { current.start = now; current.count = 0; }
+  current.count += 1;
+  requestLog.set(ip, current);
+  if (requestLog.size > 1000) {
+    for (const [key, value] of requestLog) if (now - value.start > RATE_WINDOW_MS) requestLog.delete(key);
+  }
+  return current.count > RATE_LIMIT;
+}
+
 const CORS = new Set([
   "https://yuvakesariyouthclub.in",
   "https://www.yuvakesariyouthclub.in"
@@ -142,6 +159,7 @@ async function renderSide(templateUrl, photoUrl, qrData, fields = {}, layout = {
 const server = http.createServer(async (req, res) => {
   cors(req, res);
   if (req.method === "OPTIONS") return send(res, 204, "");
+  if (rateLimited(req)) return send(res, 429, { ok: false, error: "Too many render requests. Please try again shortly." });
   
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
