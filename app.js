@@ -2222,6 +2222,143 @@ function yycAdminStartAutoSync(){
   if(window.__yycAdminSyncTimer)clearInterval(window.__yycAdminSyncTimer);
   window.__yycAdminSyncTimer=window.setInterval(yycAdminAutoSync,20000);
 }
+function yycAdminAddMenuClose(){
+  var menu=$('#yycAdminAddMenu'),btn=$('#yycAdminAddBtn');
+  if(menu) menu.hidden=true;
+  if(btn) btn.setAttribute('aria-expanded','false');
+}
+function yycAdminOpenAdd(kind){
+  yycAdminAddMenuClose();
+  if(kind==='member') return adminMemberForm(null);
+  if(kind==='leader') return adminLeaderForm(null);
+  if(kind==='update') return adminUpdateForm(null);
+  if(kind==='gallery') return adminGalleryForm(null);
+  if(kind==='event') return adminEventForm(null);
+  if(kind==='swag') return adminSwagForm(null);
+}
+function yycAdminGlobalSearchItems(d,q){
+  q=String(q||'').trim().toLowerCase();
+  if(!q) return [];
+  d=d||{};
+  var groups=[
+    ['member','members','Member','name,email,phone,role_number,position'],
+    ['leader','leaders','Leader','name,email,phone,role,line,role_number'],
+    ['update','updates','Update','title,body,category,status'],
+    ['gallery','gallery','Gallery','title,caption,album,status'],
+    ['event','events','Event','title,description,location,category,status'],
+    ['swag','swags','Swag','title,description,category,status']
+  ];
+  var out=[];
+  groups.forEach(function(g){
+    (d[g[1]]||[]).forEach(function(x){
+      var hay=g[3].split(',').map(function(k){return String(x[k]||'').toLowerCase();}).join(' ');
+      if(hay.indexOf(q)>=0){
+        out.push({kind:g[0],type:g[2],id:x.id,title:x.name||x.title||'Untitled',meta:x.role||x.position||x.location||x.category||x.status||'YYC record'});
+      }
+    });
+  });
+  return out.slice(0,8);
+}
+function yycAdminRenderGlobalSearch(d,q){
+  var box=$('#yycAdminSearchResults');
+  if(!box) return;
+  q=String(q||'').trim();
+  if(!q){box.hidden=true;box.innerHTML='';return;}
+  var items=yycAdminGlobalSearchItems(d,q);
+  if(!items.length){
+    box.innerHTML='<div class="yyc-admin-search-empty">No matching YYC records.</div>';
+    box.hidden=false;
+    return;
+  }
+  box.innerHTML=items.map(function(x){
+    return '<button type="button" class="yyc-admin-search-result" data-global-kind="'+esc(x.kind)+'" data-global-id="'+esc(x.id)+'"><span class="yyc-admin-search-type">'+esc(x.type)+'</span><span class="yyc-admin-search-main"><b>'+esc(x.title)+'</b><small>'+esc(x.meta)+'</small></span><span class="yyc-admin-search-arrow">↗</span></button>';
+  }).join('');
+  box.hidden=false;
+}
+function yycAdminBindTools(d){
+  var addBtn=$('#yycAdminAddBtn'),menu=$('#yycAdminAddMenu'),search=$('#yycAdminGlobalSearch'),results=$('#yycAdminSearchResults');
+  if(addBtn&&menu&&!addBtn.dataset.bound){
+    addBtn.dataset.bound='1';
+    addBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      menu.hidden=!menu.hidden;
+      addBtn.setAttribute('aria-expanded',menu.hidden?'false':'true');
+    });
+    Array.prototype.slice.call(menu.querySelectorAll('[data-admin-add]')).forEach(function(b){
+      b.addEventListener('click',function(e){e.stopPropagation();yycAdminOpenAdd(b.getAttribute('data-admin-add'));});
+    });
+    document.addEventListener('click',function(e){
+      if(menu.hidden)return;
+      if(!e.target.closest('.yyc-admin-add-wrap')) yycAdminAddMenuClose();
+    });
+  }
+  if(search&&!search.dataset.bound){
+    search.dataset.bound='1';
+    search.addEventListener('input',function(){yycAdminRenderGlobalSearch(d,this.value);});
+    search.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){this.value='';yycAdminRenderGlobalSearch(d,'');this.blur();}
+    });
+  }
+  if(results&&!results.dataset.bound){
+    results.dataset.bound='1';
+    results.addEventListener('click',function(e){
+      var b=e.target.closest('[data-global-kind]');
+      if(!b)return;
+      e.preventDefault();
+      var kind=b.getAttribute('data-global-kind'),id=b.getAttribute('data-global-id');
+      if(search) search.value='';
+      results.hidden=true;
+      if(kind==='member') adminMemberForm(id);
+      else if(kind==='leader') adminLeaderForm(id);
+      else if(kind==='update') adminUpdateForm(id);
+      else if(kind==='gallery') adminGalleryForm(id);
+      else if(kind==='event') adminEventForm(id);
+      else if(kind==='swag') adminSwagForm(id);
+    });
+  }
+}
+function yycAdminLoadRecentActivity(){
+  var host=$('#yycAdminRecentActivity');
+  if(!host||!adminToken)return;
+  rpc('admin_recent_activity',{p_token:adminToken}).then(function(r){
+    if(!r||!r.ok)throw new Error(r&&r.error||'Could not load activity');
+    var items=(r.items||[]).slice(0,5);
+    host.innerHTML=items.length?items.map(function(x){
+      return '<div class="yyc-admin-recent-row"><span class="yyc-admin-recent-dot"></span><div><b>'+esc(x.summary||'YYC activity')+'</b><small>'+esc(x.actor_username||'Admin')+' · '+esc(new Date(x.created_at).toLocaleString('en-IN'))+'</small></div></div>';
+    }).join(''):'<div class="yyc-admin-recent-empty">No recent administrative changes.</div>';
+  }).catch(function(){
+    host.innerHTML='<div class="yyc-admin-recent-empty">Recent activity is temporarily unavailable.</div>';
+  });
+}
+function yycAnimateAdminNumbers(){
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  Array.prototype.slice.call(document.querySelectorAll('#adminWorkspace .admin-stats b')).forEach(function(el){
+    var target=parseInt(String(el.textContent).replace(/[^0-9]/g,''),10);
+    if(!Number.isFinite(target))return;
+    if(reduce){el.textContent=String(target);return;}
+    var start=performance.now(),duration=420;
+    function tick(now){
+      var p=Math.min(1,(now-start)/duration);
+      var eased=1-Math.pow(1-p,3);
+      el.textContent=String(Math.round(target*eased));
+      if(p<1)requestAnimationFrame(tick);
+    }
+    el.textContent='0';
+    requestAnimationFrame(tick);
+  });
+}
+function yycAdminWarnUnsaved(e){
+  var back=e.target&&e.target.closest?e.target.closest('.admin-form-top .mini-btn,[data-admin-overview]'):null;
+  if(!back)return;
+  var form=document.querySelector('#modalContent form[id^="admin"]');
+  if(!form||form.dataset.dirty!=='1')return;
+  if(!confirm('Unsaved changes will be lost. Discard them?')){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+  }
+}
+
 function adminPanel(tab,forceRefresh){
   /* FIXED SELECTOR MODE */
   getAdmin(!!forceRefresh).then(function(d){
@@ -2231,7 +2368,8 @@ function adminPanel(tab,forceRefresh){
     var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Notifications'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
-    openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
+    openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-head-tools"><div class="yyc-admin-global-tools"><div class="yyc-admin-add-wrap"><button type="button" class="mini-btn gold yyc-admin-add-btn" id="yycAdminAddBtn" aria-expanded="false"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>ADD</span></button><div class="yyc-admin-add-menu" id="yycAdminAddMenu" hidden><button type="button" data-admin-add="member">+ Member</button><button type="button" data-admin-add="leader">+ Leader</button><button type="button" data-admin-add="update">+ Update</button><button type="button" data-admin-add="gallery">+ Photo</button><button type="button" data-admin-add="event">+ Event</button><button type="button" data-admin-add="swag">+ Swag</button></div></div><div class="yyc-admin-global-search"><span aria-hidden="true">⌕</span><input id="yycAdminGlobalSearch" type="search" placeholder="Search all admin records" autocomplete="off"><div class="yyc-admin-search-results" id="yycAdminSearchResults" hidden></div></div></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
+    yycAdminBindTools(d);
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
     var adminRefreshBtn=$('#yycAdminRefresh');
     if(adminRefreshBtn) adminRefreshBtn.addEventListener('click',function(){
@@ -2323,7 +2461,7 @@ function adminPanel(tab,forceRefresh){
         if(delLeader){
           e.preventDefault();e.stopPropagation();
           var lid=delLeader.getAttribute('data-del-leader');
-          if(confirm('Delete this leader?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
+          if(confirm('Remove leader "'+esc(l.name||'this leader')+'"?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
           return;
         }
       });
@@ -2358,13 +2496,22 @@ function renderAdminTab(tab,d){
           '<div class="yyc-analytics-note">'+(pendingTotal?'There are '+pendingTotal+' items waiting for review.':'Everything is currently up to date.')+'</div>'+
         '</section>'+
       '</div>'+
+      '<div class="yyc-admin-quick-add-grid">'+
+        '<button type="button" class="yyc-admin-quick-add" data-admin-add-overview="member"><span>+</span><b>Add member</b><small>Create a member record</small></button>'+
+        '<button type="button" class="yyc-admin-quick-add" data-admin-add-overview="leader"><span>+</span><b>Add leader</b><small>Create a leader account</small></button>'+
+        '<button type="button" class="yyc-admin-quick-add" data-admin-add-overview="update"><span>+</span><b>Add update</b><small>Publish or draft an update</small></button>'+
+        '<button type="button" class="yyc-admin-quick-add" data-admin-add-overview="gallery"><span>+</span><b>Add photo</b><small>Manage gallery media</small></button>'+
+        '<button type="button" class="yyc-admin-quick-add" data-admin-add-overview="event"><span>+</span><b>Add event</b><small>Create a YYC programme</small></button>'+
+        '</div>'+
       '<div class="yyc-admin-quick-grid">'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="members"><span>◉</span><b>Members</b><small>Manage member records</small></button>'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="events"><span>◷</span><b>Events & RSVP</b><small>Publish programmes and member responses</small></button>'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="notifications"><span>🔔</span><b>Notifications</b><small>Send private member messages</small></button>'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="reports"><span>▤</span><b>Reports</b><small>Open detailed live reports</small></button>'+
       '</div>'+
+      '<section class="yyc-admin-recent-panel"><div class="yyc-admin-recent-head"><h3>Recently changed</h3><span>LAST 5 ACTIONS</span></div><div class="yyc-admin-recent-list" id="yycAdminRecentActivity"><div class="yyc-admin-recent-empty">Loading recent activity…</div></div></section>'+
       '<div class="notice" style="margin-top:16px"><strong>Backend connected.</strong> Member approvals, notifications, event RSVP responses, accounts, content, settings and digital ID cards are stored centrally in Supabase.</div>';
+    Array.prototype.slice.call(document.querySelectorAll('#adminWorkspace [data-admin-add-overview]')).forEach(function(btn){btn.addEventListener('click',function(){yycAdminOpenAdd(btn.getAttribute('data-admin-add-overview'));});});
     Array.prototype.slice.call(document.querySelectorAll('#adminWorkspace [data-admin-tab]')).forEach(function(btn){
       btn.addEventListener('click',function(){
         var target=btn.getAttribute('data-admin-tab');
@@ -2372,6 +2519,8 @@ function renderAdminTab(tab,d){
         renderAdminTab(target,d);
       });
     });
+    yycAdminLoadRecentActivity();
+    yycAnimateAdminNumbers();
     return;
   }
   if(tab==='members'){
@@ -2385,7 +2534,7 @@ function renderAdminTab(tab,d){
       if(!aHas&&bHas) return 1;
       return String(a.name||'').localeCompare(String(b.name||'')); 
     });
-    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add member</span></button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: <span class="yyc-member-status '+((m.status||'pending')==='duplicate'?'yyc-member-status-duplicate':((m.status||'pending')==='approved'?'yyc-member-status-approved':''))+'">'+esc(m.status||'pending')+'</span>'+(m.duplicate_of?' · DUPLICATE OF '+esc(m.duplicate_of):'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'">Card</button><button class="mini-btn" data-download-member="'+m.id+'">Download ID</button><button class="mini-btn" data-edit-member="'+m.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-member="'+m.id+'">PASSWORD</button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn gold" data-approve="'+m.id+'">Approve</button><button class="mini-btn" data-mark-duplicate="'+m.id+'">Duplicate</button><button class="mini-btn" data-deny="'+m.id+'">Deny</button>':'<button class="mini-btn" data-review-member="'+m.id+'">View</button>')+'<button class="mini-btn" data-remove="'+m.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Members</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddMember"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add member</span></button></div></div><div class="admin-toolbar"><input id="adminMemberSearch" class="admin-search" placeholder="Search name, role number, phone or email" autocomplete="off"><span class="admin-result-count" id="adminMemberCount"></span><button type="button" class="mini-btn" id="exportMembersCSV">Export CSV</button></div>'+ (members.length?'<div class="admin-card-list">'+members.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+'</strong><small>'+esc(m.role_number||'PENDING')+' · '+esc(m.email||'')+'</small><small>Status: <span class="yyc-member-status '+((m.status||'pending')==='duplicate'?'yyc-member-status-duplicate':((m.status||'pending')==='approved'?'yyc-member-status-approved':''))+'">'+esc(m.status||'pending')+'</span>'+(m.duplicate_of?' · DUPLICATE OF '+esc(m.duplicate_of):'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-view="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>Card</span></button><button class="mini-btn" data-download-member="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">↓</span><span>Download ID</span></button><button class="mini-btn" data-edit-member="'+m.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-member="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">🔑</span><span>PASSWORD</span></button>'+((m.status||'pending')==='pending'?'<button class="mini-btn" data-review-member="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>Review</span></button><button class="mini-btn gold" data-approve="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">✓</span><span>Approve</span></button><button class="mini-btn" data-mark-duplicate="'+m.id+'">Duplicate</button><button class="mini-btn" data-deny="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">×</span><span>Deny</span></button>':'<button class="mini-btn" data-review-member="'+m.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>View</span></button>')+'<button class="mini-btn" data-remove="'+m.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join('')+'</div>':'<div class="empty">No members yet.</div>');
     $('#adminAddMember').addEventListener('click',function(){adminMemberForm(null);});
     $('#adminMemberSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=Array.prototype.slice.call(document.querySelectorAll('.admin-card-list .approval-card'));var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminMemberCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminMemberSearch').dispatchEvent(new Event('input'));
@@ -2398,7 +2547,7 @@ function renderAdminTab(tab,d){
 
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add leader</span></button></div></div><div class="admin-toolbar"><input id="adminLeaderSearch" class="admin-search" placeholder="Search leader, role, number or email" autocomplete="off"><span class="admin-result-count" id="adminLeaderCount"></span><button type="button" class="mini-btn" id="exportLeadersCSV">Export CSV</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'">Card</button><button class="mini-btn" data-download-leader="'+l.id+'">Download ID</button><button class="mini-btn" data-edit-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-leader="'+l.id+'">PASSWORD</button><button class="mini-btn" data-del-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add leader</span></button></div></div><div class="admin-toolbar"><input id="adminLeaderSearch" class="admin-search" placeholder="Search leader, role, number or email" autocomplete="off"><span class="admin-result-count" id="adminLeaderCount"></span><button type="button" class="mini-btn" id="exportLeadersCSV">Export CSV</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>Card</span></button><button class="mini-btn" data-download-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">↓</span><span>Download ID</span></button><button class="mini-btn" data-edit-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">🔑</span><span>PASSWORD</span></button><button class="mini-btn" data-del-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
     $('#adminLeaderSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminLeaderCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminLeaderSearch').dispatchEvent(new Event('input'));
@@ -2410,7 +2559,7 @@ function renderAdminTab(tab,d){
     a.innerHTML='<div class="admin-top"><h2>Updates</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addUpdateBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add update</span></button></div></div><div class="admin-toolbar"><input id="adminUpdateSearch" class="admin-search" placeholder="Search updates" autocomplete="off"><select id="adminUpdateStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminUpdateCount"></span></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card" data-content-status="'+esc(u.status||'published')+'"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+(u.featured?' · FEATURED':'')+(u.image_format?' · Photo: '+esc(yycImageFormatMeta(u.image_format).label):'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-edit-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
     $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove update "'+esc(u.title||'this update')+'"?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
     (function(){function filterUpdates(){var q=$('#adminUpdateSearch').value.trim().toLowerCase(),st=$('#adminUpdateStatus').value,rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminUpdateCount').textContent=shown+' of '+rows.length+' shown';}$('#adminUpdateSearch').addEventListener('input',filterUpdates);$('#adminUpdateStatus').addEventListener('change',filterUpdates);filterUpdates();})();
     return;
   }
@@ -2419,7 +2568,7 @@ function renderAdminTab(tab,d){
     a.innerHTML='<div class="admin-top"><h2>Gallery</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addGalleryBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add photo</span></button></div></div><div class="admin-toolbar"><input id="adminGallerySearch" class="admin-search" placeholder="Search photos or captions" autocomplete="off"><input id="adminGalleryAlbum" class="admin-search" placeholder="Filter album" autocomplete="off"><select id="adminGalleryStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminGalleryCount"></span></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card" data-content-status="'+esc(g.status||'published')+'" data-content-album="'+esc(g.album||'GENERAL')+'">'+yycMediaFrame(g.image_format,'<img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'">')+'<figcaption><strong>'+esc(g.title)+'</strong><small>'+esc(g.album||'GENERAL')+' · '+esc(yycImageFormatMeta(g.image_format).label)+(g.featured?' · FEATURED':'')+'</small><div class="admin-actions"><button class="mini-btn gold" data-edit-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
     $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Delete photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove photo "'+esc(g.title||'this photo')+'"?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
     (function(){function filterGallery(){var q=$('#adminGallerySearch').value.trim().toLowerCase(),alb=$('#adminGalleryAlbum').value.trim().toLowerCase(),st=$('#adminGalleryStatus').value,rows=$$('#adminWorkspace .admin-gallery-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!alb||String(row.getAttribute('data-content-album')||'').toLowerCase().indexOf(alb)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminGalleryCount').textContent=shown+' of '+rows.length+' shown';}$('#adminGallerySearch').addEventListener('input',filterGallery);$('#adminGalleryAlbum').addEventListener('input',filterGallery);$('#adminGalleryStatus').addEventListener('change',filterGallery);filterGallery();})();
     return;
   }
@@ -2437,7 +2586,7 @@ function renderAdminTab(tab,d){
     $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-swag]')).forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-del-swag]')).forEach(function(b){b.addEventListener('click',async function(){
-      if(!confirm('Delete this YYC swag item?')) return;
+      if(!confirm('Remove swag "'+esc(sw.title||'this item')+'"?')) return;
       var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
       if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
       toast('Swag item deleted'); adminPanel('swags');
@@ -2776,7 +2925,7 @@ function adminEventForm(id){
   });
 }
 function adminDeleteEvent(id){
-  if(!confirm('Delete this event?')) return;
+  if(!confirm('Remove event "'+esc(((adminData.events||[]).find(function(x){return String(x.id)===String(id);})||{}).title||'this event')+'"?')) return;
   rpc('admin_delete_event',{p_token:adminToken,p_id:id}).then(function(r){
     if(!r.ok) throw new Error(r.error||'Failed');
     toast('Event deleted');
@@ -3054,7 +3203,7 @@ function bindAdminActionDelegation(){
     var removeMember=target.closest('[data-remove]');
     if(removeMember){
       e.preventDefault();e.stopImmediatePropagation();
-      if(confirm('Remove this member?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
+      if(confirm('Remove member "'+esc(m.name||'this member')+'"?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
       return;
     }
 
@@ -3093,10 +3242,25 @@ function bindAdminActionDelegation(){
     }
   },true);
 }
+function yycAdminFormDirtyGuard(){
+  if(window.__yycAdminFormDirtyGuard)return;
+  window.__yycAdminFormDirtyGuard=true;
+  document.addEventListener('input',function(e){
+    var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;
+    if(form)form.dataset.dirty='1';
+  });
+  document.addEventListener('change',function(e){
+    var form=e.target&&e.target.closest?e.target.closest('#modalContent form[id^="admin"]'):null;
+    if(form)form.dataset.dirty='1';
+  });
+  document.addEventListener('click',yycAdminWarnUnsaved,true);
+}
+
 function bindUI(){
   bindYYCScrollMotion();
   bindMotionSystem();
   bindAdminActionDelegation();
+  yycAdminFormDirtyGuard();
   if($('#memberLoginBtn')) $('#memberLoginBtn').addEventListener('click',memberLogin);
   if($('#leaderLoginBtn')) $('#leaderLoginBtn').addEventListener('click',leaderLogin);
   if($('#memberLoginMobile')) $('#memberLoginMobile').addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();memberLogin();});
