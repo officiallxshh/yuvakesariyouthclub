@@ -1,0 +1,68 @@
+/* YYC SMOOTH DATA PASS
+   Visual-only: keeps public information updates calm, readable and low-jank. */
+
+.yyc-smooth-data .leader-card,
+.yyc-smooth-data .update-card,
+.yyc-smooth-data .event-card,
+.yyc-smooth-data .gallery-card,
+.yyc-smooth-data .swag-card{
+  --yyc-data-delay:0ms;
+}
+
+.yyc-smooth-data .leader-card.yyc-data-ready,
+.yyc-smooth-data .update-card.yyc-data-ready,
+.yyc-smooth-data .event-card.yyc-data-ready,
+.yyc-smooth-data .gallery-card.yyc-data-ready,
+.yyc-smooth-data .swag-card.yyc-data-ready{
+  animation:yycPublicInfoIn .48s cubic-bezier(.16,1,.3,1) both;
+  animation-delay:var(--yyc-data-delay);
+  backface-visibility:hidden;
+}
+
+.yyc-smooth-data .yyc-data-refresh{
+  min-height:inherit;
+}
+
+.yyc-smooth-data img{
+  transition:opacity .22s ease;
+}
+
+.yyc-smooth-data .event-card-photo img,
+.yyc-smooth-data .gallery-card-media img,
+.yyc-smooth-data .update-card-media-inner img,
+.yyc-smooth-data .swag-media img{
+  opacity:1;
+}
+
+@keyframes yycPublicInfoIn{
+  from{
+    opacity:0;
+    transform:translate3d(0,12px,0) scale(.993);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .yyc-smooth-data .leader-card.yyc-data-ready,
+  .yyc-smooth-data .update-card.yyc-data-ready,
+  .yyc-smooth-data .event-card.yyc-data-ready,
+  .yyc-smooth-data .gallery-card.yyc-data-ready,
+  .yyc-smooth-data .swag-card.yyc-data-ready{
+    animation:none!important;
+    transform:none!important;
+    opacity:1!important;
+  }
+}
+
+@media (hover:none),(max-width:760px){
+  .yyc-smooth-data .leader-card.yyc-data-ready,
+  .yyc-smooth-data .update-card.yyc-data-ready,
+  .yyc-smooth-data .event-card.yyc-data-ready,
+  .yyc-smooth-data .gallery-card.yyc-data-ready,
+  .yyc-smooth-data .swag-card.yyc-data-ready{
+    animation-duration:.38s;
+  }
+}
