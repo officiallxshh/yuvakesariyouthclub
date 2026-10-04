@@ -4435,3 +4435,14 @@ body.yyc-reduced-motion .ambient{
   .yyc-notification-item{grid-template-columns:auto 1fr}
   .yyc-notification-item>.mini-btn{grid-column:2;justify-self:start}
 }
+
+/* ===== YYC PERFORMANCE / CONSTRAINED DEVICE PAINT ===== */
+body.yyc-low-data .yyc-announcement-ticker,
+body.yyc-low-data .yycp-notice,
+body.yyc-low-data .yycp-update{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+body.yyc-low-data .hero-photo{
+  will-change:auto!important;
+}
