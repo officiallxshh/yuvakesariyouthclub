@@ -659,6 +659,48 @@
   to{opacity:1;transform:none}
 }
 
+/* ===== ADMIN ACTION BUTTON VISIBILITY ===== */
+.admin-shell .admin-actions{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  flex:0 0 auto;
+  min-width:0;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.admin-shell .admin-actions .mini-btn,
+.admin-shell .admin-top-actions .mini-btn,
+.admin-shell .admin-form-top .mini-btn{
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  align-items:center;
+  justify-content:center;
+  width:auto !important;
+  min-width:78px;
+  min-height:34px;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.admin-shell .approval-card .meta,
+.admin-shell .event-admin-main,
+.admin-shell .swag-admin-body{
+  min-width:0;
+  flex:1 1 auto;
+}
+@media(max-width:620px){
+  .admin-shell .admin-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+  .admin-shell .admin-actions .mini-btn{
+    min-width:74px;
+  }
+}
+
 /* ===== FORM / CONTROL POLISH ACROSS PORTALS ===== */
 .access-login-screen button,
 .premium-member-dashboard button,
