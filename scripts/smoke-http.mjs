@@ -16,23 +16,41 @@ for (const file of js) {
   console.log('syntax OK', file);
 }
 
-const required = [
-  'https://officiallxshh.github.io/yuvakesariyouthclub/',
-  'https://officiallxshh.github.io/yuvakesariyouthclub/about.html',
-  'https://officiallxshh.github.io/yuvakesariyouthclub/contact.html',
-  'https://officiallxshh.github.io/yuvakesariyouthclub/privacy.html',
-  'https://officiallxshh.github.io/yuvakesariyouthclub/terms.html',
-  'https://officiallxshh.github.io/yuvakesariyouthclub/verify.html'
+/*
+ * The repository is deployed on a custom domain behind Cloudflare.
+ * GitHub's legacy *.github.io URL can legitimately return 403/redirect after
+ * a custom domain is configured, so the CI smoke test should not treat that
+ * legacy host as the production origin.
+ *
+ * Validate the actual committed public pages locally first; this is deterministic
+ * and catches broken/missing generated pages without depending on an external
+ * CDN, DNS edge or bot-protection policy during CI.
+ */
+const requiredFiles = [
+  'index.html',
+  'about.html',
+  'contact.html',
+  'privacy.html',
+  'terms.html',
+  'verify.html',
+  'achievements/index.html',
+  'events/index.html',
+  'gallery/index.html',
+  'leaders/index.html',
+  'updates/index.html'
 ];
 
-for (const url of required) {
-  const r = await fetch(url, { redirect: 'follow' });
-  if (!r.ok) throw new Error(url + ' returned ' + r.status);
-  const body = await r.text();
-  if (!/Yuvakesari Youth Club/i.test(body)) throw new Error(url + ' does not contain the YYC marker');
-  console.log('HTTP OK', r.status, url);
+for (const file of requiredFiles) {
+  if (!fs.existsSync(file)) throw new Error('Missing public page: ' + file);
+  const body = fs.readFileSync(file, 'utf8');
+  if (!/Yuvakesari Youth Club/i.test(body)) {
+    throw new Error(file + ' does not contain the YYC marker');
+  }
+  console.log('PUBLIC PAGE OK', file);
 }
 
+/* Live production probes are informative only: Cloudflare/WAF and DNS are
+ * deployment-edge concerns and should not make source validation red. */
 const optional = [
   'https://www.yuvakesariyouthclub.in/',
   'https://www.yuvakesariyouthclub.in/sitemap.xml',
@@ -42,8 +60,8 @@ const optional = [
 for (const url of optional) {
   try {
     const r = await fetch(url, { redirect: 'follow' });
-    console.log('CUSTOM DOMAIN', r.status, url);
+    console.log('LIVE PROBE', r.status, url);
   } catch (error) {
-    console.log('CUSTOM DOMAIN CHECK SKIPPED', url, String(error));
+    console.log('LIVE PROBE SKIPPED', url, String(error));
   }
 }
