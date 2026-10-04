@@ -367,6 +367,30 @@ async function rpc(name,args,options){
     }
   }
 }
+async function yycSendExternalAlert(payload){
+  payload=payload||{};
+  try{
+    var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-notify';
+    var res=await fetch(endpoint,{
+      method:'POST',
+      cache:'no-store',
+      credentials:'omit',
+      headers:{
+        'apikey':YYC_CONFIG.supabaseKey,
+        'Content-Type':'application/json',
+        'Accept':'application/json'
+      },
+      body:JSON.stringify(payload)
+    });
+    var text=await res.text(), data=null;
+    try{data=text?JSON.parse(text):null;}catch(e){}
+    if(!res.ok || !data || data.ok===false) throw new Error(data&&data.error||'Notification delivery failed');
+    return data;
+  }catch(e){
+    /* External alerts never block login or admin actions. */
+    return {ok:false,error:e.message||'Notification delivery failed'};
+  }
+}
 function setLoginStatus(formId,msg,isError){
   var form=$('#'+formId);
   if(!form) return;
@@ -2041,6 +2065,7 @@ function memberLogin(){
       }
       setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{})); closeModal(); memberDashboard(r.member);
+      yycSendExternalAlert({event:'login',kind:'member',session_token:memberToken,device_name:yycDeviceLabel(),channels:['email','sms']});
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
       setLoginStatus('memberLoginForm',err.message,true);
@@ -2091,6 +2116,7 @@ function leaderLogin(){
       if(!r.ok) throw new Error(r.error||'Invalid leader credentials');
       setLoginStatus('leaderLoginForm','Login successful. Opening leadership portal…',false);
       leaderToken=r.token; yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken); yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(r.leader||{})); closeModal(); leaderDashboard(r.leader);
+      yycSendExternalAlert({event:'login',kind:'leader',session_token:leaderToken,device_name:yycDeviceLabel(),channels:['email','sms']});
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN AS LEADER →';}
       setLoginStatus('leaderLoginForm',err.message,true);
@@ -2643,16 +2669,58 @@ function renderAdminTab(tab,d){
 
   if(tab==='notifications'){
     var approvedMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='approved';}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''));});
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">MEMBER MESSAGES</div><h2 class="modal-title">Notifications</h2><p class="admin-subline">Send a private notification to one approved member. Credentials and session tokens are never exposed.</p></div><button class="mini-btn" data-admin-overview>← Back to Admin</button></div>'+
-      '<form id="adminNotificationForm" class="admin-form"><div class="form-grid"><div class="field"><label>Member</label><select id="anMember" required><option value="">Select approved member</option>'+approvedMembers.map(function(m){return '<option value="'+esc(m.id)+'">'+esc(m.name)+' · '+esc(m.role_number||'PENDING')+'</option>';}).join('')+'</select></div><div class="field"><label>Type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div><div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="Notification title"></div><div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="5" placeholder="Write the notification…"></textarea></div><div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://…"></div></div><div class="form-actions"><button type="submit" class="btn gold">SEND NOTIFICATION <span>→</span></button></div></form>';
+    var activeLeaders=(d.leaders||[]).filter(function(l){return (l.status||'active')!=='inactive';}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''));});
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">MEMBER & LEADER MESSAGES</div><h2 class="modal-title">Notifications</h2><p class="admin-subline">Send a notification to an approved member or active leader. YYC will deliver it to the contact details on their account.</p></div><button class="mini-btn" data-admin-overview>← Back to Admin</button></div>'+
+      '<form id="adminNotificationForm" class="admin-form"><div class="form-grid">'+
+      '<div class="field"><label>Recipient type</label><select id="anTargetKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
+      '<div class="field"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option>'+approvedMembers.map(function(m){return '<option value="member:'+esc(m.id)+'">'+esc(m.name)+' · '+esc(m.role_number||'MEMBER')+'</option>';}).join('')+activeLeaders.map(function(l){return '<option value="leader:'+esc(l.id)+'">'+esc(l.name)+' · '+esc(l.role_number||'LEADER')+'</option>';}).join('')+'</select></div>'+
+      '<div class="field"><label>Type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div>'+
+      '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="Notification title"></div>'+
+      '<div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="5" placeholder="Write the notification…"></textarea></div>'+
+      '<div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://…"></div>'+
+      '<div class="field full"><label class="yyc-channel-choice">Delivery <span class="field-note">Uses saved contact details</span></label><div class="yyc-channel-pills"><label><input type="checkbox" id="anEmail" checked> Email</label><label><input type="checkbox" id="anSms" checked> Phone / SMS</label></div></div>'+
+      '</div><div class="form-actions"><button type="submit" class="btn gold">SEND NOTIFICATION <span>→</span></button></div>'+
+      '<div class="notice" style="margin-top:12px">Login alerts are automatic after a successful member or leader login. Admin notifications use the selected recipient’s email and/or phone when available.</div></form>';
     var nf=$('#adminNotificationForm');
+    var targetKind=$('#anTargetKind'),targetId=$('#anTargetId');
+    function syncTargetOptions(){
+      var kind=targetKind.value;
+      var list=kind==='member'?approvedMembers:activeLeaders;
+      targetId.innerHTML='<option value="">Select '+(kind==='member'?'member':'leader')+'</option>'+list.map(function(x){return '<option value="'+kind+':'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.role_number||kind.toUpperCase())+'</option>';}).join('');
+    }
+    targetKind.addEventListener('change',syncTargetOptions);
+    syncTargetOptions();
     nf.addEventListener('submit',async function(e){
       e.preventDefault();
       var btn=nf.querySelector('button[type="submit"]');btn.disabled=true;
       try{
-        var r=await rpc('admin_portal',{p_token:adminToken,p_action:'send_notification',p_payload:{member_id:$('#anMember').value,title:$('#anTitle').value.trim(),body:$('#anBody').value.trim(),type:$('#anType').value,link:$('#anLink').value.trim()}});
-        if(!r||!r.ok)throw new Error(r&&r.error||'Could not send notification');
-        nf.reset();toast('Notification sent');
+        var selected=targetId.value.split(':');
+        var kind=selected[0]||'',id=selected.slice(1).join(':');
+        if(!kind||!id) throw new Error('Please select a recipient');
+        var channels=[];
+        if($('#anEmail').checked) channels.push('email');
+        if($('#anSms').checked) channels.push('sms');
+        if(!channels.length) throw new Error('Select at least one delivery channel');
+        var r=await yycSendExternalAlert({
+          event:'notification',
+          admin_token:adminToken,
+          target_kind:kind,
+          target_id:id,
+          title:$('#anTitle').value.trim(),
+          body:$('#anBody').value.trim(),
+          type:$('#anType').value,
+          link:$('#anLink').value.trim(),
+          channels:channels
+        });
+        if(!r||!r.ok) throw new Error(r&&r.error||'Could not send notification');
+        nf.reset();
+        syncTargetOptions();
+        var sent=[];
+        if(r.in_app) sent.push('in-app');
+        if(r.delivery&&r.delivery.email&&r.delivery.email.status==='sent') sent.push('email');
+        if(r.delivery&&r.delivery.sms&&r.delivery.sms.status==='sent') sent.push('SMS');
+        if(sent.length) toast('Notification sent via '+sent.join(' + '));
+        else toast('Notification saved, but no external delivery channel is configured/available.');
       }catch(e){toast(e.message||'Could not send notification');}
       finally{btn.disabled=false;}
     });
