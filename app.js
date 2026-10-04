@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261003-07';
+var YYC_APP_BUILD='20261004-01';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1026,7 +1026,14 @@ function yycInstallPublicContentChrome(){
      Do not append a duplicate Search control to the far right. */
   if(nav){
     var rightSearch=$('#yycSearchBtn');
-    if(rightSearch) rightSearch.remove();
+    if(rightSearch && rightSearch.dataset.yycSearchBound!=='1'){
+      rightSearch.dataset.yycSearchBound='1';
+      rightSearch.addEventListener('click',function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        yycOpenSearch();
+      });
+    }
   }
   ['#eventsGrid','#updatesGrid','#galleryGrid'].forEach(function(sel){
     var grid=$(sel);
