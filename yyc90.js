@@ -697,9 +697,10 @@
     bindGlobal90();
     wrapUpload90();
     addPwa90();
-    // app.js already records the page view; avoid a duplicate RPC on every load.
-    setTimeout(load90Public,450);
-    setTimeout(function(){poll90();},900);
+    /* Feature extensions are intentionally background work; protect first paint and navigation. */
+    var idle=window.requestIdleCallback||function(fn){return window.setTimeout(fn,1500);};
+    idle(function(){load90Public();});
+    idle(function(){poll90();});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init90);else init90();
