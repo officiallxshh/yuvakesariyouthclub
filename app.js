@@ -1341,7 +1341,9 @@ async function loadPublic(){
       yycInstallPublicContentChrome();
       yycHandlePublicDeepLink();
     }
-    yycInitRealtime();
+    /* Realtime is useful after first paint, but it is not critical to opening the site. */
+    var idle=window.requestIdleCallback||function(fn){return window.setTimeout(fn,1800);};
+    idle(function(){yycInitRealtime();});
   }catch(e){
     if(!renderedCached) toast('Public data is loading from the backup design.');
   }
