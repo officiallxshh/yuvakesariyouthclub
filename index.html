@@ -94,7 +94,7 @@
 <link rel="stylesheet" href="yyc-production.css?v=20261002-07">
 <link rel="stylesheet" href="assets/yyc-portal-redesign.css?v=20261002-10">
 <link rel="stylesheet" href="assets/yyc-premium-experience.css?v=20261003-01">
-<link rel="stylesheet" href="assets/yyc-max1000.css?v=20261004-01">
+<link rel="stylesheet" href="assets/yyc-max1000.css?v=20261004-02">
 </head>
 <body class="yyC-opening">\n<div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 <header class="topbar" id="topbar">
@@ -103,6 +103,7 @@
     <span class="brand-type"><b>YUVAKESARI</b><small>YOUTH CLUB</small></span>
   </a>
   <nav class="desktop-nav" aria-label="Primary">
+    <span class="yyc-nav-highlight" id="yycNavHighlight" aria-hidden="true"></span>
     <a href="#home" class="nav-link"><span class="nav-icon">⌂</span><span class="nav-label">Home</span></a>
     <a href="#glimpse" class="nav-link"><span class="nav-icon">◈</span><span class="nav-label">Tulunad Glimpse</span></a>
     <a href="#leaders" class="nav-link"><span class="nav-icon">♛</span><span class="nav-label">Leaders</span></a>
@@ -279,7 +280,7 @@
   }catch(_){}
 })();
 </script>
-<script src="app.js?v=20261004-01"></script>
+<script src="app.js?v=20261004-02"></script>
 <script src="yyc90.js?v=20261002-07"></script>
 <script src="yyc90-final.js?v=20261002-07"></script>
 <script src="yyc-production.js?v=20261002-07"></script>
@@ -482,7 +483,7 @@
       /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
          broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20261004-01&cachebust='+Date.now();
+      sc.src='app.js?v=20261004-02&cachebust='+Date.now();
       sc.async=false;
       sc.onload=function(){
         if(check()) return;
