@@ -748,7 +748,15 @@
 .admin-shell .mini-btn:hover{transform:translateY(-1px)}
 .admin-shell .mini-btn{
   border-radius:10px;
-  background:rgba(255,255,255,.022);
+  background:linear-gradient(180deg,rgba(35,43,49,.96),rgba(20,27,32,.96)) !important;
+  border:1px solid rgba(229,193,111,.24) !important;
+  color:#eadfc9 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 2px 8px rgba(0,0,0,.18);
+}
+.admin-shell .mini-btn:hover{
+  background:linear-gradient(180deg,rgba(49,57,63,.98),rgba(25,32,37,.98)) !important;
+  border-color:rgba(229,193,111,.42) !important;
+  color:#f3e5c6 !important;
 }
 
 /* ===== MOBILE ===== */
