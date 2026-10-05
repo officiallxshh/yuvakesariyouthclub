@@ -57,7 +57,7 @@ function page(title, desc, type, item) {
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta name="theme-color" content="#05080b"><meta name="robots" content="index,follow">' +
     '<link rel="canonical" href="' + canonical + '">' +
-    '<link rel="icon" type="image/svg+xml" href="../assets/yyc-lion-favicon-redesigned.svg">' +
+    '<link rel="icon" type="image/png" href="../assets/yyc-lion-favicon.png"><link rel="shortcut icon" type="image/png" href="../assets/yyc-lion-favicon.png">' +
     '<meta name="description" content="' + esc(desc).slice(0,320) + '">' + metaImage +
     '<meta name="twitter:card" content="summary_large_image">' +
     '<meta name="twitter:title" content="' + esc(title) + ' | Yuvakesari Youth Club">' +
