@@ -7,26 +7,47 @@ permissions:
   contents: read
 jobs:
   backup:
-    if: ${{ secrets.YYC_ADMIN_TOKEN != '' && secrets.YYC_BACKUP_PASSWORD != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
       - uses: actions/setup-node@v7
         with:
           node-version: 20
+
+      - name: Check backup configuration
+        id: backup_config
+        shell: bash
+        env:
+          YYC_ADMIN_TOKEN: ${{ secrets.YYC_ADMIN_TOKEN }}
+          YYC_BACKUP_PASSWORD: ${{ secrets.YYC_BACKUP_PASSWORD }}
+        run: |
+          if [[ -n "$YYC_ADMIN_TOKEN" && -n "$YYC_BACKUP_PASSWORD" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Backup configuration is available."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Backup skipped: required GitHub Actions secrets are not configured."
+          fi
+
       - name: Generate backup
+        if: steps.backup_config.outputs.enabled == 'true'
         env:
           YYC_SUPABASE_URL: https://vrllozfzheikjbhxvpkx.supabase.co
           YYC_SUPABASE_KEY: sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt
           YYC_ADMIN_TOKEN: ${{ secrets.YYC_ADMIN_TOKEN }}
         run: node scripts/backup-supabase.mjs
+
       - name: Encrypt backup
+        if: steps.backup_config.outputs.enabled == 'true'
         env:
           YYC_BACKUP_PASSWORD: ${{ secrets.YYC_BACKUP_PASSWORD }}
         run: |
           test -n "$YYC_BACKUP_PASSWORD"
           openssl enc -aes-256-cbc -pbkdf2 -salt -in yyc-backup.json -out yyc-backup.json.enc -pass env:YYC_BACKUP_PASSWORD
+
       - name: Upload encrypted backup artifact
+        if: steps.backup_config.outputs.enabled == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: yyc-encrypted-backup-${{ github.run_number }}
