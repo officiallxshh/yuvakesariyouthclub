@@ -39,7 +39,7 @@ function checkHtml(label, html, expectedMarker){
     fail(label+': build marker mismatch (expected '+expectedMarker+', got '+(getBuildMarker(html)||'none')+')');
   }
   for(const id of ['home','glimpse','leaders','swags','updates','events','gallery','join']){
-    if(!new RegExp('id=["\\\\']'+id+'["\\\\']','i').test(html)) fail(label+': missing section #'+id);
+    if(!new RegExp("id=[\"']"+id+"[\"']","i").test(html)) fail(label+': missing section #'+id);
   }
   if(/ReferenceError|SyntaxError|installImageInputReset/i.test(html)){
     fail(label+': page contains a known JavaScript boot-error marker');
