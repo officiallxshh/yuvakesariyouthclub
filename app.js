@@ -3019,7 +3019,28 @@ function renderAdminTab(tab,d){
   }
 }
 async function adminAction(name,args,msg){
-  try{var r=await rpc(name,Object.assign({p_token:adminToken},args));if(r && r.ok===false)throw new Error(r.error||'Action failed');toast(msg);var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');}catch(e){toast(e.message);}
+  try{
+    var r=await rpc(name,Object.assign({p_token:adminToken},args));
+    if(r && r.ok===false)throw new Error(r.error||'Action failed');
+    toast(msg);
+    if(name==='admin_member_action' && args && args.p_action==='approve' && r && r.action==='approved' && r.member){
+      yycSendExternalAlert({
+        event:'approval',
+        admin_token:adminToken,
+        target_kind:'member',
+        target_id:r.member.id,
+        channels:['email']
+      }).then(function(n){
+        if(n&&n.ok){
+          var sent=n.delivery&&n.delivery.email&&n.delivery.email.status==='sent';
+          toast(sent?'Acceptance letter sent to '+(r.member.email||'the member email'):'Member approved; acceptance letter saved in YYC notifications.');
+        }else{
+          toast('Member approved, but the acceptance letter could not be sent right now.');
+        }
+      }).catch(function(){});
+    }
+    var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');
+  }catch(e){toast(e.message);}
 }
 function adminReviewMember(id){
   var m=(adminData.members||[]).find(function(x){return x.id===id;});
