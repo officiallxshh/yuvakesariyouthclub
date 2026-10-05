@@ -2254,6 +2254,15 @@ function memberLogin(){
       }
       setLoginStatus('memberLoginForm','Login successful. Opening your member portal…',false);
       memberToken=r.token; yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken); yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member||{})); closeModal(); memberDashboard(r.member);
+      try{
+        if(sessionStorage.getItem('yyc_email_card_download_v1')==='1'){
+          sessionStorage.removeItem('yyc_email_card_download_v1');
+          window.setTimeout(function(){
+            var cardBtn=document.getElementById('memberDownloadBtn');
+            if(cardBtn) cardBtn.click();
+          },900);
+        }
+      }catch(_){}
       yycSendExternalAlert({event:'login',kind:'member',session_token:memberToken,device_name:yycDeviceLabel(),channels:['email','sms']});
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'LOGIN →';}
