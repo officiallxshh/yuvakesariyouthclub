@@ -1080,7 +1080,7 @@ function yycOpenContentDetail(kind,item){
   if(kind==='event'){
     if(memberToken){
       var currentRsvp=yycMemberRsvpMap[String(item.id||'')]||'';
-      eventRsvpHtml='<div class="yyc-event-rsvp"><div><span class="portal-profile-kicker">MEMBER RSVP</span><strong>Will you attend this YYC programme?</strong><small>Select your response. You can change it later.</small></div><div class="yyc-rsvp-buttons">'+
+      eventRsvpHtml='<div class="yyc-event-rsvp" data-event-id="'+esc(item.id||'')+'"><div><span class="portal-profile-kicker">MEMBER RSVP</span><strong>Will you attend this YYC programme?</strong><small>Select your response. You can change it later.</small></div><div class="yyc-rsvp-buttons">'+
         ['attending','maybe','not_attending'].map(function(st){return '<button type="button" class="mini-btn '+(currentRsvp===st?'active-rsvp':'')+'" data-yyc-rsvp="'+st+'">'+(st==='attending'?"I'M ATTENDING":st==='maybe'?'MAYBE':"CAN'T ATTEND")+'</button>';}).join('')+
       '</div><div class="yyc-rsvp-status" id="yycRsvpStatus">'+(currentRsvp?'CURRENT RESPONSE · '+String(currentRsvp).replace('_',' ').toUpperCase():'NO RESPONSE YET')+'</div></div>';
     }else{
@@ -1210,7 +1210,35 @@ function yycInstallPublicContentChrome(){
     mb.addEventListener('click',function(){if(typeof closeMobile==='function')closeMobile();yycOpenSearch();});
     mobile.appendChild(mb);
   }
-  document.addEventListener('click',function(e){
+  document.addEventListener('click',async function(e){
+    var rsvp=e.target.closest('[data-yyc-rsvp]');
+    if(rsvp){
+      e.preventDefault();
+      e.stopPropagation();
+      var wrap=rsvp.closest('.yyc-event-rsvp');
+      var eventId=wrap&&wrap.getAttribute('data-event-id');
+      var status=rsvp.getAttribute('data-yyc-rsvp');
+      if(eventId && status && memberToken){
+        var buttons=wrap.querySelectorAll('[data-yyc-rsvp]');
+        Array.prototype.forEach.call(buttons,function(b){b.disabled=true;});
+        try{
+          var rr=await rpc('member_portal',{p_token:memberToken,p_action:'rsvp',p_payload:{event_id:eventId,status:status}});
+          if(!rr||!rr.ok) throw new Error(rr&&rr.error||'Could not save RSVP');
+          yycMemberRsvpMap[String(eventId)]=status;
+          Array.prototype.forEach.call(buttons,function(b){b.classList.toggle('active-rsvp',b===rsvp);});
+          var state=wrap.querySelector('.yyc-rsvp-status');
+          if(state) state.textContent='CURRENT RESPONSE · '+String(status).replace('_',' ').toUpperCase();
+          toast('RSVP saved');
+        }catch(err){toast(err.message||'Could not save RSVP');}
+        finally{Array.prototype.forEach.call(buttons,function(b){b.disabled=false;});}
+      }
+      return;
+    }
+    if(e.target.closest('#yycEventRsvpLogin')){
+      e.preventDefault();
+      memberLogin();
+      return;
+    }
     var cal=e.target.closest('[data-yyc-calendar]');
     if(cal){
       e.preventDefault();e.stopPropagation();
