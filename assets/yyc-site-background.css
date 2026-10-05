@@ -140,7 +140,8 @@ body:after{
     padding:0 26px;
   }
   .brand{
-    min-width:300px;
+    min-width:350px;
+    flex:0 0 350px;
   }
   .desktop-nav{
     gap:2px;
