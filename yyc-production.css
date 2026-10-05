@@ -379,3 +379,241 @@ button:disabled,
     transition:none!important;
   }
 }
+
+
+/* =========================================================
+   YYC ACTION CENTER + PUBLIC DISCOVERY PASS
+   ========================================================= */
+.yyc-action-center{
+  position:relative;
+  margin:0 0 18px;
+  padding:16px;
+  border:1px solid rgba(231,191,112,.15);
+  border-radius:20px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(231,191,112,.10),transparent 28%),
+    linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:0 16px 40px rgba(0,0,0,.16);
+}
+.yyc-action-center::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(231,191,112,.52),transparent);
+}
+.yyc-action-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:11px;
+}
+.yyc-action-head h3{
+  margin:5px 0 0;
+  color:#f0dfbd;
+  font:600 24px/1.05 "Cormorant Garamond",serif;
+}
+.yyc-action-count{
+  display:grid;
+  place-items:center;
+  min-width:34px;height:34px;
+  padding:0 9px;
+  border-radius:999px;
+  border:1px solid rgba(231,191,112,.30);
+  background:rgba(231,191,112,.07);
+  color:#f0cf88;
+  font:800 12px/1 Inter,sans-serif;
+}
+.yyc-action-list{display:grid;gap:8px}
+.yyc-action-item{
+  width:100%;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:10px 11px;
+  text-align:left;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  background:rgba(255,255,255,.018);
+  color:inherit;
+}
+.yyc-action-item:hover{
+  transform:translateY(-2px);
+  border-color:rgba(231,191,112,.25);
+  background:rgba(231,191,112,.045);
+}
+.yyc-action-item:active{transform:scale(.99)}
+.yyc-action-icon{
+  width:30px;height:30px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  color:#f0cf88;
+  border:1px solid rgba(231,191,112,.22);
+  background:rgba(231,191,112,.055);
+  font-size:12px;
+}
+.yyc-action-item b{
+  display:block;
+  color:#e9dec9;
+  font-size:11px;
+}
+.yyc-action-item small{
+  display:block;
+  margin-top:3px;
+  color:#818a87;
+  font-size:8px;
+}
+.yyc-action-item strong{
+  color:#dcb86b;
+  font-size:8px;
+  letter-spacing:.10em;
+}
+.yyc-action-empty{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px;
+  border:1px solid rgba(99,196,139,.12);
+  border-radius:14px;
+  background:rgba(99,196,139,.025);
+}
+.yyc-action-empty>span{
+  color:#8ed7ae;
+  font-size:18px;
+}
+.yyc-action-empty b{display:block;color:#d9e7dd;font-size:11px}
+.yyc-action-empty small{display:block;color:#7f8b84;font-size:8px;margin-top:3px}
+
+/* Event cards now communicate urgency before the user opens the detail view. */
+.yyc-event-countdown{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin:7px 0 4px;
+  padding:5px 8px;
+  border:1px solid rgba(231,191,112,.18);
+  border-radius:999px;
+  background:rgba(231,191,112,.045);
+  color:#e6c779;
+  font:800 8px/1 Inter,sans-serif;
+  letter-spacing:.10em;
+}
+.yyc-event-countdown.today{
+  border-color:rgba(120,201,153,.25);
+  background:rgba(120,201,153,.05);
+  color:#9be0b8;
+}
+.yyc-event-countdown.past{
+  border-color:rgba(255,255,255,.10);
+  color:#89918e;
+  background:rgba(255,255,255,.025);
+}
+.event-card-cta{
+  margin-top:11px;
+  color:#e2c477;
+  font:800 8px/1 Inter,sans-serif;
+  letter-spacing:.12em;
+  opacity:.82;
+  transition:transform .22s ease,opacity .22s ease;
+}
+.event-card:hover .event-card-cta{transform:translateX(3px);opacity:1}
+
+/* Search: visible desktop shortcut cue. */
+@media(min-width:981px){
+  #yycSearchBtn::after{
+    content:"Ctrl K";
+    margin-left:3px;
+    padding:3px 5px;
+    border:1px solid rgba(255,255,255,.10);
+    border-bottom-color:rgba(231,191,112,.25);
+    border-radius:5px;
+    color:#8f9693;
+    font:700 7px/1 Inter,sans-serif;
+    letter-spacing:.04em;
+  }
+}
+
+/* Existing gallery lightbox gets a stronger photography-first presentation. */
+.yyc-lightbox{
+  width:100%;
+}
+.yyc-lightbox-stage{
+  position:relative;
+  display:grid;
+  place-items:center;
+  min-height:min(67vh,620px);
+  margin-top:14px;
+  padding:12px 54px;
+  border:1px solid rgba(231,191,112,.11);
+  border-radius:20px;
+  background:radial-gradient(circle,rgba(231,191,112,.055),rgba(0,0,0,.34) 58%,rgba(0,0,0,.52));
+  overflow:hidden;
+}
+.yyc-lightbox-stage img{
+  max-width:100%;
+  max-height:min(63vh,570px);
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  border-radius:12px;
+  box-shadow:0 25px 70px rgba(0,0,0,.45);
+  animation:yycLightboxImageIn .45s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes yycLightboxImageIn{
+  from{opacity:0;transform:scale(.975)}
+  to{opacity:1;transform:none}
+}
+.yyc-lightbox-nav{
+  position:absolute;
+  top:50%;
+  z-index:2;
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  border:1px solid rgba(231,191,112,.23);
+  border-radius:50%;
+  background:rgba(4,8,11,.72);
+  color:#f1d08a;
+  font-size:28px;
+  transform:translateY(-50%);
+  transition:transform .24s ease,border-color .24s ease,background .24s ease;
+}
+.yyc-lightbox-nav:hover{
+  border-color:rgba(231,191,112,.55);
+  background:rgba(10,14,18,.88);
+}
+.yyc-lightbox-nav:active{transform:translateY(-50%) scale(.95)}
+.yyc-lightbox-prev{left:10px}.yyc-lightbox-next{right:10px}
+.yyc-lightbox-count{
+  display:inline-flex;
+  align-items:center;
+  min-height:30px;
+  padding:0 10px;
+  border:1px solid rgba(231,191,112,.16);
+  border-radius:999px;
+  color:#cdb989;
+  font:800 8px/1 Inter,sans-serif;
+  letter-spacing:.10em;
+}
+.yyc-lightbox-caption{
+  margin:11px 2px 0;
+  color:#bcb4a7;
+  font-size:11px;
+  line-height:1.6;
+}
+@media(max-width:700px){
+  .yyc-action-center{padding:13px;border-radius:17px}
+  .yyc-action-head h3{font-size:21px}
+  .yyc-action-item{grid-template-columns:30px minmax(0,1fr);padding:10px}
+  .yyc-action-item strong{display:none}
+  .yyc-lightbox-stage{
+    min-height:58vh;
+    padding:10px 42px;
+  }
+  .yyc-lightbox-stage img{max-height:54vh}
+}
+@media(prefers-reduced-motion:reduce){
+  .yyc-action-item,.event-card-cta,.yyc-lightbox-nav{transition:none!important}
+  .yyc-lightbox-stage img{animation:none!important}
+}
