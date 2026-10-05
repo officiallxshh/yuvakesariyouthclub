@@ -201,7 +201,7 @@
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Website</b><span>Frontend loaded</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Supabase</b><span>RPC layer reachable</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Storage</b><span>Image service deployed</span></div>'+
-      '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Backup</b><span>Automated snapshot system enabled</span></div>'+
+      '<div class="yycp-health-card" id="yycpBackupHealth"><b>… Backup</b><span>Checking latest snapshot…</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ PWA</b><span>Manifest available · service worker retired for stability</span></div>'+
       '<div class="yycp-health-card"><b class="yycp-health-ok">✓ Analytics</b><span>Page-view recorder enabled</span></div>'+
       '<div class="yycp-health-card"><b>'+esc((n.finance||0))+'</b><span>Finance entries</span></div>'+
@@ -211,15 +211,37 @@
       '<div class="yycp-health-card"><b>'+esc(n.updates)+'</b><span>Updates</span></div>'+
       '<div class="yycp-health-card"><b>'+esc(n.gallery)+'</b><span>Gallery</span></div>'+
       '<div class="yycp-health-card"><b class="'+(n.pending?'yycp-health-warn':'yycp-health-ok')+'">'+esc(n.pending)+'</b><span>Pending actions</span></div>'+
-      '</div><p class="yycp-static-note">Health indicators reflect the current browser session and deployed components; they are not a substitute for an infrastructure monitor.</p>'+
+      '</div><p class="yycp-static-note">Health indicators reflect the current browser session and deployed components; backup status is read from the YYC backup scheduler and snapshot history.</p>'+
       '<div class="form-actions"><button type="button" class="btn outline yycp-back-admin">← BACK TO ADMIN</button></div>';
     if(typeof window.openModal==='function'){
       window.openModal(html);
       var back=q('#modalContent .yycp-back-admin');
       if(back) back.onclick=function(){if(typeof window.adminPanel==='function')window.adminPanel('overview');};
+      var backup=q('#yycpBackupHealth');
+      if(backup){
+        if(!window.adminToken){
+          backup.innerHTML='<b class="yycp-health-warn">! Backup</b><span>Admin session unavailable for live backup check.</span>';
+        }else{
+          pubRpc('admin_backup_status',{p_token:window.adminToken}).then(function(b){
+            if(!b||!b.ok) throw new Error(b&&b.error||'Could not read backup status');
+            var count=Number(b.snapshot_count||0);
+            var cron=!!b.cron_enabled;
+            var last=b.last_snapshot_at?new Date(b.last_snapshot_at):null;
+            var recent=last&&!isNaN(last.getTime());
+            var good=cron&&recent&&count>0;
+            var label=good?'✓ Backup':'! Backup';
+            var cls=good?'yycp-health-ok':'yycp-health-warn';
+            var detail=cron
+              ? (count>0&&recent ? ('Last snapshot · '+last.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})) : 'Scheduler active · no snapshots recorded yet')
+              : 'Daily backup scheduler is not active';
+            backup.innerHTML='<b class="'+cls+'">'+label+'</b><span>'+esc(detail)+' · '+esc(String(count))+' snapshot(s)</span>';
+          }).catch(function(){
+            backup.innerHTML='<b class="yycp-health-warn">! Backup</b><span>Could not verify backup status.</span>';
+          });
+        }
+      }
     }
   }
-
   function refreshApp(){
     if(!confirm('Refresh the YYC app cache and reload the latest production build?'))return;
     Promise.resolve().then(function(){return ('caches' in window&&window.caches&&window.caches.keys)?window.caches.keys():[];}).then(function(keys){return Promise.all((keys||[]).filter(function(k){return String(k).indexOf('yyc-')===0;}).map(function(k){return caches.delete(k);}));}).catch(function(){}).then(function(){
