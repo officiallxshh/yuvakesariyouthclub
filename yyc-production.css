@@ -617,3 +617,77 @@ button:disabled,
   .yyc-action-item,.event-card-cta,.yyc-lightbox-nav{transition:none!important}
   .yyc-lightbox-stage img{animation:none!important}
 }
+
+
+/* ===== YYC FINAL DESKTOP HEADER FIT FIX =====
+   Prevent brand text from touching/overlapping the Home navigation item.
+   Keeps the full desktop header on one clean line at 1441px+.
+*/
+@media(min-width:1441px){
+  .topbar{
+    height:76px;
+    padding-left:28px;
+    padding-right:22px;
+  }
+
+  .brand{
+    min-width:340px!important;
+    width:340px;
+    flex:0 0 340px;
+    gap:10px;
+    overflow:visible;
+  }
+  .brand-mark{
+    width:50px;
+    height:50px;
+    flex:0 0 50px;
+  }
+  .brand-mark img{
+    width:45px;
+    height:45px;
+  }
+  .brand-type{
+    min-width:0;
+  }
+  .brand-type b{
+    display:block;
+    font-size:27px!important;
+    letter-spacing:.12em!important;
+    white-space:nowrap;
+    line-height:1;
+  }
+  .brand-type small{
+    font-size:8.5px!important;
+    letter-spacing:.38em!important;
+    margin-top:6px!important;
+    white-space:nowrap;
+  }
+
+  .desktop-nav{
+    min-width:0;
+    gap:1px;
+    flex:1 1 auto;
+  }
+  .desktop-nav>a.nav-link{
+    height:42px;
+    padding-left:8px!important;
+    padding-right:8px!important;
+    gap:6px;
+    font-size:11.5px!important;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+  .desktop-nav>a.nav-link .nav-icon{
+    font-size:14px;
+  }
+  .desktop-nav>.nav-admin{
+    height:42px;
+    margin-left:2px!important;
+    padding-left:13px!important;
+    padding-right:13px!important;
+    gap:6px;
+    font-size:10.5px!important;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+}
