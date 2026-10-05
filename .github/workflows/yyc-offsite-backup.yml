@@ -7,6 +7,7 @@ permissions:
   contents: read
 jobs:
   backup:
+    if: ${{ secrets.YYC_ADMIN_TOKEN != '' && secrets.YYC_BACKUP_PASSWORD != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
