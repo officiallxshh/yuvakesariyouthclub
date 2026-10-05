@@ -2092,7 +2092,7 @@ function yycActionCenterHTML(kind,data){
     ['MEMBER APPROVALS',pendingMembers,'members','Review member applications'],
     ['UPDATE REVIEWS',pendingUpdates,'updates','Review submitted updates'],
     ['GALLERY REVIEWS',pendingGallery,'gallery','Review submitted photos'],
-    ['VOLUNTEERS',pendingVolunteers,'volunteers','Review volunteer applications']
+    ['VOLUNTEERS',pendingVolunteers,'approvals','Review volunteer applications']
   ];
   var total=groups.reduce(function(a,x){return a+x[1];},0)+newContacts;
   var rows=groups.filter(function(x){return x[1]>0;}).map(function(x){
