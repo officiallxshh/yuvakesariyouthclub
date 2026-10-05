@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const CURRENT_PRODUCTION_JS_VERSION = "20261005-01";
-const CURRENT_PRODUCTION_CSS_VERSION = "20261005-02";
+const CURRENT_PRODUCTION_CSS_VERSION = "20261005-03";
 const ignored = new Set([".git", "node_modules"]);
 
 function walk(dir) {
