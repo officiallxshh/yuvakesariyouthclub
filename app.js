@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261004-03';
+var YYC_APP_BUILD='20261005-04';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1320,6 +1320,17 @@ function yycOpenSearch(){
   });
   setTimeout(function(){input.focus();render('');},30);
 }
+  if(!window.__yycSearchKeyboardBound){
+    window.__yycSearchKeyboardBound=true;
+    document.addEventListener('keydown',function(e){
+      if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){
+        e.preventDefault();
+        if(!document.querySelector('#modal.open')) yycOpenSearch();
+        return;
+      }
+      if(e.key==='Escape'&&document.querySelector('#yycSearchInput')&&document.querySelector('#modal.open')) closeModal();
+    });
+  }
 
 async function yycInitRealtime(){
   if(window.__yycRealtimeInitStarted)return;
@@ -2047,9 +2058,47 @@ async function yycLoadMemberPortalExtras(){
     }
   }catch(e){}
 }
+function yycMemberUpcomingCount(){
+  var todayKey=new Date().toISOString().slice(0,10);
+  return (publicData&&publicData.events||[]).filter(function(ev){
+    return ev&&ev.event_date&&String(ev.event_date)>=todayKey&&String(ev.status||'published').toLowerCase()==='published';
+  }).length;
+}
+function yycActionCenterHTML(kind,data){
+  data=data||{};
+  if(kind==='member'){
+    var unread=(yycMemberNotificationCache||[]).filter(function(n){return !n.is_read;}).length;
+    var upcoming=yycMemberUpcomingCount();
+    var items=[];
+    if(unread) items.push('<button type="button" class="yyc-action-item" id="yycActionNotifications"><span class="yyc-action-icon">●</span><span><b>'+unread+' unread notification'+(unread===1?'':'s')+'</b><small>Review updates from YYC</small></span><strong>OPEN →</strong></button>');
+    if(upcoming) items.push('<button type="button" class="yyc-action-item" id="yycActionEvents"><span class="yyc-action-icon">◷</span><span><b>'+upcoming+' upcoming event'+(upcoming===1?'':'s')+'</b><small>See programmes and RSVP</small></span><strong>VIEW →</strong></button>');
+    if(!items.length) items.push('<div class="yyc-action-empty"><span>✓</span><div><b>You are all caught up.</b><small>No urgent member actions right now.</small></div></div>');
+    return '<section class="yyc-action-center member-action-center"><div class="yyc-action-head"><div><span class="portal-profile-kicker">ACTION CENTER</span><h3>What needs your attention?</h3></div><span class="yyc-action-count">'+(unread+upcoming)+'</span></div><div class="yyc-action-list">'+items.join('')+'</div></section>';
+  }
+  var pendingMembers=(data.members||[]).filter(function(x){return String(x.status||'pending').toLowerCase()==='pending'||x.approved===false;}).length;
+  var pendingUpdates=(data.pending_updates||[]).length;
+  var pendingGallery=(data.pending_gallery||[]).length;
+  var pendingVolunteers=(data.volunteers||[]).filter(function(x){return String(x.status||'').toLowerCase()==='pending';}).length;
+  var newContacts=(data.contact_messages||data.contacts||[]).filter(function(x){return String(x.status||'new').toLowerCase()==='new';}).length;
+  var groups=[
+    ['MEMBER APPROVALS',pendingMembers,'members','Review member applications'],
+    ['UPDATE REVIEWS',pendingUpdates,'updates','Review submitted updates'],
+    ['GALLERY REVIEWS',pendingGallery,'gallery','Review submitted photos'],
+    ['VOLUNTEERS',pendingVolunteers,'volunteers','Review volunteer applications']
+  ];
+  var total=groups.reduce(function(a,x){return a+x[1];},0)+newContacts;
+  var rows=groups.filter(function(x){return x[1]>0;}).map(function(x){
+    return '<button type="button" class="yyc-action-item" data-admin-action-tab="'+x[2]+'"><span class="yyc-action-icon">!</span><span><b>'+x[1]+' '+x[0].toLowerCase()+'</b><small>'+esc(x[3])+'</small></span><strong>OPEN →</strong></button>';
+  });
+  if(newContacts) rows.push('<button type="button" class="yyc-action-item" data-admin-action-tab="notifications"><span class="yyc-action-icon">✉</span><span><b>'+newContacts+' new contact message'+(newContacts===1?'':'s')+'</b><small>Open the admin inbox</small></span><strong>OPEN →</strong></button>');
+  if(!rows.length) rows.push('<div class="yyc-action-empty"><span>✓</span><div><b>Everything is up to date.</b><small>No pending admin actions right now.</small></div></div>');
+  return '<section class="yyc-action-center admin-action-center"><div class="yyc-action-head"><div><span class="modal-kicker">ACTION CENTER</span><h3>Action required</h3></div><span class="yyc-action-count">'+total+'</span></div><div class="yyc-action-list">'+rows.join('')+'</div></section>';
+}
+
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
+    yycActionCenterHTML('member',data)+
     yycDigitalCard(data,'member')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="memberEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
@@ -2710,6 +2759,7 @@ function renderAdminTab(tab,d){
       return '<div class="yyc-analytics-row"><div class="yyc-analytics-label"><span>'+label+'</span><b>'+value+'</b></div><div class="yyc-analytics-track"><span style="width:'+pct+'%"></span></div></div>';
     }
     a.innerHTML=
+      yycActionCenterHTML('admin',d)+
       '<div class="admin-stats"><div><b>'+members.length+'</b><span>Members</span></div><div><b>'+leaders.length+'</b><span>Leaders</span></div><div><b>'+publishedUpdates+'</b><span>Published updates</span></div><div><b>'+publishedGallery+'</b><span>Gallery</span></div><div class="pending-stat"><b>'+pendingTotal+'</b><span>Pending approvals</span></div></div>'+
       '<div class="yyc-admin-analytics-grid">'+
         '<section class="yyc-analytics-panel"><div class="yyc-analytics-head"><div><span class="modal-kicker">LIVE ANALYTICS</span><h3>YYC activity snapshot</h3><p>Calculated from the current admin dataset.</p></div><span class="yyc-analytics-chip">'+memberRate+'% APPROVED</span></div>'+
