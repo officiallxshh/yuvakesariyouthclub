@@ -981,8 +981,16 @@ function renderPublic(){
       return '<article class="event-card reveal">'+
         '<div class="event-card-media" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'>'+image+'<div class="event-date-badge"><b>'+day+'</b><span>'+month+'</span><small>'+year+'</small></div></div>'+
         '<div class="event-card-body"><span class="event-kicker">YYC PROGRAMME</span><h3>'+esc(ev.title||'Untitled event')+'</h3>'+
+        (function(){
+          if(!d) return '';
+          var diff=Math.ceil((d.getTime()-new Date().setHours(0,0,0,0))/86400000);
+          if(diff<0) return '<span class="yyc-event-countdown past">COMPLETED</span>';
+          if(diff===0) return '<span class="yyc-event-countdown today">HAPPENING TODAY</span>';
+          return '<span class="yyc-event-countdown">'+diff+' DAYS TO GO</span>';
+        })()+
         (ev.description?'<p>'+esc(ev.description)+'</p>':'<p>Community programme by Yuvakesari Youth Club.</p>')+
-        '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span><button type="button" class="yyc-calendar-btn" data-yyc-calendar="'+esc(ev.id||'')+'">ADD TO CALENDAR <span>＋</span></button></div></div>'+
+        '<div class="event-meta"><span>⌖ '+esc(ev.location||'Location to be announced')+'</span><button type="button" class="yyc-calendar-btn" data-yyc-calendar="'+esc(ev.id||'')+'">ADD TO CALENDAR <span>＋</span></button></div>'+
+        '<div class="event-card-cta">VIEW EVENT DETAILS <span>→</span></div></div>'+
       '</article>';
     },'No upcoming events published yet.','event-card');
   }
@@ -2106,6 +2114,11 @@ function memberDashboard(data){
     yycSessionSection('member',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'members');});
+  var acNotify=$('#yycActionNotifications');
+  if(acNotify) acNotify.addEventListener('click',function(){yycOpenMemberNotifications();});
+  var acEvents=$('#yycActionEvents');
+  if(acEvents) acEvents.addEventListener('click',function(){closeModal();setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},180);});
+
   bindPortalAccountMenu('member',data);
   var editProfile=$('#memberEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){memberEditSubmission(data);});
   var verify=$('#memberVerifyBtn');
@@ -2791,6 +2804,12 @@ function renderAdminTab(tab,d){
         var target=btn.getAttribute('data-admin-tab');
         Array.prototype.slice.call(document.querySelectorAll('.admin-tab')).forEach(function(x){x.classList.toggle('active',x.getAttribute('data-tab')===target);});
         renderAdminTab(target,d);
+      });
+    });
+    Array.prototype.slice.call(document.querySelectorAll('#adminWorkspace [data-admin-action-tab]')).forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var target=btn.getAttribute('data-admin-action-tab');
+        if(typeof adminPanel==='function') adminPanel(target);
       });
     });
     yycAdminLoadRecentActivity();
