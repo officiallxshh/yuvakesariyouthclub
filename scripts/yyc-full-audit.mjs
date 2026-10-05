@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
-const CURRENT_ASSET_VERSION = "20261002-07";
+const CURRENT_ASSET_VERSION = "20261005-01";
 const ignored = new Set([".git", "node_modules"]);
 
 function walk(dir) {
