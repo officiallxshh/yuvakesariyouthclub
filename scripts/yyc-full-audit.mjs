@@ -3,7 +3,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
-const CURRENT_ASSET_VERSION = "20261005-01";
+const CURRENT_PRODUCTION_JS_VERSION = "20261005-01";
+const CURRENT_PRODUCTION_CSS_VERSION = "20261005-02";
 const ignored = new Set([".git", "node_modules"]);
 
 function walk(dir) {
@@ -79,16 +80,15 @@ for (const file of files.filter(f => /\.html?$/i.test(f))) {
   const prodJs = [...html.matchAll(/<script[^>]+src=["']([^"']*yyc-production\.js\?v=([^"']+))["']/gi)];
   const prodCss = [...html.matchAll(/<link[^>]+href=["']([^"']*yyc-production\.css\?v=([^"']+))["']/gi)];
   for (const m of prodJs) {
-    if (m[2] !== CURRENT_ASSET_VERSION) {
-      issues.push("Stale YYC production JS version in " + file + ": " + m[2] + " (expected " + CURRENT_ASSET_VERSION + ")");
+    if (m[2] !== CURRENT_PRODUCTION_JS_VERSION) {
+      issues.push("Stale YYC production JS version in " + file + ": " + m[2] + " (expected " + CURRENT_PRODUCTION_JS_VERSION + ")");
     }
   }
   for (const m of prodCss) {
-    if (m[2] !== CURRENT_ASSET_VERSION) {
-      issues.push("Stale YYC production CSS version in " + file + ": " + m[2] + " (expected " + CURRENT_ASSET_VERSION + ")");
+    if (m[2] !== CURRENT_PRODUCTION_CSS_VERSION) {
+      issues.push("Stale YYC production CSS version in " + file + ": " + m[2] + " (expected " + CURRENT_PRODUCTION_CSS_VERSION + ")");
     }
   }
-}
 
 const sourceText = files.filter(f => f !== "scripts/yyc-full-audit.mjs" && /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
 if (/(?<!\$)\$\((["'])[^"']+\1\)\.forEach/g.test(sourceText)) {
