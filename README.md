@@ -36,14 +36,13 @@ assets/
 - YYC branding uses a cleaned circular logo asset with the square black corners removed.
 
 ## Admin
-ID: `lxshhadmin`
-Password: `yyclxshhboss`
+Admin credentials are managed through the YYC/Supabase backend and are intentionally not stored in this public repository.
 
 ## GitHub Pages
 Repository → Settings → Pages → Deploy from a branch → `main` → `/ (root)`.
 
-## Data note
-Member/admin data is browser-local in this static GitHub Pages version. Shared multi-device registrations require a real backend such as Firebase or Supabase.
+## Data and backend
+The live YYC site uses Supabase for centralized member registration, approval, authentication, sessions, notifications, events/RSVPs, digital ID cards, QR verification, leaders, content, storage and site settings. GitHub Pages is used for the public frontend.
 
 
 Latest hero refresh: Dharma Daiva, Aati Kalenja and Yakshagana assets are bundled locally as optimized 768px WebP files and cached by sw.js.
