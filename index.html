@@ -586,6 +586,34 @@
   },true);
 })();
 </script>
+<script id="YYC_EMAIL_ACCESS_LINKS">
+(function(){
+  'use strict';
+  function boot(){
+    var q;
+    try{q=new URLSearchParams(window.location.search);}catch(_){return;}
+    if(q.get('yyc_access')!=='member-login')return;
+    var autoCard=q.get('yyc_action')==='id-card';
+    try{
+      if(autoCard)sessionStorage.setItem('yyc_email_card_download_v1','1');
+    }catch(_){}
+    var opened=false,tries=0;
+    function open(){
+      if(opened)return;
+      if(window.YYCAccess&&typeof window.YYCAccess.open==='function'){
+        opened=true;window.YYCAccess.open('memberLogin');return;
+      }
+      if(window.YYC&&typeof window.YYC.memberLogin==='function'){
+        opened=true;window.YYC.memberLogin();return;
+      }
+      tries++;
+      if(tries<80)window.setTimeout(open,100);
+    }
+    open();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
 
 <div class="yyc-premium-progress" aria-hidden="true"><span></span></div><button class="yyc-premium-backtop" id="yycPremiumBacktop" type="button" aria-label="Back to top">↑</button>
 <script id="YYC_PREMIUM_EXPERIENCE">
