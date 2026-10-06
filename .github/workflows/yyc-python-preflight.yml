@@ -40,4 +40,4 @@ jobs:
         run: python -m py_compile services/id-card-renderer-python/renderer.py
 
       - name: Import check
-        run: python -c "from services.id-card-renderer-python import renderer"
+        run: cd services/id-card-renderer-python && python -c "import renderer"
