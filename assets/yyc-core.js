@@ -42,12 +42,27 @@
       if (input === void 0) { input = {}; }
       return text(input.photo_url, text(input.photo_data, "assets/yyc-logo-clean.webp"));
     };
+    var buildIdCardPayload = function (input, kind, baseUrl) {
+      if (input === void 0) { input = {}; }
+      if (kind === void 0) { kind = "member"; }
+      if (baseUrl === void 0) { baseUrl = window.location.href; }
+      var member = normalizeMember(input);
+      var roleNumber = normalizeRoleNumber(member.role_number);
+      return {
+        member: member,
+        kind: kind,
+        roleNumber: roleNumber,
+        verifyUrl: buildVerifyUrl(roleNumber, baseUrl),
+        photoUrl: getPhotoUrl(member)
+      };
+    };
     window.YYCCore = {
       normalizeMember: normalizeMember,
       isApproved: isApproved,
       normalizeRoleNumber: normalizeRoleNumber,
       buildVerifyUrl: buildVerifyUrl,
-      getPhotoUrl: getPhotoUrl
+      getPhotoUrl: getPhotoUrl,
+      buildIdCardPayload: buildIdCardPayload
     };
   }
   installYYCCore();
