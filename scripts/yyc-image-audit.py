@@ -39,7 +39,7 @@ def check(path: Path) -> tuple[bool, str]:
         if width <= 0 or height <= 0:
             return False, f"{relative}: invalid dimensions {width}x{height}"
         return True, f"{relative}: {width}x{height} {image.format or path.suffix.upper().lstrip('.')}"
-    except (UnidentifiedImageError, OSError) as exc:
+    except (UnidentifiedImageError, OSError, SyntaxError) as exc:
         return False, f"{relative}: unreadable image ({exc})"
 
 
