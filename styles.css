@@ -4446,3 +4446,22 @@ body.yyc-low-data .yycp-update{
 body.yyc-low-data .hero-photo{
   will-change:auto!important;
 }
+
+
+/* ===== YYC FINAL SINGLE NAV HIGHLIGHT =====
+   The animated nav indicator is rendered by #yycNavHighlight.
+   Disable the older label-level underline so only one light remains.
+*/
+@media(min-width:981px){
+  .desktop-nav>a.nav-link .nav-label::after{
+    opacity:0!important;
+    transform:scaleX(0)!important;
+    display:none!important;
+  }
+  .desktop-nav>a.nav-link.active .nav-label::after,
+  .desktop-nav>a.nav-link:hover .nav-label::after{
+    opacity:0!important;
+    transform:scaleX(0)!important;
+    display:none!important;
+  }
+}
