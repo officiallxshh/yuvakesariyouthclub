@@ -2,6 +2,7 @@
   "name": "yuvakesari-youth-club",
   "private": true,
   "scripts": {
-    "typecheck": "npx --yes -p typescript@5.9.3 tsc --noEmit -p tsconfig.json"
+    "typecheck": "npx --yes -p typescript@5.9.3 tsc --noEmit -p tsconfig.json",
+    "node:check-id-card": "node --check services/yyc-id-card-node/index.mjs && node --test services/yyc-id-card-node/test.mjs"
   }
 }
