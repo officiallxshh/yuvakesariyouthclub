@@ -1645,15 +1645,19 @@ function yycBarcode(){
 }
 function yycDigitalCard(data,kind){
   data=data||{};
-  if(window.YYCCore&&typeof window.YYCCore.normalizeMember==='function'){
+  var leader=kind==='leader';
+  var cardContract=null;
+  if(window.YYCCore&&typeof window.YYCCore.buildIdCardPayload==='function'){
+    cardContract=window.YYCCore.buildIdCardPayload(data,leader?'leader':'member',location.href);
+    data=cardContract.member;
+  }else if(window.YYCCore&&typeof window.YYCCore.normalizeMember==='function'){
     data=window.YYCCore.normalizeMember(data);
   }
-  var leader=kind==='leader';
-  var roleNumber=data.role_number||'PENDING';
-  var photo=data.photo_url||'assets/yyc-logo-clean.webp';
+  var roleNumber=cardContract?cardContract.roleNumber:(data.role_number||'PENDING');
+  var photo=cardContract?cardContract.photoUrl:(data.photo_url||'assets/yyc-logo-clean.webp');
   var name=data.name||'YYC Member';
   var position=leader?(data.role||'LEADER'):(data.position||'MEMBER');
-  var verify=yycVerifyUrl(roleNumber);
+  var verify=cardContract?cardContract.verifyUrl:yycVerifyUrl(roleNumber);
   var qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(verify);
   var dob=data.dob||'—';
   return '<div class="yyc-digital-card-wrap">'+
@@ -1736,6 +1740,10 @@ function yycExportFace(sourceFace,width){
 }
 async function downloadYYCDigitalCard(data,kind,button){
   data=data||{};
+  if(window.YYCCore&&typeof window.YYCCore.buildIdCardPayload==='function'){
+    var cardPayload=window.YYCCore.buildIdCardPayload(data,kind==='leader'?'leader':'member',location.href);
+    data=cardPayload.member;
+  }
   var holder=null;
   var stage=null;
   if(button){

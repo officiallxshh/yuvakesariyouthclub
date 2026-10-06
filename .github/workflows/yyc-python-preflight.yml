@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "services/id-card-renderer-python/**"
+      - "scripts/yyc-image-audit.py"
+      - "assets/**"
       - ".github/workflows/yyc-python-preflight.yml"
   pull_request:
     branches: [main]
@@ -41,3 +43,9 @@ jobs:
 
       - name: Import check
         run: cd services/id-card-renderer-python && python -c "import renderer"
+
+      - name: Renderer unit test
+        run: cd services/id-card-renderer-python && python -m unittest test_renderer.py
+
+      - name: Raster asset audit
+        run: python scripts/yyc-image-audit.py

@@ -15,12 +15,21 @@ interface YYCMemberRecord {
   [key: string]: unknown;
 }
 
+interface YYCIdCardPayload {
+  member: YYCMemberRecord;
+  kind: "member" | "leader";
+  roleNumber: string;
+  verifyUrl: string;
+  photoUrl: string;
+}
+
 interface YYCCoreApi {
   normalizeMember(input?: YYCMemberRecord): YYCMemberRecord;
   isApproved(input?: YYCMemberRecord): boolean;
   normalizeRoleNumber(value: unknown): string;
   buildVerifyUrl(roleNumber: unknown, baseUrl?: string): string;
   getPhotoUrl(input?: YYCMemberRecord): string;
+  buildIdCardPayload(input?: YYCMemberRecord, kind?: "member" | "leader", baseUrl?: string): YYCIdCardPayload;
 }
 
 declare global {
@@ -70,12 +79,29 @@ declare global {
   const getPhotoUrl = (input: YYCMemberRecord = {}): string =>
     text(input.photo_url, text(input.photo_data, "assets/yyc-logo-clean.webp"));
 
+  const buildIdCardPayload = (
+    input: YYCMemberRecord = {},
+    kind: "member" | "leader" = "member",
+    baseUrl = window.location.href
+  ): YYCIdCardPayload => {
+    const member = normalizeMember(input);
+    const roleNumber = normalizeRoleNumber(member.role_number);
+    return {
+      member,
+      kind,
+      roleNumber,
+      verifyUrl: buildVerifyUrl(roleNumber, baseUrl),
+      photoUrl: getPhotoUrl(member)
+    };
+  };
+
   window.YYCCore = {
     normalizeMember,
     isApproved,
     normalizeRoleNumber,
     buildVerifyUrl,
-    getPhotoUrl
+    getPhotoUrl,
+    buildIdCardPayload
   };
 })();
 
