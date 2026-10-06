@@ -1149,3 +1149,175 @@ body::before{
     margin-top:14px;
   }
 }
+
+
+/* =========================================================
+   YYC CINEMATIC EXPERIENCE — FINAL SCENE POLISH
+   Controlled motion only; no heavy effects or cursor-following.
+   ========================================================= */
+
+/* 1 — Hero behaves like an opening title sequence. */
+@media(min-width:981px){
+  .hero-main,
+  .culture-panel{
+    will-change:opacity,transform;
+  }
+  .hero-main{
+    animation:
+      yycHeroContentIn 1.15s cubic-bezier(.16,1,.3,1) both,
+      yycHeroBreath 8s ease-in-out 2.8s infinite;
+  }
+  .culture-panel{
+    animation:
+      yycCultureIn 1.1s cubic-bezier(.16,1,.3,1) .35s both,
+      yycCultureBreath 9s ease-in-out 3s infinite;
+  }
+}
+@keyframes yycHeroBreath{
+  0%,100%{filter:brightness(1)}
+  50%{filter:brightness(1.018)}
+}
+@keyframes yycCultureBreath{
+  0%,100%{filter:brightness(1)}
+  50%{filter:brightness(1.012)}
+}
+
+/* 2 — A restrained atmosphere layer makes the hero read like a scene,
+      while remaining extremely cheap to render. */
+.hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:-2;
+  background:
+    radial-gradient(circle at 52% 44%,rgba(245,213,143,.035),transparent 22%),
+    linear-gradient(180deg,rgba(0,0,0,.04),transparent 28%,rgba(0,0,0,.12));
+  opacity:.75;
+}
+
+/* 3 — Section entry gets a soft light sweep in addition to the existing rise. */
+.section.yyc-section-navigate{
+  position:relative;
+  overflow:hidden;
+}
+.section.yyc-section-navigate::after{
+  animation:yycSceneLightPass 1.05s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes yycSceneLightPass{
+  0%{background-position:-120% 0,0 0;opacity:.20}
+  45%{opacity:.78}
+  100%{background-position:160% 0,0 0;opacity:1}
+}
+
+/* 4 — Section kicker appears like a film chapter marker. */
+.section-kicker{
+  transition:letter-spacing .7s cubic-bezier(.16,1,.3,1),color .35s ease;
+}
+.section-head.reveal.visible ~ *{}
+.section.yyc-section-navigate .section-kicker{
+  animation:yycChapterKicker .65s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes yycChapterKicker{
+  from{opacity:.15;letter-spacing:.34em;transform:translateY(5px)}
+  to{opacity:1;letter-spacing:.25em;transform:none}
+}
+
+/* 5 — Editorial cards settle into focus rather than simply popping in. */
+.glimpse-card,
+.glimpse-feature,
+.leader-card,
+.event-card,
+.update-card,
+.gallery-card{
+  transition:
+    transform .55s cubic-bezier(.16,1,.3,1),
+    box-shadow .55s ease,
+    border-color .35s ease,
+    filter .45s ease;
+}
+.glimpse-card:hover,
+.glimpse-feature:hover,
+.leader-card:hover,
+.event-card:not(.event-skeleton):hover,
+.update-card:hover,
+.gallery-card:hover{
+  filter:saturate(1.035);
+}
+
+/* 6 — Images breathe slightly while their cards stay still. */
+.glimpse-card img,
+.glimpse-feature img,
+.leader-card img,
+.event-card img,
+.gallery-card img{
+  transform-origin:center center;
+}
+
+/* 7 — CTA buttons get one soft highlight sweep on hover, not a constant animation. */
+.hero-actions .btn,
+.join-card .btn{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+.hero-actions .btn::before,
+.join-card .btn::before{
+  content:"";
+  position:absolute;
+  top:-25%;
+  bottom:-25%;
+  left:-55%;
+  width:20%;
+  transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  opacity:0;
+  pointer-events:none;
+}
+.hero-actions .btn:hover::before,
+.join-card .btn:hover::before{
+  opacity:1;
+  animation:yycCtaSweep .78s cubic-bezier(.16,1,.3,1);
+}
+@keyframes yycCtaSweep{
+  from{transform:translateX(0) skewX(-18deg)}
+  to{transform:translateX(720%) skewX(-18deg)}
+}
+
+/* 8 — Final JOIN section gets a subtle cinematic focus at entry. */
+.join-section.yyc-section-navigate .join-card{
+  animation:yycJoinReveal .85s cubic-bezier(.16,1,.3,1) .08s both;
+}
+@keyframes yycJoinReveal{
+  from{opacity:.12;transform:translateY(18px) scale(.985);filter:brightness(.94)}
+  to{opacity:1;transform:none;filter:none}
+}
+
+/* 9 — Keep the system lightweight on low-data devices and reduced motion. */
+@media(max-width:820px){
+  .hero::after{opacity:.48}
+  .hero-main,.culture-panel{animation-duration:.9s}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-main,
+  .culture-panel,
+  .section.yyc-section-navigate::after,
+  .section.yyc-section-navigate .section-kicker,
+  .join-section.yyc-section-navigate .join-card{
+    animation:none!important;
+  }
+  .hero-actions .btn:hover::before,
+  .join-card .btn:hover::before{
+    animation:none!important;
+    opacity:0;
+  }
+}
+@media(max-width:820px){
+  .yyc-low-data .hero-main,
+  .yyc-low-data .culture-panel{
+    animation:none!important;
+  }
+  .yyc-low-data .section.yyc-section-navigate::after{
+    animation:none!important;
+  }
+}
