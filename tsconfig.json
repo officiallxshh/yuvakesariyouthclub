@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "none",
+    "strict": true,
+    "noEmit": true,
+    "lib": ["ES2019", "DOM"],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}
