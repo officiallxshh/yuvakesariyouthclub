@@ -55,5 +55,6 @@ test("builds a bounded Python renderer command", () => {
 
   assert.equal(result.request.kind, "leader");
   assert.ok(result.pythonArgs.includes("--verify-url"));
-  assert.ok(result.pythonArgs.includes("YYC-L-001"));
+  const verifyIndex = result.pythonArgs.indexOf("--verify-url");
+  assert.equal(result.pythonArgs[verifyIndex + 1], "https://www.yuvakesariyouthclub.in/verify.html?uid=YYC-L-001");
 });
