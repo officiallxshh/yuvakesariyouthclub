@@ -1,0 +1,43 @@
+name: YYC Python Preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/id-card-renderer-python/**"
+      - ".github/workflows/yyc-python-preflight.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/id-card-renderer-python/**"
+      - ".github/workflows/yyc-python-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yyc-python-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-renderer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install renderer dependencies
+        run: python -m pip install --disable-pip-version-check -r services/id-card-renderer-python/requirements.txt
+
+      - name: Compile check
+        run: python -m py_compile services/id-card-renderer-python/renderer.py
+
+      - name: Import check
+        run: python -c "from services.id-card-renderer-python import renderer"
