@@ -1633,6 +1633,9 @@ function memberRegister(){
   });
 }
 function yycVerifyUrl(roleNumber){
+  if(window.YYCCore&&typeof window.YYCCore.buildVerifyUrl==='function'){
+    return window.YYCCore.buildVerifyUrl(roleNumber,location.href);
+  }
   return new URL('verify.html',location.href).href+'?uid='+encodeURIComponent(roleNumber||'');
 }
 function yycBarcode(){
@@ -1642,6 +1645,9 @@ function yycBarcode(){
 }
 function yycDigitalCard(data,kind){
   data=data||{};
+  if(window.YYCCore&&typeof window.YYCCore.normalizeMember==='function'){
+    data=window.YYCCore.normalizeMember(data);
+  }
   var leader=kind==='leader';
   var roleNumber=data.role_number||'PENDING';
   var photo=data.photo_url||'assets/yyc-logo-clean.webp';
