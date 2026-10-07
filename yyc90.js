@@ -415,7 +415,7 @@
     var tabs=q('.admin-tabs');if(!tabs||q('[data-yyc90-tab="volunteers"]'))return;
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
-      ['attendance','Attendance'],['finance','Finance'],['messages','Messages'],
+      ['attendance','Attendance'],['certificates','Certificates'],['finance','Finance'],['messages','Messages'],
       ['analytics','Analytics'],['backup','Backup'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
@@ -440,6 +440,73 @@
   function renderHistory90(d){
     var rows=d.history||[];
     return adminHeader90('YYC History')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="h90Add">+ Add history item</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(h){return '<div class="approval-card"><div class="meta"><strong>'+esc90(h.year_label)+' · '+esc90(h.title)+'</strong><small>'+esc90(h.status||'published')+'</small><p>'+esc90(h.body||'')+'</p></div><div class="admin-actions"><button class="mini-btn gold" data-h90-edit="'+h.id+'">Edit</button><button class="mini-btn" data-h90-del="'+h.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No history items yet.</div>')+'</div>';
+  }
+
+  function renderCertificates90(){
+    return adminHeader90('Certificates')+
+      '<div class="admin-toolbar">'+
+        '<input id="c90CertSearch" class="admin-search" placeholder="Search recipient, event or certificate no">'+
+        '<select id="c90CertStatus"><option value="">All status</option><option value="emailed">Emailed</option><option value="generated">Generated</option><option value="failed">Failed</option><option value="pending">Pending</option><option value="revoked">Revoked</option></select>'+
+        '<button type="button" class="mini-btn" id="c90CertRefresh">Refresh</button>'+
+        '<button type="button" class="mini-btn gold" id="c90CertExport">Export CSV</button>'+
+      '</div>'+
+      '<div id="c90CertCount" class="admin-result-count"></div>'+
+      '<div id="c90CertificateList" class="admin-card-list"><div class="empty">Loading certificates…</div></div>';
+  }
+
+  function renderCertificateRows90(items){
+    var rows=items||[];
+    if(!rows.length)return '<div class="empty">No certificates found.</div>';
+    return rows.map(function(c){
+      var status=String(c.status||'pending').toLowerCase();
+      var no=String(c.certificate_no||'').padStart(2,'0');
+      var viewUrl='./certificate.html?token='+encodeURIComponent(c.certificate_token||'');
+      var retry=status==='failed'?'<button class="mini-btn" data-c90-retry="'+esc90(c.id)+'">Retry email</button>':'';
+      var view=c.certificate_token?'<a class="mini-btn gold" href="'+esc90(viewUrl)+'" target="_blank" rel="noopener">View</a>':'';
+      return '<div class="approval-card yyc90-certificate-row" data-status="'+esc90(status)+'">'+
+        '<div class="meta"><strong>CERTIFICATE NO '+esc90(no)+' · '+esc90(c.recipient_name)+'</strong>'+
+        '<small>'+esc90(c.certificate_code||'')+' · '+esc90(c.recipient_kind||'')+'</small>'+
+        '<small>'+esc90(c.event_title||'YYC Event')+' · '+esc90(format90Date(c.event_date))+' · '+esc90(c.location||'')+'</small>'+
+        '<small>STATUS · <b>'+esc90(status.toUpperCase())+'</b>'+(c.emailed_at?' · EMAILED '+esc90(format90Date(c.emailed_at)):'')+'</small>'+
+        (c.error_message?'<p>'+esc90(c.error_message)+'</p>':'')+
+        '</div><div class="admin-actions">'+view+retry+'</div></div>';
+    }).join('');
+  }
+
+  function certificateRetry90(certificateId){
+    if(typeof window.yycSendExternalAlert!=='function')return Promise.reject(new Error('Certificate delivery service is not ready'));
+    return window.yycSendExternalAlert({event:'certificate_retry',admin_token:window.adminToken,certificate_id:certificateId});
+  }
+
+  function loadCertificates90(){
+    var list=q('#c90CertificateList');
+    if(!list)return;
+    list.innerHTML='<div class="empty">Loading certificates…</div>';
+    rpc90('admin_certificate_history',{
+      p_token:window.adminToken,p_limit:200,
+      p_search:(q('#c90CertSearch')?.value||'').trim(),
+      p_status:q('#c90CertStatus')?.value||''
+    }).then(function(r){
+      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load certificates');
+      var items=r.items||[];
+      list.innerHTML=renderCertificateRows90(items);
+      var count=q('#c90CertCount');
+      if(count)count.textContent=items.length+' certificate'+(items.length===1?'':'s')+' shown';
+      qa('[data-c90-retry]').forEach(function(btn){
+        btn.onclick=async function(){
+          btn.disabled=true;btn.textContent='RETRYING…';
+          try{
+            var result=await certificateRetry90(btn.getAttribute('data-c90-retry'));
+            if(!result||!result.ok)throw new Error(result&&result.error||'Certificate retry failed');
+            toast90('Certificate '+(result.certificate?.certificate_no_display||'')+' emailed ✓');
+            loadCertificates90();
+          }catch(err){btn.disabled=false;btn.textContent='Retry email';toast90(err.message||'Certificate retry failed');}
+        };
+      });
+    }).catch(function(e){
+      list.innerHTML='<div class="notice">'+esc90(e.message||'Unable to load certificates')+'</div>';
+      var count=q('#c90CertCount');if(count)count.textContent='';
+    });
   }
 
   function renderAttendance90(d){
@@ -609,6 +676,29 @@
             renderAttendanceRows90(d);
           });
         });
+      }
+      if(tab==='certificates'){
+        workspace.innerHTML=renderCertificates90();
+        q('#c90CertSearch').addEventListener('input',function(){
+          window.clearTimeout(window.__yyc90CertSearchTimer);
+          window.__yyc90CertSearchTimer=window.setTimeout(loadCertificates90,220);
+        });
+        q('#c90CertStatus').addEventListener('change',loadCertificates90);
+        q('#c90CertRefresh').addEventListener('click',loadCertificates90);
+        q('#c90CertExport').addEventListener('click',function(){
+          rpc90('admin_certificate_history',{
+            p_token:window.adminToken,p_limit:200,
+            p_search:(q('#c90CertSearch').value||'').trim(),
+            p_status:q('#c90CertStatus').value||''
+          }).then(function(r){
+            if(!r||!r.ok)throw new Error(r&&r.error||'Unable to export certificates');
+            var rows=[['Certificate No','Certificate ID','Recipient','Type','Event','Date','Location','Status','Created At','Emailed At']]
+              .concat((r.items||[]).map(function(c){return [c.certificate_no,c.certificate_code,c.recipient_name,c.recipient_kind,c.event_title,c.event_date,c.location,c.status,c.created_at,c.emailed_at||''];}));
+            var csv=rows.map(function(row){return row.map(function(v){var z=String(v==null?'':v).replace(/"/g,'""');return '"'+z+'"';}).join(',');}).join('\n');
+            download90('yyc-certificates-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
+          }).catch(function(e){toast90(e.message);});
+        });
+        loadCertificates90();
       }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);
