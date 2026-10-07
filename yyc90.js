@@ -443,112 +443,128 @@
   }
 
   function renderAttendance90(d){
-    var events=(window.__yycAdminLastData||{}).events||[],members=(window.__yycAdminLastData||{}).members||[],att=d.attendance||[];
-    return adminHeader90('Attendance')+'<div class="form-grid"><div class="field"><label>Event</label><select id="at90Event">'+(events.length?events.map(function(e){return '<option value="'+e.id+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+'</select></div><div class="field"><label>Search member</label><input id="at90MemberSearch" placeholder="Name or role number"></div></div><div id="at90Rows" class="yyc90-attendance-list"></div>';
-  }
-
-  function renderFinance90(d){
-    var rows=d.finance||[];
-    return adminHeader90('Finance')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="f90Add">+ Add entry</button><button class="mini-btn" id="f90Export">Export CSV</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(f){return '<div class="approval-card"><div class="meta"><strong>'+esc90(f.description)+'</strong><small>'+esc90(f.entry_type.toUpperCase())+' · ₹'+esc90(Number(f.amount||0).toLocaleString('en-IN'))+' · '+esc90(format90Date(f.entry_date))+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-f90-edit="'+f.id+'">Edit</button><button class="mini-btn" data-f90-del="'+f.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No finance entries yet.</div>')+'</div>';
-  }
-
-  function renderMessages90(d){
-    var rows=d.contacts||[];
-    return adminHeader90('Messages')+'<div class="admin-toolbar"><select id="c90StatusFilter"><option value="">All status</option><option>new</option><option>read</option><option>replied</option><option>archived</option></select><span id="c90Count" class="admin-result-count"></span></div><div class="admin-card-list">'+(rows.length?rows.map(function(c){return '<div class="approval-card yyc90-message-row" data-status="'+esc90(c.status)+'"><div class="meta"><strong>'+esc90(c.subject||'General enquiry')+'</strong><small>'+esc90(c.name)+' · '+esc90(c.email||c.phone||'')+' · '+esc90(format90Date(c.created_at))+'</small><p>'+esc90(c.message)+'</p></div><div class="admin-actions"><select data-c90-action="'+c.id+'"><option value="'+esc90(c.status)+'">'+esc90(c.status.toUpperCase())+'</option><option value="new">new</option><option value="read">read</option><option value="replied">replied</option><option value="archived">archived</option></select></div></div>';}).join(''):'<div class="empty">No messages yet.</div>')+'</div>';
-  }
-
-  function renderAnalytics90(){
-    return adminHeader90('Analytics')+'<div id="yyc90AnalyticsBox" class="yyc90-analytics-box"><div class="storage-loading"><div class="storage-spinner"></div><strong>Loading analytics…</strong></div></div>';
-  }
-
-  function renderBackup90(){
-    return adminHeader90('Backup & Tools')+'<div class="yyc90-tools-grid"><article><span>BACKUP SNAPSHOT</span><h3>Download a safe JSON backup.</h3><p>Excludes stored password hashes from members and leaders.</p><button class="mini-btn gold" id="yyc90BackupBtn">DOWNLOAD BACKUP</button></article><article><span>DATA EXPORT</span><h3>Export the current feature dataset.</h3><p>Useful for local records and recovery workflows.</p><button class="mini-btn" id="yyc90DataExportBtn">EXPORT FEATURE DATA</button></article><article><span>APP HEALTH</span><h3 id="yyc90HealthTitle">Checking…</h3><p id="yyc90HealthText">Testing the YYC data connection.</p></article></div>';
-  }
-
-  function renderSitePro90(s){
-    s=s||{};
-    return adminHeader90('Site Pro Settings')+'<form id="yyc90SiteProForm"><div class="form-grid">'+
-      '<div class="field"><label>Announcement enabled</label><select id="spAnn"><option value="false">Off</option><option value="true">On</option></select></div>'+
-      '<div class="field"><label>Announcement text</label><input id="spAnnText" value="'+esc90(s.announcement_text||'')+'" maxlength="220"></div>'+
-      '<div class="field"><label>Announcement link</label><input id="spAnnLink" value="'+esc90(s.announcement_link||'')+'" placeholder="https://..."></div>'+
-      '<div class="field"><label>Contact email</label><input id="spEmail" type="email" value="'+esc90(s.contact_email||'')+'"></div>'+
-      '<div class="field"><label>Contact phone</label><input id="spPhone" value="'+esc90(s.contact_phone||'')+'"></div>'+
-      '<div class="field"><label>Contact address</label><input id="spAddress" value="'+esc90(s.contact_address||'')+'"></div>'+
-      '<div class="field full"><label>SEO title</label><input id="spMetaTitle" value="'+esc90(s.meta_title||'Yuvakesari Youth Club')+'"></div>'+
-      '<div class="field full"><label>SEO description</label><textarea id="spMetaDesc" maxlength="300">'+esc90(s.meta_description||'')+'</textarea></div>'+
-      '<div class="field full"><label>Social preview image URL</label><input id="spMetaImage" value="'+esc90(s.meta_image||'')+'" placeholder="https://..."></div>'+
-      '<div class="field full"><label>History intro</label><textarea id="spHistoryIntro">'+esc90(s.history_intro||'')+'</textarea></div>'+
-      '<div class="field"><label>Maintenance mode</label><select id="spMaint"><option value="false">Off</option><option value="true">On</option></select></div>'+
-      '</div><div class="form-actions"><button type="submit" class="btn gold">SAVE SITE PRO SETTINGS</button></div></form>';
+    var events=(window.__yycAdminLastData||{}).events||[];
+    return adminHeader90('Attendance')+
+      '<div class="form-grid">'+
+        '<div class="field"><label>Event</label><select id="at90Event">'+
+          (events.length?events.map(function(e){return '<option value="'+e.id+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+
+        '</select></div>'+
+        '<div class="field"><label>Search</label><input id="at90MemberSearch" placeholder="Name or role number"></div>'+
+      '</div>'+
+      '<div class="yyc90-attendance-mode" role="tablist" aria-label="Attendance type">'+
+        '<button type="button" class="yyc90-filter active" data-at90-kind="member">MEMBERS</button>'+
+        '<button type="button" class="yyc90-filter" data-at90-kind="leader">LEADERS</button>'+
+      '</div>'+
+      '<div id="at90Rows" class="yyc90-attendance-list"></div>';
   }
 
   function renderAttendanceRows90(d){
-    var events=(window.__yycAdminLastData||{}).events||[],members=(window.__yycAdminLastData||{}).members||[],att=d.attendance||[];
+    var adminData=window.__yycAdminLastData||{};
+    var events=adminData.events||[];
+    var members=adminData.members||[];
+    var leaders=adminData.leaders||[];
+    var att=d.attendance||[];
     var eId=q('#at90Event')?.value || (events[0]&&events[0].id) || '';
+    var kind=q('[data-at90-kind].active')?.getAttribute('data-at90-kind') || 'member';
     var search=(q('#at90MemberSearch')?.value||'').toLowerCase();
-    var rows=members.filter(function(m){return !search||String(m.name||'').toLowerCase().indexOf(search)>=0||String(m.role_number||'').toLowerCase().indexOf(search)>=0;});
-    q('#at90Rows').innerHTML=rows.length?rows.map(function(m){
-      var a=att.find(function(x){return String(x.member_id)===String(m.id)&&String(x.event_id)===String(eId);});
-      return '<div class="yyc90-attendance-row"><div><strong>'+esc90(m.name)+'</strong><small>'+esc90(m.role_number||'PENDING')+'</small></div><label><input type="checkbox" data-at90-member="'+m.id+'" '+(a&&a.present?'checked':'')+'> Present</label></div>';
-    }).join(''):'<div class="empty">No matching members.</div>';
-    if(!q('#at90Save')){var b=document.createElement('button');b.id='at90Save';b.className='btn gold';b.type='button';b.textContent='SAVE ATTENDANCE';b.onclick=function(){
-      var eventId=q('#at90Event').value;
-      var eventRow=(events||[]).find(function(ev){return String(ev.id)===String(eventId);});
-      var checks=qa('[data-at90-member]');
-      var newlyPresent=checks.filter(function(c){
-        if(!c.checked)return false;
-        var prior=att.find(function(x){return String(x.member_id)===String(c.getAttribute('data-at90-member'))&&String(x.event_id)===String(eventId);});
-        return !(prior&&prior.present);
+    var rows=(kind==='leader'?leaders:members).filter(function(p){
+      return !search ||
+        String(p.name||'').toLowerCase().indexOf(search)>=0 ||
+        String(p.role_number||p.role||'').toLowerCase().indexOf(search)>=0;
+    });
+    q('#at90Rows').innerHTML=rows.length?rows.map(function(p){
+      var a=att.find(function(x){
+        var matchesTarget=kind==='leader'
+          ? String(x.leader_id)===String(p.id)
+          : String(x.member_id)===String(p.id);
+        return matchesTarget && String(x.event_id)===String(eId);
       });
-      var promises=checks.map(function(c){return rpc90('admin_record_attendance',{
-        p_token:window.adminToken,
-        p_member_id:c.getAttribute('data-at90-member'),
-        p_event_id:eventId,
-        p_present:c.checked
-      });});
-      Promise.all(promises).then(function(rs){
-        var bad=rs.find(function(r){return !r||r.ok===false;});
-        if(bad)throw new Error(bad.error||'Unable to save attendance');
-        if(!newlyPresent.length){
-          toast90('Attendance saved');
-          return;
-        }
-        if(typeof window.yycSendExternalAlert!=='function'){
-          toast90('Attendance saved. Email service is not ready.');
-          return;
-        }
-        return Promise.all(newlyPresent.map(function(c){
-          var memberId=c.getAttribute('data-at90-member');
-          return window.yycSendExternalAlert({
-            event:'attendance',
-            admin_token:window.adminToken,
-            target_kind:'member',
-            target_id:memberId,
-            event_id:eventId,
-            channels:['email']
-          }).then(function(result){
-            return result;
+      var attr=kind==='leader'?'data-at90-leader':'data-at90-member';
+      var role=kind==='leader'?(p.role_number||p.role||'LEADER'):(p.role_number||'PENDING');
+      return '<div class="yyc90-attendance-row"><div><strong>'+esc90(p.name)+'</strong><small>'+esc90(role)+'</small></div><label><input type="checkbox" '+attr+'="'+p.id+'" '+(a&&a.present?'checked':'')+'> Present</label></div>';
+    }).join(''):'<div class="empty">No matching '+(kind==='leader'?'leaders':'members')+'.</div>';
+
+    if(!q('#at90Save')){
+      var b=document.createElement('button');
+      b.id='at90Save';b.className='btn gold';b.type='button';b.textContent='SAVE ATTENDANCE';
+      b.onclick=function(){
+        var eventId=q('#at90Event').value;
+        var activeKind=q('[data-at90-kind].active')?.getAttribute('data-at90-kind')||'member';
+        var checks=qa(activeKind==='leader'?'[data-at90-leader]':'[data-at90-member]');
+        var newlyPresent=checks.filter(function(c){
+          if(!c.checked)return false;
+          var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+          var prior=att.find(function(x){
+            var matchesTarget=activeKind==='leader'
+              ? String(x.leader_id)===String(id)
+              : String(x.member_id)===String(id);
+            return matchesTarget && String(x.event_id)===String(eventId);
           });
-        })).then(function(results){
-          var attendanceSent=results.filter(function(result){
-            return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
-          }).length;
-          var certificateSent=results.filter(function(result){
-            return !!(result&&result.ok&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email&&result.delivery.certificate.email.status==='sent');
-          }).length;
-          var failed=results.filter(function(result){
-            var a=result&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email;
-            var c=result&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email;
-            return !(a&&a.status==='sent') || !(c&&c.status==='sent');
-          }).length;
-          var totalSent=attendanceSent+certificateSent;
-          if(totalSent&&failed) toast90('Attendance saved · '+attendanceSent+' attendance + '+certificateSent+' certificate emails sent · some failed');
-          else if(totalSent===newlyPresent.length*2) toast90('Attendance saved · '+newlyPresent.length+' attendance + '+newlyPresent.length+' certificate emails sent ✓');
-          else if(totalSent) toast90('Attendance saved · '+totalSent+' emails sent · some failed');
-          else toast90('Attendance saved · attendance/certificate emails could not be sent');
+          return !(prior&&prior.present);
         });
-      }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
-    };q('#at90Rows').parentNode.appendChild(b);}
+
+        var promises=checks.map(function(c){
+          var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+          if(activeKind==='leader'){
+            return rpc90('admin_record_leader_attendance',{
+              p_token:window.adminToken,
+              p_leader_id:id,
+              p_event_id:eventId,
+              p_present:c.checked
+            });
+          }
+          return rpc90('admin_record_attendance',{
+            p_token:window.adminToken,
+            p_member_id:id,
+            p_event_id:eventId,
+            p_present:c.checked
+          });
+        });
+
+        Promise.all(promises).then(function(rs){
+          var bad=rs.find(function(r){return !r||r.ok===false;});
+          if(bad)throw new Error(bad.error||'Unable to save attendance');
+          if(!newlyPresent.length){
+            toast90('Attendance saved');
+            return;
+          }
+          if(typeof window.yycSendExternalAlert!=='function'){
+            toast90('Attendance saved. Email service is not ready.');
+            return;
+          }
+          return Promise.all(newlyPresent.map(function(c){
+            var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+            return window.yycSendExternalAlert({
+              event:'attendance',
+              admin_token:window.adminToken,
+              target_kind:activeKind,
+              target_id:id,
+              event_id:eventId,
+              channels:['email']
+            });
+          })).then(function(results){
+            var attendanceSent=results.filter(function(result){
+              return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
+            }).length;
+            var certificateSent=results.filter(function(result){
+              return !!(result&&result.ok&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email&&result.delivery.certificate.email.status==='sent');
+            }).length;
+            var failed=results.filter(function(result){
+              var a=result&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email;
+              var c=result&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email;
+              return !(a&&a.status==='sent') || !(c&&c.status==='sent');
+            }).length;
+            var totalSent=attendanceSent+certificateSent;
+            var who=activeKind==='leader'?'leader':'member';
+            if(totalSent&&failed) toast90('Attendance saved · '+attendanceSent+' '+who+' attendance + '+certificateSent+' certificate emails sent · some failed');
+            else if(totalSent===newlyPresent.length*2) toast90('Attendance saved · '+newlyPresent.length+' '+who+' attendance + '+newlyPresent.length+' certificate emails sent ✓');
+            else if(totalSent) toast90('Attendance saved · '+totalSent+' emails sent · some failed');
+            else toast90('Attendance saved · attendance/certificate emails could not be sent');
+          });
+        }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
+      };
+      q('#at90Rows').parentNode.appendChild(b);
+    }
   }
 
   function admin90Data(refresh){
@@ -582,7 +598,18 @@
       if(tab==='volunteers')workspace.innerHTML=renderVolunteers90(d);
       if(tab==='achievements')workspace.innerHTML=renderAchievements90(d);
       if(tab==='history')workspace.innerHTML=renderHistory90(d);
-      if(tab==='attendance'){workspace.innerHTML=renderAttendance90(d);renderAttendanceRows90(d);q('#at90Event').addEventListener('change',function(){renderAttendanceRows90(d);});q('#at90MemberSearch').addEventListener('input',function(){renderAttendanceRows90(d);});}
+      if(tab==='attendance'){
+        workspace.innerHTML=renderAttendance90(d);
+        renderAttendanceRows90(d);
+        q('#at90Event').addEventListener('change',function(){renderAttendanceRows90(d);});
+        q('#at90MemberSearch').addEventListener('input',function(){renderAttendanceRows90(d);});
+        qa('[data-at90-kind]').forEach(function(btn){
+          btn.addEventListener('click',function(){
+            qa('[data-at90-kind]').forEach(function(x){x.classList.toggle('active',x===btn);});
+            renderAttendanceRows90(d);
+          });
+        });
+      }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);
       if(tab==='analytics')workspace.innerHTML=renderAnalytics90();
