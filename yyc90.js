@@ -598,7 +598,18 @@
       if(tab==='volunteers')workspace.innerHTML=renderVolunteers90(d);
       if(tab==='achievements')workspace.innerHTML=renderAchievements90(d);
       if(tab==='history')workspace.innerHTML=renderHistory90(d);
-      if(tab==='attendance'){workspace.innerHTML=renderAttendance90(d);renderAttendanceRows90(d);q('#at90Event').addEventListener('change',function(){renderAttendanceRows90(d);});q('#at90MemberSearch').addEventListener('input',function(){renderAttendanceRows90(d);});}
+      if(tab==='attendance'){
+        workspace.innerHTML=renderAttendance90(d);
+        renderAttendanceRows90(d);
+        q('#at90Event').addEventListener('change',function(){renderAttendanceRows90(d);});
+        q('#at90MemberSearch').addEventListener('input',function(){renderAttendanceRows90(d);});
+        qa('[data-at90-kind]').forEach(function(btn){
+          btn.addEventListener('click',function(){
+            qa('[data-at90-kind]').forEach(function(x){x.classList.toggle('active',x===btn);});
+            renderAttendanceRows90(d);
+          });
+        });
+      }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);
       if(tab==='analytics')workspace.innerHTML=renderAnalytics90();
