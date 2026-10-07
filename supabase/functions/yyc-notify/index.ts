@@ -493,7 +493,7 @@ async function buildCertificatePdf(cert:any) {
 
   const recipient=String(cert.recipient_name||"YYC Participant").slice(0,120);
   const nameSize=Math.min(30,Math.max(20,recipient.length<24?30:24));
-  page.drawText(recipient,{x:(W-bold.widthOfTextAtSize(recipient,nameSize))/2,y:335,size:nameSize,font:bold,color=forest});
+  page.drawText(recipient,{x:(W-bold.widthOfTextAtSize(recipient,nameSize))/2,y:335,size:nameSize,font:bold,color:forest});
 
   const sentence="for active participation in “"+String(cert.event_title||"YYC Event").slice(0,180)+"”";
   const lines=wrapPdfText(sentence,regular,13,620);
