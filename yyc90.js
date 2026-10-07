@@ -442,6 +442,41 @@
     return adminHeader90('YYC History')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="h90Add">+ Add history item</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(h){return '<div class="approval-card"><div class="meta"><strong>'+esc90(h.year_label)+' · '+esc90(h.title)+'</strong><small>'+esc90(h.status||'published')+'</small><p>'+esc90(h.body||'')+'</p></div><div class="admin-actions"><button class="mini-btn gold" data-h90-edit="'+h.id+'">Edit</button><button class="mini-btn" data-h90-del="'+h.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No history items yet.</div>')+'</div>';
   }
 
+  function generateFreeCertificate90(eventId,instructions){
+    var events=(window.__yycAdminLastData||{}).events||[];
+    var ev=events.find(function(x){return String(x.id)===String(eventId);})||{};
+    var title=String(ev.title||'YYC Certificate').trim();
+    var date=String(ev.event_date||'').slice(0,10);
+    var location=String(ev.location||'Subrahmanya, Karnataka').trim();
+    var note=String(instructions||'').trim();
+    var safe=function(v){return esc90(v).replace(/\n/g,' ');};
+    var dateText=date?new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'DATE';
+    var svg='<?xml version="1.0" encoding="UTF-8"?>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">' +
+      '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07110d"/><stop offset=".52" stop-color="#101b16"/><stop offset="1" stop-color="#050908"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9c7430"/><stop offset=".5" stop-color="#f0d28a"/><stop offset="1" stop-color="#9c7430"/></linearGradient></defs>' +
+      '<rect width="1600" height="1100" fill="url(#bg)"/><rect x="42" y="42" width="1516" height="1016" rx="24" fill="none" stroke="#a77d39" stroke-width="3"/><rect x="62" y="62" width="1476" height="976" rx="18" fill="none" stroke="#6f552f" stroke-width="1"/>' +
+      '<circle cx="800" cy="530" r="360" fill="none" stroke="#d8b56c" stroke-opacity=".07" stroke-width="2"/><circle cx="800" cy="530" r="300" fill="none" stroke="#d8b56c" stroke-opacity=".045" stroke-width="2"/>' +
+      '<text x="800" y="145" text-anchor="middle" fill="#f0d28a" font-family="Georgia,serif" font-size="25" letter-spacing="7">YUVAKESARI YOUTH CLUB</text>' +
+      '<text x="800" y="192" text-anchor="middle" fill="#7f968b" font-family="Arial,sans-serif" font-size="15" letter-spacing="4">SUBRAHMANYA · KARNATAKA</text>' +
+      '<path d="M560 230 H1040" stroke="url(#gold)" stroke-width="2"/><text x="800" y="300" text-anchor="middle" fill="#e9ddc4" font-family="Georgia,serif" font-size="62" letter-spacing="9">CERTIFICATE</text>' +
+      '<text x="800" y="350" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="14" letter-spacing="5">OF PARTICIPATION</text>' +
+      '<text x="800" y="455" text-anchor="middle" fill="#899b92" font-family="Arial,sans-serif" font-size="18">This certificate is proudly presented for participation in</text>' +
+      '<text x="800" y="535" text-anchor="middle" fill="#fff4d9" font-family="Georgia,serif" font-size="46">@@TITLE@@</text>' +
+      '<text x="800" y="595" text-anchor="middle" fill="#aebbb4" font-family="Arial,sans-serif" font-size="17">@@NOTE@@</text>' +
+      '<line x1="560" y1="700" x2="770" y2="700" stroke="#5e705f"/><line x1="830" y1="700" x2="1040" y2="700" stroke="#5e705f"/>' +
+      '<text x="800" y="690" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="14" letter-spacing="3">@@DATE@@</text>' +
+      '<text x="560" y="770" text-anchor="middle" fill="#e7dcc4" font-family="Georgia,serif" font-size="20">Yuvakesari Youth Club</text><text x="560" y="798" text-anchor="middle" fill="#788980" font-family="Arial,sans-serif" font-size="13">OFFICIAL CLUB</text>' +
+      '<text x="1040" y="770" text-anchor="middle" fill="#e7dcc4" font-family="Georgia,serif" font-size="20">@@LOCATION@@</text><text x="1040" y="798" text-anchor="middle" fill="#788980" font-family="Arial,sans-serif" font-size="13">EVENT LOCATION</text>' +
+      '<text x="800" y="930" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="13" letter-spacing="3">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</text>'+
+      '<text x="800" y="975" text-anchor="middle" fill="#53645b" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">CARDLESS CERTIFICATE DESIGN · YYC</text></svg>';
+    svg=svg.replace('@@TITLE@@',safe(title)).replace('@@NOTE@@',safe(note||'For active participation and contribution to the Yuvakesari Youth Club initiative.')).replace('@@DATE@@',safe(dateText)).replace('@@LOCATION@@',safe(location));
+    var blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),preview=q('#yyc90FreePreview');
+    if(preview) preview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+url+'" alt="YYC free certificate design preview"></div><div class="form-actions"><a class="btn gold" download="YYC-certificate-master.svg" href="'+url+'">DOWNLOAD SVG MASTER ↗</a><button type="button" class="btn" id="yyc90PrintFree">PRINT / SAVE PDF</button></div>';
+    var printBtn=q('#yyc90PrintFree');
+    if(printBtn) printBtn.onclick=function(){var w=window.open('','_blank','noopener,noreferrer,width=1100,height=800');if(!w)return;w.document.write('<!doctype html><title>YYC Certificate Master</title><style>body{margin:0;background:#fff}img{width:100%;height:auto;display:block}</style><img src="'+url+'">');w.document.close();w.focus();setTimeout(function(){w.print();},350);};
+    toast90('Free certificate master generated ✓ No card or API needed');
+  }
+
   function renderCertificateAI90(){
     var events=(window.__yycAdminLastData||{}).events||[];
     var selected=(events[0]&&events[0].id)||'';
@@ -452,9 +487,9 @@
         '<div class="field"><label>Reference image <span class="field-note">Upload the certificate image you want AI to follow</span></label><input id="ai90ReferenceFile" type="file" accept="image/png,image/jpeg,image/webp"><small class="field-note">You can also use the selected event image below.</small></div><div class="field"><label>Reference image URL <span class="field-note">Optional</span></label><input id="ai90Reference" type="url" placeholder="https://.../certificate-reference.png"></div>'+
         '<div class="field full"><label>AI art direction <span class="field-note">Optional</span></label><textarea id="ai90Instructions" maxlength="1200" rows="5" placeholder="Premium, eco-themed, Kukke/Subrahmanya, cream + forest-green + gold, preserve YYC visual identity…"></textarea></div>'+
       '</div>'+
-      '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button></div>'+
+      '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button><button class="btn" type="button" id="yyc90FreeGenerate">GENERATE FREE MASTER <span>◇</span></button></div>'+
       '<div id="ai90Status" class="notice" style="margin-top:14px">Ready. Generate a design for the selected event.</div>'+
-      '<section class="yyc90-ai-preview" id="ai90Preview"><div class="empty">No AI design generated for this session.</div></section>'+
+      '<section class="yyc90-ai-preview" id="ai90Preview"><div class="empty">No AI design generated for this session.</div></section><section class="yyc90-ai-preview" id="yyc90FreePreview"><div class="empty">No free certificate master generated yet.</div></section>'+
       '<section style="margin-top:18px"><div class="modal-kicker">DESIGN HISTORY</div><div id="ai90History" class="admin-card-list"><div class="empty">Loading designs…</div></div></section>';
   }
 
@@ -735,6 +770,7 @@
         var firstOpt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];
         if(firstOpt&&firstOpt.getAttribute('data-image'))aiRef.value=firstOpt.getAttribute('data-image');
         loadAIDesignHistory90(aiEvent&&aiEvent.value||'');
+        q('#yyc90FreeGenerate').addEventListener('click',function(){generateFreeCertificate90(aiEvent&&aiEvent.value||'',q('#ai90Instructions').value.trim());});
         q('#ai90Generate').addEventListener('click',function(){
           var btn=this,eventId=aiEvent&&aiEvent.value||'',reference=aiRef&&aiRef.value.trim()||'',instructions=q('#ai90Instructions').value.trim();
           if(!eventId){toast90('Select an event first');return;}
