@@ -449,7 +449,7 @@
       '<div class="notice">AI prepares the premium visual master. Official names, dates, certificate numbers and QR codes are added afterwards by the YYC deterministic certificate engine, so generated artwork cannot change official participant data.</div>'+
       '<div class="form-grid">'+
         '<div class="field"><label>Event</label><select id="ai90Event">'+(events.length?events.map(function(e){return '<option value="'+esc90(e.id)+'" data-image="'+esc90(e.image_url||'')+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+'</select></div>'+
-        '<div class="field"><label>Reference image URL <span class="field-note">Optional · defaults to the selected event image</span></label><input id="ai90Reference" type="url" placeholder="https://.../certificate-reference.png"></div>'+
+        '<div class="field"><label>Reference image <span class="field-note">Upload the certificate image you want AI to follow</span></label><input id="ai90ReferenceFile" type="file" accept="image/png,image/jpeg,image/webp"><small class="field-note">You can also use the selected event image below.</small></div><div class="field"><label>Reference image URL <span class="field-note">Optional</span></label><input id="ai90Reference" type="url" placeholder="https://.../certificate-reference.png"></div>'+
         '<div class="field full"><label>AI art direction <span class="field-note">Optional</span></label><textarea id="ai90Instructions" maxlength="1200" rows="5" placeholder="Premium, eco-themed, Kukke/Subrahmanya, cream + forest-green + gold, preserve YYC visual identity…"></textarea></div>'+
       '</div>'+
       '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button></div>'+
@@ -729,7 +729,7 @@
       }
       if(tab==='certai'){
         workspace.innerHTML=renderCertificateAI90();
-        var aiEvent=q('#ai90Event'),aiRef=q('#ai90Reference'),aiStatus=q('#ai90Status'),aiPreview=q('#ai90Preview');
+        var aiEvent=q('#ai90Event'),aiRef=q('#ai90Reference'),aiFile=q('#ai90ReferenceFile'),aiStatus=q('#ai90Status'),aiPreview=q('#ai90Preview');
         function syncAIRef(){var opt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];if(opt&&!aiRef.value)aiRef.value=opt.getAttribute('data-image')||'';loadAIDesignHistory90(aiEvent&&aiEvent.value||'');}
         if(aiEvent)aiEvent.addEventListener('change',function(){aiRef.value='';syncAIRef();});
         var firstOpt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];
@@ -741,8 +741,7 @@
           btn.disabled=true;btn.textContent='GENERATING AI MASTER…';
           if(aiStatus)aiStatus.textContent='AI designer is preparing the visual master. This can take a little time.';
           if(aiPreview)aiPreview.innerHTML='<div class="empty">Generating premium certificate artwork…</div>';
-          callCertificateAI90({admin_token:window.adminToken,event_id:eventId,reference_image_url:reference,instructions:instructions})
-          .then(function(result){
+          imagePromise.then(function(result){
             var d=result.design||{};
             if(aiStatus)aiStatus.textContent='AI design generated ✓ Version '+(d.version||'')+'. New certificates for this event will use the active design.';
             if(aiPreview&&d.public_url)aiPreview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+esc90(d.public_url)+'" alt="AI certificate master preview"></div>';
