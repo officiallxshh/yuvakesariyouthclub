@@ -89,6 +89,14 @@ The provider cards show:
 
 The status check never exposes the secrets themselves.
 
+## Automatic attendance email
+
+When an Admin saves attendance and a member changes from **not present** to **Present**, YYC automatically sends that member an attendance-confirmation email. The same member is not emailed again when the Admin saves the already-present state.
+
+The email contains the member's name, event title, event date, location, and PRESENT status. The send is recorded in `admin_message_deliveries` as an event message, with the provider result shown in the Admin Message Center.
+
+An attendance save is never rolled back because email delivery fails; attendance remains saved and the failure is recorded for retry/follow-up.
+
 ## Delivery flow
 
 1. Admin selects a member or leader.
