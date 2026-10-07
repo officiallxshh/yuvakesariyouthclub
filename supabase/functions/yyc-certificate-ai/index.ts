@@ -41,20 +41,20 @@ function basePrompt(event:any,extra:string){
   ].filter(Boolean).join("\\n");
 }
 
-async function generateWithOpenAI(prompt:string,referenceUrl:string){
+async function generateWithOpenAI(prompt:string,reference:string){
   if(!OPENAI_KEY)throw new Error("OPENAI_API_KEY is not configured in Supabase Secrets");
 
   const input:any[]=[{
     role:"user",
     content:[
       {type:"input_text",text:prompt},
-      ...(referenceUrl?[{type:"input_image",image_url:referenceUrl,detail:"high"}]:[])
+      ...(reference?[{type:"input_image",image_url:reference,detail:"high"}]:[])
     ]
   }];
 
   const tools:any=[{
     type:"image_generation",
-    action:referenceUrl?"edit":"generate",
+    action:reference?"edit":"generate",
     model:IMAGE_MODEL,
     size:"1536x1024",
     output_format:"png",
@@ -116,13 +116,13 @@ Deno.serve(async(req)=>{
 
   const inserted=await db.from("yyc_certificate_designs").insert({
     id:designId,event_id:eventId,version,provider:"openai",
-    model:IMAGE_MODEL,reference_image_url:referenceUrl||null,prompt,
+    model:IMAGE_MODEL,reference_image_url:referenceData?null:(referenceUrl||null),prompt,
     output_path:outputPath,status:"pending",is_active:false
   });
   if(inserted.error)return out(req,{ok:false,error:"Could not create certificate design job: "+inserted.error.message},500);
 
   try{
-    const generated=await generateWithOpenAI(prompt,referenceUrl);
+    const generated=await generateWithOpenAI(prompt,reference);
     const {error:uploadError}=await db.storage.from("yyc-media").upload(outputPath,generated.bytes,{
       contentType:"image/png",cacheControl:"31536000",upsert:false
     });
@@ -141,7 +141,7 @@ Deno.serve(async(req)=>{
       ok:true,design:{
         id:designId,event_id:eventId,version,
         provider:"openai",model:IMAGE_MODEL,
-        reference_image_url:referenceUrl||null,
+        reference_image_url:referenceData?null:(referenceUrl||null),
         public_url:publicUrl,status:"generated",is_active:true
       }
     });
