@@ -655,23 +655,50 @@ Deno.serve(async(req:Request)=>{
         : "Date not specified";
       const eventTitle=clean(eventRow.title,180)||"YYC event";
       const location=clean(eventRow.location,180)||"Location not specified";
-      const subject="Attendance confirmed — "+eventTitle;
-      const body="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”.";
-      const meta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: PRESENT";
+      const attendanceSubject="Attendance confirmed — "+eventTitle;
+      const attendanceBody="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”.";
+      const attendanceMeta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: PRESENT";
+      const certificateSubject="Participation Certificate — "+eventTitle;
+      const certificateBody="Hello "+clean(target.name,120)+", your participation certificate for the YYC event “"+eventTitle+"” has been confirmed because your attendance is marked PRESENT. The certificate document will be made available through YYC administration when published.";
+      const certificateMeta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Certificate status: CONFIRMED";
       const link="https://www.yuvakesariyouthclub.in/";
+      const batchId=crypto.randomUUID();
 
-      const delivery=await deliver(
+      const attendanceDelivery=await deliver(
         target,
-        subject,
-        body,
-        meta,
+        attendanceSubject,
+        attendanceBody,
+        attendanceMeta,
         link,
         ["email"],
         "event",
-        crypto.randomUUID()
+        batchId
       );
 
-      return out(req,{ok:true,event:"attendance",target_kind:"member",event_id:eventId,delivery});
+      const certificateDelivery=await deliver(
+        target,
+        certificateSubject,
+        certificateBody,
+        certificateMeta,
+        link,
+        ["email"],
+        "certificate",
+        batchId
+      );
+
+      return out(req,{
+        ok:true,
+        event:"attendance",
+        target_kind:"member",
+        event_id:eventId,
+        delivery:{
+          attendance:attendanceDelivery,
+          certificate:certificateDelivery,
+          total_sent:
+            (attendanceDelivery?.email?.status==="sent"?1:0)+
+            (certificateDelivery?.email?.status==="sent"?1:0)
+        }
+      });
     }
 
     if(event==="notification"){
