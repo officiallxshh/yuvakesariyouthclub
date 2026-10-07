@@ -2551,7 +2551,7 @@ function adminPanel(tab,forceRefresh){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Notifications'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Messages'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-head-tools"><div class="yyc-admin-global-tools"><div class="yyc-admin-add-wrap"><button type="button" class="mini-btn gold yyc-admin-add-btn" id="yycAdminAddBtn" aria-expanded="false"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>ADD</span></button><div class="yyc-admin-add-menu" id="yycAdminAddMenu" hidden><button type="button" data-admin-add="member">+ Member</button><button type="button" data-admin-add="leader">+ Leader</button><button type="button" data-admin-add="update">+ Update</button><button type="button" data-admin-add="gallery">+ Photo</button><button type="button" data-admin-add="event">+ Event</button><button type="button" data-admin-add="swag">+ Swag</button></div></div><div class="yyc-admin-global-search"><span aria-hidden="true">⌕</span><input id="yycAdminGlobalSearch" type="search" placeholder="Search all admin records" autocomplete="off"><div class="yyc-admin-search-results" id="yycAdminSearchResults" hidden></div></div></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
@@ -2837,17 +2837,85 @@ function renderAdminTab(tab,d){
   if(tab==='notifications'){
     var approvedMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='approved';}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''));});
     var activeLeaders=(d.leaders||[]).filter(function(l){return (l.status||'active')!=='inactive';}).sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''));});
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">MEMBER & LEADER MESSAGES</div><h2 class="modal-title">Notifications</h2><p class="admin-subline">Send a notification to an approved member or active leader. YYC will deliver it to the contact details on their account.</p></div><button class="mini-btn" data-admin-overview>← Back to Admin</button></div>'+
-      '<form id="adminNotificationForm" class="admin-form"><div class="form-grid">'+
-      '<div class="field"><label>Recipient type</label><select id="anTargetKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
-      '<div class="field"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option>'+approvedMembers.map(function(m){return '<option value="member:'+esc(m.id)+'">'+esc(m.name)+' · '+esc(m.role_number||'MEMBER')+'</option>';}).join('')+activeLeaders.map(function(l){return '<option value="leader:'+esc(l.id)+'">'+esc(l.name)+' · '+esc(l.role_number||'LEADER')+'</option>';}).join('')+'</select></div>'+
-      '<div class="field"><label>Type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div>'+
-      '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="Notification title"></div>'+
-      '<div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="5" placeholder="Write the notification…"></textarea></div>'+
-      '<div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://…"></div>'+
-      '<div class="field full"><label class="yyc-channel-choice">Delivery <span class="field-note">Uses saved contact details</span></label><div class="yyc-channel-pills"><label><input type="checkbox" id="anEmail" checked> Email</label><label><input type="checkbox" id="anSms" checked> Phone / SMS</label></div></div>'+
-      '</div><div class="form-actions"><button type="submit" class="btn gold">SEND NOTIFICATION <span>→</span></button></div>'+
-      '<div class="notice" style="margin-top:12px">Login alerts are automatic after a successful member or leader login. Admin notifications use the selected recipient’s email and/or phone when available.</div></form>';
+
+    function channelLabel(channel,status){
+      var label=channel==='whatsapp'?'WHATSAPP':'EMAIL';
+      if(status==='sent'||status==='delivered') return '<span class="yyc-delivery-pill yyc-delivery-ok">✓ '+label+' SENT</span>';
+      if(status==='failed') return '<span class="yyc-delivery-pill yyc-delivery-failed">! '+label+' FAILED</span>';
+      if(status==='queued') return '<span class="yyc-delivery-pill yyc-delivery-queued">… '+label+' QUEUED</span>';
+      return '<span class="yyc-delivery-pill yyc-delivery-skipped">— '+label+' '+esc(String(status||'SKIPPED').toUpperCase())+'</span>';
+    }
+    function renderDeliveryResults(delivery){
+      var host=$('#yycMessageSendResult');
+      if(!host)return;
+      delivery=delivery||{};
+      host.innerHTML='<div class="yyc-delivery-result-head"><strong>Delivery result</strong><span>'+(delivery.any_sent?'Message accepted by provider':'No channel was sent')+'</span></div>'+
+        '<div class="yyc-delivery-result-grid">'+
+        channelLabel('email',delivery.email&&delivery.email.status||'skipped')+
+        channelLabel('whatsapp',delivery.whatsapp&&delivery.whatsapp.status||'skipped')+
+        '</div>'+
+        ((delivery.email&&delivery.email.reason)|| (delivery.whatsapp&&delivery.whatsapp.reason)?'<div class="yyc-delivery-result-note">'+esc([delivery.email,delivery.whatsapp].filter(function(x){return x&&x.reason;}).map(function(x){return x.reason;}).join(' · '))+'</div>':'');
+      host.hidden=false;
+    }
+    function renderHistory(items){
+      var host=$('#yycMessageHistory');
+      if(!host)return;
+      if(!items||!items.length){host.innerHTML='<div class="empty">No message delivery history yet.</div>';return;}
+      host.innerHTML=items.map(function(x){
+        var state=x.status==='sent'||x.status==='delivered'?'ok':x.status==='failed'?'failed':x.status==='queued'?'queued':'skipped';
+        var icon=state==='ok'?'✓':state==='failed'?'!':state==='queued'?'…':'—';
+        var channel=String(x.channel||'').toUpperCase();
+        var when=x.created_at?new Date(x.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+        var statusText=x.status==='delivered'?'DELIVERED':x.status==='sent'?'SENT':x.status==='failed'?'FAILED':x.status==='queued'?'QUEUED':'SKIPPED';
+        return '<article class="yyc-message-history-row">'+
+          '<div class="yyc-message-history-icon '+state+'">'+icon+'</div>'+
+          '<div class="yyc-message-history-main"><strong>'+esc(x.recipient_name||'Recipient')+'</strong><span>'+esc(channel)+' · '+esc(statusText)+' · '+esc(when)+'</span><p>'+esc(x.title||'YYC message')+'</p></div>'+
+          '<div class="yyc-message-history-meta">'+(x.recipient_address?'<small>'+esc(x.recipient_address)+'</small>':'')+(x.error_message?'<small class="error">'+esc(x.error_message)+'</small>':'')+'</div>'+
+        '</article>';
+      }).join('');
+    }
+    async function refreshMessageHistory(){
+      var host=$('#yycMessageHistory');
+      if(host)host.innerHTML='<div class="yyc-message-history-loading">Loading delivery history…</div>';
+      var r=await rpc('admin_message_history',{p_token:adminToken,p_limit:60});
+      if(!r||!r.ok) throw new Error(r&&r.error||'Could not load delivery history');
+      renderHistory(r.items||[]);
+    }
+    function loadMessageProviderStatus(){
+      var emailState=$('#yycEmailProviderStatus'),waState=$('#yycWhatsappProviderStatus');
+      if(emailState) emailState.textContent='Checking…';
+      if(waState) waState.textContent='Checking…';
+      yycSendExternalAlert({event:'config',admin_token:adminToken}).then(function(r){
+        if(!r||!r.ok) throw new Error(r&&r.error||'Configuration check failed');
+        if(emailState){emailState.textContent=r.email&&r.email.configured?'READY · RESEND':'NOT CONFIGURED';emailState.className=r.email&&r.email.configured?'yyc-provider-state ready':'yyc-provider-state';}
+        if(waState){waState.textContent=r.whatsapp&&r.whatsapp.configured?'READY · CLOUD API':'NOT CONFIGURED';waState.className=r.whatsapp&&r.whatsapp.configured?'yyc-provider-state ready':'yyc-provider-state';}
+      }).catch(function(){
+        if(emailState){emailState.textContent='CHECK FAILED';emailState.className='yyc-provider-state';}
+        if(waState){waState.textContent='CHECK FAILED';waState.className='yyc-provider-state';}
+      });
+    }
+
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send a message to an approved member or active leader through Email, WhatsApp, or the in-app notification system.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
+      '<div class="yyc-provider-strip">'+
+        '<div class="yyc-provider-card"><span class="yyc-provider-icon">✉</span><div><b>Email</b><small id="yycEmailProviderStatus">Checking…</small></div></div>'+
+        '<div class="yyc-provider-card"><span class="yyc-provider-icon">◉</span><div><b>WhatsApp</b><small id="yycWhatsappProviderStatus">Checking…</small></div></div>'+
+        '<div class="yyc-provider-note"><strong>Delivery tracking</strong><span>Every send is logged. A green ✓ means the provider accepted the message for sending.</span></div>'+
+      '</div>'+
+      '<form id="adminNotificationForm" class="admin-form yyc-message-form"><div class="form-grid">'+
+        '<div class="field"><label>Recipient type</label><select id="anTargetKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
+        '<div class="field"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option></select></div>'+
+        '<div class="field"><label>Message type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="certificate">Certificate</option><option value="system">System</option></select></div>'+
+        '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="e.g. Swachatha Abhiyaan Certificate"></div>'+
+        '<div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="6" required placeholder="Write the message to the member or leader…"></textarea></div>'+
+        '<div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://www.yuvakesariyouthclub.in/…"></div>'+
+        '<div class="field full"><label class="yyc-channel-choice">Delivery channels <span class="field-note">Choose one or both</span></label><div class="yyc-channel-pills yyc-message-channels"><label><input type="checkbox" id="anEmail" checked> <span>✉ Email</span></label><label><input type="checkbox" id="anWhatsapp" checked> <span>◉ WhatsApp</span></label></div></div>'+
+      '</div><div class="form-actions"><button type="submit" class="btn gold" id="yycSendMessageBtn">SEND MESSAGE <span>→</span></button></div>'+
+      '<div class="yyc-delivery-result" id="yycMessageSendResult" hidden></div>'+
+      '<div class="notice" style="margin-top:12px">Email uses the configured Resend sender. WhatsApp uses the official WhatsApp Business Cloud API and an approved template when configured. Delivery failures never remove the in-app notification record.</div>'+
+      '</form>'+
+      '<div class="yyc-message-history-head"><div><div class="modal-kicker">DELIVERY LOG</div><h3>Recent messages</h3></div><span>Latest 60 attempts</span></div>'+
+      '<div class="yyc-message-history" id="yycMessageHistory"><div class="yyc-message-history-loading">Loading delivery history…</div></div>';
+
     var nf=$('#adminNotificationForm');
     var targetKind=$('#anTargetKind'),targetId=$('#anTargetId');
     function syncTargetOptions(){
@@ -2857,17 +2925,24 @@ function renderAdminTab(tab,d){
     }
     targetKind.addEventListener('change',syncTargetOptions);
     syncTargetOptions();
+
     nf.addEventListener('submit',async function(e){
       e.preventDefault();
-      var btn=nf.querySelector('button[type="submit"]');btn.disabled=true;
+      var btn=nf.querySelector('button[type="submit"]');
+      btn.disabled=true;
+      btn.dataset.originalText=btn.textContent;
+      btn.textContent='SENDING…';
+      var resultHost=$('#yycMessageSendResult');
+      if(resultHost){resultHost.hidden=true;resultHost.innerHTML='';}
       try{
         var selected=targetId.value.split(':');
         var kind=selected[0]||'',id=selected.slice(1).join(':');
         if(!kind||!id) throw new Error('Please select a recipient');
         var channels=[];
         if($('#anEmail').checked) channels.push('email');
-        if($('#anSms').checked) channels.push('sms');
+        if($('#anWhatsapp').checked) channels.push('whatsapp');
         if(!channels.length) throw new Error('Select at least one delivery channel');
+
         var r=await yycSendExternalAlert({
           event:'notification',
           admin_token:adminToken,
@@ -2879,20 +2954,35 @@ function renderAdminTab(tab,d){
           link:$('#anLink').value.trim(),
           channels:channels
         });
-        if(!r||!r.ok) throw new Error(r&&r.error||'Could not send notification');
+        if(!r||!r.ok) throw new Error(r&&r.error||'Could not send message');
+        renderDeliveryResults(r.delivery||{});
+        if(r.delivery&&r.delivery.any_sent) toast('Message sent ✓');
+        else toast('Message recorded, but no channel was sent.');
         nf.reset();
+        $('#anEmail').checked=true;
+        $('#anWhatsapp').checked=true;
         syncTargetOptions();
-        var sent=[];
-        if(r.in_app) sent.push('in-app');
-        if(r.delivery&&r.delivery.email&&r.delivery.email.status==='sent') sent.push('email');
-        if(r.delivery&&r.delivery.sms&&r.delivery.sms.status==='sent') sent.push('SMS');
-        if(sent.length) toast('Notification sent via '+sent.join(' + '));
-        else toast('Notification saved, but no external delivery channel is configured/available.');
-      }catch(e){toast(e.message||'Could not send notification');}
-      finally{btn.disabled=false;}
+        await refreshMessageHistory();
+      }catch(err){
+        if(resultHost){resultHost.hidden=false;resultHost.innerHTML='<div class="yyc-delivery-result-note error">'+esc(err.message||'Could not send message')+'</div>';}
+        toast(err.message||'Could not send message');
+      }finally{
+        btn.disabled=false;
+        btn.textContent=btn.dataset.originalText||'SEND MESSAGE →';
+        loadMessageProviderStatus();
+      }
     });
+
+    $('#yycMessageRefresh').addEventListener('click',async function(){
+      var btn=this;btn.disabled=true;btn.textContent='REFRESHING…';
+      try{loadMessageProviderStatus();await refreshMessageHistory();}catch(e){toast(e.message||'Could not refresh messages');}
+      finally{btn.disabled=false;btn.textContent='↻ Refresh';}
+    });
+    loadMessageProviderStatus();
+    refreshMessageHistory().catch(function(e){var h=$('#yycMessageHistory');if(h)h.innerHTML='<div class="storage-error"><strong>Could not load delivery history.</strong><span>'+esc(e.message)+'</span></div>';});
     return;
   }
+
   if(tab==='activity'){
     a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading activity…</strong><span>Reading recent admin actions</span></div>';
     rpc('admin_recent_activity',{p_token:adminToken}).then(function(s){
