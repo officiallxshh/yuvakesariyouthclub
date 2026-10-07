@@ -105,7 +105,7 @@ Deno.serve(async(req)=>{
 
   const referenceUrl=clean(body?.reference_image_url||event.image_url,500);
   const referenceData=clean(body?.reference_image_data,8500000);
-  if(referenceData && !/^data:image\\/(?:png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=\\s]+$/i.test(referenceData))
+  if(referenceData && !/^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(referenceData))
     return out(req,{ok:false,error:"Reference image data is invalid"},400);
   if(referenceData && referenceData.length>8500000)
     return out(req,{ok:false,error:"Reference image is too large"},400);
