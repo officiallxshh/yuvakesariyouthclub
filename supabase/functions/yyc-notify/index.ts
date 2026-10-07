@@ -407,6 +407,76 @@ async function finishDelivery(id:string,status:string,result:any) {
   if(status==="delivered") patch.delivered_at=new Date().toISOString();
   await db.from("admin_message_deliveries").update(patch).eq("id",id);
 }
+async function deliverApproval(target:any,subject:string,body:string,meta:string,loginUrl:string,idCardUrl:string,verifyUrl:string,channels:string[],batchId:string) {
+  const requested=new Set((channels||["email","whatsapp"]).filter(x=>x==="email"||x==="whatsapp"));
+  const output:any={};
+  const tasks:any[]=[];
+
+  if(target?.email && requested.has("email")){
+    tasks.push((async()=>{
+      const id=await logDelivery({
+        batch_id:batchId,
+        recipient_kind:"member",
+        recipient_id:target.id,
+        recipient_name:target.name,
+        channel:"email",
+        message_type:"membership",
+        subject,
+        title:subject,
+        body,
+        link:verifyUrl,
+        status:"queued",
+        provider:"resend",
+        recipient_address:maskContact(String(target.email),"email")
+      });
+      const result=await sendEmail(
+        String(target.email),
+        subject,
+        approvalEmailHtml(target,loginUrl,idCardUrl,verifyUrl)
+      );
+      await finishDelivery(id,result.status,result);
+      output.email={...result,recipient:maskContact(String(target.email),"email"),delivery_id:id};
+    })());
+  }else{
+    output.email={status:"skipped",reason:target?.email?"channel not selected":"no email on record"};
+  }
+
+  const normalized=normalizePhone(String(target?.phone||""));
+  if(normalized && requested.has("whatsapp")){
+    tasks.push((async()=>{
+      const id=await logDelivery({
+        batch_id:batchId,
+        recipient_kind:"member",
+        recipient_id:target.id,
+        recipient_name:target.name,
+        channel:"whatsapp",
+        message_type:"membership",
+        subject,
+        title:subject,
+        body,
+        link:verifyUrl,
+        status:"queued",
+        provider:"meta-whatsapp",
+        recipient_address:maskContact(normalized,"phone")
+      });
+      const result=await sendWhatsApp(normalized,target,subject,body,verifyUrl);
+      await finishDelivery(id,result.status,result);
+      output.whatsapp={...result,recipient:maskContact(normalized,"phone"),delivery_id:id};
+    })());
+  }else{
+    output.whatsapp={
+      status:"skipped",
+      reason:normalized?(requested.has("whatsapp")?"":"channel not selected"):"no usable phone on record"
+    };
+  }
+
+  await Promise.all(tasks);
+  const selected=Array.from(requested);
+  output.all_selected_sent=selected.length>0 && selected.every(x=>output[x]?.status==="sent");
+  output.any_sent=selected.some(x=>output[x]?.status==="sent");
+  return output;
+}
+
 async function deliver(target:any,subject:string,body:string,meta:string,link:string,channels:string[],messageType="general",batchId:string|null=null) {
   const requested=new Set((channels||["email","whatsapp"]).filter(x=>x==="email"||x==="whatsapp"||x==="sms"));
   const output:any={};
@@ -466,7 +536,6 @@ async function deliver(target:any,subject:string,body:string,meta:string,link:st
     };
   }
 
-  if(requested.has("sms")) output.sms={status:"skipped",reason:"SMS is not part of the YYC message center"};
   await Promise.all(tasks);
   const selected=Array.from(requested).filter(x=>x==="email"||x==="whatsapp");
   output.all_selected_sent=selected.length>0 && selected.every(x=>output[x]?.status==="sent");
@@ -547,14 +616,15 @@ Deno.serve(async(req:Request)=>{
       const inApp=await insertMemberInApp(adminToken,id,"Membership application accepted",body,"membership",idCardUrl);
       target.kind="member";
       const batchId=crypto.randomUUID();
-      const approvalDelivery=await deliver(
+      const approvalDelivery=await deliverApproval(
         target,
         subject,
         body,
         meta,
+        loginUrl,
+        idCardUrl,
         verifyUrl,
         Array.isArray(b?.channels)?b.channels:["email","whatsapp"],
-        "membership",
         batchId
       );
 
