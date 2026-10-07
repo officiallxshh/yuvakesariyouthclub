@@ -492,8 +492,53 @@
       return '<div class="yyc90-attendance-row"><div><strong>'+esc90(m.name)+'</strong><small>'+esc90(m.role_number||'PENDING')+'</small></div><label><input type="checkbox" data-at90-member="'+m.id+'" '+(a&&a.present?'checked':'')+'> Present</label></div>';
     }).join(''):'<div class="empty">No matching members.</div>';
     if(!q('#at90Save')){var b=document.createElement('button');b.id='at90Save';b.className='btn gold';b.type='button';b.textContent='SAVE ATTENDANCE';b.onclick=function(){
-      var checks=qa('[data-at90-member]'), promises=checks.map(function(c){return rpc90('admin_record_attendance',{p_token:window.adminToken,p_member_id:c.getAttribute('data-at90-member'),p_event_id:q('#at90Event').value,p_present:c.checked});});
-      Promise.all(promises).then(function(rs){var bad=rs.find(function(r){return !r||r.ok===false;});if(bad)throw new Error(bad.error||'Unable to save attendance');toast90('Attendance saved');return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
+      var eventId=q('#at90Event').value;
+      var eventRow=(events||[]).find(function(ev){return String(ev.id)===String(eventId);});
+      var checks=qa('[data-at90-member]');
+      var newlyPresent=checks.filter(function(c){
+        if(!c.checked)return false;
+        var prior=att.find(function(x){return String(x.member_id)===String(c.getAttribute('data-at90-member'))&&String(x.event_id)===String(eventId);});
+        return !(prior&&prior.present);
+      });
+      var promises=checks.map(function(c){return rpc90('admin_record_attendance',{
+        p_token:window.adminToken,
+        p_member_id:c.getAttribute('data-at90-member'),
+        p_event_id:eventId,
+        p_present:c.checked
+      });});
+      Promise.all(promises).then(function(rs){
+        var bad=rs.find(function(r){return !r||r.ok===false;});
+        if(bad)throw new Error(bad.error||'Unable to save attendance');
+        if(!newlyPresent.length){
+          toast90('Attendance saved');
+          return;
+        }
+        if(typeof window.yycSendExternalAlert!=='function'){
+          toast90('Attendance saved. Email service is not ready.');
+          return;
+        }
+        return Promise.all(newlyPresent.map(function(c){
+          var memberId=c.getAttribute('data-at90-member');
+          return window.yycSendExternalAlert({
+            event:'attendance',
+            admin_token:window.adminToken,
+            target_kind:'member',
+            target_id:memberId,
+            event_id:eventId,
+            channels:['email']
+          }).then(function(result){
+            return result;
+          });
+        })).then(function(results){
+          var sent=results.filter(function(result){
+            return !!(result&&result.ok&&result.delivery&&result.delivery.email&&result.delivery.email.status==='sent');
+          }).length;
+          var failed=results.length-sent;
+          if(sent&&failed) toast90('Attendance saved · '+sent+' emails sent · '+failed+' failed');
+          else if(sent) toast90('Attendance saved · '+sent+' confirmation email'+(sent===1?'':'s')+' sent ✓');
+          else toast90('Attendance saved · confirmation email could not be sent');
+        });
+      }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
     };q('#at90Rows').parentNode.appendChild(b);}
   }
 
