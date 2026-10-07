@@ -577,6 +577,10 @@ async function prepareAndSendCertificate(cert:any,batchId:string,target:any = nu
   const storagePath=cert.storage_path || ("certificates/"+String(cert.certificate_code||("YYC-CERT-"+cert.certificate_no))+".pdf");
   let deliveryId:string|null=null;
   try{
+    if(!cert.design_url && cert.design_id){
+      const {data:design}=await db.from("yyc_certificate_designs").select("public_url").eq("id",cert.design_id).maybeSingle();
+      if(design?.public_url) cert={...cert,design_url:design.public_url};
+    }
     deliveryId=await logDelivery({
       batch_id:batchId,recipient_kind:cert.recipient_kind,recipient_id:cert.recipient_id,
       recipient_name:cert.recipient_name,channel:"email",message_type:"certificate",
