@@ -631,6 +631,49 @@ Deno.serve(async(req:Request)=>{
       return out(req,{ok:true,event:"approval",in_app:inApp,delivery:approvalDelivery});
     }
 
+    if(event==="attendance"){
+      const adminToken=clean(b?.admin_token,500);
+      if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
+
+      const kind=clean(b?.target_kind,20);
+      const id=clean(b?.target_id,100);
+      const eventId=clean(b?.event_id,100);
+      if(kind!=="member" || !id || !eventId) return out(req,{ok:false,error:"Member and event are required"},400);
+
+      const target=await targetById("member",id);
+      if(!target) return out(req,{ok:false,error:"Approved member not found"},404);
+      target.kind="member";
+
+      const {data:eventRow,error:eventError}=await db.from("events")
+        .select("id,title,event_date,location,status")
+        .eq("id",eventId)
+        .maybeSingle();
+      if(eventError || !eventRow) return out(req,{ok:false,error:"Event not found"},404);
+
+      const eventDate=eventRow.event_date
+        ? new Date(String(eventRow.event_date)+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric",timeZone:"Asia/Kolkata"})
+        : "Date not specified";
+      const eventTitle=clean(eventRow.title,180)||"YYC event";
+      const location=clean(eventRow.location,180)||"Location not specified";
+      const subject="Attendance confirmed — "+eventTitle;
+      const body="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”.";
+      const meta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: PRESENT";
+      const link="https://www.yuvakesariyouthclub.in/";
+
+      const delivery=await deliver(
+        target,
+        subject,
+        body,
+        meta,
+        link,
+        ["email"],
+        "event",
+        crypto.randomUUID()
+      );
+
+      return out(req,{ok:true,event:"attendance",target_kind:"member",event_id:eventId,delivery});
+    }
+
     if(event==="notification"){
       const adminToken=clean(b?.admin_token,500);
       if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
