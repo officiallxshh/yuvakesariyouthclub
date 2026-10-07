@@ -477,6 +477,39 @@
     toast90('Free certificate master generated ✓ No card or API needed');
   }
 
+  function generateHFCertificate90(eventId,instructions){
+    var aiEvent=q('#ai90Event'),events=(window.__yycAdminLastData||{}).events||[];
+    var ev=events.find(function(x){return String(x.id)===String(eventId);})||{};
+    var title=String(ev.title||'YYC Certificate').trim();
+    var note=String(instructions||'').trim();
+    var status=q('#ai90Status'),preview=q('#yyc90HFPreview'),btn=q('#yyc90HFGenerate');
+    if(!eventId){toast90('Select an event first');return;}
+    if(btn){btn.disabled=true;btn.textContent='GENERATING HF AI…';}
+    if(status)status.textContent='Free HF AI is generating the visual master through Hugging Face ZeroGPU. The public free pool may queue.';
+    if(preview)preview.innerHTML='<div class="empty">Generating FLUX.1 Schnell artwork…</div>';
+    callCertificateHF90({
+      admin_token:window.adminToken,
+      event_id:eventId,
+      instructions:note
+    }).then(function(result){
+      var d=result.design||{};
+      if(status)status.textContent='HF AI design generated ✓ Version '+(d.version||'')+'. It is now the active design for this event.';
+      if(preview&&d.public_url){
+        preview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+esc90(d.public_url)+'" alt="Hugging Face AI certificate master preview"></div>'+
+          '<div class="form-actions"><a class="btn gold" href="'+esc90(d.public_url)+'" target="_blank" rel="noopener">OPEN HF MASTER ↗</a><a class="btn" href="'+esc90(d.public_url)+'" download="YYC-HF-certificate-master.png">DOWNLOAD PNG ↗</a></div>';
+      }
+      toast90('HF AI certificate master generated ✓');
+      loadAIDesignHistory90(aiEvent&&aiEvent.value||'');
+    }).catch(function(e){
+      var msg=e&&e.message||'Hugging Face AI certificate generation failed';
+      if(status)status.textContent=msg;
+      if(preview)preview.innerHTML='<div class="notice">'+esc90(msg)+'</div>';
+      toast90(msg);
+    }).finally(function(){
+      if(btn){btn.disabled=false;btn.innerHTML='GENERATE HF FREE AI <span>⚡</span>';}
+    });
+  }
+
   function renderCertificateAI90(){
     var events=(window.__yycAdminLastData||{}).events||[];
     var selected=(events[0]&&events[0].id)||'';
@@ -487,9 +520,9 @@
         '<div class="field"><label>Reference image <span class="field-note">Upload the certificate image you want AI to follow</span></label><input id="ai90ReferenceFile" type="file" accept="image/png,image/jpeg,image/webp"><small class="field-note">You can also use the selected event image below.</small></div><div class="field"><label>Reference image URL <span class="field-note">Optional</span></label><input id="ai90Reference" type="url" placeholder="https://.../certificate-reference.png"></div>'+
         '<div class="field full"><label>AI art direction <span class="field-note">Optional</span></label><textarea id="ai90Instructions" maxlength="1200" rows="5" placeholder="Premium, eco-themed, Kukke/Subrahmanya, cream + forest-green + gold, preserve YYC visual identity…"></textarea></div>'+
       '</div>'+
-      '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button><button class="btn" type="button" id="yyc90FreeGenerate">GENERATE FREE MASTER <span>◇</span></button></div>'+
+      '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button><button class="btn" type="button" id="yyc90HFGenerate">GENERATE HF FREE AI <span>⚡</span></button><button class="btn" type="button" id="yyc90FreeGenerate">GENERATE FREE MASTER <span>◇</span></button></div><div class="notice" style="margin-top:10px">HF FREE AI uses the public Hugging Face FLUX.1 Schnell ZeroGPU service. It is cardless but quota-limited. Reference-image upload is for the OpenAI mode; this HF mode is prompt-only.</div>'+
       '<div id="ai90Status" class="notice" style="margin-top:14px">Ready. Generate a design for the selected event.</div>'+
-      '<section class="yyc90-ai-preview" id="ai90Preview"><div class="empty">No AI design generated for this session.</div></section><section class="yyc90-ai-preview" id="yyc90FreePreview"><div class="empty">No free certificate master generated yet.</div></section>'+
+      '<section class="yyc90-ai-preview" id="ai90Preview"><div class="empty">No AI design generated for this session.</div></section><section class="yyc90-ai-preview" id="yyc90HFPreview"><div class="empty">No Hugging Face AI design generated yet.</div></section><section class="yyc90-ai-preview" id="yyc90FreePreview"><div class="empty">No free certificate master generated yet.</div></section>'+
       '<section style="margin-top:18px"><div class="modal-kicker">DESIGN HISTORY</div><div id="ai90History" class="admin-card-list"><div class="empty">Loading designs…</div></div></section>';
   }
 
@@ -510,6 +543,21 @@
       if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load AI designs');
       host.innerHTML=renderAIDesignRows90(r.items||[]);
     }).catch(function(e){host.innerHTML='<div class="notice">'+esc90(e.message)+'</div>';});
+  }
+
+  function callCertificateHF90(payload){
+    var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-certificate-hf';
+    return fetch(endpoint,{
+      method:'POST',cache:'no-store',credentials:'omit',
+      headers:{'apikey':YYC_CONFIG.supabaseKey,'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(payload)
+    }).then(function(res){
+      return res.text().then(function(text){
+        var data=null;try{data=text?JSON.parse(text):null;}catch(_){}
+        if(!res.ok||!data||data.ok===false)throw new Error(data&&data.error||'HF certificate design failed');
+        return data;
+      });
+    });
   }
 
   function callCertificateAI90(payload){
@@ -770,6 +818,7 @@
         var firstOpt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];
         if(firstOpt&&firstOpt.getAttribute('data-image'))aiRef.value=firstOpt.getAttribute('data-image');
         loadAIDesignHistory90(aiEvent&&aiEvent.value||'');
+        q('#yyc90HFGenerate').addEventListener('click',function(){generateHFCertificate90(aiEvent&&aiEvent.value||'',q('#ai90Instructions').value.trim());});
         q('#yyc90FreeGenerate').addEventListener('click',function(){generateFreeCertificate90(aiEvent&&aiEvent.value||'',q('#ai90Instructions').value.trim());});
         q('#ai90Generate').addEventListener('click',function(){
           var btn=this,eventId=aiEvent&&aiEvent.value||'',reference=aiRef&&aiRef.value.trim()||'',instructions=q('#ai90Instructions').value.trim();
