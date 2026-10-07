@@ -415,7 +415,7 @@
     var tabs=q('.admin-tabs');if(!tabs||q('[data-yyc90-tab="volunteers"]'))return;
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
-      ['attendance','Attendance'],['certificates','Certificates'],['certai','AI Certificate'],['finance','Finance'],['messages','Messages'],
+      ['attendance','Attendance'],['finance','Finance'],['messages','Messages'],
       ['analytics','Analytics'],['backup','Backup'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
@@ -440,206 +440,6 @@
   function renderHistory90(d){
     var rows=d.history||[];
     return adminHeader90('YYC History')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="h90Add">+ Add history item</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(h){return '<div class="approval-card"><div class="meta"><strong>'+esc90(h.year_label)+' · '+esc90(h.title)+'</strong><small>'+esc90(h.status||'published')+'</small><p>'+esc90(h.body||'')+'</p></div><div class="admin-actions"><button class="mini-btn gold" data-h90-edit="'+h.id+'">Edit</button><button class="mini-btn" data-h90-del="'+h.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No history items yet.</div>')+'</div>';
-  }
-
-  function generateFreeCertificate90(eventId,instructions){
-    var events=(window.__yycAdminLastData||{}).events||[];
-    var ev=events.find(function(x){return String(x.id)===String(eventId);})||{};
-    var title=String(ev.title||'YYC Certificate').trim();
-    var date=String(ev.event_date||'').slice(0,10);
-    var location=String(ev.location||'Subrahmanya, Karnataka').trim();
-    var note=String(instructions||'').trim();
-    var safe=function(v){return esc90(v).replace(/\n/g,' ');};
-    var dateText=date?new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'DATE';
-    var svg='<?xml version="1.0" encoding="UTF-8"?>' +
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">' +
-      '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07110d"/><stop offset=".52" stop-color="#101b16"/><stop offset="1" stop-color="#050908"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9c7430"/><stop offset=".5" stop-color="#f0d28a"/><stop offset="1" stop-color="#9c7430"/></linearGradient></defs>' +
-      '<rect width="1600" height="1100" fill="url(#bg)"/><rect x="42" y="42" width="1516" height="1016" rx="24" fill="none" stroke="#a77d39" stroke-width="3"/><rect x="62" y="62" width="1476" height="976" rx="18" fill="none" stroke="#6f552f" stroke-width="1"/>' +
-      '<circle cx="800" cy="530" r="360" fill="none" stroke="#d8b56c" stroke-opacity=".07" stroke-width="2"/><circle cx="800" cy="530" r="300" fill="none" stroke="#d8b56c" stroke-opacity=".045" stroke-width="2"/>' +
-      '<text x="800" y="145" text-anchor="middle" fill="#f0d28a" font-family="Georgia,serif" font-size="25" letter-spacing="7">YUVAKESARI YOUTH CLUB</text>' +
-      '<text x="800" y="192" text-anchor="middle" fill="#7f968b" font-family="Arial,sans-serif" font-size="15" letter-spacing="4">SUBRAHMANYA · KARNATAKA</text>' +
-      '<path d="M560 230 H1040" stroke="url(#gold)" stroke-width="2"/><text x="800" y="300" text-anchor="middle" fill="#e9ddc4" font-family="Georgia,serif" font-size="62" letter-spacing="9">CERTIFICATE</text>' +
-      '<text x="800" y="350" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="14" letter-spacing="5">OF PARTICIPATION</text>' +
-      '<text x="800" y="455" text-anchor="middle" fill="#899b92" font-family="Arial,sans-serif" font-size="18">This certificate is proudly presented for participation in</text>' +
-      '<text x="800" y="535" text-anchor="middle" fill="#fff4d9" font-family="Georgia,serif" font-size="46">@@TITLE@@</text>' +
-      '<text x="800" y="595" text-anchor="middle" fill="#aebbb4" font-family="Arial,sans-serif" font-size="17">@@NOTE@@</text>' +
-      '<line x1="560" y1="700" x2="770" y2="700" stroke="#5e705f"/><line x1="830" y1="700" x2="1040" y2="700" stroke="#5e705f"/>' +
-      '<text x="800" y="690" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="14" letter-spacing="3">@@DATE@@</text>' +
-      '<text x="560" y="770" text-anchor="middle" fill="#e7dcc4" font-family="Georgia,serif" font-size="20">Yuvakesari Youth Club</text><text x="560" y="798" text-anchor="middle" fill="#788980" font-family="Arial,sans-serif" font-size="13">OFFICIAL CLUB</text>' +
-      '<text x="1040" y="770" text-anchor="middle" fill="#e7dcc4" font-family="Georgia,serif" font-size="20">@@LOCATION@@</text><text x="1040" y="798" text-anchor="middle" fill="#788980" font-family="Arial,sans-serif" font-size="13">EVENT LOCATION</text>' +
-      '<text x="800" y="930" text-anchor="middle" fill="#d7b66d" font-family="Arial,sans-serif" font-size="13" letter-spacing="3">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</text>'+
-      '<text x="800" y="975" text-anchor="middle" fill="#53645b" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">CARDLESS CERTIFICATE DESIGN · YYC</text></svg>';
-    svg=svg.replace('@@TITLE@@',safe(title)).replace('@@NOTE@@',safe(note||'For active participation and contribution to the Yuvakesari Youth Club initiative.')).replace('@@DATE@@',safe(dateText)).replace('@@LOCATION@@',safe(location));
-    var blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),preview=q('#yyc90FreePreview');
-    if(preview) preview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+url+'" alt="YYC free certificate design preview"></div><div class="form-actions"><a class="btn gold" download="YYC-certificate-master.svg" href="'+url+'">DOWNLOAD SVG MASTER ↗</a><button type="button" class="btn" id="yyc90PrintFree">PRINT / SAVE PDF</button></div>';
-    var printBtn=q('#yyc90PrintFree');
-    if(printBtn) printBtn.onclick=function(){var w=window.open('','_blank','noopener,noreferrer,width=1100,height=800');if(!w)return;w.document.write('<!doctype html><title>YYC Certificate Master</title><style>body{margin:0;background:#fff}img{width:100%;height:auto;display:block}</style><img src="'+url+'">');w.document.close();w.focus();setTimeout(function(){w.print();},350);};
-    toast90('Free certificate master generated ✓ No card or API needed');
-  }
-
-  function generateHFCertificate90(eventId,instructions){
-    var aiEvent=q('#ai90Event'),events=(window.__yycAdminLastData||{}).events||[];
-    var ev=events.find(function(x){return String(x.id)===String(eventId);})||{};
-    var title=String(ev.title||'YYC Certificate').trim();
-    var note=String(instructions||'').trim();
-    var status=q('#ai90Status'),preview=q('#yyc90HFPreview'),btn=q('#yyc90HFGenerate');
-    if(!eventId){toast90('Select an event first');return;}
-    if(btn){btn.disabled=true;btn.textContent='GENERATING HF AI…';}
-    if(status)status.textContent='Free HF AI is generating the visual master through Hugging Face ZeroGPU. The public free pool may queue.';
-    if(preview)preview.innerHTML='<div class="empty">Generating FLUX.1 Schnell artwork…</div>';
-    callCertificateHF90({
-      admin_token:window.adminToken,
-      event_id:eventId,
-      instructions:note
-    }).then(function(result){
-      var d=result.design||{};
-      if(status)status.textContent='HF AI design generated ✓ Version '+(d.version||'')+'. It is now the active design for this event.';
-      if(preview&&d.public_url){
-        preview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+esc90(d.public_url)+'" alt="Hugging Face AI certificate master preview"></div>'+
-          '<div class="form-actions"><a class="btn gold" href="'+esc90(d.public_url)+'" target="_blank" rel="noopener">OPEN HF MASTER ↗</a><a class="btn" href="'+esc90(d.public_url)+'" download="YYC-HF-certificate-master.png">DOWNLOAD PNG ↗</a></div>';
-      }
-      toast90('HF AI certificate master generated ✓');
-      loadAIDesignHistory90(aiEvent&&aiEvent.value||'');
-    }).catch(function(e){
-      var msg=e&&e.message||'Hugging Face AI certificate generation failed';
-      if(status)status.textContent=msg;
-      if(preview)preview.innerHTML='<div class="notice">'+esc90(msg)+'</div>';
-      toast90(msg);
-    }).finally(function(){
-      if(btn){btn.disabled=false;btn.innerHTML='GENERATE HF FREE AI <span>⚡</span>';}
-    });
-  }
-
-  function renderCertificateAI90(){
-    var events=(window.__yycAdminLastData||{}).events||[];
-    var selected=(events[0]&&events[0].id)||'';
-    return adminHeader90('AI Certificate Designer')+
-      '<div class="notice">AI prepares the premium visual master. Official names, dates, certificate numbers and QR codes are added afterwards by the YYC deterministic certificate engine, so generated artwork cannot change official participant data.</div>'+
-      '<div class="form-grid">'+
-        '<div class="field"><label>Event</label><select id="ai90Event">'+(events.length?events.map(function(e){return '<option value="'+esc90(e.id)+'" data-image="'+esc90(e.image_url||'')+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+'</select></div>'+
-        '<div class="field"><label>Reference image <span class="field-note">Upload the certificate image you want AI to follow</span></label><input id="ai90ReferenceFile" type="file" accept="image/png,image/jpeg,image/webp"><small class="field-note">You can also use the selected event image below.</small></div><div class="field"><label>Reference image URL <span class="field-note">Optional</span></label><input id="ai90Reference" type="url" placeholder="https://.../certificate-reference.png"></div>'+
-        '<div class="field full"><label>AI art direction <span class="field-note">Optional</span></label><textarea id="ai90Instructions" maxlength="1200" rows="5" placeholder="Premium, eco-themed, Kukke/Subrahmanya, cream + forest-green + gold, preserve YYC visual identity…"></textarea></div>'+
-      '</div>'+
-      '<div class="form-actions"><button class="btn gold" type="button" id="ai90Generate">GENERATE AI MASTER DESIGN <span>✦</span></button><button class="btn" type="button" id="yyc90HFGenerate">GENERATE HF FREE AI <span>⚡</span></button><button class="btn" type="button" id="yyc90FreeGenerate">GENERATE FREE MASTER <span>◇</span></button></div><div class="notice" style="margin-top:10px">HF FREE AI uses the public Hugging Face FLUX.1 Schnell ZeroGPU service. It is cardless but quota-limited. Reference-image upload is for the OpenAI mode; this HF mode is prompt-only.</div>'+
-      '<div id="ai90Status" class="notice" style="margin-top:14px">Ready. Generate a design for the selected event.</div>'+
-      '<section class="yyc90-ai-preview" id="ai90Preview"><div class="empty">No AI design generated for this session.</div></section><section class="yyc90-ai-preview" id="yyc90HFPreview"><div class="empty">No Hugging Face AI design generated yet.</div></section><section class="yyc90-ai-preview" id="yyc90FreePreview"><div class="empty">No free certificate master generated yet.</div></section>'+
-      '<section style="margin-top:18px"><div class="modal-kicker">DESIGN HISTORY</div><div id="ai90History" class="admin-card-list"><div class="empty">Loading designs…</div></div></section>';
-  }
-
-  function renderAIDesignRows90(items){
-    if(!items||!items.length)return '<div class="empty">No AI designs yet.</div>';
-    return items.map(function(d){
-      return '<div class="approval-card"><div class="meta"><strong>V'+esc90(d.version)+' · '+esc90(d.event_title||'YYC Event')+(d.is_active?' · ACTIVE':'')+'</strong>'+
-        '<small>'+esc90(d.provider||'openai')+' · '+esc90(d.model||'')+' · '+esc90(d.status||'')+'</small>'+
-        (d.public_url?'<small><a href="'+esc90(d.public_url)+'" target="_blank" rel="noopener">Open generated master ↗</a></small>':'')+
-        (d.error_message?'<p>'+esc90(d.error_message)+'</p>':'')+
-        '</div></div>';
-    }).join('');
-  }
-
-  function loadAIDesignHistory90(eventId){
-    var host=q('#ai90History');if(!host)return;
-    rpc90('admin_certificate_design_history',{p_token:window.adminToken,p_event_id:eventId||null}).then(function(r){
-      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load AI designs');
-      host.innerHTML=renderAIDesignRows90(r.items||[]);
-    }).catch(function(e){host.innerHTML='<div class="notice">'+esc90(e.message)+'</div>';});
-  }
-
-  function callCertificateHF90(payload){
-    var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-certificate-hf';
-    return fetch(endpoint,{
-      method:'POST',cache:'no-store',credentials:'omit',
-      headers:{'apikey':YYC_CONFIG.supabaseKey,'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify(payload)
-    }).then(function(res){
-      return res.text().then(function(text){
-        var data=null;try{data=text?JSON.parse(text):null;}catch(_){}
-        if(!res.ok||!data||data.ok===false)throw new Error(data&&data.error||'HF certificate design failed');
-        return data;
-      });
-    });
-  }
-
-  function callCertificateAI90(payload){
-    var endpoint=YYC_CONFIG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-certificate-ai';
-    return fetch(endpoint,{
-      method:'POST',cache:'no-store',credentials:'omit',
-      headers:{'apikey':YYC_CONFIG.supabaseKey,'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify(payload)
-    }).then(function(res){
-      return res.text().then(function(text){
-        var data=null;try{data=text?JSON.parse(text):null;}catch(_){}
-        if(!res.ok||!data||data.ok===false)throw new Error(data&&data.error||'AI certificate design failed');
-        return data;
-      });
-    });
-  }
-
-  function renderCertificates90(){
-    return adminHeader90('Certificates')+
-      '<div class="admin-toolbar">'+
-        '<input id="c90CertSearch" class="admin-search" placeholder="Search recipient, event or certificate no">'+
-        '<select id="c90CertStatus"><option value="">All status</option><option value="emailed">Emailed</option><option value="generated">Generated</option><option value="failed">Failed</option><option value="pending">Pending</option><option value="revoked">Revoked</option></select>'+
-        '<button type="button" class="mini-btn" id="c90CertRefresh">Refresh</button>'+
-        '<button type="button" class="mini-btn gold" id="c90CertExport">Export CSV</button>'+
-      '</div>'+
-      '<div id="c90CertCount" class="admin-result-count"></div>'+
-      '<div id="c90CertificateList" class="admin-card-list"><div class="empty">Loading certificates…</div></div>';
-  }
-
-  function renderCertificateRows90(items){
-    var rows=items||[];
-    if(!rows.length)return '<div class="empty">No certificates found.</div>';
-    return rows.map(function(c){
-      var status=String(c.status||'pending').toLowerCase();
-      var no=String(c.certificate_no||'').padStart(2,'0');
-      var viewUrl='./certificate.html?token='+encodeURIComponent(c.certificate_token||'');
-      var retry=status==='failed'?'<button class="mini-btn" data-c90-retry="'+esc90(c.id)+'">Retry email</button>':'';
-      var view=c.certificate_token?'<a class="mini-btn gold" href="'+esc90(viewUrl)+'" target="_blank" rel="noopener">View</a>':'';
-      return '<div class="approval-card yyc90-certificate-row" data-status="'+esc90(status)+'">'+
-        '<div class="meta"><strong>CERTIFICATE NO '+esc90(no)+' · '+esc90(c.recipient_name)+'</strong>'+
-        '<small>'+esc90(c.certificate_code||'')+' · '+esc90(c.recipient_kind||'')+'</small>'+
-        '<small>'+esc90(c.event_title||'YYC Event')+' · '+esc90(format90Date(c.event_date))+' · '+esc90(c.location||'')+'</small>'+
-        '<small>STATUS · <b>'+esc90(status.toUpperCase())+'</b>'+(c.emailed_at?' · EMAILED '+esc90(format90Date(c.emailed_at)):'')+'</small>'+
-        (c.error_message?'<p>'+esc90(c.error_message)+'</p>':'')+
-        '</div><div class="admin-actions">'+view+retry+'</div></div>';
-    }).join('');
-  }
-
-  function certificateRetry90(certificateId){
-    if(typeof window.yycSendExternalAlert!=='function')return Promise.reject(new Error('Certificate delivery service is not ready'));
-    return window.yycSendExternalAlert({event:'certificate_retry',admin_token:window.adminToken,certificate_id:certificateId});
-  }
-
-  function loadCertificates90(){
-    var list=q('#c90CertificateList');
-    if(!list)return;
-    list.innerHTML='<div class="empty">Loading certificates…</div>';
-    rpc90('admin_certificate_history',{
-      p_token:window.adminToken,p_limit:200,
-      p_search:(q('#c90CertSearch')?.value||'').trim(),
-      p_status:q('#c90CertStatus')?.value||''
-    }).then(function(r){
-      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load certificates');
-      var items=r.items||[];
-      list.innerHTML=renderCertificateRows90(items);
-      var count=q('#c90CertCount');
-      if(count)count.textContent=items.length+' certificate'+(items.length===1?'':'s')+' shown';
-      qa('[data-c90-retry]').forEach(function(btn){
-        btn.onclick=async function(){
-          btn.disabled=true;btn.textContent='RETRYING…';
-          try{
-            var result=await certificateRetry90(btn.getAttribute('data-c90-retry'));
-            if(!result||!result.ok)throw new Error(result&&result.error||'Certificate retry failed');
-            toast90('Certificate '+(result.certificate?.certificate_no_display||'')+' emailed ✓');
-            loadCertificates90();
-          }catch(err){btn.disabled=false;btn.textContent='Retry email';toast90(err.message||'Certificate retry failed');}
-        };
-      });
-    }).catch(function(e){
-      list.innerHTML='<div class="notice">'+esc90(e.message||'Unable to load certificates')+'</div>';
-      var count=q('#c90CertCount');if(count)count.textContent='';
-    });
   }
 
   function renderAttendance90(d){
@@ -743,23 +543,15 @@
               channels:['email']
             });
           })).then(function(results){
-            var attendanceSent=results.filter(function(result){
+            var who=activeKind==='leader'?'leader':'member';
+            var sent=results.filter(function(result){
               return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
             }).length;
-            var certificateSent=results.filter(function(result){
-              return !!(result&&result.ok&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email&&result.delivery.certificate.email.status==='sent');
-            }).length;
-            var failed=results.filter(function(result){
-              var a=result&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email;
-              var c=result&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email;
-              return !(a&&a.status==='sent') || !(c&&c.status==='sent');
-            }).length;
-            var totalSent=attendanceSent+certificateSent;
-            var who=activeKind==='leader'?'leader':'member';
-            if(totalSent&&failed) toast90('Attendance saved · '+attendanceSent+' '+who+' attendance + '+certificateSent+' certificate emails sent · some failed');
-            else if(totalSent===newlyPresent.length*2) toast90('Attendance saved · '+newlyPresent.length+' '+who+' attendance + '+newlyPresent.length+' certificate emails sent ✓');
-            else if(totalSent) toast90('Attendance saved · '+totalSent+' emails sent · some failed');
-            else toast90('Attendance saved · attendance/certificate emails could not be sent');
+            var failed=results.length-sent;
+            if(sent&&failed) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent · some failed');
+            else if(sent===results.length) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent ✓');
+            else if(sent) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent · some failed');
+            else toast90('Attendance saved · attendance emails could not be sent');
           });
         }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
       };
@@ -809,76 +601,6 @@
             renderAttendanceRows90(d);
           });
         });
-      }
-      if(tab==='certai'){
-        workspace.innerHTML=renderCertificateAI90();
-        var aiEvent=q('#ai90Event'),aiRef=q('#ai90Reference'),aiFile=q('#ai90ReferenceFile'),aiStatus=q('#ai90Status'),aiPreview=q('#ai90Preview');
-        function syncAIRef(){var opt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];if(opt&&!aiRef.value)aiRef.value=opt.getAttribute('data-image')||'';loadAIDesignHistory90(aiEvent&&aiEvent.value||'');}
-        if(aiEvent)aiEvent.addEventListener('change',function(){aiRef.value='';syncAIRef();});
-        var firstOpt=aiEvent&&aiEvent.options[aiEvent.selectedIndex];
-        if(firstOpt&&firstOpt.getAttribute('data-image'))aiRef.value=firstOpt.getAttribute('data-image');
-        loadAIDesignHistory90(aiEvent&&aiEvent.value||'');
-        q('#yyc90HFGenerate').addEventListener('click',function(){generateHFCertificate90(aiEvent&&aiEvent.value||'',q('#ai90Instructions').value.trim());});
-        q('#yyc90FreeGenerate').addEventListener('click',function(){generateFreeCertificate90(aiEvent&&aiEvent.value||'',q('#ai90Instructions').value.trim());});
-        q('#ai90Generate').addEventListener('click',function(){
-          var btn=this,eventId=aiEvent&&aiEvent.value||'',reference=aiRef&&aiRef.value.trim()||'',instructions=q('#ai90Instructions').value.trim();
-          if(!eventId){toast90('Select an event first');return;}
-          btn.disabled=true;btn.textContent='GENERATING AI MASTER…';
-          if(aiStatus)aiStatus.textContent='AI designer is preparing the visual master. This can take a little time.';
-          if(aiPreview)aiPreview.innerHTML='<div class="empty">Generating premium certificate artwork…</div>';
-
-          var imagePromise=(aiFile&&aiFile.files&&aiFile.files[0])
-            ? readFile(aiFile.files[0],1536).then(function(data){
-                return {reference_image_data:data,reference_image_url:''};
-              })
-            : Promise.resolve({reference_image_data:'',reference_image_url:reference});
-
-          imagePromise.then(function(refPayload){
-            return callCertificateAI90({
-              admin_token:window.adminToken,
-              event_id:eventId,
-              instructions:instructions,
-              reference_image_data:refPayload.reference_image_data,
-              reference_image_url:refPayload.reference_image_url
-            });
-          }).then(function(result){
-            var d=result.design||{};
-            if(aiStatus)aiStatus.textContent='AI design generated ✓ Version '+(d.version||'')+'. New certificates for this event will use the active design.';
-            if(aiPreview&&d.public_url)aiPreview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+esc90(d.public_url)+'" alt="AI certificate master preview"></div>';
-            toast90('AI certificate master generated ✓');
-            loadAIDesignHistory90(eventId);
-          }).catch(function(e){
-            if(aiStatus)aiStatus.textContent=e.message||'AI design generation failed';
-            if(aiPreview)aiPreview.innerHTML='<div class="notice">'+esc90(e.message||'AI design generation failed')+'</div>';
-            toast90(e.message||'AI design generation failed');
-          }).finally(function(){
-            btn.disabled=false;
-            btn.innerHTML='GENERATE AI MASTER DESIGN <span>✦</span>';
-          });
-        });
-      }
-      if(tab==='certificates'){
-        workspace.innerHTML=renderCertificates90();
-        q('#c90CertSearch').addEventListener('input',function(){
-          window.clearTimeout(window.__yyc90CertSearchTimer);
-          window.__yyc90CertSearchTimer=window.setTimeout(loadCertificates90,220);
-        });
-        q('#c90CertStatus').addEventListener('change',loadCertificates90);
-        q('#c90CertRefresh').addEventListener('click',loadCertificates90);
-        q('#c90CertExport').addEventListener('click',function(){
-          rpc90('admin_certificate_history',{
-            p_token:window.adminToken,p_limit:200,
-            p_search:(q('#c90CertSearch').value||'').trim(),
-            p_status:q('#c90CertStatus').value||''
-          }).then(function(r){
-            if(!r||!r.ok)throw new Error(r&&r.error||'Unable to export certificates');
-            var rows=[['Certificate No','Certificate ID','Recipient','Type','Event','Date','Location','Status','Created At','Emailed At']]
-              .concat((r.items||[]).map(function(c){return [c.certificate_no,c.certificate_code,c.recipient_name,c.recipient_kind,c.event_title,c.event_date,c.location,c.status,c.created_at,c.emailed_at||''];}));
-            var csv=rows.map(function(row){return row.map(function(v){var z=String(v==null?'':v).replace(/"/g,'""');return '"'+z+'"';}).join(',');}).join('\n');
-            download90('yyc-certificates-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
-          }).catch(function(e){toast90(e.message);});
-        });
-        loadCertificates90();
       }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);

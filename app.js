@@ -2841,8 +2841,8 @@ function renderAdminTab(tab,d){
       '<form id="adminNotificationForm" class="admin-form yyc-message-form"><div class="form-grid">'+
         '<div class="field"><label>Recipient type</label><select id="anTargetKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
         '<div class="field"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option></select></div>'+
-        '<div class="field"><label>Message type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="certificate">Certificate</option><option value="system">System</option></select></div>'+
-        '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="e.g. Swachatha Abhiyaan Certificate"></div>'+
+        '<div class="field"><label>Message type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div>'+
+        '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="e.g. Swachatha Abhiyaan"></div>'+
         '<div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="6" required placeholder="Write the message to the member or leader…"></textarea></div>'+
         '<div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://www.yuvakesariyouthclub.in/…"></div>'+
         '<div class="field full"><label class="yyc-channel-choice">Delivery channels <span class="field-note">Choose one or both</span></label><div class="yyc-channel-pills yyc-message-channels"><label><input type="checkbox" id="anEmail" checked> <span>✉ Email</span></label><label><input type="checkbox" id="anWhatsapp" checked> <span>◉ WhatsApp</span></label></div></div>'+
