@@ -304,3 +304,8 @@ end;
 $function$;
 
 grant execute on function public.admin_certificate_history(text,integer,text,text) to anon, authenticated;
+
+
+insert into storage.buckets(id,name,public)
+values ('yyc-certificates','yyc-certificates',false)
+on conflict (id) do update set public=false;
