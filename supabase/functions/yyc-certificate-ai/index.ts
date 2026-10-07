@@ -108,7 +108,7 @@ Deno.serve(async(req)=>{
   const extra=clean(body?.instructions,1200);
   const prompt=basePrompt(event,extra);
 
-  const next={data:latest,error:latestError}=await db.from("yyc_certificate_designs")
+  const {data:latest,error:latestError}=await db.from("yyc_certificate_designs")
     .select("version").eq("event_id",eventId).order("version",{ascending:false}).limit(1).maybeSingle();
   const version=Number(latest?.version||0)+1;
   const designId=crypto.randomUUID();
