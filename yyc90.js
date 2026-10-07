@@ -741,15 +741,35 @@
           btn.disabled=true;btn.textContent='GENERATING AI MASTER…';
           if(aiStatus)aiStatus.textContent='AI designer is preparing the visual master. This can take a little time.';
           if(aiPreview)aiPreview.innerHTML='<div class="empty">Generating premium certificate artwork…</div>';
-          imagePromise.then(function(result){
+
+          var imagePromise=(aiFile&&aiFile.files&&aiFile.files[0])
+            ? readFile(aiFile.files[0],1536).then(function(data){
+                return {reference_image_data:data,reference_image_url:''};
+              })
+            : Promise.resolve({reference_image_data:'',reference_image_url:reference});
+
+          imagePromise.then(function(refPayload){
+            return callCertificateAI90({
+              admin_token:window.adminToken,
+              event_id:eventId,
+              instructions:instructions,
+              reference_image_data:refPayload.reference_image_data,
+              reference_image_url:refPayload.reference_image_url
+            });
+          }).then(function(result){
             var d=result.design||{};
             if(aiStatus)aiStatus.textContent='AI design generated ✓ Version '+(d.version||'')+'. New certificates for this event will use the active design.';
             if(aiPreview&&d.public_url)aiPreview.innerHTML='<div class="yyc90-ai-preview-frame"><img src="'+esc90(d.public_url)+'" alt="AI certificate master preview"></div>';
             toast90('AI certificate master generated ✓');
             loadAIDesignHistory90(eventId);
-          })
-          .catch(function(e){if(aiStatus)aiStatus.textContent=e.message||'AI design generation failed';if(aiPreview)aiPreview.innerHTML='<div class="notice">'+esc90(e.message||'AI design generation failed')+'</div>';toast90(e.message||'AI design generation failed');})
-          .finally(function(){btn.disabled=false;btn.innerHTML='GENERATE AI MASTER DESIGN <span>✦</span>';});
+          }).catch(function(e){
+            if(aiStatus)aiStatus.textContent=e.message||'AI design generation failed';
+            if(aiPreview)aiPreview.innerHTML='<div class="notice">'+esc90(e.message||'AI design generation failed')+'</div>';
+            toast90(e.message||'AI design generation failed');
+          }).finally(function(){
+            btn.disabled=false;
+            btn.innerHTML='GENERATE AI MASTER DESIGN <span>✦</span>';
+          });
         });
       }
       if(tab==='certificates'){
