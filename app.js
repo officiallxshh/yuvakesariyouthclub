@@ -2590,66 +2590,7 @@ function adminPanel(tab,forceRefresh){
         var target=e.target.closest('button');
         if(!target || !workspace.contains(target)) return;
         var back=target.closest('[data-admin-overview]');
-        if(back){e.preventDefault();e.stopPropagation();adminPanel('overview');return;}
-        var cardLeader=target.closest('[data-card-leader]');
-        if(cardLeader){
-          e.preventDefault();e.stopPropagation();
-          var l=(d.leaders||[]).find(function(x){return String(x.id)===String(cardLeader.getAttribute('data-card-leader'));});
-          if(l){l.__adminView=true;l.__adminTab='leaders';leaderDashboard(l);}
-          return;
-        }
-        var dlLeader=target.closest('[data-download-leader]');
-        if(dlLeader){
-          e.preventDefault();e.stopPropagation();
-          var dl=(d.leaders||[]).find(function(x){return String(x.id)===String(dlLeader.getAttribute('data-download-leader'));});
-          if(dl) downloadAdminCard(dl,'leader');
-          return;
-        }
-        var dlMember=target.closest('[data-download-member]');
-    if(dlMember){
-      e.preventDefault();
-      e.stopPropagation();
-      var md=window.__yycAdminLastData||adminData;
-      var mm=(md&&md.members||[]).find(function(x){return String(x.id)===String(dlMember.getAttribute('data-download-member'));});
-      if(mm) downloadAdminCard(mm,'member',dlMember); else toast('Member record not found');
-      return;
-    }
-
-    var dlLeader=target.closest('[data-download-leader]');
-    if(dlLeader){
-      e.preventDefault();
-      e.stopPropagation();
-      var ld=window.__yycAdminLastData||adminData;
-      var ll=(ld&&ld.leaders||[]).find(function(x){return String(x.id)===String(dlLeader.getAttribute('data-download-leader'));});
-      if(ll) downloadAdminCard(ll,'leader',dlLeader); else toast('Leader record not found');
-      return;
-    }
-
-    var resetLeader=target.closest('[data-reset-leader]');
-    if(resetLeader){
-      e.preventDefault();e.stopImmediatePropagation();
-      var rlid=resetLeader.getAttribute('data-reset-leader');
-      var rl=(d.leaders||[]).find(function(x){return String(x.id)===String(rlid);});
-      if(rl){
-        adminLeaderForm(rlid);
-        setTimeout(function(){var field=$('#alPass');if(field)field.focus();},80);
-      }else toast('Leader record not found');
-      return;
-    }
-
-    var editLeader=target.closest('[data-edit-leader]');
-        if(editLeader){
-          e.preventDefault();e.stopPropagation();
-          adminLeaderForm(editLeader.getAttribute('data-edit-leader'));
-          return;
-        }
-        var delLeader=target.closest('[data-del-leader]');
-        if(delLeader){
-          e.preventDefault();e.stopPropagation();
-          var lid=delLeader.getAttribute('data-del-leader');
-          if(confirm('Remove leader "'+esc(l.name||'this leader')+'"?')) adminAction('admin_delete_leader',{p_id:lid},'Leader deleted');
-          return;
-        }
+        if(back){e.preventDefault();e.stopPropagation();adminPanel('overview');}
       });
     }
   });
@@ -2752,7 +2693,7 @@ function renderAdminTab(tab,d){
     a.innerHTML='<div class="admin-top"><h2>Updates</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addUpdateBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add update</span></button></div></div><div class="admin-toolbar"><input id="adminUpdateSearch" class="admin-search" placeholder="Search updates" autocomplete="off"><select id="adminUpdateStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminUpdateCount"></span></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card" data-content-status="'+esc(u.status||'published')+'"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+(u.featured?' · FEATURED':'')+(u.image_format?' · Photo: '+esc(yycImageFormatMeta(u.image_format).label):'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-edit-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
     $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove update "'+esc(u.title||'this update')+'"?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
     (function(){function filterUpdates(){var q=$('#adminUpdateSearch').value.trim().toLowerCase(),st=$('#adminUpdateStatus').value,rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminUpdateCount').textContent=shown+' of '+rows.length+' shown';}$('#adminUpdateSearch').addEventListener('input',filterUpdates);$('#adminUpdateStatus').addEventListener('change',filterUpdates);filterUpdates();})();
     return;
   }
@@ -2761,7 +2702,7 @@ function renderAdminTab(tab,d){
     a.innerHTML='<div class="admin-top"><h2>Gallery</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addGalleryBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add photo</span></button></div></div><div class="admin-toolbar"><input id="adminGallerySearch" class="admin-search" placeholder="Search photos or captions" autocomplete="off"><input id="adminGalleryAlbum" class="admin-search" placeholder="Filter album" autocomplete="off"><select id="adminGalleryStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminGalleryCount"></span></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card" data-content-status="'+esc(g.status||'published')+'" data-content-album="'+esc(g.album||'GENERAL')+'">'+yycMediaFrame(g.image_format,'<img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'">')+'<figcaption><strong>'+esc(g.title)+'</strong><small>'+esc(g.album||'GENERAL')+' · '+esc(yycImageFormatMeta(g.image_format).label)+(g.featured?' · FEATURED':'')+'</small><div class="admin-actions"><button class="mini-btn gold" data-edit-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
     $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove photo "'+esc(g.title||'this photo')+'"?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
     (function(){function filterGallery(){var q=$('#adminGallerySearch').value.trim().toLowerCase(),alb=$('#adminGalleryAlbum').value.trim().toLowerCase(),st=$('#adminGalleryStatus').value,rows=$$('#adminWorkspace .admin-gallery-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!alb||String(row.getAttribute('data-content-album')||'').toLowerCase().indexOf(alb)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminGalleryCount').textContent=shown+' of '+rows.length+' shown';}$('#adminGallerySearch').addEventListener('input',filterGallery);$('#adminGalleryAlbum').addEventListener('input',filterGallery);$('#adminGalleryStatus').addEventListener('change',filterGallery);filterGallery();})();
     return;
   }
@@ -2779,10 +2720,10 @@ function renderAdminTab(tab,d){
     $('#addSwagBtn').addEventListener('click',function(){adminSwagForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-swag]')).forEach(function(b){b.addEventListener('click',function(){adminSwagForm(b.getAttribute('data-edit-swag'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-del-swag]')).forEach(function(b){b.addEventListener('click',async function(){
-      if(!confirm('Remove swag "'+esc(sw.title||'this item')+'"?')) return;
+      if(!confirm('Remove this swag item?')) return;
       var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
       if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
-      toast('Swag item deleted'); adminPanel('swags');
+      toast('Swag item deleted'); adminPanel('swags',true);
     });});
     return;
   }
@@ -3162,7 +3103,7 @@ function adminMemberForm(id){
   wireEditor('adminM',obj,'amFile');
   $('#adminMemberBack').addEventListener('click',function(){adminPanel('members');});
   $('#adminMemberAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
-  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);photo=await uploadYYCImage(croppedPhoto,'member',adminToken,id||'',existing.photo_url||'');obj.scale=1;obj.x=50;obj.y=50;}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members');}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
+  $('#adminMemberForm').addEventListener('submit',async function(e){e.preventDefault();var btn=this.querySelector('button[type="submit"]');try{if(!id && !obj.photo)throw new Error('Photo is required');if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;}var photo=obj.photo;if(String(photo).startsWith('data:image/')){if(btn)btn.textContent='UPLOADING PHOTO…';var croppedPhoto=await yycManualSquareCrop(photo,obj.scale,obj.x,obj.y,760);photo=await uploadYYCImage(croppedPhoto,'member',adminToken,id||'',existing.photo_url||'');obj.scale=1;obj.x=50;obj.y=50;}else if(!photo){photo=existing.photo_url||'';}var payload={name:$('#amName').value.trim(),dob:$('#amDob').value,phone:$('#amPhone').value.trim(),email:$('#amEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#amPosition').value.trim()||'MEMBER',photo_data:photo,photo_scale:obj.scale,photo_pos_x:obj.x,photo_pos_y:obj.y,password:$('#amPass').value};var r=await rpc('admin_member_upsert',{p_token:adminToken,p_id:id,p_payload:payload});if(!r.ok)throw new Error(r.error||'Failed');closeModal();toast('Member saved');adminPanel('members',true);}catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE MEMBER';}toast(err.message);}});
 }
 
 function adminLeaderForm(id){
@@ -3205,7 +3146,7 @@ function adminLeaderForm(id){
       };
       var r=await rpc('admin_upsert_leader',{p_token:adminToken,p_id:id,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast('Leader saved');adminPanel('leaders');
+      closeModal();toast('Leader saved');adminPanel('leaders',true);
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE LEADER';}toast(err.message);}
   });
 }
@@ -3318,7 +3259,7 @@ function adminUpdateForm(id){
         category:$('#auCategory').value.trim(),publish_at:yycPublishAtIso($('#auPublishAt').value),sort_order:Number($('#auSort').value||0)
       }});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast($('#auStatus').value==='draft'?'Update saved as draft':'Update saved');adminPanel('updates');
+      closeModal();toast($('#auStatus').value==='draft'?'Update saved as draft':'Update saved');adminPanel('updates',true);
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE UPDATE';}toast(err.message);}
   });
 }
@@ -3362,7 +3303,7 @@ function adminGalleryForm(id){
         publish_at:yycPublishAtIso($('#agPublishAt').value),sort_order:Number($('#agSort').value||0)
       }});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast($('#agStatus').value==='draft'?'Gallery item saved as draft':'Gallery photo saved');adminPanel('gallery');
+      closeModal();toast($('#agStatus').value==='draft'?'Gallery item saved as draft':'Gallery photo saved');adminPanel('gallery',true);
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE PHOTO';}toast(err.message);}
   });
 }
@@ -3425,7 +3366,7 @@ function adminSwagForm(id){
       };
       var rr=await rpc('admin_upsert_swag',{p_token:adminToken,p_id:id||null,p_payload:payload});
       if(!rr||!rr.ok) throw new Error(rr&&rr.error||'Could not save swag item');
-      closeModal(); toast(id?'Swag item updated':'Swag item added'); adminPanel('swags');
+      closeModal(); toast(id?'Swag item updated':'Swag item added'); adminPanel('swags',true);
     }catch(err){
       btn.disabled=false; btn.textContent=btn.dataset.originalText||'ADD SWAG ✓'; toast(err.message);
     }
@@ -3545,7 +3486,19 @@ function bindAdminActionDelegation(){
     var removeMember=target.closest('[data-remove]');
     if(removeMember){
       e.preventDefault();e.stopImmediatePropagation();
-      if(confirm('Remove member "'+esc(m.name||'this member')+'"?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
+      if(confirm('Remove this member?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
+      return;
+    }
+
+    var resetLeader=target.closest('[data-reset-leader]');
+    if(resetLeader){
+      e.preventDefault();e.stopImmediatePropagation();
+      var rlid=resetLeader.getAttribute('data-reset-leader');
+      var rl=(d.leaders||[]).find(function(x){return String(x.id)===String(rlid);});
+      if(rl){
+        adminLeaderForm(rlid);
+        setTimeout(function(){var field=$('#alPass');if(field)field.focus();},80);
+      }else toast('Leader record not found');
       return;
     }
 
