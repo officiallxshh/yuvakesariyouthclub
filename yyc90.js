@@ -530,13 +530,22 @@
             return result;
           });
         })).then(function(results){
-          var sent=results.filter(function(result){
-            return !!(result&&result.ok&&result.delivery&&result.delivery.email&&result.delivery.email.status==='sent');
+          var attendanceSent=results.filter(function(result){
+            return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
           }).length;
-          var failed=results.length-sent;
-          if(sent&&failed) toast90('Attendance saved · '+sent+' emails sent · '+failed+' failed');
-          else if(sent) toast90('Attendance saved · '+sent+' confirmation email'+(sent===1?'':'s')+' sent ✓');
-          else toast90('Attendance saved · confirmation email could not be sent');
+          var certificateSent=results.filter(function(result){
+            return !!(result&&result.ok&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email&&result.delivery.certificate.email.status==='sent');
+          }).length;
+          var failed=results.filter(function(result){
+            var a=result&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email;
+            var c=result&&result.delivery&&result.delivery.certificate&&result.delivery.certificate.email;
+            return !(a&&a.status==='sent') || !(c&&c.status==='sent');
+          }).length;
+          var totalSent=attendanceSent+certificateSent;
+          if(totalSent&&failed) toast90('Attendance saved · '+attendanceSent+' attendance + '+certificateSent+' certificate emails sent · some failed');
+          else if(totalSent===newlyPresent.length*2) toast90('Attendance saved · '+newlyPresent.length+' attendance + '+newlyPresent.length+' certificate emails sent ✓');
+          else if(totalSent) toast90('Attendance saved · '+totalSent+' emails sent · some failed');
+          else toast90('Attendance saved · attendance/certificate emails could not be sent');
         });
       }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
     };q('#at90Rows').parentNode.appendChild(b);}
