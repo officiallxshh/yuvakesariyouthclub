@@ -2767,7 +2767,7 @@ function renderAdminTab(tab,d){
     $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-event]')).forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-del-event]')).forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
-    (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value,rows=$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();
+    (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value;/* $$ returns a collection; $ returns one element. */var rows=$$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();;
     return;
   }
 
