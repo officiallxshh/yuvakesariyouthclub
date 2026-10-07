@@ -2811,26 +2811,22 @@ function renderAdminTab(tab,d){
   }
 
   if(tab==='events'){
-    a.innerHTML='<div class="storage-loading"><div class="storage-spinner"></div><strong>Loading events…</strong><span>Reading YYC event records</span></div>';
-    rpc('admin_dashboard',{p_token:adminToken}).then(function(s){
-      if(!s.ok) throw new Error(s.error||'Unable to load events');
-      adminData=s;
-      var events=s.events||[];
-      a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC PROGRAMMES</div><h2 class="modal-title">Events</h2><p class="admin-subline">Create and manage public event cards.</p></div>'+
-        '<div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddEvent"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add event</span></button></div></div>'+
-        '<div class="admin-toolbar"><input id="adminEventSearch" class="admin-search" placeholder="Search event, location or category" autocomplete="off"><select id="adminEventStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option><option value="ongoing">Ongoing</option><option value="cancelled">Cancelled</option><option value="postponed">Postponed</option></select><span class="admin-result-count" id="adminEventCount"></span></div>'+
-        (events.length?'<div class="events-admin-grid">'+events.map(function(ev){
-          var dt=ev.event_date?new Date(ev.event_date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'DATE TBC';
-          return '<article class="event-admin-card" data-content-status="'+esc(ev.status||'published')+'"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span><small>'+esc(ev.category||'GENERAL')+' · '+esc(ev.status||'published')+(ev.featured?' · FEATURED':'')+'</small>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'<div class="admin-actions event-admin-actions"><button class="mini-btn" data-edit-event="'+ev.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-event="'+ev.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div></article>';
-        }).join('')+'</div>':'<div class="empty">No events stored yet. Add the first YYC programme.</div>');
-      $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
-      Array.prototype.slice.call(document.querySelectorAll('[data-edit-event]')).forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
-      Array.prototype.slice.call(document.querySelectorAll('[data-del-event]')).forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
-      (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value,rows=$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();
-    }).catch(function(e){
-      a.innerHTML='<div class="storage-error"><strong>Could not load events.</strong><span>'+esc(e.message)+'</span><button class="mini-btn gold" id="eventsRetry">Retry</button></div>';
-      $('#eventsRetry').addEventListener('click',function(){adminPanel('events');});
-    });
+    /* Reuse the admin_dashboard payload already loaded by adminPanel().
+       The old implementation issued a second admin_dashboard request here,
+       which could surface a false "Could not load/fetch events" error even
+       though the admin workspace had already authenticated and loaded. */
+    var events=d.events||[];
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC PROGRAMMES</div><h2 class="modal-title">Events</h2><p class="admin-subline">Create and manage public event cards.</p></div>'+
+      '<div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="adminAddEvent"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add event</span></button></div></div>'+
+      '<div class="admin-toolbar"><input id="adminEventSearch" class="admin-search" placeholder="Search event, location or category" autocomplete="off"><select id="adminEventStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option><option value="ongoing">Ongoing</option><option value="cancelled">Cancelled</option><option value="postponed">Postponed</option></select><span class="admin-result-count" id="adminEventCount"></span></div>'+
+      (events.length?'<div class="events-admin-grid">'+events.map(function(ev){
+        var dt=ev.event_date?new Date(ev.event_date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'DATE TBC';
+        return '<article class="event-admin-card" data-content-status="'+esc(ev.status||'published')+'"><div class="event-admin-date">'+esc(dt)+'</div><div class="event-admin-main"><strong>'+esc(ev.title||'Untitled event')+'</strong><span>'+esc(ev.location||'Location not set')+'</span><small>'+esc(ev.category||'GENERAL')+' · '+esc(ev.status||'published')+(ev.featured?' · FEATURED':'')+'</small>'+(ev.description?'<p>'+esc(ev.description)+'</p>':'')+'<div class="admin-actions event-admin-actions"><button class="mini-btn" data-edit-event="'+ev.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-event="'+ev.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div></article>';
+      }).join('')+'</div>':'<div class="empty">No events stored yet. Add the first YYC programme.</div>');
+    $('#adminAddEvent').addEventListener('click',function(){adminEventForm(null);});
+    Array.prototype.slice.call(document.querySelectorAll('[data-edit-event]')).forEach(function(b){b.addEventListener('click',function(){adminEventForm(b.getAttribute('data-edit-event'));});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-event]')).forEach(function(b){b.addEventListener('click',function(){adminDeleteEvent(b.getAttribute('data-del-event'));});});
+    (function(){function filterEvents(){var q=$('#adminEventSearch').value.trim().toLowerCase(),st=$('#adminEventStatus').value,rows=$('#adminWorkspace .event-admin-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminEventCount').textContent=shown+' of '+rows.length+' shown';}$('#adminEventSearch').addEventListener('input',filterEvents);$('#adminEventStatus').addEventListener('change',filterEvents);filterEvents();})();
     return;
   }
 
@@ -3266,7 +3262,7 @@ function adminEventForm(id){
       };
       var r=await rpc('admin_upsert_event',{p_token:adminToken,p_id:id||null,p_payload:payload});
       if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast(payload.status==='draft'?'Event saved as draft':'Event saved');adminPanel('events');
+      closeModal();toast(payload.status==='draft'?'Event saved as draft':'Event saved');adminPanel('events',true);
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE EVENT';}toast(err.message);}
   });
 }
@@ -3275,7 +3271,7 @@ function adminDeleteEvent(id){
   rpc('admin_delete_event',{p_token:adminToken,p_id:id}).then(function(r){
     if(!r.ok) throw new Error(r.error||'Failed');
     toast('Event deleted');
-    adminPanel('events');
+    adminPanel('events',true);
   }).catch(function(e){toast(e.message);});
 }
 
