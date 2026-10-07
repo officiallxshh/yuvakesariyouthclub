@@ -638,11 +638,15 @@ Deno.serve(async(req:Request)=>{
       const kind=clean(b?.target_kind,20);
       const id=clean(b?.target_id,100);
       const eventId=clean(b?.event_id,100);
-      if(kind!=="member" || !id || !eventId) return out(req,{ok:false,error:"Member and event are required"},400);
+      if(!["member","leader"].includes(kind) || !id || !eventId) {
+        return out(req,{ok:false,error:"Member/leader and event are required"},400);
+      }
 
-      const target=await targetById("member",id);
-      if(!target) return out(req,{ok:false,error:"Approved member not found"},404);
-      target.kind="member";
+      const target=await targetById(kind as "member"|"leader",id);
+      if(!target) {
+        return out(req,{ok:false,error:"Active attendance target not found"},404);
+      }
+      target.kind=kind;
 
       const {data:eventRow,error:eventError}=await db.from("events")
         .select("id,title,event_date,location,status")
