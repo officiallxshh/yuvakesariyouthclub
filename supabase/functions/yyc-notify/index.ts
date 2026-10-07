@@ -415,6 +415,22 @@ function wrapPdfText(text:string,font:any,size:number,maxWidth:number) {
   if(line) lines.push(line);
   return lines;
 }
+async function fetchPng(url:string){
+  const cleanUrl=String(url||"").trim();
+  if(!cleanUrl) return null;
+  if(!/^https:\/\//i.test(cleanUrl)) return null;
+  try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),8000);
+    const response=await fetch(cleanUrl,{signal:controller.signal});
+    clearTimeout(timeout);
+    if(!response.ok) return null;
+    const type=response.headers.get("content-type")||"";
+    if(!/^image\/(png|jpeg|jpg|webp)/i.test(type)) return null;
+    return new Uint8Array(await response.arrayBuffer());
+  }catch(_){ return null; }
+}
+
 async function buildCertificatePdf(cert:any) {
   const pdf=await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -431,12 +447,31 @@ async function buildCertificatePdf(cert:any) {
   let kannada=regular;
 
   page.drawRectangle({x:0,y:0,width:W,height:H,color:cream});
-  page.drawRectangle({x:0,y:H-34,width:W,height:34,color:forest});
-  page.drawRectangle({x:0,y:0,width:W,height:25,color:forest});
-  page.drawRectangle({x:18,y:18,width:W-36,height:H-36,borderColor:gold,borderWidth:2});
-  page.drawRectangle({x:27,y:27,width:W-54,height:H-54,borderColor:forest2,borderWidth:1});
-  page.drawCircle({x:74,y:H-78,size:28,color:forest2,borderColor:gold,borderWidth:2});
-  page.drawText("YYC",{x:53,y:H-84,size:14,font:bold,color:lightGold});
+
+  /* AI supplies the visual master artwork. Official variable data is always
+     overlaid by this deterministic renderer, never generated as image text. */
+  const designBytes=await fetchPng(cert.design_url||"");
+  if(designBytes){
+    try{
+      let designImage;
+      const signature=String.fromCharCode(designBytes[0]||0,designBytes[1]||0,designBytes[2]||0,designBytes[3]||0);
+      if(signature==="\x89PNG"){
+        designImage=await pdf.embedPng(designBytes);
+      }else{
+        designImage=await pdf.embedJpg(designBytes);
+      }
+      page.drawImage(designImage,{x:0,y:0,width:W,height:H});
+    }catch(_){
+      page.drawRectangle({x:0,y:0,width:W,height:H,color:cream});
+    }
+  }else{
+    page.drawRectangle({x:0,y:H-34,width:W,height:34,color:forest});
+    page.drawRectangle({x:0,y:0,width:W,height:25,color:forest});
+    page.drawRectangle({x:18,y:18,width:W-36,height:H-36,borderColor:gold,borderWidth:2});
+    page.drawRectangle({x:27,y:27,width:W-54,height:H-54,borderColor:forest2,borderWidth:1});
+    page.drawCircle({x:74,y:H-78,size:28,color:forest2,borderColor:gold,borderWidth:2});
+    page.drawText("YYC",{x:53,y:H-84,size:14,font:bold,color:lightGold});
+  }
 
   try{
     const controller=new AbortController();
@@ -446,6 +481,7 @@ async function buildCertificatePdf(cert:any) {
     if(response.ok) kannada=await pdf.embedFont(new Uint8Array(await response.arrayBuffer()),{subset:true});
   }catch(_){}
 
+  /* Deterministic content layer: exact official text only. */
   page.drawText("YUVAKESARI YOUTH CLUB",{x:112,y:H-77,size:11,font:bold,color:forest});
   page.drawText("SUBRAHMANYA · KARNATAKA",{x:112,y:H-93,size:8,font:regular,color:soft});
   const title="CERTIFICATE OF PARTICIPATION";
@@ -457,7 +493,7 @@ async function buildCertificatePdf(cert:any) {
 
   const recipient=String(cert.recipient_name||"YYC Participant").slice(0,120);
   const nameSize=Math.min(30,Math.max(20,recipient.length<24?30:24));
-  page.drawText(recipient,{x:(W-bold.widthOfTextAtSize(recipient,nameSize))/2,y:335,size:nameSize,font:bold,color:forest});
+  page.drawText(recipient,{x:(W-bold.widthOfTextAtSize(recipient,nameSize))/2,y:335,size:nameSize,font:bold,color=forest});
 
   const sentence="for active participation in “"+String(cert.event_title||"YYC Event").slice(0,180)+"”";
   const lines=wrapPdfText(sentence,regular,13,620);
