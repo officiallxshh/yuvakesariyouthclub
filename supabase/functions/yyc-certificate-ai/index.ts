@@ -104,7 +104,14 @@ Deno.serve(async(req)=>{
   if(String(event.status||"published").toLowerCase()==="cancelled")return out(req,{ok:false,error:"Cannot design a certificate for a cancelled event"},400);
 
   const referenceUrl=clean(body?.reference_image_url||event.image_url,500);
-  if(referenceUrl && !/^https:\\/\\//i.test(referenceUrl))return out(req,{ok:false,error:"Reference image URL must be HTTPS"},400);
+  const referenceData=clean(body?.reference_image_data,8500000);
+  if(referenceData && !/^data:image\\/(?:png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=\\s]+$/i.test(referenceData))
+    return out(req,{ok:false,error:"Reference image data is invalid"},400);
+  if(referenceData && referenceData.length>8500000)
+    return out(req,{ok:false,error:"Reference image is too large"},400);
+  if(!referenceData && referenceUrl && !/^https:\\/\\//i.test(referenceUrl))
+    return out(req,{ok:false,error:"Reference image URL must be HTTPS"},400);
+  const reference=referenceData||referenceUrl;
   const extra=clean(body?.instructions,1200);
   const prompt=basePrompt(event,extra);
 
