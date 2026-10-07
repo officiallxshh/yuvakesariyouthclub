@@ -109,7 +109,7 @@ Deno.serve(async(req)=>{
     return out(req,{ok:false,error:"Reference image data is invalid"},400);
   if(referenceData && referenceData.length>8500000)
     return out(req,{ok:false,error:"Reference image is too large"},400);
-  if(!referenceData && referenceUrl && !/^https:\\/\\//i.test(referenceUrl))
+  if(!referenceData && referenceUrl && !/^https:\/\//i.test(referenceUrl))
     return out(req,{ok:false,error:"Reference image URL must be HTTPS"},400);
   const reference=referenceData||referenceUrl;
   const extra=clean(body?.instructions,1200);
