@@ -1147,7 +1147,7 @@
           '<small>'+esc90(m.name||'Unknown sender')+' · '+esc90(m.email||'')+(m.phone?' · '+esc90(m.phone):'')+'</small>'+
           '<small>'+esc90(m.created_at?new Date(m.created_at).toLocaleString('en-IN'):'')+' · '+esc90(status.toUpperCase())+'</small>'+
           '<p>'+esc90(m.message||'')+'</p></div>'+
-          '<div class="admin-actions"><select class="mini-select" data-c90-action="'+esc90(m.id)+'"><option value="">STATUS</option>'+statuses.map(function(st){return '<option value="'+st+'">'+st.toUpperCase()+'</option>';}).join('')+'</select></div>'+
+          '<div class="admin-actions"><select class="mini-select" data-c90-action="'+esc90(m.id)+'"><option value="">STATUS</option>'+statuses.map(function(st){return '<option value="'+st+'" '+(st===status?'selected':'')+'>'+st.toUpperCase()+'</option>';}).join('')+'</select></div>'+
         '</div>';
       }).join(''):'<div class="empty">No contact messages yet.</div>')+'</div>';
   }
