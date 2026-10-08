@@ -332,7 +332,7 @@
 
   var FEATURES=[
     'Premium branding','Responsive layout','Sticky navigation','Active tab highlight','Smooth scrolling',
-    'Hero auto zoom','Scroll reveal','Soft parallax','Reduced motion support','Back-to-top',
+    'Hero auto zoom','Scroll reveal','Reduced motion support','Back-to-top',
     'Keyboard shortcuts','Offline indicator','PWA manifest','Service worker retired for stability','Skip link',
     'Tulunadu glimpse','Culture cards','Culture detail modal','Public leaders',
     'Updates read-more system','Events read-more system','Gallery read-more system','Swag showcase','Update detail modal',
@@ -372,19 +372,7 @@
   }
 
   installMediaClick();
-  /* Load the optional Render bridge after the core site is ready.
-     It only activates for heavy ID-card export and always keeps the existing
-     browser renderer as a fallback. */
-  (function loadYYCRenderBridge(){
-    if(window.__YYC_RENDER_BRIDGE_LOADING || window.__YYC_RENDER_BRIDGE_INSTALLED) return;
-    window.__YYC_RENDER_BRIDGE_LOADING=true;
-    var s=document.createElement('script');
-    s.src='assets/yyc-render-bridge.js?v=20261004-01';
-    s.async=true;
-    s.onload=function(){window.__YYC_RENDER_BRIDGE_LOADING=false;};
-    s.onerror=function(){window.__YYC_RENDER_BRIDGE_LOADING=false;};
-    document.head.appendChild(s);
-  })();
+  /* The former Render bridge was intentionally removed; ID-card export uses the local renderer. */
   var timer=setInterval(scan,1800);
   setTimeout(function(){clearInterval(timer);scan();},18000);
 })();
