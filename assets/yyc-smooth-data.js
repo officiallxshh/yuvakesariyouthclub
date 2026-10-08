@@ -38,12 +38,6 @@
     if(!grid) return;
     var cards=getCards(grid);
     cards.forEach(animateCard);
-    grid.classList.remove('yyc-data-refresh');
-    void grid.offsetWidth;
-    grid.classList.add('yyc-data-refresh');
-    window.setTimeout(function(){
-      grid.classList.remove('yyc-data-refresh');
-    },500);
   }
 
   function init(){
