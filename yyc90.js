@@ -460,6 +460,7 @@
 
   function renderAttendancePercentage90() {
     return adminHeader90('Attendance Percentage')+
+      '<style id="yyc90AttendancePctStyle">.yyc90-attendance-pct-list{margin-top:14px}.yyc90-attendance-pct-row{min-width:0}@media(max-width:760px){.yyc90-attendance-pct-row{grid-template-columns:1fr 92px!important;gap:10px!important}.yyc90-attendance-pct-stats{text-align:right!important}.yyc90-attendance-pct-bar{grid-column:1 / -1}.yyc90-attendance-pct-value{text-align:right!important}}</style>'+
       '<div id="yyc90AttendancePctHost">'+
         '<div class="notice">Loading attendance percentages…</div>'+
       '</div>';
