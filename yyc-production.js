@@ -428,7 +428,7 @@
 
   function boot(){
     document.documentElement.setAttribute('data-yycp-version',PROD_VERSION);
-    installAdaptiveMotion();installOffline();installSwUpdate();installTopSearch();injectFooterLinks();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
+    installAdaptiveMotion();installOffline();installSwUpdate();installTopSearch();installQrObserver();installEventCalendar();recordView();installContactShortcut();installContactForm();installForgotPasswordLinks();installAdminDraftRecovery();
     if(window.MutationObserver){
       var adminRoot=q('#modalContent')||document.body;
       new MutationObserver(function(){
