@@ -105,6 +105,17 @@ for (const file of files.filter(f => /\.css$/i.test(f))) {
   }
 }
 
+const sourceText = files.filter(f => f !== "scripts/yyc-full-audit.mjs" && /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
+if (/(?<!\$)\$\((["'])[^"']+\1\)\.forEach/g.test(sourceText)) {
+  issues.push("Single-element $().forEach() runtime pattern found.");
+}
+
+const index = read("index.html");
+const app = read("app.js");
+const yyc90 = read("yyc90.js");
+const production = read("yyc-production.js");
+const responsiveCss = read("assets/yyc-responsive.css");
+
 /* Dynamic manifest injection must point to a real file. */
 if (yyc90.includes("manifest.webmanifest") && !fileSet.has("manifest.webmanifest")) {
   issues.push("Missing dynamic PWA manifest: manifest.webmanifest");
@@ -117,16 +128,7 @@ for (const fn of yyc90RenderCalls) {
   if (!yyc90RenderDefs.has(fn)) issues.push("YYC90 render function missing definition: " + fn);
 }
 
-const sourceText = files.filter(f => f !== "scripts/yyc-full-audit.mjs" && /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
-if (/(?<!\$)\$\((["'])[^"']+\1\)\.forEach/g.test(sourceText)) {
-  issues.push("Single-element $().forEach() runtime pattern found.");
-}
 
-const index = read("index.html");
-const app = read("app.js");
-const yyc90 = read("yyc90.js");
-const production = read("yyc-production.js");
-const responsiveCss = read("assets/yyc-responsive.css");
 
 if(/\$Array\.prototype/.test(app)) {
   issues.push("app.js contains the invalid $Array.prototype runtime reference.");
