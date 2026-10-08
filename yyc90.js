@@ -1027,6 +1027,92 @@
     q('#adminHistoryForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc90('admin_upsert_history',{p_token:window.adminToken,p_id:id||null,p_payload:{year_label:q('#h90Year').value.trim(),title:q('#h90Title').value.trim(),body:q('#h90Body').value.trim(),image_url:q('#h90Image').value.trim(),status:q('#h90Status').value,sort_order:Number(q('#h90Sort').value||0)}});if(!r.ok)throw new Error(r.error||'Failed');featureData=null;toast90('History item saved');admin90Open('history',true);}catch(err){toast90(err.message);}});
   }
 
+  function renderMediaAudit90f(){
+    var d=window.__yycAdminLastData||{};
+    var groups=[
+      {kind:'GALLERY',items:d.gallery||[],src:function(x){return x.src||x.image_url||x.image||'';},label:function(x){return x.title||'Untitled gallery item';}},
+      {kind:'EVENTS',items:d.events||[],src:function(x){return x.image_url||x.cover_image||x.src||'';},label:function(x){return x.title||'Untitled event';}},
+      {kind:'LEADERS',items:d.leaders||[],src:function(x){return x.photo_url||x.photo||'';},label:function(x){return x.name||'Unnamed leader';}},
+      {kind:'SWAGS',items:d.swags||[],src:function(x){return x.image_url||x.src||'';},label:function(x){return x.title||'Untitled swag';}}
+    ];
+    var rows=[];
+    groups.forEach(function(g){
+      (g.items||[]).forEach(function(x){
+        var src=String(g.src(x)||'').trim();
+        if(src) rows.push({kind:g.kind,label:g.label(x),src:src,status:'CHECKING…'});
+      });
+    });
+    var total=rows.length;
+    var external=rows.filter(function(x){return /^https?:\\/\\//i.test(x.src);}).length;
+    var local=total-external;
+    var html=adminHeader90('Media Audit')+
+      '<div class="yyc90-metric-grid">'+
+        '<div><b>'+esc90(total)+'</b><span>MEDIA REFERENCES</span></div>'+
+        '<div><b>'+esc90(local)+'</b><span>LOCAL</span></div>'+
+        '<div><b>'+esc90(external)+'</b><span>EXTERNAL</span></div>'+
+        '<div><b>0</b><span>FAILED</span></div>'+
+      '</div>'+
+      '<div class="admin-card-list" id="yyc90MediaAuditList" style="margin-top:14px">'+
+        (rows.length?rows.map(function(x,i){
+          return '<div class="approval-card yyc90-media-audit-row" data-media-index="'+i+'">'+
+            '<div class="meta"><strong>'+esc90(x.label)+'</strong><small>'+esc90(x.kind)+' · <span data-media-status>CHECKING…</span></small><p style="word-break:break-all">'+esc90(x.src)+'</p></div>'+
+            '<span class="mini-btn" data-media-badge>CHECKING</span>'+
+          '</div>';
+        }).join(''):'<div class="empty">No managed media references were found in the current admin data.</div>')+
+      '</div>';
+    q('#adminWorkspace').innerHTML=html;
+    var failed=0,checked=0;
+    rows.forEach(function(x,i){
+      var img=new Image();
+      var row=q('.yyc90-media-audit-row[data-media-index="'+i+'"]');
+      var st=row&&row.querySelector('[data-media-status]');
+      var badge=row&&row.querySelector('[data-media-badge]');
+      function finish(ok){
+        checked++;
+        if(!ok)failed++;
+        if(st)st.textContent=ok?'READY':'FAILED';
+        if(badge){badge.textContent=ok?'READY':'FAILED';badge.classList.toggle('gold',ok);}
+        var metrics=q('#yyc90MediaAuditList')?.parentNode?.querySelector('.yyc90-metric-grid');
+        if(metrics){
+          var nums=metrics.querySelectorAll('b');
+          if(nums.length>=4){nums[3].textContent=String(failed);}
+        }
+      }
+      img.onload=function(){finish(true);};
+      img.onerror=function(){finish(false);};
+      img.src=x.src;
+    });
+  }
+
+  function renderSitePro90(s){
+    s=s||{};
+    function val(v){return esc90(v==null?'':v);}
+    return adminHeader90('Site Pro')+
+      '<form id="yyc90SiteProForm">'+
+      '<div class="form-grid">'+
+        '<div class="field"><label>Club name</label><input id="spClubName" value="'+val(s.club_name||'Yuvakesari Youth Club')+'"></div>'+
+        '<div class="field"><label>Location</label><input id="spLocation" value="'+val(s.location||'Subrahmanya, Karnataka')+'"></div>'+
+        '<div class="field full"><label>Slogan</label><input id="spSlogan" value="'+val(s.slogan||'')+'"></div>'+
+        '<div class="field"><label>Instagram</label><input id="spInstagram" value="'+val(s.instagram||'')+'"></div>'+
+        '<div class="field"><label>WhatsApp</label><input id="spWhatsapp" value="'+val(s.whatsapp||'')+'"></div>'+
+        '<div class="field"><label>X / Twitter</label><input id="spX" value="'+val(s.x_url||'')+'"></div>'+
+        '<div class="field"><label>Facebook</label><input id="spFacebook" value="'+val(s.facebook||'')+'"></div>'+
+        '<div class="field"><label>Announcement</label><select id="spAnn"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>'+
+        '<div class="field"><label>Maintenance mode</label><select id="spMaint"><option value="false">Disabled</option><option value="true">Enabled</option></select></div>'+
+        '<div class="field full"><label>Announcement text</label><textarea id="spAnnText" rows="3">'+val(s.announcement_text||'')+'</textarea></div>'+
+        '<div class="field full"><label>Announcement link</label><input id="spAnnLink" value="'+val(s.announcement_link||'')+'"></div>'+
+        '<div class="field"><label>Contact email</label><input id="spEmail" type="email" value="'+val(s.contact_email||'')+'"></div>'+
+        '<div class="field"><label>Contact phone</label><input id="spPhone" value="'+val(s.contact_phone||'')+'"></div>'+
+        '<div class="field full"><label>Contact address</label><input id="spAddress" value="'+val(s.contact_address||'')+'"></div>'+
+        '<div class="field"><label>Meta title</label><input id="spMetaTitle" value="'+val(s.meta_title||'')+'"></div>'+
+        '<div class="field"><label>Meta image URL</label><input id="spMetaImage" value="'+val(s.meta_image||'')+'"></div>'+
+        '<div class="field full"><label>Meta description</label><textarea id="spMetaDesc" rows="3">'+val(s.meta_description||'')+'</textarea></div>'+
+        '<div class="field full"><label>History intro</label><textarea id="spHistoryIntro" rows="4">'+val(s.history_intro||'')+'</textarea></div>'+
+      '</div>'+
+      '<div class="form-actions"><button class="btn gold" type="submit">SAVE SITE SETTINGS</button><button type="button" class="btn outline" data-yyc90-back>← BACK TO ADMIN</button></div>'+
+      '</form>';
+  }
+
   function renderMessages90(d){
     var rows=d.contacts||d.contact_messages||[];
     var statuses=['new','read','replied','archived'];
