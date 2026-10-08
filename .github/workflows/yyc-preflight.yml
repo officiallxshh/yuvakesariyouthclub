@@ -49,3 +49,5 @@ jobs:
 
       - name: Public site smoke test
         run: node scripts/smoke-http.mjs
+
+# preflight asset sync
