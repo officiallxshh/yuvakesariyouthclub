@@ -92,6 +92,31 @@ for (const file of files.filter(f => /\.html?$/i.test(f))) {
 
 }
 
+/* CSS local asset references are part of the runtime surface too. */
+for (const file of files.filter(f => /\.css$/i.test(f))) {
+  const css = read(file);
+  for (const m of css.matchAll(/url\(\s*["']?([^"'\)]+)["']?\s*\)/gi)) {
+    const raw = String(m[1] || "").split("?")[0].split("#")[0];
+    if (!raw || /^(https?:|data:|blob:|javascript:)/i.test(raw)) continue;
+    const target = normalizeTarget(file, raw);
+    if (target && !fileSet.has(target)) {
+      issues.push("Missing CSS local reference: " + file + " -> " + raw + " (resolved " + target + ")");
+    }
+  }
+}
+
+/* Dynamic manifest injection must point to a real file. */
+if (yyc90.includes("manifest.webmanifest") && !fileSet.has("manifest.webmanifest")) {
+  issues.push("Missing dynamic PWA manifest: manifest.webmanifest");
+}
+
+/* YYC90 render functions are internal to yyc90.js and must have definitions. */
+const yyc90RenderDefs = new Set([...yyc90.matchAll(/function\s+(render[A-Za-z0-9_$]*90[A-Za-z0-9_$]*)\s*\(/g)].map(m => m[1]));
+const yyc90RenderCalls = new Set([...yyc90.matchAll(/\b(render[A-Za-z0-9_$]*90[A-Za-z0-9_$]*)\s*\(/g)].map(m => m[1]));
+for (const fn of yyc90RenderCalls) {
+  if (!yyc90RenderDefs.has(fn)) issues.push("YYC90 render function missing definition: " + fn);
+}
+
 const sourceText = files.filter(f => f !== "scripts/yyc-full-audit.mjs" && /\.(?:html?|js|css)$/i.test(f)).map(read).join("\n");
 if (/(?<!\$)\$\((["'])[^"']+\1\)\.forEach/g.test(sourceText)) {
   issues.push("Single-element $().forEach() runtime pattern found.");
@@ -150,7 +175,7 @@ for (const tab of adminTabs) {
   }
 }
 
-const customTabs = ["volunteers","achievements","history","attendance","finance","messages","analytics","backup","sitepro"];
+const customTabs = ["volunteers","achievements","history","attendance","attendance_pct","attendance_reports","finance","messages","analytics","backup","sitepro"];
 for (const tab of customTabs) {
   if (!yyc90.includes("'" + tab + "'") || !yyc90.includes("tab==='" + tab + "'")) {
     issues.push("YYC90 custom admin tab wiring incomplete: " + tab);
