@@ -415,7 +415,7 @@
     var tabs=q('.admin-tabs');if(!tabs||q('[data-yyc90-tab="volunteers"]'))return;
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
-      ['attendance','Attendance'],['finance','Finance'],['messages','Messages'],
+      ['attendance','Attendance'],['attendance_pct','Attendance %'],['finance','Finance'],['messages','Messages'],
       ['analytics','Analytics'],['backup','Backup'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
@@ -456,6 +456,73 @@
         '<button type="button" class="yyc90-filter" data-at90-kind="leader">LEADERS</button>'+
       '</div>'+
       '<div id="at90Rows" class="yyc90-attendance-list"></div>';
+  }
+
+  function renderAttendancePercentage90() {
+    return adminHeader90('Attendance Percentage')+
+      '<div id="yyc90AttendancePctHost">'+
+        '<div class="notice">Loading attendance percentages…</div>'+
+      '</div>';
+  }
+
+  function loadAttendancePercentage90() {
+    var host=q('#yyc90AttendancePctHost');
+    if(!host) return;
+    rpc90('admin_attendance_stats',{p_token:window.adminToken}).then(function(r){
+      if(!r||!r.ok) throw new Error(r&&r.error||'Unable to calculate attendance percentages');
+      var members=r.members||[], leaders=r.leaders||[], total=Number(r.completed_events)||0;
+      host.innerHTML=
+        '<div class="yyc90-attendance-summary">'+
+          '<div class="yyc90-metric-grid">'+
+            '<div><b>'+esc90(total)+'</b><span>COMPLETED EVENTS</span></div>'+
+            '<div><b>'+esc90(members.length)+'</b><span>APPROVED MEMBERS</span></div>'+
+            '<div><b>'+esc90(leaders.length)+'</b><span>ACTIVE LEADERS</span></div>'+
+          '</div>'+
+          '<div class="form-grid" style="margin-top:14px">'+
+            '<div class="field"><label>Search</label><input id="atp90Search" placeholder="Name or Unique ID"></div>'+
+          '</div>'+
+          '<div class="yyc90-attendance-mode" role="tablist" aria-label="Attendance percentage type" style="margin-top:12px">'+
+            '<button type="button" class="yyc90-filter active" data-atp-kind="member">MEMBERS</button>'+
+            '<button type="button" class="yyc90-filter" data-atp-kind="leader">LEADERS</button>'+
+          '</div>'+
+          '<div id="atp90Rows" class="yyc90-attendance-pct-list"></div>'+
+        '</div>';
+
+      function renderRows(){
+        var kind=q('[data-atp-kind].active')?.getAttribute('data-atp-kind')||'member';
+        var search=(q('#atp90Search')?.value||'').trim().toLowerCase();
+        var rows=(kind==='leader'?leaders:members).filter(function(x){
+          return !search ||
+            String(x.name||'').toLowerCase().includes(search) ||
+            String(x.role_number||x.role||'').toLowerCase().includes(search);
+        });
+        var sorted=rows.slice().sort(function(a,b){return Number(b.percentage||0)-Number(a.percentage||0)||String(a.name||'').localeCompare(String(b.name||''));});
+        var pctHtml=sorted.map(function(x){
+          var pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
+          var present=Number(x.present)||0;
+          var totalEvents=Number(x.total_events)||total;
+          var role=kind==='leader'?(x.role_number||x.role||'LEADER'):(x.role_number||'PENDING');
+          return '<div class="yyc90-attendance-pct-row">'+
+            '<div class="yyc90-attendance-pct-person"><strong>'+esc90(x.name||'Unnamed')+'</strong><small>'+esc90(role)+'</small></div>'+
+            '<div class="yyc90-attendance-pct-stats"><b>'+esc90(present)+' / '+esc90(totalEvents)+'</b><span>Present / Completed</span></div>'+
+            '<div class="yyc90-attendance-pct-bar"><i style="width:'+pct.toFixed(2)+'%"></i></div>'+
+            '<div class="yyc90-attendance-pct-value">'+pct.toFixed(2)+'%</div>'+
+          '</div>';
+        }).join('');
+        q('#atp90Rows').innerHTML=pctHtml||'<div class="empty">No matching records.</div>';
+      }
+
+      q('#atp90Search').addEventListener('input',renderRows);
+      qa('[data-atp-kind]').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          qa('[data-atp-kind]').forEach(function(x){x.classList.toggle('active',x===btn);});
+          renderRows();
+        });
+      });
+      renderRows();
+    }).catch(function(e){
+      host.innerHTML='<div class="notice">'+esc90(e.message||'Unable to calculate attendance percentages')+'</div>';
+    });
   }
 
   function renderAttendanceRows90(d){
@@ -671,6 +738,10 @@
             renderAttendanceRows90(d);
           });
         });
+      }
+      if(tab==='attendance_pct'){
+        workspace.innerHTML=renderAttendancePercentage90();
+        loadAttendancePercentage90();
       }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);
