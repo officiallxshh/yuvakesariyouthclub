@@ -996,6 +996,15 @@
       qa('[data-f90-edit]').forEach(function(b){b.onclick=function(){financeForm90(b.getAttribute('data-f90-edit'));};});
       qa('[data-f90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete finance entry?'))return;rpc90('admin_finance_delete',{p_token:window.adminToken,p_id:b.getAttribute('data-f90-del')}).then(function(){featureData=null;admin90Open('finance',true);toast90('Finance entry deleted');}).catch(function(e){toast90(e.message);});};});
       q('#f90Export').onclick=function(){var rows=[['Date','Description','Type','Amount']].concat((d.finance||[]).map(function(f){return [f.entry_date,f.description,f.entry_type,f.amount];}));var csv=rows.map(function(r){return r.map(function(x){var s=String(x==null?'':x).replace(/"/g,'""');return '"'+s+'"';}).join(',');}).join('\n');download90('yyc-finance.csv',csv,'text/csv;charset=utf-8');};
+      var financeFilter=function(){
+        var term=(q('#f90Search')?.value||'').trim().toLowerCase();
+        qa('.yyc90-finance-row').forEach(function(row){
+          var hit=!term || String(row.getAttribute('data-f90-search')||'').indexOf(term)>=0;
+          row.style.display=hit?'':'none';
+        });
+      };
+      q('#f90Search')?.addEventListener('input',financeFilter);
+      financeFilter();
     }
     if(tab==='messages'){
       var filter=function(){var st=q('#c90StatusFilter').value,rows=qa('.yyc90-message-row'),n=0;rows.forEach(function(r){var hit=!st||r.getAttribute('data-status')===st;r.style.display=hit?'':'none';if(hit)n++;});q('#c90Count').textContent=n+' of '+rows.length+' shown';};
