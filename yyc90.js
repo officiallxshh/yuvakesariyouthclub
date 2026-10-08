@@ -445,6 +445,16 @@
   function renderAttendance90(d){
     var events=(window.__yycAdminLastData||{}).events||[];
     return adminHeader90('Attendance')+
+      '<style id="yyc90AttendanceStatusStyle">'+
+        '.yyc90-attendance-choice{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}'+
+        '.yyc90-status-option{position:relative;cursor:pointer;display:inline-flex;align-items:center}'+
+        '.yyc90-status-option input{position:absolute;opacity:0;pointer-events:none}'+
+        '.yyc90-status-option span{display:inline-flex;align-items:center;min-height:34px;padding:8px 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.03);color:#aeb7b4;font-size:10px;font-weight:900;letter-spacing:1px;transition:transform .16s ease,background .16s ease,border-color .16s ease,color .16s ease}'+
+        '.yyc90-status-option:hover span{transform:translateY(-1px)}'+
+        '.yyc90-status-option.present input:checked + span{background:rgba(50,130,78,.18);border-color:rgba(110,205,137,.5);color:#9be0ad}'+
+        '.yyc90-status-option.absent input:checked + span{background:rgba(150,62,62,.18);border-color:rgba(230,130,130,.5);color:#f1a8a8}'+
+        '@media(max-width:700px){.yyc90-attendance-choice{justify-content:flex-start}.yyc90-attendance-row{gap:12px!important}}'+
+      '</style>'+
       '<div class="form-grid">'+
         '<div class="field"><label>Event</label><select id="at90Event">'+
           (events.length?events.map(function(e){return '<option value="'+e.id+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+
@@ -455,6 +465,7 @@
         '<button type="button" class="yyc90-filter active" data-at90-kind="member">MEMBERS</button>'+
         '<button type="button" class="yyc90-filter" data-at90-kind="leader">LEADERS</button>'+
       '</div>'+
+      '<div class="notice" style="margin-top:12px">Choose exactly one status for each person: PRESENT or ABSENT. An email is sent after the status is saved.</div>'+
       '<div id="at90Rows" class="yyc90-attendance-list"></div>';
   }
 
