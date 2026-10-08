@@ -415,7 +415,7 @@
     var tabs=q('.admin-tabs');if(!tabs||q('[data-yyc90-tab="volunteers"]'))return;
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
-      ['attendance','Attendance'],['attendance_pct','Attendance %'],['finance','Finance'],['messages','Messages'],
+      ['attendance','Attendance'],['attendance_pct','Attendance %'],['attendance_reports','Attendance Reports'],['finance','Finance'],['messages','Messages'],
       ['analytics','Analytics'],['backup','Backup'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
@@ -523,6 +523,168 @@
       renderRows();
     }).catch(function(e){
       host.innerHTML='<div class="notice">'+esc90(e.message||'Unable to calculate attendance percentages')+'</div>';
+    });
+  }
+
+  function renderAttendanceReports90(d){
+    var events=(d&&d.events)||[];
+    var defaultEvent=(events[0]&&events[0].id)||'';
+    return adminHeader90('Attendance Reports')+
+      '<style id="yyc90AttendanceReportsStyle">'+
+      '.yyc90-ar-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}'+
+      '.yyc90-ar-stat{padding:15px 16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}'+
+      '.yyc90-ar-stat b{display:block;font-size:21px;color:#e7d09a}.yyc90-ar-stat span{display:block;margin-top:4px;font-size:9px;letter-spacing:.11em;color:#7f8985}'+
+      '.yyc90-ar-section{margin-top:18px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.02)}'+
+      '.yyc90-ar-section h3{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e9e1cf}'+
+      '.yyc90-ar-row{display:grid;grid-template-columns:minmax(160px,1fr) 90px 100px 110px 130px;gap:10px;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.06)}'+
+      '.yyc90-ar-row:first-child{border-top:0}.yyc90-ar-row small{color:#8e9692}.yyc90-ar-pill{display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;border-radius:999px;font-size:9px;letter-spacing:.08em;font-weight:700;background:rgba(255,255,255,.07);color:#ddd}'+
+      '.yyc90-ar-pill.present{color:#bfe2c9}.yyc90-ar-pill.absent{color:#e2b3b3}'+
+      '.yyc90-ar-muted{color:#89928e;font-size:11px}.yyc90-ar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}'+
+      '@media(max-width:900px){.yyc90-ar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.yyc90-ar-row{grid-template-columns:1fr 86px 96px;gap:8px}.yyc90-ar-row > :nth-child(4),.yyc90-ar-row > :nth-child(5){grid-column:span 3}}'+
+      '@media(max-width:600px){.yyc90-ar-grid{grid-template-columns:1fr 1fr}.yyc90-ar-section{padding:13px}.yyc90-ar-row{grid-template-columns:1fr 80px}.yyc90-ar-row > :nth-child(n+3){grid-column:span 2}}'+
+      '</style>'+
+      '<div class="form-grid">'+
+        '<div class="field"><label>Event report</label><select id="ar90Event">'+
+          (events.length?events.map(function(e){return '<option value="'+esc90(e.id)+'">'+esc90(e.title)+' · '+esc90(e.event_date||'')+'</option>';}).join(''):'<option value="">No events</option>')+
+        '</select></div>'+
+        '<div class="field"><label>Low attendance threshold</label><input id="ar90Threshold" type="number" min="0" max="100" step="1" value="75"></div>'+
+        '<div class="field"><label>History filter</label><select id="ar90HistoryKind"><option value="">All</option><option value="member">Members</option><option value="leader">Leaders</option></select></div>'+
+        '<div class="field"><label>Search history</label><input id="ar90HistorySearch" placeholder="Name, role or event"></div>'+
+      '</div>'+
+      '<div class="yyc90-ar-actions">'+
+        '<button type="button" class="mini-btn gold" id="ar90Refresh">REFRESH REPORT</button>'+
+        '<button type="button" class="mini-btn" id="ar90Csv">EXPORT CSV</button>'+
+        '<button type="button" class="mini-btn" id="ar90Xls">EXPORT EXCEL (.XLS)</button>'+
+      '</div>'+
+      '<div id="ar90Summary" class="yyc90-ar-section"><div class="notice">Loading attendance report…</div></div>'+
+      '<div id="ar90Low" class="yyc90-ar-section"><h3>Low Attendance Alert</h3><div class="yyc90-ar-muted">Below the selected threshold across completed events.</div><div id="ar90LowRows" style="margin-top:8px"><div class="empty">Loading…</div></div></div>'+
+      '<div id="ar90History" class="yyc90-ar-section"><h3>Attendance History</h3><div id="ar90HistoryRows"><div class="empty">Loading…</div></div></div>'+
+      '<div id="ar90Audit" class="yyc90-ar-section"><h3>Attendance Audit Log</h3><div id="ar90AuditRows"><div class="empty">Loading…</div></div></div>';
+  }
+
+  function loadAttendanceReports90(d){
+    var eventId=q('#ar90Event')?.value || '';
+    var threshold=Number(q('#ar90Threshold')?.value);
+    if(!isFinite(threshold)) threshold=75;
+    threshold=Math.max(0,Math.min(100,threshold));
+    if(q('#ar90Threshold')) q('#ar90Threshold').value=String(threshold);
+    var summaryBox=q('#ar90Summary'),lowBox=q('#ar90LowRows'),historyBox=q('#ar90HistoryRows'),auditBox=q('#ar90AuditRows');
+    if(!summaryBox)return;
+    summaryBox.innerHTML='<div class="notice">Loading attendance report…</div>';
+    rpc90('admin_attendance_reports',{p_token:window.adminToken,p_event_id:eventId||null,p_threshold:threshold}).then(function(r){
+      if(!r||!r.ok) throw new Error(r&&r.error||'Unable to load attendance reports');
+
+      var s=r.summary||null;
+      var hp=r.history||[];
+      var low=r.low_attendance||[];
+      var audit=r.audit||[];
+
+      if(s&&s.event_id){
+        var totalEligible=Number(s.member_eligible||0)+Number(s.leader_eligible||0);
+        var totalPresent=Number(s.member_present||0)+Number(s.leader_present||0);
+        var totalMarked=Number(s.member_marked||0)+Number(s.leader_marked||0);
+        var overall=totalEligible?((totalPresent*100)/totalEligible):0;
+        summaryBox.innerHTML=
+          '<h3>Event Attendance Summary</h3>'+
+          '<div class="yyc90-ar-muted">'+esc90(s.event_title||'Event')+' · '+esc90(format90Date(s.event_date))+(s.location?' · '+esc90(s.location):'')+'</div>'+
+          '<div class="yyc90-ar-grid">'+
+            '<div class="yyc90-ar-stat"><b>'+esc90(s.member_present)+' / '+esc90(s.member_eligible)+'</b><span>MEMBERS PRESENT</span></div>'+
+            '<div class="yyc90-ar-stat"><b>'+esc90(s.leader_present)+' / '+esc90(s.leader_eligible)+'</b><span>LEADERS PRESENT</span></div>'+
+            '<div class="yyc90-ar-stat"><b>'+esc90(totalMarked)+' / '+esc90(totalEligible)+'</b><span>RECORDS MARKED</span></div>'+
+            '<div class="yyc90-ar-stat"><b>'+overall.toFixed(2)+'%</b><span>OVERALL RATE</span></div>'+
+          '</div>';
+      }else{
+        summaryBox.innerHTML='<h3>Event Attendance Summary</h3><div class="empty">Select an event to view its attendance summary.</div>';
+      }
+
+      function drawLow(){
+        var ss=(q('#ar90LowSearch')?.value||'').trim().toLowerCase();
+        var kind=q('#ar90LowKind')?.value||'';
+        var rows=low.filter(function(x){
+          return (!kind||x.kind===kind)&&(!ss||
+            String(x.name||'').toLowerCase().includes(ss)||
+            String(x.role_number||x.role||'').toLowerCase().includes(ss));
+        });
+        lowBox.innerHTML=rows.length?rows.map(function(x){
+          var pct=Number(x.percentage)||0;
+          return '<div class="yyc90-ar-row">'+
+            '<div><strong>'+esc90(x.name||'Unnamed')+'</strong><br><small>'+esc90(x.role_number||x.role||'')+' · '+esc90(x.kind)+'</small></div>'+
+            '<div class="yyc90-ar-pill '+(pct<threshold?'absent':'present')+'">'+pct.toFixed(2)+'%</div>'+
+            '<div class="yyc90-ar-muted">'+esc90(x.present)+' / '+esc90(x.total_events)+'</div>'+
+            '<div class="yyc90-ar-muted">Threshold '+threshold.toFixed(0)+'%</div>'+
+            '<div class="yyc90-ar-muted">'+(Number(x.total_events)>0?'Completed events':'No completed events')+'</div>'+
+          '</div>';
+        }).join(''):'<div class="empty">'+(Number(r.completed_events)===0?'No completed events yet.':'No people below the selected threshold.')+'</div>';
+      }
+
+      var lowHead=q('#ar90Low .yyc90-ar-muted');
+      if(lowHead) lowHead.insertAdjacentHTML('afterend','<div class="form-grid" style="margin-top:10px"><div class="field"><label>Search low attendance</label><input id="ar90LowSearch" placeholder="Name or role"></div><div class="field"><label>Type</label><select id="ar90LowKind"><option value="">Members + Leaders</option><option value="member">Members</option><option value="leader">Leaders</option></select></div></div>');
+      q('#ar90LowSearch')?.addEventListener('input',drawLow);
+      q('#ar90LowKind')?.addEventListener('change',drawLow);
+      drawLow();
+
+      function drawHistory(){
+        var hs=(q('#ar90HistorySearch')?.value||'').trim().toLowerCase();
+        var hk=q('#ar90HistoryKind')?.value||'';
+        var rows=hp.filter(function(x){
+          return (!hk||x.kind===hk)&&(!hs||
+            String(x.person_name||'').toLowerCase().includes(hs)||
+            String(x.role_number||x.role||'').toLowerCase().includes(hs)||
+            String(x.event_title||'').toLowerCase().includes(hs));
+        });
+        historyBox.innerHTML=rows.length?rows.map(function(x){
+          return '<div class="yyc90-ar-row">'+
+            '<div><strong>'+esc90(x.person_name||'Unnamed')+'</strong><br><small>'+esc90(x.role_number||x.role||'')+' · '+esc90(x.kind)+'</small></div>'+
+            '<div class="yyc90-ar-pill '+(x.present?'present':'absent')+'">'+(x.present?'PRESENT':'ABSENT')+'</div>'+
+            '<div class="yyc90-ar-muted">'+esc90(format90Date(x.event_date))+'</div>'+
+            '<div class="yyc90-ar-muted">'+esc90(x.event_title||'Event')+'</div>'+
+            '<div class="yyc90-ar-muted">'+esc90(x.marked_at?new Date(x.marked_at).toLocaleString('en-IN'): '—')+'</div>'+
+          '</div>';
+        }).join(''):'<div class="empty">No attendance history found.</div>';
+      }
+      q('#ar90HistorySearch')?.addEventListener('input',drawHistory);
+      q('#ar90HistoryKind')?.addEventListener('change',drawHistory);
+      drawHistory();
+
+      auditBox.innerHTML=audit.length?audit.map(function(x){
+        var act=String(x.action||'').replace(/_/g,' ').toUpperCase();
+        return '<div class="yyc90-ar-row">'+
+          '<div><strong>'+esc90(act)+'</strong><br><small>'+esc90(x.actor_username||'Admin')+'</small></div>'+
+          '<div class="yyc90-ar-pill">'+esc90(x.entity_type||'attendance')+'</div>'+
+          '<div class="yyc90-ar-muted">'+esc90(x.summary||'Attendance updated')+'</div>'+
+          '<div class="yyc90-ar-muted">'+esc90(x.entity_id||'—')+'</div>'+
+          '<div class="yyc90-ar-muted">'+esc90(x.created_at?new Date(x.created_at).toLocaleString('en-IN'):'—')+'</div>'+
+        '</div>';
+      }).join(''):'<div class="empty">No attendance audit entries yet.</div>';
+
+      function exportRows(){
+        return hp.map(function(x){return [
+          x.kind||'',x.person_name||'',x.role_number||x.role||'',x.event_title||'',format90Date(x.event_date),
+          x.present?'Present':'Absent',x.marked_at?new Date(x.marked_at).toLocaleString('en-IN'):''
+        ];});
+      }
+      function csvEscape(v){
+        var s=String(v==null?'':v);
+        return '"'+s.replace(/"/g,'""')+'"';
+      }
+      q('#ar90Csv').onclick=function(){
+        var rows=[['Type','Name','Role / ID','Event','Date','Status','Marked At']].concat(exportRows());
+        download90('yyc-attendance-'+new Date().toISOString().slice(0,10)+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\n'),'text/csv;charset=utf-8');
+        toast90('Attendance CSV exported');
+      };
+      q('#ar90Xls').onclick=function(){
+        var rows=[['Type','Name','Role / ID','Event','Date','Status','Marked At']].concat(exportRows());
+        var html='<html><head><meta charset="UTF-8"></head><body><table border="1"><thead><tr>'+rows[0].map(function(v){return '<th>'+esc90(v)+'</th>';}).join('')+'</tr></thead><tbody>'+
+          rows.slice(1).map(function(row){return '<tr>'+row.map(function(v){return '<td>'+esc90(v)+'</td>';}).join('')+'</tr>';}).join('')+
+          '</tbody></table></body></html>';
+        download90('yyc-attendance-'+new Date().toISOString().slice(0,10)+'.xls',html,'application/vnd.ms-excel;charset=utf-8');
+        toast90('Attendance Excel file exported');
+      };
+    }).catch(function(e){
+      summaryBox.innerHTML='<div class="notice">'+esc90(e.message||'Unable to load attendance reports')+'</div>';
+      lowBox.innerHTML='<div class="empty">Report unavailable.</div>';
+      historyBox.innerHTML='<div class="empty">Report unavailable.</div>';
+      auditBox.innerHTML='<div class="empty">Report unavailable.</div>';
     });
   }
 
@@ -743,6 +905,14 @@
       if(tab==='attendance_pct'){
         workspace.innerHTML=renderAttendancePercentage90();
         loadAttendancePercentage90();
+      }
+      if(tab==='attendance_reports'){
+        workspace.innerHTML=renderAttendanceReports90(d);
+        var arEvents=d.events||[];
+        if(q('#ar90Event') && !q('#ar90Event').value && arEvents[0]) q('#ar90Event').value=arEvents[0].id;
+        loadAttendanceReports90(d);
+        q('#ar90Event')?.addEventListener('change',function(){loadAttendanceReports90(d);});
+        q('#ar90Refresh')?.addEventListener('click',function(){loadAttendanceReports90(d);});
       }
       if(tab==='finance')workspace.innerHTML=renderFinance90(d);
       if(tab==='messages')workspace.innerHTML=renderMessages90(d);
