@@ -770,18 +770,9 @@ function bindYYCScrollMotion(){
     img.style.setProperty('--yyc-parallax-y',offset.toFixed(2)+'px');
   }
 
-  if(!reduce && !yycParallaxBound){
-    yycParallaxBound=true;
-    var ticking=false;
-    window.addEventListener('scroll',function(){
-      if(ticking) return;
-      ticking=true;
-      requestAnimationFrame(function(){ticking=false;updateParallax();});
-    },{passive:true});
-    window.addEventListener('resize',updateParallax,{passive:true});
-    updateParallax();
-  }
-
+  /* Parallax is intentionally disabled on the public page.
+     The cinematic hero/background motion remains CSS-driven, while removing
+     per-frame geometry reads + style writes keeps scrolling smooth. */
   window.YYCObserveReveals=observeReveals;
   observeReveals(document);
 }
