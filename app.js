@@ -3029,20 +3029,28 @@ async function adminAction(name,args,msg){
     if(r && r.ok===false)throw new Error(r.error||'Action failed');
     toast(msg);
     if(name==='admin_member_action' && args && args.p_action==='approve' && r && r.action==='approved' && r.member){
-      yycSendExternalAlert({
-        event:'approval',
-        admin_token:adminToken,
-        target_kind:'member',
-        target_id:r.member.id,
-        channels:['email']
-      }).then(function(n){
-        if(n&&n.ok){
-          var sent=n.delivery&&n.delivery.email&&n.delivery.email.status==='sent';
-          toast(sent?'Acceptance letter sent to '+(r.member.email||'the member email'):'Member approved; acceptance letter saved in YYC notifications.');
+      var approvalNotice=null;
+      for(var approvalAttempt=0;approvalAttempt<2;approvalAttempt++){
+        approvalNotice=await yycSendExternalAlert({
+          event:'approval',
+          admin_token:adminToken,
+          target_kind:'member',
+          target_id:r.member.id,
+          channels:['email']
+        });
+        if(approvalNotice&&approvalNotice.ok)break;
+        if(approvalAttempt===0) await new Promise(function(resolve){setTimeout(resolve,700);});
+      }
+      if(approvalNotice&&approvalNotice.ok){
+        var approvalEmail=approvalNotice.delivery&&approvalNotice.delivery.email;
+        if(approvalEmail&&approvalEmail.status==='sent'){
+          toast('Member approved · acceptance email sent ✓');
         }else{
-          toast('Member approved, but the acceptance letter could not be sent right now.');
+          toast('Member approved · email was not sent: '+((approvalEmail&&approvalEmail.reason)||'unknown delivery issue'));
         }
-      }).catch(function(){});
+      }else{
+        toast('Member approved · acceptance email failed: '+((approvalNotice&&approvalNotice.error)||'notification service unavailable'));
+      }
     }
     var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');
   }catch(e){toast(e.message);}
