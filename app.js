@@ -1410,7 +1410,9 @@ function bindNavigation(){
     navScrollTicking=true;
     requestAnimationFrame(function(){
       navScrollTicking=false;
-      updateYYCActiveSection();
+      /* Progress is a cheap compositor-only scale update. Active-section
+         detection is handled by IntersectionObserver to avoid repeated
+         getBoundingClientRect() reads during scrolling. */
       updateYYCScrollProgress();
     });
   },{passive:true});
