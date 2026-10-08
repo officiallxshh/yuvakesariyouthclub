@@ -699,6 +699,7 @@
         String(p.name||'').toLowerCase().indexOf(search)>=0 ||
         String(p.role_number||p.role||'').toLowerCase().indexOf(search)>=0;
     });
+
     q('#at90Rows').innerHTML=rows.length?rows.map(function(p){
       var a=att.find(function(x){
         var matchesTarget=kind==='leader'
@@ -706,74 +707,106 @@
           : String(x.member_id)===String(p.id);
         return matchesTarget && String(x.event_id)===String(eId);
       });
+      var statusPresent=!!(a&&a.present);
+      var statusAbsent=!!(a&&a.present===false);
       var attr=kind==='leader'?'data-at90-leader':'data-at90-member';
       var role=kind==='leader'?(p.role_number||p.role||'LEADER'):(p.role_number||'PENDING');
-      return '<div class="yyc90-attendance-row"><div><strong>'+esc90(p.name)+'</strong><small>'+esc90(role)+'</small></div><label><input type="checkbox" '+attr+'="'+p.id+'" '+(a&&a.present?'checked':'')+'> Present</label></div>';
+      var group='at90-status-'+kind+'-'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+      return '<div class="yyc90-attendance-row" data-at90-row-id="'+esc90(p.id)+'">'+
+        '<div><strong>'+esc90(p.name)+'</strong><small>'+esc90(role)+'</small></div>'+
+        '<div class="yyc90-attendance-choice" role="group" aria-label="Attendance status for '+esc90(p.name)+'">'+
+          '<label class="yyc90-status-option present"><input type="radio" name="'+group+'" value="present" data-at90-status="'+attr+'" data-at90-status-id="'+esc90(p.id)+'" '+(statusPresent?'checked':'')+'><span>PRESENT</span></label>'+
+          '<label class="yyc90-status-option absent"><input type="radio" name="'+group+'" value="absent" data-at90-status="'+attr+'" data-at90-status-id="'+esc90(p.id)+'" '+(statusAbsent?'checked':'')+'><span>ABSENT</span></label>'+
+        '</div>'+
+      '</div>';
     }).join(''):'<div class="empty">No matching '+(kind==='leader'?'leaders':'members')+'.</div>';
 
-    var immediateSelector=kind==='leader'?'[data-at90-leader]':'[data-at90-member]';
+    function targetMatch(x,id){
+      return (kind==='leader'
+        ? String(x.leader_id)===String(id)
+        : String(x.member_id)===String(id)) &&
+        String(x.event_id)===String(eId);
+    }
+
+    function selectedStatusForId(id){
+      var selector=kind==='leader'?'[data-at90-leader="'+id+'"]':'[data-at90-member="'+id+'"]';
+      var checked=q('#at90Rows '+selector+'[data-at90-status]:checked');
+      return checked ? checked.value : '';
+    }
+
+    var immediateSelector=kind==='leader'?'[data-at90-leader][data-at90-status]':'[data-at90-member][data-at90-status]';
     qa(immediateSelector).forEach(function(c){
       if(c.getAttribute('data-yyc-immediate-bound')==='1') return;
       c.setAttribute('data-yyc-immediate-bound','1');
       c.addEventListener('change',function(){
         var box=this;
-        var id=box.getAttribute(kind==='leader'?'data-at90-leader':'data-at90-member');
-        if(!id || !eId) return;
-        var wasPresent=att.some(function(x){
-          var matchesTarget=kind==='leader'
-            ? String(x.leader_id)===String(id)
-            : String(x.member_id)===String(id);
-          return matchesTarget && String(x.event_id)===String(eId) && !!x.present;
-        });
+        var id=box.getAttribute('data-at90-status-id');
+        var status=box.value;
+        if(!id || !eId || (status!=='present' && status!=='absent')) return;
+
+        var prior=att.find(function(x){return targetMatch(x,id);});
+        var wasStatus=prior ? (prior.present?'present':'absent') : '';
+        if(status===wasStatus){
+          toast90(status==='present'?'Present selected':'Absent selected');
+          return;
+        }
+
         var rpcName=kind==='leader'?'admin_record_leader_attendance':'admin_record_attendance';
         var args=kind==='leader'
-          ? {p_token:window.adminToken,p_leader_id:id,p_event_id:eId,p_present:box.checked}
-          : {p_token:window.adminToken,p_member_id:id,p_event_id:eId,p_present:box.checked};
+          ? {p_token:window.adminToken,p_leader_id:id,p_event_id:eId,p_present:status==='present'}
+          : {p_token:window.adminToken,p_member_id:id,p_event_id:eId,p_present:status==='present'};
 
         box.disabled=true;
+        var rowEl=box.closest('.yyc90-attendance-row');
+
         rpc90(rpcName,args).then(function(result){
           if(!result || result.ok===false) throw new Error(result && result.error || 'Unable to save attendance');
-          var found=att.find(function(x){
-            var matchesTarget=kind==='leader'
-              ? String(x.leader_id)===String(id)
-              : String(x.member_id)===String(id);
-            return matchesTarget && String(x.event_id)===String(eId);
-          });
+
+          var found=att.find(function(x){return targetMatch(x,id);});
           if(found){
-            found.present=!!box.checked;
+            found.present=status==='present';
             found.marked_at=new Date().toISOString();
           }else{
-            var row={event_id:eId,present:!!box.checked,marked_at:new Date().toISOString()};
+            var row={event_id:eId,present:status==='present',marked_at:new Date().toISOString()};
             if(kind==='leader') row.leader_id=id; else row.member_id=id;
             att.push(row);
           }
-          if(box.checked && !wasPresent){
-            if(typeof window.yycSendExternalAlert!=='function'){
-              throw new Error('Attendance email service is not ready.');
-            }
-            return window.yycSendExternalAlert({
-              event:'attendance',
-              admin_token:window.adminToken,
-              target_kind:kind,
-              target_id:id,
-              event_id:eId,
-              channels:['email']
-            }).then(function(result){
-              if(!result || !result.ok) throw new Error(result && result.error || 'Attendance email could not be sent');
-              var delivery=result.delivery && result.delivery.attendance;
-              var email=delivery && delivery.email;
-              if(!email || email.status!=='sent') throw new Error((email && email.reason) || 'Attendance email could not be sent');
-              return 'sent';
+
+          if(typeof window.yycSendExternalAlert!=='function'){
+            throw new Error('Attendance email service is not ready.');
+          }
+
+          return window.yycSendExternalAlert({
+            event:'attendance',
+            admin_token:window.adminToken,
+            target_kind:kind,
+            target_id:id,
+            event_id:eId,
+            attendance_status:status,
+            channels:['email']
+          }).then(function(result){
+            if(!result || !result.ok) throw new Error(result && result.error || 'Attendance email could not be sent');
+            var delivery=result.delivery && result.delivery.attendance;
+            var email=delivery && delivery.email;
+            if(!email || email.status!=='sent') throw new Error((email && email.reason) || 'Attendance email could not be sent');
+            return status;
+          });
+        }).then(function(savedStatus){
+          if(savedStatus==='present') toast90('PRESENT saved · email sent ✓');
+          else toast90('ABSENT saved · email sent ✓');
+        }).catch(function(err){
+          if(rowEl){
+            rowEl.querySelectorAll('input[data-at90-status]').forEach(function(radio){
+              radio.checked=(radio.value===wasStatus);
             });
           }
-          return box.checked ? 'already-sent' : 'absent';
-        }).then(function(mode){
-          if(mode==='sent') toast90('Present saved · attendance email sent ✓');
-          else if(mode==='already-sent') toast90('Present saved');
-          else if(mode==='absent') toast90('Attendance marked absent');
-        }).catch(function(err){
-          // Roll the checkbox back when either persistence or notification fails.
-          box.checked=!box.checked;
+          var found=att.find(function(x){return targetMatch(x,id);});
+          if(found) found.present=wasStatus==='present';
+          else if(!wasStatus){
+            for(var ai=att.length-1;ai>=0;ai--){
+              if(targetMatch(att[ai],id)){att.splice(ai,1);break;}
+            }
+          }
           toast90(err.message||'Attendance update failed');
         }).finally(function(){
           box.disabled=false;
@@ -787,70 +820,69 @@
       b.onclick=function(){
         var eventId=q('#at90Event').value;
         var activeKind=q('[data-at90-kind].active')?.getAttribute('data-at90-kind')||'member';
-        var checks=qa(activeKind==='leader'?'[data-at90-leader]':'[data-at90-member]');
-        var newlyPresent=checks.filter(function(c){
-          if(!c.checked)return false;
-          var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+        var selected=qa('#at90Rows input[data-at90-status]:checked');
+        var changes=selected.map(function(c){
+          var id=c.getAttribute('data-at90-status-id');
+          var status=c.value;
           var prior=att.find(function(x){
-            var matchesTarget=activeKind==='leader'
+            return (activeKind==='leader'
               ? String(x.leader_id)===String(id)
-              : String(x.member_id)===String(id);
-            return matchesTarget && String(x.event_id)===String(eventId);
+              : String(x.member_id)===String(id)) &&
+              String(x.event_id)===String(eventId);
           });
-          return !(prior&&prior.present);
-        });
+          var priorStatus=prior ? (prior.present?'present':'absent') : '';
+          return {control:c,id:id,status:status,priorStatus:priorStatus};
+        }).filter(function(x){return x.id && (x.status==='present'||x.status==='absent') && x.status!==x.priorStatus;});
 
-        var promises=checks.map(function(c){
-          var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+        if(!changes.length){
+          toast90('No attendance changes to save');
+          return;
+        }
+
+        var promises=changes.map(function(x){
           if(activeKind==='leader'){
             return rpc90('admin_record_leader_attendance',{
               p_token:window.adminToken,
-              p_leader_id:id,
+              p_leader_id:x.id,
               p_event_id:eventId,
-              p_present:c.checked
+              p_present:x.status==='present'
             });
           }
           return rpc90('admin_record_attendance',{
             p_token:window.adminToken,
-            p_member_id:id,
+            p_member_id:x.id,
             p_event_id:eventId,
-            p_present:c.checked
+            p_present:x.status==='present'
           });
         });
 
         Promise.all(promises).then(function(rs){
           var bad=rs.find(function(r){return !r||r.ok===false;});
           if(bad)throw new Error(bad.error||'Unable to save attendance');
-          if(!newlyPresent.length){
-            toast90('Attendance saved');
-            return;
-          }
-          if(typeof window.yycSendExternalAlert!=='function'){
-            toast90('Attendance saved. Email service is not ready.');
-            return;
-          }
-          return Promise.all(newlyPresent.map(function(c){
-            var id=c.getAttribute(activeKind==='leader'?'data-at90-leader':'data-at90-member');
+
+          return Promise.all(changes.map(function(x){
             return window.yycSendExternalAlert({
               event:'attendance',
               admin_token:window.adminToken,
               target_kind:activeKind,
-              target_id:id,
+              target_id:x.id,
               event_id:eventId,
+              attendance_status:x.status,
               channels:['email']
             });
-          })).then(function(results){
-            var who=activeKind==='leader'?'leader':'member';
-            var sent=results.filter(function(result){
-              return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
-            }).length;
-            var failed=results.length-sent;
-            if(sent&&failed) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent · some failed');
-            else if(sent===results.length) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent ✓');
-            else if(sent) toast90('Attendance saved · '+sent+' '+who+' attendance emails sent · some failed');
-            else toast90('Attendance saved · attendance emails could not be sent');
-          });
-        }).then(function(){return admin90Data(true);}).then(function(){renderCustomAdminTab90('attendance');}).catch(function(e){toast90(e.message);});
+          }));
+        }).then(function(results){
+          var sent=results.filter(function(result){
+            return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
+          }).length;
+          var failed=results.length-sent;
+          var who=activeKind==='leader'?'leader':'member';
+          if(failed) toast90('Attendance saved · '+sent+'/'+results.length+' '+who+' emails sent');
+          else toast90('Attendance saved · '+sent+' '+who+' attendance emails sent ✓');
+          return admin90Data(true);
+        }).then(function(){
+          renderCustomAdminTab90('attendance');
+        }).catch(function(e){toast90(e.message||'Attendance update failed');});
       };
       q('#at90Rows').parentNode.appendChild(b);
     }
