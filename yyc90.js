@@ -1065,7 +1065,7 @@
       });
     });
     var total=rows.length;
-    var external=rows.filter(function(x){return /^https?:\\/\\//i.test(x.src);}).length;
+    var external=rows.filter(function(x){return /^https?:\/\//i.test(x.src);}).length;
     var local=total-external;
     var html=adminHeader90('Media Audit')+
       '<div class="yyc90-metric-grid">'+
