@@ -502,11 +502,11 @@
           var present=Number(x.present)||0;
           var totalEvents=Number(x.total_events)||total;
           var role=kind==='leader'?(x.role_number||x.role||'LEADER'):(x.role_number||'PENDING');
-          return '<div class="yyc90-attendance-pct-row">'+
-            '<div class="yyc90-attendance-pct-person"><strong>'+esc90(x.name||'Unnamed')+'</strong><small>'+esc90(role)+'</small></div>'+
-            '<div class="yyc90-attendance-pct-stats"><b>'+esc90(present)+' / '+esc90(totalEvents)+'</b><span>Present / Completed</span></div>'+
-            '<div class="yyc90-attendance-pct-bar"><i style="width:'+pct.toFixed(2)+'%"></i></div>'+
-            '<div class="yyc90-attendance-pct-value">'+pct.toFixed(2)+'%</div>'+
+          return '<div class="yyc90-attendance-pct-row" style="display:grid;grid-template-columns:minmax(180px,1.2fr) 110px minmax(120px,1fr) 86px;gap:14px;align-items:center;padding:15px 16px;margin-top:8px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)">'+
+            '<div class="yyc90-attendance-pct-person"><strong style="display:block;font-size:14px;color:#eee">'+esc90(x.name||'Unnamed')+'</strong><small style="display:block;margin-top:4px;font-size:10px;letter-spacing:.08em;color:#929b97">'+esc90(role)+'</small></div>'+
+            '<div class="yyc90-attendance-pct-stats" style="text-align:center"><b style="display:block;font-size:13px;color:#e6d3a5">'+esc90(present)+' / '+esc90(totalEvents)+'</b><span style="display:block;margin-top:3px;font-size:9px;color:#7f8985">PRESENT / COMPLETED</span></div>'+
+            '<div class="yyc90-attendance-pct-bar" style="height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden"><i style="display:block;height:100%;width:'+pct.toFixed(2)+'%;border-radius:inherit;background:linear-gradient(90deg,#c7a55e,#8fc8a3)"></i></div>'+
+            '<div class="yyc90-attendance-pct-value" style="text-align:right;font-size:17px;font-weight:800;color:#e4c77e">'+pct.toFixed(2)+'%</div>'+
           '</div>';
         }).join('');
         q('#atp90Rows').innerHTML=pctHtml||'<div class="empty">No matching records.</div>';
