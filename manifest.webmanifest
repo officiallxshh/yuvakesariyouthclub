@@ -1,0 +1,18 @@
+{
+  "name": "Yuvakesari Youth Club",
+  "short_name": "YYC",
+  "description": "Official website of Yuvakesari Youth Club, Subrahmanya, Karnataka.",
+  "lang": "en-IN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05080b",
+  "theme_color": "#05080b",
+  "icons": [
+    {
+      "src": "./favicon.png",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
