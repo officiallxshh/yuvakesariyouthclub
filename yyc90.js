@@ -922,7 +922,18 @@
           contact_email:q('#spEmail').value.trim(),contact_phone:q('#spPhone').value.trim(),contact_address:q('#spAddress').value.trim(),
           meta_title:q('#spMetaTitle').value.trim(),meta_description:q('#spMetaDesc').value.trim(),meta_image:q('#spMetaImage').value.trim(),
           history_intro:q('#spHistoryIntro').value.trim(),maintenance_mode:q('#spMaint').value==='true'
-        }});if(!r.ok)throw new Error(r.error||'Unable to save');toast90('Site Pro settings saved');featureData=null;if(typeof window.loadPublic==='function')window.loadPublic();admin90Open('sitepro',true);}
+        }});if(!r.ok)throw new Error(r.error||'Unable to save');
+          var savedSettings={
+            club_name:q('#spClubName').value.trim(),location:q('#spLocation').value.trim(),slogan:q('#spSlogan').value.trim(),
+            instagram:q('#spInstagram').value.trim(),whatsapp:q('#spWhatsapp').value.trim(),x_url:q('#spX').value.trim(),facebook:q('#spFacebook').value.trim(),
+            announcement_enabled:q('#spAnn').value==='true',announcement_text:q('#spAnnText').value.trim(),announcement_link:q('#spAnnLink').value.trim(),
+            contact_email:q('#spEmail').value.trim(),contact_phone:q('#spPhone').value.trim(),contact_address:q('#spAddress').value.trim(),
+            meta_title:q('#spMetaTitle').value.trim(),meta_description:q('#spMetaDesc').value.trim(),meta_image:q('#spMetaImage').value.trim(),
+            history_intro:q('#spHistoryIntro').value.trim(),maintenance_mode:q('#spMaint').value==='true'
+          };
+          window.__yycAdminLastData=window.__yycAdminLastData||{};
+          window.__yycAdminLastData.settings=Object.assign({},window.__yycAdminLastData.settings||{},savedSettings);
+          toast90('Site Pro settings saved');featureData=null;if(typeof window.loadPublic==='function')window.loadPublic();admin90Open('sitepro',true);}
         catch(err){toast90(err.message);b.disabled=false;}
       });
       return;
