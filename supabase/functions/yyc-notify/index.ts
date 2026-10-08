@@ -479,7 +479,80 @@ async function deliverApproval(target:any,subject:string,body:string,meta:string
   return output;
 }
 
-async function deliver(target:any,subject:string,body:string,meta:string,link:string,channels:string[],messageType="general",batchId:string|null=null) {
+function isSwachathaCertificateEvent(title:string) {
+  const t=clean(title,200).toLowerCase().replace(/[^a-z0-9]/g,"");
+  return t.includes("yycswachathaabhiyaan") || t.includes("swachathaabhiyaan") || t.includes("swachhataabhiyaan");
+}
+
+function swachathaCertificatePrompt(target:any,eventTitle:string,eventDate:string,location:string) {
+  const name=clean(target?.name,160)||"MEMBER NAME";
+  const uid=clean(target?.role_number,80)||"YYC ID";
+  const role=clean(target?.role||target?.position,120)||(String(target?.kind||"member").toLowerCase()==="leader"?"LEADER":"MEMBER");
+  const kind=String(target?.kind||"member").toLowerCase()==="leader" ? "LEADER" : "MEMBER";
+  return [
+    "Create one official YYC personalized Certificate of Participation using the YYC clean-event certificate reference/design.",
+    "",
+    "IMPORTANT: This certificate is for one specific YYC recipient. Keep every personalized identity field below EXACTLY as provided. Do not alter, abbreviate, stylize, replace, or invent these values.",
+    "",
+    "RECIPIENT",
+    "Name: "+name,
+    "Unique ID: "+uid,
+    "Role: "+role,
+    "Recipient Type: "+kind,
+    "",
+    "EVENT",
+    "Event Name: YYC SWACHATHA ABHIYAAN",
+    "Certificate Type: CERTIFICATE OF PARTICIPATION",
+    "Date: 10 October 2026",
+    "Day: SATURDAY",
+    "Location: KUKKE SUBRAHMANYA",
+    "Region: DAKSHINA KANNADA, KARNATAKA",
+    "",
+    "DESIGN — MATCH THE PROVIDED YYC CLEAN-EVENT CERTIFICATE REFERENCE",
+    "• Premium landscape certificate composition.",
+    "• Cream/warm-paper background with deep forest-green and warm-gold accents.",
+    "• YYC lion emblem/logo at upper left and YUVAKESARI YOUTH CLUB wordmark prominently across the top.",
+    "• Show SUBRAHMANYA | KUKKE REGION | KARNATAKA under the main club name.",
+    "• Show tm_wxriorz association branding at the upper right.",
+    "• Botanical leafy border/corner framing and premium gold ornamental lines.",
+    "• Kukke Shri Subrahmanya Temple visual on the left and clean-environment / earth visual on the right.",
+    "• Central hierarchy: CERTIFICATE → OF PARTICIPATION → THIS CERTIFICATE IS PROUDLY PRESENTED TO → recipient name.",
+    "• Recipient name is the visual focus and uses an elegant handwritten/script style similar to the reference.",
+    "• Show the active-participation statement and event name below the recipient name.",
+    "• Keep the date/location area with calendar and location icons.",
+    "• Reproduce the bottom signature section with these exact names and roles:",
+    "  Ashwin Y — PRESIDENT",
+    "  Bhavish A T — VICE PRESIDENT",
+    "  Lathesh M — CHAIRMAN / DEVELOPER & TECHNICAL TEAM",
+    "  Preetham K P — GENERAL SECRETARY",
+    "  Lekhan — SECRETARY",
+    "  Akash N S — TREASURER",
+    "  Puneeth P V — TECHNICAL TEAM",
+    "  Sampath B — PHOTOGRAPHY / VIDEOGRAPHY & EDITING TEAM",
+    "  Sandesh M T — ASS. EDITING TEAM",
+    "• Footer: CLEAN ENVIRONMENT | HEALTHY COMMUNITIES | GREENER TOMORROW.",
+    "• Premium, realistic, high-resolution, print-ready and professionally balanced.",
+    "",
+    "STRICT DATA RULES",
+    "1. Do not change the recipient name, unique ID, role, event name, date, day, location, or signature names/roles.",
+    "2. Do not add extra people, certificates, QR codes, random IDs, seals, organizations, or logos.",
+    "3. Do not change this from a Certificate of Participation.",
+    "4. Generate exactly one certificate for the recipient identified above.",
+    "",
+    "Return the finished certificate as a single clean landscape image suitable for digital sharing and printing."
+  ].join("\n");
+}
+
+function certificatePromptEmailHtml(target:any,attendanceSubject:string,attendanceBody:string,meta:string,prompt:string) {
+  const name=escHtml(target?.name||"YYC Member");
+  const safeSubject=escHtml(attendanceSubject);
+  const safeBody=escHtml(attendanceBody).replace(/\r?\n/g,"<br>");
+  const safeMeta=escHtml(meta);
+  const safePrompt=escHtml(prompt);
+  return "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+safeSubject+"</title><style>@media only screen and (max-width:680px){.shell{width:100%!important}.pad{padding:24px 18px!important}}</style></head><body style=\"margin:0;padding:0;background:#05080b;color:#e9e1d2;font-family:Arial,Helvetica,sans-serif\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#05080b\"><tr><td align=\"center\" style=\"padding:24px 10px\"><table role=\"presentation\" class=\"shell\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:680px;max-width:680px;background:#0a1015;border:1px solid #252e33;border-radius:24px;overflow:hidden\"><tr><td class=\"pad\" style=\"padding:24px 28px;background:#0b1218;border-bottom:1px solid #20292d\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td width=\"58\"><img src=\"https://www.yuvakesariyouthclub.in/assets/yyc-logo-clean.webp\" alt=\"YYC\" width=\"50\" height=\"50\" style=\"display:block;border-radius:14px;border:1px solid #4b4029;background:#080d11\"></td><td style=\"padding-left:13px\"><div style=\"font-size:11px;font-weight:800;letter-spacing:2.5px;color:#d7b66d\">YUVAKESARI YOUTH CLUB</div><div style=\"margin-top:5px;font-size:11px;letter-spacing:1.1px;color:#7d8986\">SUBRAHMANYA · KARNATAKA</div></td><td align=\"right\"><span style=\"display:inline-block;padding:7px 10px;border:1px solid #315641;border-radius:999px;background:#0c1d14;color:#8fd0a7;font-size:9px;font-weight:800;letter-spacing:1px\">PRESENT</span></td></tr></table></td></tr><tr><td class=\"pad\" style=\"padding:32px 28px\"><div style=\"font-size:10px;font-weight:800;letter-spacing:2px;color:#8fd0a7\">ATTENDANCE CONFIRMED</div><h1 style=\"margin:12px 0 8px;font-size:30px;line-height:1.15;color:#f0d18a\">Your certificate prompt is ready, "+name+".</h1><p style=\"margin:0;color:#aab3b0;font-size:14px;line-height:1.75\">"+safeBody+"</p><div style=\"margin-top:18px;padding:14px 16px;background:#0e151b;border:1px solid #252e33;border-radius:14px;color:#9da7a4;font-size:11px;line-height:1.7\">"+safeMeta+"</div><div style=\"margin-top:26px;font-size:11px;font-weight:900;letter-spacing:1.6px;color:#c8aa69\">COPY THIS PROMPT INTO CHATGPT</div><div style=\"margin-top:7px;font-size:11px;color:#77817e;line-height:1.6\">This prompt is personalized for your YYC attendance record. Keep the supplied identity and event details unchanged.</div><pre style=\"margin:14px 0 0;padding:18px;white-space:pre-wrap;word-break:break-word;background:#070b0f;border:1px solid #344047;border-radius:16px;color:#e8e0d1;font:12px/1.65 Consolas,Monaco,monospace\">"+safePrompt+"</pre><div style=\"margin-top:18px;padding:15px 16px;background:#111920;border-left:3px solid #c8aa69;border-radius:10px;color:#9aa4a1;font-size:10px;line-height:1.7\">Paste the complete prompt into ChatGPT and use your YYC certificate reference image as the design reference. The identity values above are the official YYC attendance-issued details for this recipient.</div><div style=\"margin-top:24px;text-align:center\"><a href=\"https://www.yuvakesariyouthclub.in/\" style=\"color:#d5b268;text-decoration:none;font-size:10px;font-weight:800;letter-spacing:1px\">OPEN OFFICIAL YYC WEBSITE ↗</a></div></td></tr><tr><td class=\"pad\" style=\"padding:20px 28px 24px;background:#080d11;border-top:1px solid #20292d\"><div style=\"font-size:11px;font-weight:800;letter-spacing:1.2px;color:#c5a763\">ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</div><div style=\"margin-top:7px;font-size:10px;line-height:1.7;color:#66716f\">Official automated attendance and certificate-prompt communication from Yuvakesari Youth Club.</div></td></tr></table></td></tr></table></body></html>";
+}
+
+async function deliver(target:any,subject:string,body:string,meta:string,link:string,channels:string[],messageType="general",batchId:string|null=null,customHtml:string="") {
   const requested=new Set((channels||["email","whatsapp"]).filter(x=>x==="email"||x==="whatsapp"||x==="sms"));
   const output:any={};
   const tasks:any[]=[];
@@ -501,7 +574,7 @@ async function deliver(target:any,subject:string,body:string,meta:string,link:st
         provider:"resend",
         recipient_address:maskContact(String(target.email),"email")
       });
-      const result=await sendEmail(String(target.email),subject,emailHtml(target,subject,body,meta,link));
+      const result=await sendEmail(String(target.email),subject,customHtml||emailHtml(target,subject,body,meta,link));
       await finishDelivery(id,result.status,result);
       output.email={...result,recipient:maskContact(String(target.email),"email"),delivery_id:id};
     })());
@@ -646,12 +719,18 @@ Deno.serve(async(req:Request)=>{
       const eventTitle=clean(eventRow.title,180)||"YYC event";
       const eventDate=eventRow.event_date ? new Date(String(eventRow.event_date)+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric",timeZone:"Asia/Kolkata"}) : "Date not specified";
       const location=clean(eventRow.location,180)||"Location not specified";
-      const attendanceSubject="Attendance confirmed — "+eventTitle;
-      const attendanceBody="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”.";
+      const cleanEvent=isSwachathaCertificateEvent(eventTitle);
+      const attendanceSubject=cleanEvent
+        ? "Attendance confirmed + Certificate Prompt — "+eventTitle
+        : "Attendance confirmed — "+eventTitle;
+      const attendanceBody="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”."+
+        (cleanEvent ? " Your personalized YYC certificate-generation prompt is included below." : "");
       const attendanceMeta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: PRESENT";
+      const certificatePrompt=cleanEvent ? swachathaCertificatePrompt(target,eventTitle,eventDate,location) : "";
+      const customHtml=cleanEvent ? certificatePromptEmailHtml(target,attendanceSubject,attendanceBody,attendanceMeta,certificatePrompt) : "";
       const batchId=crypto.randomUUID();
-      const attendanceDelivery=await deliver(target,attendanceSubject,attendanceBody,attendanceMeta,"https://www.yuvakesariyouthclub.in/",["email"],"event",batchId);
-      return out(req,{ok:true,event:"attendance",target_kind:kind,event_id:eventId,delivery:{attendance:attendanceDelivery,total_sent:(attendanceDelivery?.email?.status==="sent"?1:0)}});
+      const attendanceDelivery=await deliver(target,attendanceSubject,attendanceBody,attendanceMeta,"https://www.yuvakesariyouthclub.in/",["email"],"event",batchId,customHtml);
+      return out(req,{ok:true,event:"attendance",target_kind:kind,event_id:eventId,certificate_prompt_sent:cleanEvent,delivery:{attendance:attendanceDelivery,total_sent:(attendanceDelivery?.email?.status==="sent"?1:0)}});
     }
 
     if(event==="notification"){
