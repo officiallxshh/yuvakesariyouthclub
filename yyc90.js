@@ -484,6 +484,76 @@
       return '<div class="yyc90-attendance-row"><div><strong>'+esc90(p.name)+'</strong><small>'+esc90(role)+'</small></div><label><input type="checkbox" '+attr+'="'+p.id+'" '+(a&&a.present?'checked':'')+'> Present</label></div>';
     }).join(''):'<div class="empty">No matching '+(kind==='leader'?'leaders':'members')+'.</div>';
 
+    var immediateSelector=kind==='leader'?'[data-at90-leader]':'[data-at90-member]';
+    qa(immediateSelector).forEach(function(c){
+      if(c.getAttribute('data-yyc-immediate-bound')==='1') return;
+      c.setAttribute('data-yyc-immediate-bound','1');
+      c.addEventListener('change',function(){
+        var box=this;
+        var id=box.getAttribute(kind==='leader'?'data-at90-leader':'data-at90-member');
+        if(!id || !eId) return;
+        var wasPresent=att.some(function(x){
+          var matchesTarget=kind==='leader'
+            ? String(x.leader_id)===String(id)
+            : String(x.member_id)===String(id);
+          return matchesTarget && String(x.event_id)===String(eId) && !!x.present;
+        });
+        var rpcName=kind==='leader'?'admin_record_leader_attendance':'admin_record_attendance';
+        var args=kind==='leader'
+          ? {p_token:window.adminToken,p_leader_id:id,p_event_id:eId,p_present:box.checked}
+          : {p_token:window.adminToken,p_member_id:id,p_event_id:eId,p_present:box.checked};
+
+        box.disabled=true;
+        rpc90(rpcName,args).then(function(result){
+          if(!result || result.ok===false) throw new Error(result && result.error || 'Unable to save attendance');
+          var found=att.find(function(x){
+            var matchesTarget=kind==='leader'
+              ? String(x.leader_id)===String(id)
+              : String(x.member_id)===String(id);
+            return matchesTarget && String(x.event_id)===String(eId);
+          });
+          if(found){
+            found.present=!!box.checked;
+            found.marked_at=new Date().toISOString();
+          }else{
+            var row={event_id:eId,present:!!box.checked,marked_at:new Date().toISOString()};
+            if(kind==='leader') row.leader_id=id; else row.member_id=id;
+            att.push(row);
+          }
+          if(box.checked && !wasPresent){
+            if(typeof window.yycSendExternalAlert!=='function'){
+              throw new Error('Attendance email service is not ready.');
+            }
+            return window.yycSendExternalAlert({
+              event:'attendance',
+              admin_token:window.adminToken,
+              target_kind:kind,
+              target_id:id,
+              event_id:eId,
+              channels:['email']
+            }).then(function(result){
+              if(!result || !result.ok) throw new Error(result && result.error || 'Attendance email could not be sent');
+              var delivery=result.delivery && result.delivery.attendance;
+              var email=delivery && delivery.email;
+              if(!email || email.status!=='sent') throw new Error((email && email.reason) || 'Attendance email could not be sent');
+              return 'sent';
+            });
+          }
+          return box.checked ? 'already-sent' : 'absent';
+        }).then(function(mode){
+          if(mode==='sent') toast90('Present saved · attendance email sent ✓');
+          else if(mode==='already-sent') toast90('Present saved');
+          else if(mode==='absent') toast90('Attendance marked absent');
+        }).catch(function(err){
+          // Roll the checkbox back when either persistence or notification fails.
+          box.checked=!box.checked;
+          toast90(err.message||'Attendance update failed');
+        }).finally(function(){
+          box.disabled=false;
+        });
+      });
+    });
+
     if(!q('#at90Save')){
       var b=document.createElement('button');
       b.id='at90Save';b.className='btn gold';b.type='button';b.textContent='SAVE ATTENDANCE';
