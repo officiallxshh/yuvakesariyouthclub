@@ -1027,6 +1027,40 @@
     q('#adminHistoryForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc90('admin_upsert_history',{p_token:window.adminToken,p_id:id||null,p_payload:{year_label:q('#h90Year').value.trim(),title:q('#h90Title').value.trim(),body:q('#h90Body').value.trim(),image_url:q('#h90Image').value.trim(),status:q('#h90Status').value,sort_order:Number(q('#h90Sort').value||0)}});if(!r.ok)throw new Error(r.error||'Failed');featureData=null;toast90('History item saved');admin90Open('history',true);}catch(err){toast90(err.message);}});
   }
 
+  function renderMessages90(d){
+    var rows=d.contacts||d.contact_messages||[];
+    var statuses=['new','read','replied','archived'];
+    return adminHeader90('Messages')+
+      '<div class="admin-toolbar"><select id="c90StatusFilter"><option value="">All status</option>'+statuses.map(function(st){return '<option value="'+st+'">'+st.toUpperCase()+'</option>';}).join('')+'</select><span class="admin-result-count" id="c90Count"></span></div>'+
+      '<div class="admin-card-list">'+(rows.length?rows.map(function(m){
+        var status=String(m.status||'new').toLowerCase();
+        return '<div class="approval-card yyc90-message-row" data-status="'+esc90(status)+'">'+
+          '<div class="meta"><strong>'+esc90(m.subject||'Contact message')+'</strong>'+
+          '<small>'+esc90(m.name||'Unknown sender')+' · '+esc90(m.email||'')+(m.phone?' · '+esc90(m.phone):'')+'</small>'+
+          '<small>'+esc90(m.created_at?new Date(m.created_at).toLocaleString('en-IN'):'')+' · '+esc90(status.toUpperCase())+'</small>'+
+          '<p>'+esc90(m.message||'')+'</p></div>'+
+          '<div class="admin-actions"><select class="mini-select" data-c90-action="'+esc90(m.id)+'"><option value="">STATUS</option>'+statuses.map(function(st){return '<option value="'+st+'">'+st.toUpperCase()+'</option>';}).join('')+'</select></div>'+
+        '</div>';
+      }).join(''):'<div class="empty">No contact messages yet.</div>')+'</div>';
+  }
+
+  function renderAnalytics90(){
+    return adminHeader90('Analytics')+
+      '<div id="yyc90AnalyticsBox"><div class="notice">Loading analytics…</div></div>';
+  }
+
+  function renderBackup90(){
+    return adminHeader90('Backup')+
+      '<div class="yyc90-health-grid">'+
+        '<div class="yyc90-health-card"><b id="yyc90HealthTitle">CHECKING…</b><span id="yyc90HealthText">Preparing backup controls.</span></div>'+
+        '<div class="yyc90-health-card"><b>SAFE EXPORT</b><span>Passwords and session tokens are not included.</span></div>'+
+      '</div>'+
+      '<div class="admin-top-actions" style="justify-content:flex-start;margin-top:14px;gap:8px;flex-wrap:wrap">'+
+        '<button type="button" class="mini-btn gold" id="yyc90BackupBtn">DOWNLOAD DATABASE SNAPSHOT</button>'+
+        '<button type="button" class="mini-btn" id="yyc90DataExportBtn">EXPORT FEATURE DATA</button>'+
+      '</div>';
+  }
+
   function renderFinance90(d){
     d=d||{};
     var rows=d.finance||[];
