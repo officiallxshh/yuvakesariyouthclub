@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
-const CURRENT_PRODUCTION_JS_VERSION = "20261005-01";
+const CURRENT_PRODUCTION_JS_VERSION = "20261008-02";
 const CURRENT_PRODUCTION_CSS_VERSION = "20261006-01";
 const ignored = new Set([".git", "node_modules"]);
 
@@ -97,7 +97,7 @@ for (const file of files.filter(f => /\.css$/i.test(f))) {
   const css = read(file);
   for (const m of css.matchAll(/url\(\s*["']?([^"'\)]+)["']?\s*\)/gi)) {
     const raw = String(m[1] || "").split("?")[0].split("#")[0];
-    if (!raw || /^(https?:|data:|blob:|javascript:)/i.test(raw)) continue;
+    if (!raw || /^(https?:|data:|blob:|javascript:|%23)/i.test(raw)) continue;
     const target = normalizeTarget(file, raw);
     if (target && !fileSet.has(target)) {
       issues.push("Missing CSS local reference: " + file + " -> " + raw + " (resolved " + target + ")");
