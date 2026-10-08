@@ -528,7 +528,6 @@
 
   function renderAttendanceReports90(d){
     var events=(d&&d.events)||[];
-    var defaultEvent=(events[0]&&events[0].id)||'';
     return adminHeader90('Attendance Reports')+
       '<style id="yyc90AttendanceReportsStyle">'+
       '.yyc90-ar-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}'+
@@ -557,7 +556,7 @@
         '<button type="button" class="mini-btn" id="ar90Xls">EXPORT EXCEL (.XLS)</button>'+
       '</div>'+
       '<div id="ar90Summary" class="yyc90-ar-section"><div class="notice">Loading attendance report…</div></div>'+
-      '<div id="ar90Low" class="yyc90-ar-section"><h3>Low Attendance Alert</h3><div class="yyc90-ar-muted">Below the selected threshold across completed events.</div><div id="ar90LowRows" style="margin-top:8px"><div class="empty">Loading…</div></div></div>'+
+      '<div id="ar90Low" class="yyc90-ar-section"><h3>Low Attendance Alert</h3><div class="yyc90-ar-muted">Below the selected threshold across completed events.</div><div class="form-grid" style="margin-top:10px"><div class="field"><label>Search low attendance</label><input id="ar90LowSearch" placeholder="Name or role"></div><div class="field"><label>Type</label><select id="ar90LowKind"><option value="">Members + Leaders</option><option value="member">Members</option><option value="leader">Leaders</option></select></div></div><div id="ar90LowRows" style="margin-top:8px"><div class="empty">Loading…</div></div></div>'+
       '<div id="ar90History" class="yyc90-ar-section"><h3>Attendance History</h3><div id="ar90HistoryRows"><div class="empty">Loading…</div></div></div>'+
       '<div id="ar90Audit" class="yyc90-ar-section"><h3>Attendance Audit Log</h3><div id="ar90AuditRows"><div class="empty">Loading…</div></div></div>';
   }
@@ -617,10 +616,8 @@
         }).join(''):'<div class="empty">'+(Number(r.completed_events)===0?'No completed events yet.':'No people below the selected threshold.')+'</div>';
       }
 
-      var lowHead=q('#ar90Low .yyc90-ar-muted');
-      if(lowHead) lowHead.insertAdjacentHTML('afterend','<div class="form-grid" style="margin-top:10px"><div class="field"><label>Search low attendance</label><input id="ar90LowSearch" placeholder="Name or role"></div><div class="field"><label>Type</label><select id="ar90LowKind"><option value="">Members + Leaders</option><option value="member">Members</option><option value="leader">Leaders</option></select></div></div>');
-      q('#ar90LowSearch')?.addEventListener('input',drawLow);
-      q('#ar90LowKind')?.addEventListener('change',drawLow);
+      q('#ar90LowSearch').oninput=drawLow;
+      q('#ar90LowKind').onchange=drawLow;
       drawLow();
 
       function drawHistory(){
@@ -642,8 +639,8 @@
           '</div>';
         }).join(''):'<div class="empty">No attendance history found.</div>';
       }
-      q('#ar90HistorySearch')?.addEventListener('input',drawHistory);
-      q('#ar90HistoryKind')?.addEventListener('change',drawHistory);
+      q('#ar90HistorySearch').oninput=drawHistory;
+      q('#ar90HistoryKind').onchange=drawHistory;
       drawHistory();
 
       auditBox.innerHTML=audit.length?audit.map(function(x){
