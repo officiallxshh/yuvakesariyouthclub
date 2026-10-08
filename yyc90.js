@@ -984,6 +984,56 @@
     q('#adminHistoryForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc90('admin_upsert_history',{p_token:window.adminToken,p_id:id||null,p_payload:{year_label:q('#h90Year').value.trim(),title:q('#h90Title').value.trim(),body:q('#h90Body').value.trim(),image_url:q('#h90Image').value.trim(),status:q('#h90Status').value,sort_order:Number(q('#h90Sort').value||0)}});if(!r.ok)throw new Error(r.error||'Failed');featureData=null;toast90('History item saved');admin90Open('history',true);}catch(err){toast90(err.message);}});
   }
 
+  function renderFinance90(d){
+    d=d||{};
+    var rows=d.finance||[];
+    var income=0,expense=0;
+    rows.forEach(function(x){
+      var amount=Number(x.amount)||0;
+      if(String(x.entry_type||'expense').toLowerCase()==='income') income+=amount;
+      else expense+=amount;
+    });
+    var balance=income-expense;
+    var sorted=rows.slice().sort(function(a,b){
+      return String(b.entry_date||'').localeCompare(String(a.entry_date||'')) ||
+        String(b.created_at||'').localeCompare(String(a.created_at||''));
+    });
+    var totalLabel=sorted.length+' '+(sorted.length===1?'entry':'entries');
+    var cards=sorted.length?sorted.map(function(x){
+      var type=String(x.entry_type||'expense').toLowerCase()==='income'?'income':'expense';
+      var amount=Number(x.amount)||0;
+      return '<div class="approval-card yyc90-finance-row" data-f90-type="'+type+'" data-f90-search="'+esc90((x.description||'')+' '+(x.entry_date||'')).toLowerCase()+'">'+
+        '<div class="meta">'+
+          '<strong>'+esc90(x.description||'Untitled entry')+'</strong>'+
+          '<small>'+esc90(format90Date(x.entry_date))+' · '+type.toUpperCase()+'</small>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">'+
+          '<strong style="color:'+(type==='income'?'#9ed4b0':'#e1b3b3')+'">₹ '+esc90(amount.toFixed(2))+'</strong>'+
+          '<button class="mini-btn gold" type="button" data-f90-edit="'+esc90(x.id)+'">Edit</button>'+
+          '<button class="mini-btn" type="button" data-f90-del="'+esc90(x.id)+'">Delete</button>'+
+        '</div>'+
+      '</div>';
+    }).join(''):'<div class="empty">No finance entries yet.</div>';
+    return adminHeader90('Finance')+
+      '<div class="yyc90-finance-head" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
+        '<div><div class="modal-kicker">ADMIN · FINANCE</div><p class="modal-sub" style="margin:0">Track YYC income and expenses.</p></div>'+
+        '<div class="admin-top-actions" style="margin:0">'+
+          '<button class="mini-btn gold" type="button" id="f90Add">+ ADD ENTRY</button>'+
+          '<button class="mini-btn" type="button" id="f90Export">EXPORT CSV</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="yyc90-metric-grid" style="margin-top:14px">'+
+        '<div><b>₹ '+esc90(income.toFixed(2))+'</b><span>TOTAL INCOME</span></div>'+
+        '<div><b>₹ '+esc90(expense.toFixed(2))+'</b><span>TOTAL EXPENSE</span></div>'+
+        '<div><b>₹ '+esc90(balance.toFixed(2))+'</b><span>BALANCE</span></div>'+
+        '<div><b>'+esc90(totalLabel)+'</b><span>RECORDS</span></div>'+
+      '</div>'+
+      '<div class="form-grid" style="margin-top:14px">'+
+        '<div class="field full"><label>Search finance</label><input id="f90Search" type="search" placeholder="Search description or date"></div>'+
+      '</div>'+
+      '<div id="f90Rows" class="admin-card-list">'+cards+'</div>';
+  }
+
   function financeForm90(id){
     var ex=(featureData.finance||[]).find(function(x){return String(x.id)===String(id);})||{entry_date:new Date().toISOString().slice(0,10),description:'',amount:'',entry_type:'expense'};
     open90('<div class="modal-kicker">ADMIN · FINANCE</div><h2 class="modal-title">'+(id?'Edit':'Add')+' Finance Entry</h2><form id="adminFinance90Form"><div class="form-grid"><div class="field"><label>Date</label><input id="f90Date" type="date" value="'+esc90(ex.entry_date||'')+'" required></div><div class="field"><label>Type</label><select id="f90Type"><option>expense</option><option>income</option></select></div><div class="field full"><label>Description</label><input id="f90Desc" value="'+esc90(ex.description||'')+'" required></div><div class="field"><label>Amount (₹)</label><input id="f90Amount" type="number" min="0" step="0.01" value="'+esc90(ex.amount||'')+'" required></div></div><div class="form-actions"><button class="btn gold" type="submit">SAVE ENTRY</button></div></form>');
