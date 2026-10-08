@@ -905,7 +905,7 @@
   }
   function admin90DataCache(){
     if(featureData)return Promise.resolve(featureData);
-    return rpc90('admin_feature_data',{p_token:window.adminToken}).then(function(r){if(!r||!r.ok)throw new Error(r&&r.error||'Unauthorized');featureData=r;return r;});
+    return rpc90('admin_feature_data',{p_token:window.adminToken}).then(function(r){if(!r||!r.ok)throw new Error(r&&r.error||'Unauthorized');featureData=r;window.YYC90_FEATURE_DATA=r;return r;});
   }
 
   function renderCustomAdminTab90(tab){
