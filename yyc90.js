@@ -916,6 +916,8 @@
       q('#yyc90SiteProForm').addEventListener('submit',async function(e){
         e.preventDefault();var b=this.querySelector('button[type="submit"]');b.disabled=true;
         try{var r=await rpc90('admin_save_settings',{p_token:window.adminToken,p_payload:{
+          club_name:q('#spClubName').value.trim(),location:q('#spLocation').value.trim(),slogan:q('#spSlogan').value.trim(),
+          instagram:q('#spInstagram').value.trim(),whatsapp:q('#spWhatsapp').value.trim(),x_url:q('#spX').value.trim(),facebook:q('#spFacebook').value.trim(),
           announcement_enabled:q('#spAnn').value==='true',announcement_text:q('#spAnnText').value.trim(),announcement_link:q('#spAnnLink').value.trim(),
           contact_email:q('#spEmail').value.trim(),contact_phone:q('#spPhone').value.trim(),contact_address:q('#spAddress').value.trim(),
           meta_title:q('#spMetaTitle').value.trim(),meta_description:q('#spMetaDesc').value.trim(),meta_image:q('#spMetaImage').value.trim(),
