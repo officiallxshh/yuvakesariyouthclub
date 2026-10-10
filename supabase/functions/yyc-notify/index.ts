@@ -720,31 +720,402 @@ Deno.serve(async(req:Request)=>{
       return out(req,{ok:true,event:"approval",in_app:inApp,delivery:approvalDelivery});
     }
 
+    if(event==="attendance_batch"){
+      const adminToken=clean(b?.admin_token,500);
+      if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
+
+      const kind=clean(b?.target_kind,20);
+      const eventId=clean(b?.event_id,100);
+      const rawRecipients=Array.isArray(b?.recipients)?b.recipients:[];
+      if(!["member","leader"].includes(kind) || !eventId) return out(req,{ok:false,error:"Member/leader and event are required"},400);
+      if(!rawRecipients.length || rawRecipients.length>100) return out(req,{ok:false,error:"Select between 1 and 100 attendance recipients per batch"},400);
+
+      const recipients=rawRecipients.map((item:any)=>({
+        target_id:clean(item?.target_id,100),
+        attendance_status:clean(item?.attendance_status,20).toLowerCase()
+      }));
+      if(recipients.some((item:any)=>!item.target_id || !["present","absent"].includes(item.attendance_status))) {
+        return out(req,{ok:false,error:"Every recipient needs an ID and PRESENT or ABSENT status"},400);
+      }
+      if(new Set(recipients.map((item:any)=>item.target_id)).size!==recipients.length) {
+        return out(req,{ok:false,error:"Duplicate attendance recipients were supplied"},400);
+      }
+
+      const {data:eventRow,error:eventError}=await db.from("events").select("id,title,event_date,location,status").eq("id",eventId).maybeSingle();
+      if(eventError || !eventRow) return out(req,{ok:false,error:"Event not found"},404);
+
+      const ids=recipients.map((item:any)=>item.target_id);
+      const {data:rows,error:targetError}=await (kind==="member"
+        ? db.from("members").select("id,name,email,phone,role_number,status,approved,dob,position").in("id",ids)
+        : db.from("leaders").select("id,name,email,phone,role_number,role,status").in("id",ids));
+      if(targetError) return out(req,{ok:false,error:"Could not load attendance recipients"},500);
+
+      const targetMap=new Map<string,any>((rows||[]).map((row:any)=>[String(row.id),row]));
+      const eventTitle=clean(eventRow.title,180)||"YYC event";
+      const eventDate=eventRow.event_date
+        ? new Date(String(eventRow.event_date)+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric",timeZone:"Asia/Kolkata"})
+        : "Date not specified";
+      const location=clean(eventRow.location,180)||"Location not specified";
+      const cleanEvent=isSwachathaCertificateEvent(eventTitle);
+      const batchId=crypto.randomUUID();
+      const resultsById=new Map<string,any>();
+      const pending:any[]=[];
+      const logEntries:any[]=[];
+
+      for(const item of recipients){
+        const target=targetMap.get(item.target_id);
+        if(!target || (kind==="member" && String(target.status||"pending").toLowerCase()!=="approved") ||
+          (kind==="leader" && String(target.status||"active").toLowerCase()==="inactive")){
+          resultsById.set(item.target_id,{target_id:item.target_id,status:"failed",reason:"Active attendance recipient not found"});
+          continue;
+        }
+        const name=clean(target.name,120)|| (kind==="leader"?"YYC Leader":"YYC Member");
+        if(!target.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(target.email).trim())){
+          resultsById.set(item.target_id,{target_id:item.target_id,name,status:"skipped",reason:"No valid email address on record"});
+          continue;
+        }
+
+        target.kind=kind;
+        const isPresent=item.attendance_status==="present";
+        const includeCertificatePrompt=isPresent && cleanEvent;
+        const subject=isPresent
+          ? (includeCertificatePrompt ? "Attendance confirmed + Certificate Prompt — "+eventTitle : "Attendance confirmed — "+eventTitle)
+          : "Attendance marked absent — "+eventTitle;
+        const body=isPresent
+          ? ("Hello "+name+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”."+
+              (includeCertificatePrompt ? " Your personalized YYC certificate-generation prompt is included below." : ""))
+          : ("Hello "+name+", your attendance has been recorded as ABSENT for the YYC event “"+eventTitle+"”.");
+        const meta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: "+(isPresent?"PRESENT":"ABSENT");
+        const certificatePrompt=includeCertificatePrompt ? swachathaCertificatePrompt(target,eventTitle,eventDate,location) : "";
+        const html=includeCertificatePrompt
+          ? certificatePromptEmailHtml(target,subject,body,meta,certificatePrompt)
+          : emailHtml(target,subject,body,meta,"https://www.yuvakesariyouthclub.in/");
+        const record={
+          batch_id:batchId,
+          recipient_kind:kind,
+          recipient_id:target.id,
+          recipient_name:clean(target.name,180),
+          channel:"email",
+          message_type:"event",
+          subject:clean(subject,200),
+          title:clean(subject,160),
+          body:clean(body,2000),
+          link:"https://www.yuvakesariyouthclub.in/",
+          status:"queued",
+          provider:"resend",
+          recipient_address:maskContact(String(target.email).trim(),"email"),
+          metadata:{event_id:eventId,attendance_status:item.attendance_status,event_title:eventTitle}
+        };
+        pending.push({
+          target_id:item.target_id,
+          target,
+          email:String(target.email).trim(),
+          subject,
+          html
+        });
+        logEntries.push(record);
+        resultsById.set(item.target_id,{target_id:item.target_id,name,status:"queued"});
+      }
+
+      const key=Deno.env.get("RESEND_API_KEY") ?? "";
+      const from=Deno.env.get("RESEND_FROM_EMAIL") ?? "";
+      if(!key || !from){
+        for(const item of pending){
+          resultsById.set(item.target_id,{target_id:item.target_id,name:clean(item.target.name,180),status:"skipped",reason:"Email provider is not configured"});
+        }
+        const results=recipients.map((item:any)=>resultsById.get(item.target_id)||{target_id:item.target_id,status:"failed",reason:"No delivery result"});
+        return out(req,{ok:true,event:"attendance_batch",delivery:{total:results.length,sent:0,failed:results.filter((x:any)=>x.status==="failed").length,skipped:results.filter((x:any)=>x.status==="skipped").length},results});
+      }
+
+      let logged:any[]=[];
+      let loggingWarning="";
+      if(logEntries.length){
+        const {data:logRows,error:logError}=await db.from("admin_message_deliveries").insert(logEntries).select("id,recipient_id");
+        if(logError) loggingWarning="Could not save every email delivery log";
+        else logged=logRows||[];
+      }
+      const logByRecipient=new Map<string,any>(logged.map((row:any)=>[String(row.recipient_id),row]));
+      const providerByRecipient=new Map<string,string>();
+      let providerError="";
+      if(pending.length){
+        try{
+          const response=await fetch("https://api.resend.com/emails/batch",{
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json",
+              "Authorization":"Bearer "+key,
+              "Idempotency-Key":batchId
+            },
+            body:JSON.stringify(pending.map((item:any)=>({
+              from,
+              to:[item.email],
+              subject:item.subject,
+              html:item.html
+            })))
+          });
+          const responseText=await response.text();
+          let providerData:any=null;
+          try{providerData=responseText?JSON.parse(responseText):null;}catch{}
+          if(!response.ok){
+            providerError=providerData?.message||providerData?.error?.message||"Email provider rejected the batch";
+          }else{
+            const returned=Array.isArray(providerData?.data)?providerData.data:[];
+            for(let i=0;i<pending.length;i++){
+              const providerId=clean(returned[i]?.id,200);
+              if(providerId) providerByRecipient.set(pending[i].target_id,providerId);
+              else providerError=providerError||"Email provider returned an incomplete batch result";
+            }
+          }
+        }catch(e){
+          providerError=e instanceof Error?e.message:"Could not reach the email provider";
+        }
+      }
+
+      for(const item of pending){
+        const providerId=providerByRecipient.get(item.target_id)||"";
+        const status=providerId?"sent":"failed";
+        const reason=providerId?"":(providerError||"Email provider did not return a message ID");
+        const logRow=logByRecipient.get(String(item.target.id));
+        resultsById.set(item.target_id,{
+          target_id:item.target_id,
+          name:clean(item.target.name,180),
+          status,
+          reason:reason||undefined,
+          provider_message_id:providerId||undefined,
+          delivery_id:logRow?.id||undefined
+        });
+      }
+
+      await Promise.all(logged.map(async(row:any)=>{
+        const result=resultsById.get(String(row.recipient_id));
+        if(result) await finishDelivery(row.id,result.status,{id:result.provider_message_id||null,reason:result.reason||""});
+      }));
+
+      const results=recipients.map((item:any)=>resultsById.get(item.target_id)||{target_id:item.target_id,status:"failed",reason:"No delivery result"});
+      const sent=results.filter((item:any)=>item.status==="sent").length;
+      const failed=results.filter((item:any)=>item.status==="failed").length;
+      const skipped=results.filter((item:any)=>item.status==="skipped").length;
+      return out(req,{
+        ok:true,
+        event:"attendance_batch",
+        target_kind:kind,
+        event_id:eventId,
+        delivery:{total:results.length,sent,failed,skipped,provider:"resend-batch"},
+        results,
+        logging_warning:loggingWarning||undefined
+      });
+    }
+
     if(event==="attendance"){
       const adminToken=clean(b?.admin_token,500);
       if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
       const kind=clean(b?.target_kind,20), id=clean(b?.target_id,100), eventId=clean(b?.event_id,100);
+      const attendanceStatus=clean(b?.attendance_status,20).toLowerCase();
       if(!["member","leader"].includes(kind) || !id || !eventId) return out(req,{ok:false,error:"Member/leader and event are required"},400);
+      if(!["present","absent"].includes(attendanceStatus)) return out(req,{ok:false,error:"Attendance status must be PRESENT or ABSENT"},400);
+
       const target=await targetById(kind as "member"|"leader",id);
       if(!target) return out(req,{ok:false,error:"Active attendance target not found"},404);
       target.kind=kind;
+
       const {data:eventRow,error:eventError}=await db.from("events").select("id,title,event_date,location,status").eq("id",eventId).maybeSingle();
       if(eventError || !eventRow) return out(req,{ok:false,error:"Event not found"},404);
+
       const eventTitle=clean(eventRow.title,180)||"YYC event";
-      const eventDate=eventRow.event_date ? new Date(String(eventRow.event_date)+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric",timeZone:"Asia/Kolkata"}) : "Date not specified";
+      const eventDate=eventRow.event_date
+        ? new Date(String(eventRow.event_date)+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric",timeZone:"Asia/Kolkata"})
+        : "Date not specified";
       const location=clean(eventRow.location,180)||"Location not specified";
-      const cleanEvent=isSwachathaCertificateEvent(eventTitle);
-      const attendanceSubject=cleanEvent
-        ? "Attendance confirmed + Certificate Prompt — "+eventTitle
-        : "Attendance confirmed — "+eventTitle;
-      const attendanceBody="Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”."+
-        (cleanEvent ? " Your personalized YYC certificate-generation prompt is included below." : "");
-      const attendanceMeta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: PRESENT";
+      const isPresent=attendanceStatus==="present";
+      const cleanEvent=isPresent && isSwachathaCertificateEvent(eventTitle);
+
+      const attendanceSubject=isPresent
+        ? (cleanEvent
+            ? "Attendance confirmed + Certificate Prompt — "+eventTitle
+            : "Attendance confirmed — "+eventTitle)
+        : "Attendance marked absent — "+eventTitle;
+
+      const attendanceBody=isPresent
+        ? ("Hello "+clean(target.name,120)+", your attendance has been recorded as PRESENT for the YYC event “"+eventTitle+"”."+
+            (cleanEvent ? " Your personalized YYC certificate-generation prompt is included below." : ""))
+        : ("Hello "+clean(target.name,120)+", your attendance has been recorded as ABSENT for the YYC event “"+eventTitle+"”.");
+
+      const attendanceMeta="Event: "+eventTitle+" · Date: "+eventDate+" · Location: "+location+" · Attendance status: "+(isPresent?"PRESENT":"ABSENT");
       const certificatePrompt=cleanEvent ? swachathaCertificatePrompt(target,eventTitle,eventDate,location) : "";
-      const customHtml=cleanEvent ? certificatePromptEmailHtml(target,attendanceSubject,attendanceBody,attendanceMeta,certificatePrompt) : "";
+      const customHtml=cleanEvent
+        ? certificatePromptEmailHtml(target,attendanceSubject,attendanceBody,attendanceMeta,certificatePrompt)
+        : "";
+
       const batchId=crypto.randomUUID();
-      const attendanceDelivery=await deliver(target,attendanceSubject,attendanceBody,attendanceMeta,"https://www.yuvakesariyouthclub.in/",["email"],"event",batchId,customHtml);
-      return out(req,{ok:true,event:"attendance",target_kind:kind,event_id:eventId,certificate_prompt_sent:cleanEvent,delivery:{attendance:attendanceDelivery,total_sent:(attendanceDelivery?.email?.status==="sent"?1:0)}});
+      const attendanceDelivery=await deliver(
+        target,
+        attendanceSubject,
+        attendanceBody,
+        attendanceMeta,
+        "https://www.yuvakesariyouthclub.in/",
+        ["email"],
+        "event",
+        batchId,
+        customHtml
+      );
+
+      return out(req,{
+        ok:true,
+        event:"attendance",
+        attendance_status:attendanceStatus,
+        target_kind:kind,
+        event_id:eventId,
+        certificate_prompt_sent:cleanEvent,
+        delivery:{
+          attendance:attendanceDelivery,
+          total_sent:(attendanceDelivery?.email?.status==="sent"?1:0)
+        }
+      });
+    }
+
+
+    if(event==="member_broadcast"){
+      const adminToken=clean(b?.admin_token,500);
+      if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
+      if(b?.confirm_all!==true) return out(req,{ok:false,error:"Explicit confirmation is required for an all-members broadcast"},400);
+
+      const title=clean(b?.title,160);
+      const body=clean(b?.body,2000);
+      const type=clean(b?.type,30)||"general";
+      const link=clean(b?.link,500);
+      if(!title || !body) return out(req,{ok:false,error:"Notice title and message are required"},400);
+      if(link){
+        try{
+          const parsedLink=new URL(link);
+          if(parsedLink.protocol!=="https:" && parsedLink.protocol!=="http:") return out(req,{ok:false,error:"The notice link must be an HTTP or HTTPS URL"},400);
+        }catch{
+          return out(req,{ok:false,error:"Please enter a valid notice URL"},400);
+        }
+      }
+
+      const key=Deno.env.get("RESEND_API_KEY") ?? "";
+      const from=Deno.env.get("RESEND_FROM_EMAIL") ?? "";
+      if(!key || !from) return out(req,{ok:false,error:"Resend email is not configured"},503);
+
+      const {data:memberRows,error:memberError}=await db.from("members")
+        .select("id,name,email,role_number,status,approved,duplicate_of")
+        .eq("status","approved")
+        .eq("approved",true)
+        .is("duplicate_of",null)
+        .order("name",{ascending:true});
+      if(memberError) return out(req,{ok:false,error:"Could not load the approved-member list"},500);
+      const recipients=memberRows||[];
+      if(!recipients.length) return out(req,{ok:false,error:"There are no approved members to email"},409);
+      if(recipients.length>500) return out(req,{ok:false,error:"Broadcast safety limit is 500 approved members per send"},413);
+
+      const batchId=crypto.randomUUID();
+      const subject=clean("YYC Notice: "+title,200);
+      const sentAt=new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+      const meta="Important notice from YYC administration · "+sentAt;
+      const validEmail=(value:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      const emailTargets:any[]=[];
+      const logEntries:any[]=[];
+      const resultsById=new Map<string,any>();
+
+      for(const member of recipients){
+        const email=clean(member.email,320);
+        const name=clean(member.name,120)||"YYC Member";
+        const usable=validEmail(email);
+        if(usable) emailTargets.push({id:String(member.id),name,email,role_number:member.role_number});
+        else resultsById.set(String(member.id),{status:"skipped",reason:"No valid email address on record"});
+        logEntries.push({
+          batch_id:batchId,
+          recipient_kind:"member",
+          recipient_id:member.id,
+          recipient_name:name,
+          channel:"email",
+          message_type:type,
+          subject,
+          title,
+          body,
+          link:link||null,
+          status:usable?"queued":"skipped",
+          provider:"resend",
+          recipient_address:usable?maskContact(email,"email"):null,
+          error_message:usable?null:"No valid email address on record",
+          metadata:{broadcast:true,audience:"approved_members",batch_id:batchId}
+        });
+      }
+
+      let loggingWarning="";
+      let logged:any[]=[];
+      const {data:logRows,error:logError}=await db.from("admin_message_deliveries")
+        .insert(logEntries).select("id,recipient_id");
+      if(logError) loggingWarning="Could not save every email delivery log";
+      else logged=logRows||[];
+      const logByRecipient=new Map<string,any>(logged.map((row:any)=>[String(row.recipient_id),row]));
+
+      let providerError="";
+      const emailLink=link||"https://www.yuvakesariyouthclub.in/";
+      for(let offset=0;offset<emailTargets.length;offset+=100){
+        const group=emailTargets.slice(offset,offset+100);
+        try{
+          const response=await fetch("https://api.resend.com/emails/batch",{
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json",
+              "Authorization":"Bearer "+key,
+              "Idempotency-Key":batchId+"-"+String(offset)
+            },
+            body:JSON.stringify(group.map((target:any)=>({
+              from,
+              to:[target.email],
+              subject,
+              html:emailHtml(target,subject,"Hello "+target.name+",\n\n"+body,meta,emailLink)
+            })))
+          });
+          const responseText=await response.text();
+          let providerData:any=null;
+          try{providerData=responseText?JSON.parse(responseText):null;}catch{}
+          if(!response.ok){
+            const reason=clean(providerData?.message||providerData?.error?.message||"Email provider rejected the batch",1000);
+            providerError=providerError||reason;
+            for(const target of group) resultsById.set(target.id,{status:"failed",reason});
+            continue;
+          }
+          const returned=Array.isArray(providerData?.data)?providerData.data:[];
+          for(let i=0;i<group.length;i++){
+            const target=group[i];
+            const providerId=clean(returned[i]?.id,200);
+            if(providerId) resultsById.set(target.id,{status:"sent",id:providerId,reason:""});
+            else resultsById.set(target.id,{status:"failed",reason:"Email provider returned no message ID"});
+          }
+        }catch(e){
+          const reason=clean(e instanceof Error?e.message:"Could not reach the email provider",1000);
+          providerError=providerError||reason;
+          for(const target of group) resultsById.set(target.id,{status:"failed",reason});
+        }
+      }
+
+      const updates=emailTargets.map((target:any)=>({target,log:logByRecipient.get(target.id),result:resultsById.get(target.id)||{status:"failed",reason:providerError||"No delivery result"}}));
+      for(let i=0;i<updates.length;i+=25){
+        await Promise.all(updates.slice(i,i+25).map(async(item:any)=>{
+          if(item.log?.id) await finishDelivery(item.log.id,item.result.status,{id:item.result.id||null,reason:item.result.reason||""});
+        }));
+      }
+
+      const sent=Array.from(resultsById.values()).filter((x:any)=>x.status==="sent").length;
+      const failed=Array.from(resultsById.values()).filter((x:any)=>x.status==="failed").length;
+      const skipped=Array.from(resultsById.values()).filter((x:any)=>x.status==="skipped").length;
+      return out(req,{
+        ok:true,
+        event:"member_broadcast",
+        delivery:{
+          audience:"approved_members",
+          batch_id:batchId,
+          total:recipients.length,
+          sent,
+          failed,
+          skipped,
+          provider:"resend-batch",
+          logging_warning:loggingWarning||undefined
+        }
+      });
     }
 
     if(event==="notification"){
