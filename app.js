@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-06';
+var YYC_APP_BUILD='20261010-07';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -819,12 +819,14 @@ function socialHTML(){
   return arr.join('');
 }
 var yycCollectionExpanded={updates:false,events:false,gallery:false};
+var yycGallerySearchQuery='';
 function yycLimitedSectionHTML(key,items,renderer,emptyText,itemClass){
   if(!items || !items.length) return '<div class="empty">'+emptyText+'</div>';
-  var expanded=!!yycCollectionExpanded[key];
+  var searchActive=key==='gallery'&&String(yycGallerySearchQuery||'').trim().length>0;
+  var expanded=!!yycCollectionExpanded[key]||searchActive;
   var visible=expanded ? items : items.slice(0,4);
   var html=visible.map(renderer).join('');
-  if(items.length>4){
+  if(items.length>4&&!searchActive){
     html+='<div class="yyc-read-more-wrap"><button type="button" class="yyc-read-more" data-yyc-more="'+key+'">'+(expanded?'SHOW LESS':'READ MORE')+' <span>'+(expanded?'↑':'→')+'</span></button><small>Showing '+(expanded?items.length:Math.min(4,items.length))+' of '+items.length+(key==='gallery'?' albums':'')+'</small></div>';
   }
   return html;
@@ -867,6 +869,71 @@ function yycFindGalleryPosition(item){
     }
   }
   return null;
+}
+function yycGalleryAlbumMatches(album,query){
+  if(!query)return true;
+  var terms=[album&&album.title,album&&album.album,album&&album.key];
+  (album&&album.items||[]).forEach(function(photo){terms.push(photo&&photo.title,photo&&photo.caption,photo&&photo.album);});
+  return terms.filter(Boolean).join(' ').toLocaleLowerCase().indexOf(query)>=0;
+}
+function yycBindGallerySearchControls(){
+  var input=$('#yycGallerySearch');
+  var clear=$('#yycGallerySearchClear');
+  if(input&&input.getAttribute('data-yyc-bound')!=='1'){
+    input.setAttribute('data-yyc-bound','1');
+    input.addEventListener('input',function(){
+      yycGallerySearchQuery=String(this.value||'');
+      yycRenderGallerySection();
+    });
+    input.value=yycGallerySearchQuery;
+  }
+  if(clear&&clear.getAttribute('data-yyc-bound')!=='1'){
+    clear.setAttribute('data-yyc-bound','1');
+    clear.addEventListener('click',function(){
+      yycGallerySearchQuery='';
+      if(input){input.value='';input.focus();}
+      yycRenderGallerySection();
+    });
+  }
+}
+function yycRenderGallerySection(){
+  var gg=$('#galleryGrid');
+  if(!gg)return;
+  yycBindGallerySearchControls();
+  var allAlbums=yycBuildGalleryAlbums();
+  var query=String(yycGallerySearchQuery||'').trim().toLocaleLowerCase();
+  var albums=query?allAlbums.filter(function(album){return yycGalleryAlbumMatches(album,query);}):allAlbums;
+  var count=$('#yycGalleryResultCount');
+  if(count){
+    count.textContent=query
+      ? albums.length+' MATCH'+(albums.length===1?'':'ES')
+      : allAlbums.length+' ALBUM'+(allAlbums.length===1?'':'S');
+    count.setAttribute('aria-label',query?albums.length+' matching albums':allAlbums.length+' albums');
+  }
+  var clear=$('#yycGallerySearchClear');
+  if(clear)clear.hidden=!query;
+  var emptyText=query
+    ? 'No albums match “'+esc(query)+'”. Try another event or album name.'
+    : 'No gallery items published yet.';
+  gg.innerHTML=yycLimitedSectionHTML('gallery',albums,function(album){
+    var photos=album.items||[];
+    var count=photos.length;
+    var preview=photos.slice(0,4).map(function(photo){
+      var src=photo.src||photo.image_url||'';
+      return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="'+esc(photo.title||album.title)+'" loading="lazy" decoding="async"><span class="yyc-gallery-search-image-label">'+esc(photo.title||album.title||'')+'</span>':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
+    }).join('');
+    var countLabel=count===1?'VIEW PHOTO ↗':count+' PHOTOS ↗';
+    var caption=photos[0]&&photos[0].caption?String(photos[0].caption).replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim():'';
+    var m=yycImageFormatMeta(photos[0]&&photos[0].image_format);
+    return '<figure class="gallery-card yyc-gallery-album-card reveal" role="button" tabindex="0" aria-label="Open '+esc(album.title)+' album, '+count+' photo'+(count===1?'':'s')+'" data-yyc-album="'+esc(album.key)+'" data-yyc-format="'+m.key+'">'+
+      '<div class="gallery-card-media yyc-gallery-album-media" data-yyc-format="'+m.key+'"><div class="yyc-gallery-cover-grid count-'+Math.min(count,4)+'">'+preview+'</div>'+
+      (count>1?'<span class="yyc-gallery-photo-count">'+countLabel+'</span>':'<span class="yyc-gallery-photo-count single">'+countLabel+'</span>')+
+      (count>4?'<span class="yyc-gallery-extra">+'+(count-4)+'</span>':'')+
+      '</div><figcaption><strong>'+esc(album.title)+'</strong>'+
+      (caption?'<small>'+esc(caption)+'</small>':'')+
+      '<span class="yyc-gallery-album-meta">'+count+' PHOTO'+(count===1?'':'S')+' · '+(count>1?'OPEN ALBUM':'OPEN PHOTO')+' <b>↗</b></span></figcaption></figure>';
+  },emptyText,'gallery-card');
+  if(window.YYCObserveReveals)window.YYCObserveReveals(gg);
 }
 function renderPublic(){
   if(!publicData) return;
@@ -923,28 +990,7 @@ function renderPublic(){
     },'No upcoming events published yet.','event-card');
   }
 
-  var gg=$('#galleryGrid');
-  if(gg){
-    var galleryAlbums=yycBuildGalleryAlbums();
-    gg.innerHTML=yycLimitedSectionHTML('gallery',galleryAlbums,function(album){
-      var photos=album.items||[];
-      var count=photos.length;
-      var preview=photos.slice(0,4).map(function(photo){
-        var src=photo.src||photo.image_url||'';
-        return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="'+esc(photo.title||album.title)+'" loading="lazy" decoding="async">':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
-      }).join('');
-      var countLabel=count===1?'VIEW PHOTO ↗':count+' PHOTOS ↗';
-      var caption=photos[0]&&photos[0].caption?String(photos[0].caption).replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim():'';
-      var m=yycImageFormatMeta(photos[0]&&photos[0].image_format);
-      return '<figure class="gallery-card yyc-gallery-album-card reveal" role="button" tabindex="0" aria-label="Open '+esc(album.title)+' album, '+count+' photo'+(count===1?'':'s')+'" data-yyc-album="'+esc(album.key)+'" data-yyc-format="'+m.key+'">'+
-        '<div class="gallery-card-media yyc-gallery-album-media" data-yyc-format="'+m.key+'"><div class="yyc-gallery-cover-grid count-'+Math.min(count,4)+'">'+preview+'</div>'+
-        (count>1?'<span class="yyc-gallery-photo-count">'+countLabel+'</span>':'<span class="yyc-gallery-photo-count single">'+countLabel+'</span>')+
-        (count>4?'<span class="yyc-gallery-extra">+'+(count-4)+'</span>':'')+
-        '</div><figcaption><strong>'+esc(album.title)+'</strong>'+
-        (caption?'<small>'+esc(caption)+'</small>':'')+
-        '<span class="yyc-gallery-album-meta">'+count+' PHOTO'+(count===1?'':'S')+' · '+(count>1?'OPEN ALBUM':'OPEN PHOTO')+' <b>↗</b></span></figcaption></figure>';
-    },'No gallery items published yet.','gallery-card');
-  }
+  yycRenderGallerySection();
   if(window.YYCObserveReveals) window.YYCObserveReveals(document);
   var sg=$('#swagsGrid');
   if(sg){
