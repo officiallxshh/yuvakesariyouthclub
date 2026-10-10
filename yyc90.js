@@ -871,25 +871,32 @@
           var bad=rs.find(function(r){return !r||r.ok===false;});
           if(bad)throw new Error(bad.error||'Unable to save attendance');
 
-          return Promise.all(changes.map(function(x){
-            return window.yycSendExternalAlert({
-              event:'attendance',
-              admin_token:window.adminToken,
-              target_kind:activeKind,
-              target_id:x.id,
-              event_id:eventId,
-              attendance_status:x.status,
-              channels:['email']
-            });
-          }));
-        }).then(function(results){
-          var sent=results.filter(function(result){
-            return !!(result&&result.ok&&result.delivery&&result.delivery.attendance&&result.delivery.attendance.email&&result.delivery.attendance.email.status==='sent');
-          }).length;
-          var failed=results.length-sent;
+          return window.yycSendExternalAlert({
+            event:'attendance_batch',
+            admin_token:window.adminToken,
+            target_kind:activeKind,
+            event_id:eventId,
+            recipients:changes.map(function(x){
+              return {target_id:x.id,attendance_status:x.status};
+            }),
+            channels:['email']
+          });
+        }).then(function(batchResult){
           var who=activeKind==='leader'?'leader':'member';
-          if(failed) toast90('Attendance saved · '+sent+'/'+results.length+' '+who+' emails sent');
-          else toast90('Attendance saved · '+sent+' '+who+' attendance emails sent ✓');
+          if(!batchResult||!batchResult.ok){
+            toast90('Attendance saved · '+who+' email batch could not be sent');
+          }else{
+            var delivery=batchResult.delivery||{};
+            var total=Number(delivery.total)||changes.length;
+            var sent=Number(delivery.sent)||0;
+            var failed=Number(delivery.failed)||0;
+            var skipped=Number(delivery.skipped)||0;
+            var message='Attendance saved · '+sent+'/'+total+' '+who+' emails accepted by provider';
+            if(failed) message+=' · '+failed+' failed';
+            if(skipped) message+=' · '+skipped+' skipped';
+            if(sent===total&&!failed&&!skipped) message+=' ✓';
+            toast90(message);
+          }
           return admin90Data(true);
         }).then(function(){
           renderCustomAdminTab90('attendance');
