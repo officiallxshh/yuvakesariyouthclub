@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-02';
+var YYC_APP_BUILD='20261010-03';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -3333,45 +3333,163 @@ function adminUpdateForm(id){
 function adminGalleryForm(id){
   var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:'GENERAL',publish_at:'',sort_order:0};
   var obj={photo:existing.src||''};
+  var batchPhotos=[];
+  var maxBatchPhotos=20;
+  function renderGalleryBatchSlots(count){
+    var host=$('#agBatchPhotos');
+    if(!host)return;
+    count=Math.max(1,Math.min(maxBatchPhotos,Math.floor(Number(count)||1)));
+    batchPhotos=new Array(count).fill('');
+    var markup='';
+    for(var i=0;i<count;i++){
+      var n=String(i+1).padStart(2,'0');
+      markup+='<div class="yyc-gallery-upload-card">'+
+        '<div class="yyc-gallery-upload-card-head"><b>PHOTO '+n+'</b><span>REQUIRED</span></div>'+
+        '<input id="agBatchFile'+i+'" type="file" accept="image/jpeg,image/png,image/webp" required aria-label="Choose gallery photo '+(i+1)+'">'+
+        '<div class="yyc-gallery-upload-preview"><img id="agBatchPreview'+i+'" alt="Photo '+(i+1)+' preview" hidden><span id="agBatchPreviewHint'+i+'">Preview appears here</span></div>'+
+      '</div>';
+    }
+    host.innerHTML=markup;
+    for(var j=0;j<count;j++){
+      (function(index){
+        var input=$('#agBatchFile'+index);
+        if(!input)return;
+        input.addEventListener('change',async function(){
+          var file=this.files&&this.files[0];
+          batchPhotos[index]='';
+          if(!file)return;
+          try{
+            var data=await readFile(file,2400);
+            if(!data)throw new Error('Could not read image');
+            batchPhotos[index]=data;
+            var preview=$('#agBatchPreview'+index);
+            var hint=$('#agBatchPreviewHint'+index);
+            if(preview){preview.src=data;preview.hidden=false;}
+            if(hint){hint.textContent=file.name||'Photo ready';hint.classList.add('ready');}
+          }catch(err){
+            this.value='';
+            toast(err.message||'Could not read image');
+          }
+        });
+      })(j);
+    }
+  }
+  var newPhotoUpload=
+    '<div class="field full"><label>Number of photos <span class="field-note">(1–20 per batch)</span></label><input id="agPhotoCount" type="number" min="1" max="20" step="1" value="3" required><small class="field-help">Choose the number first. YYC will create that many upload slots for this event. Changing the number resets the selected files.</small></div>'+
+    '<div class="field full"><label>Upload photos</label><div class="yyc-gallery-upload-grid" id="agBatchPhotos"></div></div>';
+  var onePhotoUpload=
+    '<div class="field full"><label>Replace photo</label><input id="agFile" type="file" accept="image/jpeg,image/png,image/webp"><small class="field-help">Leave empty while editing to keep the current photo.</small></div>';
   openModal(
     '<div class="modal-kicker">ADMIN · GALLERY</div>'+
     '<div class="admin-form-top"><button type="button" class="mini-btn" id="adminGalleryAdminBack">← BACK TO ADMIN</button></div>'+
-    '<h2 class="modal-title">'+(id?'Edit':'Publish')+' Gallery Photo</h2>'+
-    '<p class="modal-sub">Manage the image, album, visibility and public presentation.</p>'+
+    '<h2 class="modal-title">'+(id?'Edit Gallery Photo':'Add Event Photos')+'</h2>'+
+    '<p class="modal-sub">'+(id?'Update this photo’s caption, album, visibility or display settings.':'Choose how many event photos to upload. All photos will share one album and can be published together.')+'</p>'+
     '<form id="adminGalleryForm">'+
       '<div class="form-grid">'+
-        '<div class="field"><label>Caption / title</label><input id="agTitle" value="'+esc(existing.title)+'" required></div>'+
-        '<div class="field"><label>Album</label><input id="agAlbum" value="'+esc(existing.album||'GENERAL')+'" placeholder="EVENTS / SPORTS / CULTURE"></div>'+
+        '<div class="field"><label>'+(id?'Caption / title':'Event / gallery title')+'</label><input id="agTitle" maxlength="180" value="'+esc(existing.title||'')+'" placeholder="e.g. Swachatha Abhiyaan" required></div>'+
+        '<div class="field"><label>Album</label><input id="agAlbum" maxlength="120" value="'+esc(id?(existing.album||'GENERAL'):'')+'" placeholder="Defaults to the event title"></div>'+
         '<div class="field"><label>Status</label><select id="agStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
         '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="agPublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"></div>'+
         '<div class="field"><label>Display order</label><input id="agSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
-        '<div class="field"><label class="yyc-check-field"><input id="agFeatured" type="checkbox" '+(existing.featured?'checked':'')+'> <span>FEATURED PHOTO</span></label></div>'+
+        '<div class="field"><label class="yyc-check-field"><input id="agFeatured" type="checkbox" '+(existing.featured?'checked':'')+'> <span>FEATURED PHOTO</span></label><small class="field-help">'+(id?'Mark this photo as featured.':'If checked, the first photo in this batch is featured.')+'</small></div>'+
         '<div class="field"><label>Display format</label><select id="agFormat">'+yycImageFormatOptions(existing.image_format)+'</select></div>'+
-        '<div class="field full"><label>Photo</label><input id="agFile" type="file" accept="image/*"><small class="field-help">Leave empty while editing to keep the current photo.</small></div>'+
-        '<div class="field full"><label>Caption <span class="field-note">(optional)</span></label><textarea id="agCaption">'+esc(existing.caption||'')+'</textarea></div>'+
+        (id?onePhotoUpload:newPhotoUpload)+
+        '<div class="field full"><label>Shared caption <span class="field-note">(optional · numbered per photo)</span></label><textarea id="agCaption" maxlength="1000" placeholder="A short caption for this event photo set">'+esc(existing.caption||'')+'</textarea></div>'+
       '</div>'+
-      '<div class="crop-preview yyc-simple-preview yyc-admin-media-preview" id="agPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div>'+
-      '<div class="form-actions"><button type="submit" class="btn gold">'+(id?'SAVE CHANGES':'SAVE PHOTO')+'</button></div></form>'
+      (id?'<div class="crop-preview yyc-simple-preview yyc-admin-media-preview" id="agPreviewFrame" data-yyc-format="'+yycImageFormatMeta(existing.image_format).key+'"><img id="agPrev" src="'+esc(obj.photo||'assets/yyc-logo-clean.webp')+'" alt="preview"></div>':'')+
+      '<div class="form-actions"><button type="submit" class="btn gold" id="agSubmitBtn">'+(id?'SAVE CHANGES':'UPLOAD EVENT PHOTOS')+' <span>✓</span></button></div>'+
+      '<div class="notice" style="margin-top:12px">Each image becomes its own gallery item in the same album. Up to 20 photos can be added per batch.</div>'+
+    '</form>'
   );
   $('#adminGalleryAdminBack').addEventListener('click',function(){closeModal();adminPanel('overview');});
   $('#agStatus').value=existing.status||'published';
-  yycApplyMediaPreview('#agPreviewFrame',$('#agFormat').value);
-  $('#agFormat').addEventListener('change',function(){yycApplyMediaPreview('#agPreviewFrame',this.value);});
-  $('#agFile').addEventListener('change',async function(){try{var file=this.files&&this.files[0];if(!file)return;obj.photo=await readFile(file,2400);if(obj.photo)$('#agPrev').src=obj.photo;}catch(err){toast('Could not read image');}});
+  if(id)yycApplyMediaPreview('#agPreviewFrame',$('#agFormat').value);
+  $('#agFormat').addEventListener('change',function(){if(id)yycApplyMediaPreview('#agPreviewFrame',this.value);});
+  if(id){
+    $('#agFile').addEventListener('change',async function(){
+      try{
+        var file=this.files&&this.files[0];
+        if(!file)return;
+        obj.photo=await readFile(file,2400);
+        if(obj.photo)$('#agPrev').src=obj.photo;
+      }catch(err){toast('Could not read image');}
+    });
+  }else{
+    $('#agPhotoCount').addEventListener('change',function(){
+      var count=Number(this.value);
+      if(!Number.isInteger(count)||count<1||count>maxBatchPhotos){
+        toast('Choose between 1 and '+maxBatchPhotos+' photos');
+        this.value='3';
+        count=3;
+      }
+      this.value=String(count);
+      renderGalleryBatchSlots(count);
+    });
+    renderGalleryBatchSlots(3);
+  }
   $('#adminGalleryForm').addEventListener('submit',async function(e){
-    e.preventDefault();var btn=this.querySelector('button[type="submit"]');
+    e.preventDefault();
+    var btn=this.querySelector('button[type="submit"]');
+    var savedBatchCount=0;
     try{
-      if(!obj.photo) throw new Error('Photo is required');
-      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
-      var photo=String(obj.photo).startsWith('data:image/')?await uploadYYCImage(obj.photo,'gallery',adminToken,id||'',existing.src||''):obj.photo;
-      var r=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id||null,p_payload:{
-        title:$('#agTitle').value.trim(),src:photo,caption:$('#agCaption').value.trim(),image_format:$('#agFormat').value,
-        status:$('#agStatus').value,featured:$('#agFeatured').checked,album:$('#agAlbum').value.trim(),
-        publish_at:yycPublishAtIso($('#agPublishAt').value),sort_order:Number($('#agSort').value||0)
+      var title=$('#agTitle').value.trim();
+      var caption=$('#agCaption').value.trim();
+      var album=$('#agAlbum').value.trim()||title||'GENERAL';
+      var status=$('#agStatus').value;
+      var imageFormat=$('#agFormat').value;
+      var publishAt=yycPublishAtIso($('#agPublishAt').value);
+      var sortBase=Number($('#agSort').value||0);
+      if(!title)throw new Error('Event / gallery title is required');
+      if(btn){
+        btn.disabled=true;
+        btn.dataset.originalText=btn.textContent;
+      }
+      if(!id){
+        var count=Number($('#agPhotoCount').value);
+        if(!Number.isInteger(count)||count<1||count>maxBatchPhotos)throw new Error('Choose between 1 and '+maxBatchPhotos+' photos');
+        if(batchPhotos.length!==count||batchPhotos.some(function(photo){return !photo;}))throw new Error('Please choose an image for all '+count+' photo slots');
+        for(var i=0;i<count;i++){
+          if(btn)btn.textContent='UPLOADING PHOTO '+(i+1)+' OF '+count+'…';
+          var photo=await uploadYYCImage(batchPhotos[i],'gallery',adminToken,'','');
+          var suffix=String(i+1).padStart(2,'0');
+          var itemTitle=title+' · Photo '+suffix;
+          var itemCaption=caption?(count>1?caption+' · '+suffix:caption):'';
+          var result=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:null,p_payload:{
+            title:itemTitle,src:photo,caption:itemCaption,image_format:imageFormat,
+            status:status,featured:$('#agFeatured').checked&&i===0,album:album,
+            publish_at:publishAt,sort_order:sortBase+i
+          }});
+          if(!result||!result.ok)throw new Error('Photo '+(i+1)+' could not be saved: '+(result&&result.error||'Unknown save error'));
+          savedBatchCount++;
+        }
+        closeModal();
+        toast(savedBatchCount+' photos added to '+album);
+        adminPanel('gallery',true);
+        return;
+      }
+      var image=obj.photo||'';
+      if(String(image).startsWith('data:image/')){
+        if(btn)btn.textContent='UPLOADING PHOTO…';
+        image=await uploadYYCImage(image,'gallery',adminToken,id||'',existing.src||'');
+      }
+      var result=await rpc('admin_upsert_gallery',{p_token:adminToken,p_id:id||null,p_payload:{
+        title:title,src:image,caption:caption,image_format:imageFormat,
+        status:status,featured:$('#agFeatured').checked,album:album,
+        publish_at:publishAt,sort_order:sortBase
       }});
-      if(!r.ok) throw new Error(r.error||'Failed');
-      closeModal();toast($('#agStatus').value==='draft'?'Gallery item saved as draft':'Gallery photo saved');adminPanel('gallery',true);
-    }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE PHOTO';}toast(err.message);}
+      if(!result||!result.ok)throw new Error(result&&result.error||'Failed');
+      closeModal();
+      toast(status==='draft'?'Gallery item saved as draft':'Gallery photo saved');
+      adminPanel('gallery',true);
+    }catch(err){
+      var message=err&&err.message?err.message:'Could not save gallery photos';
+      if(!id&&savedBatchCount)message='Saved '+savedBatchCount+' photo(s) before the next item failed. Check the gallery before retrying to avoid duplicates. '+message;
+      if(btn){
+        btn.disabled=false;
+        btn.textContent=btn.dataset.originalText||'UPLOAD EVENT PHOTOS ✓';
+      }
+      toast(message);
+    }
   });
 }
 function adminSwagForm(id){
