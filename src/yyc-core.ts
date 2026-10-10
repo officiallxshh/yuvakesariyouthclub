@@ -1,6 +1,7 @@
 /* YYC typed core — additive, browser-safe utilities for critical data flows. */
 
 interface YYCMemberRecord {
+  id?: unknown;
   name?: unknown;
   position?: unknown;
   role?: unknown;
@@ -86,11 +87,14 @@ declare global {
   ): YYCIdCardPayload => {
     const member = normalizeMember(input);
     const roleNumber = normalizeRoleNumber(member.role_number);
+    // A member's displayed roll number may change after another member is removed.
+    // Use the stable member UUID in its QR; leaders keep their existing role-number QR.
+    const verifyIdentity = kind === "leader" ? roleNumber : text(member.id, roleNumber);
     return {
       member,
       kind,
       roleNumber,
-      verifyUrl: buildVerifyUrl(roleNumber, baseUrl),
+      verifyUrl: buildVerifyUrl(verifyIdentity, baseUrl),
       photoUrl: getPhotoUrl(member)
     };
   };
