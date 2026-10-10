@@ -111,3 +111,84 @@
 .yyc-message-form #anWhatsappChoice[hidden]{
   display:none!important;
 }
+
+
+/* Multi-photo gallery upload inside the admin editor. */
+.yyc-gallery-upload-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  width:100%;
+}
+.yyc-gallery-upload-card{
+  min-width:0;
+  padding:11px;
+  border:1px solid rgba(239,195,106,.16);
+  border-radius:14px;
+  background:rgba(255,255,255,.025);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.yyc-gallery-upload-card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.yyc-gallery-upload-card-head b{
+  color:#e7d3a4;
+  font-size:9px;
+  letter-spacing:.13em;
+}
+.yyc-gallery-upload-card-head span{
+  color:#7e8c85;
+  font-size:8px;
+  letter-spacing:.08em;
+}
+.yyc-gallery-upload-card input[type=file]{
+  display:block;
+  width:100%;
+  max-width:100%;
+  font-size:10px;
+  color:#a7afab;
+}
+.yyc-gallery-upload-preview{
+  position:relative;
+  display:grid;
+  place-items:center;
+  aspect-ratio:4/3;
+  min-height:84px;
+  overflow:hidden;
+  border:1px dashed rgba(239,195,106,.2);
+  border-radius:10px;
+  background:#080d11;
+  color:#65716c;
+  font-size:9px;
+  text-align:center;
+}
+.yyc-gallery-upload-preview img{
+  display:block;
+  width:100%;
+  height:100%;
+  position:absolute;
+  inset:0;
+  object-fit:cover;
+}
+.yyc-gallery-upload-preview img[hidden]{display:none}
+.yyc-gallery-upload-preview span{
+  padding:8px;
+  overflow-wrap:anywhere;
+}
+.yyc-gallery-upload-preview span.ready{color:#95cba5}
+@media(max-width:760px){
+  .yyc-gallery-upload-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .yyc-gallery-upload-card{padding:9px}
+}
+@media(max-width:430px){
+  .yyc-gallery-upload-grid{grid-template-columns:1fr}
+  .yyc-gallery-upload-card{display:grid;grid-template-columns:minmax(0,1fr) 112px;align-items:start}
+  .yyc-gallery-upload-card-head{grid-column:1/-1}
+  .yyc-gallery-upload-card input[type=file]{grid-column:1;grid-row:2}
+  .yyc-gallery-upload-preview{grid-column:2;grid-row:2;aspect-ratio:1/1;min-height:0}
+}
