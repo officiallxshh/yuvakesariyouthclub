@@ -920,7 +920,7 @@ function yycRenderGallerySection(){
     var count=photos.length;
     var preview=photos.slice(0,4).map(function(photo){
       var src=photo.src||photo.image_url||'';
-      return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="'+esc(photo.title||album.title)+'" loading="lazy" decoding="async"><span class="yyc-gallery-search-image-label">'+esc(photo.title||album.title||'')+'</span>':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
+      return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="'+esc(photo.title||album.title)+'" loading="lazy" decoding="async">':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
     }).join('');
     var countLabel=count===1?'VIEW PHOTO ↗':count+' PHOTOS ↗';
     var caption=photos[0]&&photos[0].caption?String(photos[0].caption).replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim():'';
@@ -933,6 +933,14 @@ function yycRenderGallerySection(){
       (caption?'<small>'+esc(caption)+'</small>':'')+
       '<span class="yyc-gallery-album-meta">'+count+' PHOTO'+(count===1?'':'S')+' · '+(count>1?'OPEN ALBUM':'OPEN PHOTO')+' <b>↗</b></span></figcaption></figure>';
   },emptyText,'gallery-card');
+  var galleryMore=gg.querySelector('.yyc-read-more[data-yyc-more="gallery"]');
+  if(galleryMore){
+    galleryMore.addEventListener('click',function(){
+      yycCollectionExpanded.gallery=!yycCollectionExpanded.gallery;
+      yycRenderGallerySection();
+      gg.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  }
   if(window.YYCObserveReveals)window.YYCObserveReveals(gg);
 }
 function renderPublic(){
@@ -1011,7 +1019,7 @@ function renderPublic(){
         '<div class="swag-actions">'+cta+'</div></div></article>';
     },'Swag collection coming soon.','swag-card');
   }
-  document.querySelectorAll('.yyc-read-more').forEach(function(btn){
+  document.querySelectorAll('.yyc-read-more:not([data-yyc-more="gallery"])').forEach(function(btn){
     btn.addEventListener('click',function(){
       var key=this.getAttribute('data-yyc-more');
       if(!key) return;
@@ -1193,7 +1201,10 @@ function yycDecoratePublicCards(){
   }
   decorate('#eventsGrid',publicData.events||[],'.event-card');
   decorate('#updatesGrid',publicData.updates||[],'.update-card');
-  decorate('#galleryGrid',yycBuildGalleryAlbums(),'.gallery-card');
+  var visibleGalleryAlbums=yycBuildGalleryAlbums();
+  var galleryQuery=String(yycGallerySearchQuery||'').trim().toLocaleLowerCase();
+  if(galleryQuery)visibleGalleryAlbums=visibleGalleryAlbums.filter(function(album){return yycGalleryAlbumMatches(album,galleryQuery);});
+  decorate('#galleryGrid',visibleGalleryAlbums,'.gallery-card');
 }
 function yycInstallPublicContentChrome(){
   if(window.__yycPublicContentChrome) return;
