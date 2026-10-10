@@ -4542,7 +4542,7 @@ body.yyc-low-data .hero-photo{
 .yyc-dashboard-refresh span{font-size:8px;font-weight:850;letter-spacing:.12em}
 .yyc-dashboard-refresh:hover{background:rgba(226,191,114,.15);border-color:rgba(226,191,114,.6);transform:translateY(-1px)}
 .yyc-dashboard-refresh:disabled{opacity:.65;cursor:wait;transform:none}
-.yyc-member-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.yyc-member-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .yyc-member-stat{min-width:0;display:flex;align-items:center;gap:11px;padding:14px 13px;border:1px solid rgba(255,255,255,.075);border-radius:15px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
 .yyc-member-stat-icon{flex:0 0 33px;display:grid;place-items:center;width:33px;height:33px;border-radius:11px;border:1px solid rgba(222,190,119,.22);background:rgba(222,190,119,.08);color:#e5c777;font-size:16px}
 .yyc-member-stat>div{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
@@ -4588,7 +4588,7 @@ body.yyc-low-data .hero-photo{
  .yyc-member-overview-head p{max-width:270px}
  .yyc-dashboard-refresh{padding:0 9px;min-height:31px}
  .yyc-dashboard-refresh span{font-size:7px}
- .yyc-member-stats{gap:7px}
+ .yyc-member-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
  .yyc-member-stat{gap:7px;padding:10px 8px;border-radius:12px}
  .yyc-member-stat-icon{flex-basis:26px;width:26px;height:26px;border-radius:8px;font-size:12px}
  .yyc-member-stat small{font-size:6px;letter-spacing:.08em}
@@ -4607,3 +4607,9 @@ body.yyc-low-data .hero-photo{
  .yyc-member-overview-head h3{font-size:19px}
  .yyc-dash-activity-row time{max-width:35%;font-size:7px}
 }
+
+.yyc-attendance-progress{display:block!important;align-self:stretch;width:100%;height:4px;margin-top:4px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.09)}
+.yyc-attendance-progress i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a77b2d,#f0d78f);box-shadow:0 0 10px rgba(226,191,114,.24);transition:width .45s ease}
+.yyc-attendance-percentage-stat .yyc-member-stat-icon{font-size:14px}
+@media(max-width:640px){.yyc-member-stat b#yycDashPercent{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.yyc-attendance-progress i{transition:none}}
