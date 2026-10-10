@@ -942,6 +942,7 @@ function yycRenderGallerySection(){
     });
   }
   if(window.YYCObserveReveals)window.YYCObserveReveals(gg);
+  if(typeof yycDecoratePublicCards==='function')yycDecoratePublicCards();
 }
 function renderPublic(){
   if(!publicData) return;
