@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-04';
+var YYC_APP_BUILD='20261010-05';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -20,17 +20,17 @@ function yycSafeSet(store,key,value){
 function yycSafeRemove(store,key){
   try{store.removeItem(key);}catch(e){}
 }
-/* Keep the admin bearer token tab-scoped. Migrate the existing tab's token once
-   so a code refresh does not unexpectedly log out an administrator. */
-var adminToken = yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+/* Keep the administrator signed in across refreshes and browser restarts.
+   The server token stays valid until the explicit Logout action revokes it. */
+var adminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
 if(!adminToken){
-  var legacyAdminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
-  if(legacyAdminToken){
-    adminToken = legacyAdminToken;
-    yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,legacyAdminToken);
-    yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);
+  var tabAdminToken = yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+  if(tabAdminToken){
+    adminToken=tabAdminToken;
+    yycSafeSet(localStorage,ADMIN_TOKEN_KEY,tabAdminToken);
   }
 }
+yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);
 var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
 var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
@@ -2315,7 +2315,7 @@ function adminLogin(){
       var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid credentials');
       setLoginStatus('adminLoginForm','Login successful. Opening admin control center…',false);
-      adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); yycSafeRemove(localStorage,ADMIN_TOKEN_KEY); adminData=null; closeModal(); adminPanel();
+      adminToken=r.token; yycSafeSet(localStorage,ADMIN_TOKEN_KEY,adminToken); yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
       setLoginStatus('adminLoginForm',err.message,true);
@@ -2325,7 +2325,7 @@ function adminLogin(){
 }
 
 function getAdmin(force){
-  if(!adminToken) adminToken=yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+  if(!adminToken) adminToken=yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
   if(!adminToken){adminLogin();return null;}
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
