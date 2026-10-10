@@ -1293,17 +1293,19 @@ function yycInstallPublicContentChrome(){
     if(galleryCard&&!galleryCard.closest('#modalContent')){
       var cardsG=Array.prototype.slice.call(document.querySelectorAll('#galleryGrid .gallery-card'));
       var idxG=cardsG.indexOf(galleryCard);
-      if(idxG>=0){e.preventDefault();yycOpenGalleryLightbox(idxG,0);}
+      if(idxG>=0){
+        e.preventDefault();
+        var albumPosition=yycFindGalleryPosition({key:galleryCard.getAttribute('data-yyc-album')});
+        if(albumPosition)yycOpenGalleryLightbox(albumPosition.albumIndex,0);
+      }
     }
   });
   document.addEventListener('keydown',function(e){
     var focusedAlbum=e.target&&e.target.closest?e.target.closest('#galleryGrid .yyc-gallery-album-card'):null;
     if(focusedAlbum&&(e.key==='Enter'||e.key===' ')){
       e.preventDefault();
-      var publicAlbums=yycBuildGalleryAlbums();
-      var albumCards=Array.prototype.slice.call(document.querySelectorAll('#galleryGrid .yyc-gallery-album-card'));
-      var albumIndex=albumCards.indexOf(focusedAlbum);
-      if(albumIndex>=0)yycOpenGalleryLightbox(albumIndex,0);
+      var albumPosition=yycFindGalleryPosition({key:focusedAlbum.getAttribute('data-yyc-album')});
+      if(albumPosition)yycOpenGalleryLightbox(albumPosition.albumIndex,0);
       return;
     }
     if(!document.querySelector('#modal.open .yyc-lightbox')) return;
