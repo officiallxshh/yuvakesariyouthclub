@@ -1710,7 +1710,7 @@ function yycDigitalCard(data,kind){
   var photo=cardContract?cardContract.photoUrl:(data.photo_url||'assets/yyc-logo-clean.webp');
   var name=data.name||'YYC Member';
   var position=leader?(data.role||'LEADER'):(data.position||'MEMBER');
-  var verify=cardContract?cardContract.verifyUrl:yycVerifyUrl(roleNumber);
+  var verify=cardContract?cardContract.verifyUrl:yycVerifyUrl(!leader&&data.id?data.id:roleNumber);
   var qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(verify);
   var dob=data.dob||'—';
   return '<div class="yyc-digital-card-wrap">'+
@@ -3974,7 +3974,7 @@ function bindAdminActionDelegation(){
     var removeMember=target.closest('[data-remove]');
     if(removeMember){
       e.preventDefault();e.stopImmediatePropagation();
-      if(confirm('Remove this member?')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed');
+      if(confirm('Remove this member? All remaining approved member roll numbers will be reordered automatically.')) adminAction('admin_member_action',{p_member_id:removeMember.getAttribute('data-remove'),p_action:'remove'},'Member removed · active roll numbers reordered');
       return;
     }
 
