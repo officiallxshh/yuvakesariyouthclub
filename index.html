@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080b">
-<meta name="yyc-build" content="20261010-06-gallery-albums">
+<meta name="yyc-build" content="20261010-07-gallery-search">
 <meta name="google-site-verification" content="A7_j3T1Poi_JpcKv3-eg6U2ZRS1CZXXmQuxd6IHSnLE">
 <meta name="description" content="Official website of Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka — youth service, community initiatives, Tulunadu culture, sports, events, updates and membership.">
 <meta name="author" content="Yuvakesari Youth Club">
@@ -83,7 +83,7 @@
 <link rel="shortcut icon" type="image/png" href="./favicon.png">
 <link rel="apple-touch-icon" href="./favicon.png">
 <link rel="preload" as="image" href="./assets/hero-tulunad.webp" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20261010-06">
+<link rel="stylesheet" href="styles.css?v=20261010-07">
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20261008-01">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-04">
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20261003-02">
@@ -228,6 +228,14 @@
 <section class="section type-gallery" id="gallery">
   <div class="section-kicker">06 / GALLERY</div>
   <div class="section-head tight reveal"><div><h2>Moments that move us.</h2><p>Community photos, programmes and youth activities.</p></div><button class="link-btn" id="submitGalleryBtn">Submit gallery item +</button></div>
+  <div class="yyc-gallery-toolbar" id="yycGalleryToolbar">
+    <label class="yyc-gallery-search" for="yycGallerySearch">
+      <span class="yyc-gallery-search-icon" aria-hidden="true">⌕</span>
+      <input type="search" id="yycGallerySearch" placeholder="Find an event or album..." autocomplete="off" aria-controls="galleryGrid">
+      <button type="button" class="yyc-gallery-search-clear" id="yycGallerySearchClear" aria-label="Clear gallery search" hidden>CLEAR ×</button>
+    </label>
+    <div class="yyc-gallery-search-meta"><span class="yyc-gallery-result-count" id="yycGalleryResultCount" aria-live="polite">ALBUMS</span><span class="yyc-gallery-search-hint">Search event names or captions</span></div>
+  </div>
   <div class="gallery-grid" id="galleryGrid">
     <figure class="gallery-card reveal visible"><div class="gallery-card-media"><img src="./assets/dharma-daiva.webp" alt="Dharma Daiva" loading="lazy"></div><figcaption>Dharma Daiva · Tulunadu</figcaption></figure>
     <figure class="gallery-card reveal visible"><div class="gallery-card-media"><img src="./assets/aati-kalenja.webp" alt="Aati Kalenja" loading="lazy"></div><figcaption>Aati Kalenja · Tradition</figcaption></figure>
@@ -278,7 +286,7 @@
 })();
 </script>
 <script src="assets/yyc-core.js?v=20261006-02"></script>
-<script src="app.js?v=20261010-06"></script>
+<script src="app.js?v=20261010-07"></script>
 <script src="assets/yyc-smooth-data.js?v=20261008-02"></script>
 <script src="yyc90.js?v=20261010-01"></script>
 <script src="yyc90-final.js?v=20261008-01"></script>
@@ -481,7 +489,7 @@
       /* Always request a fresh app.js copy. This avoids hanging on an already-loaded
          broken/stale script tag from the browser or GitHub Pages cache. */
       var sc=document.createElement('script');
-      sc.src='app.js?v=20261010-06&cachebust='+Date.now();
+      sc.src='app.js?v=20261010-07&cachebust='+Date.now();
       sc.async=false;
       sc.onload=function(){
         if(check()) return;
