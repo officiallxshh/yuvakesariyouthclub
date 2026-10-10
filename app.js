@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-08';
+var YYC_APP_BUILD='20261010-09';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -2170,9 +2170,96 @@ function yycActionCenterHTML(kind,data){
   return '<section class="yyc-action-center admin-action-center"><div class="yyc-action-head"><div><span class="modal-kicker">ACTION CENTER</span><h3>Action required</h3></div><span class="yyc-action-count">'+total+'</span></div><div class="yyc-action-list">'+rows.join('')+'</div></section>';
 }
 
+
+function yycMemberOverviewHTML(){
+  return '<section class="yyc-member-overview" id="yycMemberOverview" aria-labelledby="yycMemberOverviewTitle" aria-busy="true">'+
+    '<div class="yyc-member-overview-head"><div><span class="yyc-member-overview-kicker">MY YYC DASHBOARD</span><h3 id="yycMemberOverviewTitle">Your activity at a glance.</h3><p>Your membership, programmes and personal updates in one place.</p></div><button type="button" class="yyc-dashboard-refresh" id="yycDashboardRefresh" aria-label="Refresh your YYC dashboard">↻ <span>REFRESH</span></button></div>'+
+    '<div class="yyc-member-stats">'+
+      '<article class="yyc-member-stat"><span class="yyc-member-stat-icon">✓</span><div><small>EVENTS ATTENDED</small><b id="yycDashAttended">—</b><span>Attendance recorded</span></div></article>'+
+      '<article class="yyc-member-stat"><span class="yyc-member-stat-icon">◷</span><div><small>UPCOMING EVENTS</small><b id="yycDashUpcoming">—</b><span>Published programmes</span></div></article>'+
+      '<article class="yyc-member-stat"><span class="yyc-member-stat-icon">●</span><div><small>UNREAD UPDATES</small><b id="yycDashUnread">—</b><span>Member notifications</span></div></article>'+
+    '</div>'+
+    '<div class="yyc-member-dash-grid">'+
+      '<section class="yyc-dash-panel"><div class="yyc-dash-panel-head"><div><span>ON THE CALENDAR</span><h4>Upcoming events</h4></div><span class="yyc-dash-panel-count" id="yycDashUpcomingCount">—</span></div><div class="yyc-dash-list" id="yycDashUpcomingList" aria-live="polite"><div class="yyc-dash-empty">Loading your upcoming events…</div></div><button type="button" class="yyc-dash-text-link" id="yycDashboardViewEvents">VIEW ALL EVENTS <span>↗</span></button></section>'+
+      '<section class="yyc-dash-panel"><div class="yyc-dash-panel-head"><div><span>YOUR PARTICIPATION</span><h4>Attendance history</h4></div><span class="yyc-dash-panel-count" id="yycDashAttendanceCount">—</span></div><div class="yyc-dash-list" id="yycDashAttendanceList" aria-live="polite"><div class="yyc-dash-empty">Loading your attendance…</div></div></section>'+
+    '</div>'+
+    '<section class="yyc-dash-panel yyc-dash-activity-panel"><div class="yyc-dash-panel-head"><div><span>RECENT UPDATES</span><h4>Personal activity</h4></div><span class="yyc-dash-panel-count" id="yycDashActivityCount">—</span></div><div class="yyc-dash-activity-list" id="yycDashActivityList" aria-live="polite"><div class="yyc-dash-empty">Loading your recent activity…</div></div></section>'+
+  '</section>';
+}
+function yycDashboardDate(value,withTime){
+  if(!value)return 'Date pending';
+  var d=new Date(value);
+  if(isNaN(d.getTime()))return 'Date pending';
+  var date=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  return withTime?date+' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):date;
+}
+function yycMemberDashboardOverviewRender(result){
+  var summary=result.summary||{};
+  var attended=$('#yycDashAttended'),upcomingCount=$('#yycDashUpcoming'),unread=$('#yycDashUnread');
+  if(attended)attended.textContent=String(Number(summary.events_attended)||0);
+  if(upcomingCount)upcomingCount.textContent=String(Number(summary.upcoming_events)||0);
+  if(unread)unread.textContent=String(Number(summary.unread_notifications)||0);
+  var upcoming=result.upcoming_events||[],history=result.attendance_history||[],activity=result.activity||[];
+  var eCount=$('#yycDashUpcomingCount'),aCount=$('#yycDashAttendanceCount'),activityCount=$('#yycDashActivityCount');
+  if(eCount)eCount.textContent=String(upcoming.length);
+  if(aCount)aCount.textContent=String(history.length);
+  if(activityCount)activityCount.textContent=String(activity.length);
+  var eventHost=$('#yycDashUpcomingList');
+  if(eventHost){
+    eventHost.innerHTML=upcoming.length?upcoming.map(function(ev){
+      var rsvp=String(ev.rsvp_status||'').toLowerCase();
+      var label=rsvp==='attending'?'GOING':rsvp==='maybe'?'MAYBE':rsvp==='not_attending'?'NOT ATTENDING':'NO RSVP';
+      return '<article class="yyc-dash-event"><span class="yyc-dash-row-icon">◷</span><div class="yyc-dash-row-main"><b>'+esc(ev.title||'YYC event')+'</b><small>'+esc(yycDashboardDate(ev.event_date,false))+(ev.location?' · '+esc(ev.location):'')+'</small><span class="yyc-dash-rsvp '+(rsvp?'has-rsvp':'')+'">'+label+'</span></div></article>';
+    }).join(''):'<div class="yyc-dash-empty"><span>◷</span><b>No upcoming events right now.</b><small>New YYC programmes will appear here when published.</small></div>';
+  }
+  var attendanceHost=$('#yycDashAttendanceList');
+  if(attendanceHost){
+    attendanceHost.innerHTML=history.length?history.map(function(item){
+      var present=item.present===true || String(item.present)==='true';
+      return '<article class="yyc-dash-event"><span class="yyc-dash-row-icon">'+(present?'✓':'—')+'</span><div class="yyc-dash-row-main"><b>'+esc(item.event_title||'YYC event')+'</b><small>'+esc(yycDashboardDate(item.event_date||item.marked_at,false))+'</small><span class="yyc-dash-attendance-status '+(present?'present':'absent')+'">'+(present?'PRESENT':'ABSENT')+'</span></div></article>';
+    }).join(''):'<div class="yyc-dash-empty"><span>✓</span><b>Your attendance history will appear here.</b><small>Records show after attendance is marked for a YYC programme.</small></div>';
+  }
+  var activityHost=$('#yycDashActivityList');
+  if(activityHost){
+    activityHost.innerHTML=activity.length?activity.map(function(item){
+      var kind=String(item.kind||'activity').toLowerCase();
+      var icon=kind==='attendance'?'✓':kind==='rsvp'?'◷':kind==='notification'?'●':'•';
+      var meta=kind==='attendance'?'ATTENDANCE':kind==='rsvp'?'EVENT RSVP':'NOTIFICATION';
+      var status=String(item.status||'').toLowerCase().replace(/_/g,' ');
+      return '<article class="yyc-dash-activity-row"><span class="yyc-dash-activity-icon">'+icon+'</span><div class="yyc-dash-row-main"><b>'+esc(item.title||'YYC activity')+'</b>'+(item.description?'<small>'+esc(item.description)+'</small>':'')+'<span class="yyc-dash-activity-meta">'+meta+(status?' · '+esc(status.toUpperCase()):'')+'</span></div><time>'+esc(yycDashboardDate(item.created_at,true))+'</time></article>';
+    }).join(''):'<div class="yyc-dash-empty"><span>✦</span><b>Your YYC journey starts here.</b><small>Event, attendance and notification updates will build your personal activity timeline.</small></div>';
+  }
+}
+async function yycLoadMemberDashboard(){
+  var root=$('#yycMemberOverview');
+  if(!root||!memberToken)return;
+  var token=memberToken,refresh=$('#yycDashboardRefresh');
+  if(refresh){refresh.disabled=true;refresh.innerHTML='↻ <span>LOADING…</span>';}
+  root.setAttribute('aria-busy','true');
+  try{
+    var result=await rpc('member_dashboard_data',{p_token:token},{timeoutMs:15000,retries:1});
+    if(token!==memberToken||!$('#yycMemberOverview'))return;
+    if(!result||!result.ok)throw new Error(result&&result.error||'Could not load your dashboard');
+    yycMemberDashboardOverviewRender(result);
+  }catch(err){
+    if(token!==memberToken||!$('#yycMemberOverview'))return;
+    var message='<div class="yyc-dash-empty"><b>Dashboard could not load.</b><small>Please check your connection and use Refresh to try again.</small></div>';
+    ['yycDashUpcomingList','yycDashAttendanceList','yycDashActivityList'].forEach(function(id){var host=$('#'+id);if(host)host.innerHTML=message;});
+    ['yycDashAttended','yycDashUpcoming','yycDashUnread'].forEach(function(id){var el=$('#'+id);if(el)el.textContent='—';});
+  }finally{
+    if(token===memberToken){
+      var current=$('#yycMemberOverview');
+      if(current)current.setAttribute('aria-busy','false');
+      var currentRefresh=$('#yycDashboardRefresh');
+      if(currentRefresh){currentRefresh.disabled=false;currentRefresh.innerHTML='↻ <span>REFRESH</span>';}
+    }
+  }
+}
+
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
+    (data.__adminView?'':yycMemberOverviewHTML())+
     yycActionCenterHTML('member',data)+
     yycDigitalCard(data,'member')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
@@ -2186,6 +2273,14 @@ function memberDashboard(data){
   var acEvents=$('#yycActionEvents');
   if(acEvents) acEvents.addEventListener('click',function(){closeModal();setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},180);});
 
+  var dashboardRefresh=$('#yycDashboardRefresh');
+  if(dashboardRefresh)dashboardRefresh.addEventListener('click',function(){yycLoadMemberDashboard();});
+  var dashboardEvents=$('#yycDashboardViewEvents');
+  if(dashboardEvents)dashboardEvents.addEventListener('click',function(){
+    closeModal();
+    window.setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},150);
+  });
+  if(!data.__adminView){yycLoadMemberDashboard();yycLoadMemberPortalExtras();}
   bindPortalAccountMenu('member',data);
   var editProfile=$('#memberEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){memberEditSubmission(data);});
   var verify=$('#memberVerifyBtn');
