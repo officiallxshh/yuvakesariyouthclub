@@ -4507,3 +4507,25 @@ body.yyc-low-data .hero-photo{
   .yyc-gallery-thumb{flex-basis:58px;width:58px;height:58px}
   .yyc-album-lightbox .yyc-lightbox-top{align-items:flex-start;gap:10px}
 }
+
+
+/* YYC Gallery instant album search — compact, accessible and responsive. */
+.yyc-gallery-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:18px 0 22px;padding:14px 16px;border:1px solid rgba(237,194,105,.14);border-radius:18px;background:linear-gradient(110deg,rgba(255,255,255,.026),rgba(255,255,255,.008));}
+.yyc-gallery-search{display:flex;align-items:center;gap:11px;min-width:0;width:min(100%,520px);padding:0 12px;border:1px solid rgba(237,194,105,.17);border-radius:12px;background:rgba(4,8,11,.56);transition:border-color .2s ease,box-shadow .2s ease;}
+.yyc-gallery-search:focus-within{border-color:rgba(237,194,105,.55);box-shadow:0 0 0 3px rgba(237,194,105,.055);}
+.yyc-gallery-search-icon{flex:0 0 auto;color:#d8b875;font-size:24px;line-height:1;}
+.yyc-gallery-search input{width:100%;min-width:0;height:44px;padding:0;border:0;outline:0;background:transparent;color:#f1e8d7;font:500 12px/1.4 Inter,sans-serif;}
+.yyc-gallery-search input::placeholder{color:#737b7d;}
+.yyc-gallery-search input::-webkit-search-cancel-button{cursor:pointer;filter:grayscale(1);}
+.yyc-gallery-search-clear{flex:0 0 auto;border:0;background:transparent;color:#e5c47d;padding:8px 3px;font-size:8px;font-weight:800;letter-spacing:.11em;cursor:pointer;}
+.yyc-gallery-search-clear[hidden]{display:none!important;}
+.yyc-gallery-search-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:116px;}
+.yyc-gallery-result-count{color:#efd18e;font-size:9px;font-weight:800;letter-spacing:.16em;}
+.yyc-gallery-search-hint{color:#828b8b;font-size:9px;line-height:1.4;text-align:right;}
+@media(max-width:620px){
+  .yyc-gallery-toolbar{align-items:stretch;flex-direction:column;gap:11px;margin:14px 0 18px;padding:11px;border-radius:15px;}
+  .yyc-gallery-search{width:100%;gap:8px;padding:0 10px;}
+  .yyc-gallery-search input{height:42px;font-size:12px;}
+  .yyc-gallery-search-meta{align-items:flex-start;flex-direction:row;justify-content:space-between;gap:12px;min-width:0;}
+  .yyc-gallery-search-hint{text-align:right;}
+}
