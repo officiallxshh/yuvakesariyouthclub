@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-07';
+var YYC_APP_BUILD='20261010-08';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
