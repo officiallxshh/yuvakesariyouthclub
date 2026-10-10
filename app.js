@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-05';
+var YYC_APP_BUILD='20261010-06';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -275,6 +275,8 @@ function closeModal(){
       window.__yycDeepLinkKey=null;
     }
     window.__yycGalleryIndex=null;
+    window.__yycGalleryPhotoIndex=null;
+    window.__yycGalleryAlbumKey=null;
     window.__yycModalCloseTimer=null;
   },240);
 }
@@ -823,9 +825,48 @@ function yycLimitedSectionHTML(key,items,renderer,emptyText,itemClass){
   var visible=expanded ? items : items.slice(0,4);
   var html=visible.map(renderer).join('');
   if(items.length>4){
-    html+='<div class="yyc-read-more-wrap"><button type="button" class="yyc-read-more" data-yyc-more="'+key+'">'+(expanded?'SHOW LESS':'READ MORE')+' <span>'+(expanded?'↑':'→')+'</span></button><small>Showing '+(expanded?items.length:Math.min(4,items.length))+' of '+items.length+'</small></div>';
+    html+='<div class="yyc-read-more-wrap"><button type="button" class="yyc-read-more" data-yyc-more="'+key+'">'+(expanded?'SHOW LESS':'READ MORE')+' <span>'+(expanded?'↑':'→')+'</span></button><small>Showing '+(expanded?items.length:Math.min(4,items.length))+' of '+items.length+(key==='gallery'?' albums':'')+'</small></div>';
   }
   return html;
+}
+function yycBuildGalleryAlbums(){
+  var source=publicData&&Array.isArray(publicData.gallery)?publicData.gallery:[];
+  var albums=[],byKey=Object.create(null);
+  source.forEach(function(item,index){
+    item=item||{};
+    var rawAlbum=String(item.album||'').trim();
+    var generic=!rawAlbum||/^(general|misc|miscellaneous)$/i.test(rawAlbum);
+    var rawTitle=String(item.title||item.caption||'YYC Gallery').trim();
+    var suffix=rawTitle.match(/^(.*?)\s*[·|–—-]\s*Photo\s*\d+\s*$/i);
+    var cleanTitle=suffix&&suffix[1].trim()?suffix[1].trim():rawTitle;
+    var key=generic?(suffix?'title:'+cleanTitle.toLocaleLowerCase().replace(/\s+/g,' ').trim():'single:'+(item.id||index)):'album:'+rawAlbum.toLocaleLowerCase().replace(/\s+/g,' ').trim();
+    var displayTitle=generic?cleanTitle:rawAlbum;
+    var album=byKey[key];
+    if(!album){
+      album={key:key,title:displayTitle||'YYC Gallery',album:displayTitle||rawAlbum,items:[],featured:false,created_at:item.created_at||null,published_at:item.published_at||null,status:item.status||'published',id:item.id||null,slug:item.slug||null};
+      byKey[key]=album;albums.push(album);
+    }
+    album.items.push(item);
+    album.featured=album.featured||!!item.featured;
+    if(!album.created_at&&item.created_at)album.created_at=item.created_at;
+    if(!album.published_at&&item.published_at)album.published_at=item.published_at;
+  });
+  return albums;
+}
+function yycFindGalleryPosition(item){
+  var albums=yycBuildGalleryAlbums();
+  if(item&&item.key){
+    for(var i=0;i<albums.length;i++)if(albums[i].key===item.key)return {albums:albums,albumIndex:i,photoIndex:0,album:albums[i]};
+  }
+  for(var a=0;a<albums.length;a++){
+    for(var p=0;p<albums[a].items.length;p++){
+      var candidate=albums[a].items[p];
+      if(candidate===item||(item&&candidate.id!=null&&item.id!=null&&String(candidate.id)===String(item.id))||(item&&candidate.slug&&item.slug&&String(candidate.slug)===String(item.slug))){
+        return {albums:albums,albumIndex:a,photoIndex:p,album:albums[a]};
+      }
+    }
+  }
+  return null;
 }
 function renderPublic(){
   if(!publicData) return;
@@ -884,9 +925,24 @@ function renderPublic(){
 
   var gg=$('#galleryGrid');
   if(gg){
-    var gs=publicData.gallery||[];
-    gg.innerHTML=yycLimitedSectionHTML('gallery',gs,function(g){
-      var m=yycImageFormatMeta(g.image_format); return '<figure class="gallery-card reveal" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'><div class="gallery-card-media" data-yyc-format="'+m.key+'"'+(m.ratio==='auto'?'':' style="--yyc-media-ratio:'+m.ratio+'"')+'><img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'" loading="lazy" decoding="async"></div><figcaption>'+esc(g.caption||g.title)+'</figcaption></figure>';
+    var galleryAlbums=yycBuildGalleryAlbums();
+    gg.innerHTML=yycLimitedSectionHTML('gallery',galleryAlbums,function(album){
+      var photos=album.items||[];
+      var count=photos.length;
+      var preview=photos.slice(0,4).map(function(photo){
+        var src=photo.src||photo.image_url||'';
+        return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="'+esc(photo.title||album.title)+'" loading="lazy" decoding="async">':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
+      }).join('');
+      var countLabel=count===1?'VIEW PHOTO ↗':count+' PHOTOS ↗';
+      var caption=photos[0]&&photos[0].caption?String(photos[0].caption).replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim():'';
+      var m=yycImageFormatMeta(photos[0]&&photos[0].image_format);
+      return '<figure class="gallery-card yyc-gallery-album-card reveal" role="button" tabindex="0" aria-label="Open '+esc(album.title)+' album, '+count+' photo'+(count===1?'':'s')+'" data-yyc-album="'+esc(album.key)+'" data-yyc-format="'+m.key+'">'+
+        '<div class="gallery-card-media yyc-gallery-album-media" data-yyc-format="'+m.key+'"><div class="yyc-gallery-cover-grid count-'+Math.min(count,4)+'">'+preview+'</div>'+
+        (count>1?'<span class="yyc-gallery-photo-count">'+countLabel+'</span>':'<span class="yyc-gallery-photo-count single">'+countLabel+'</span>')+
+        (count>4?'<span class="yyc-gallery-extra">+'+(count-4)+'</span>':'')+
+        '</div><figcaption><strong>'+esc(album.title)+'</strong>'+
+        (caption?'<small>'+esc(caption)+'</small>':'')+
+        '<span class="yyc-gallery-album-meta">'+count+' PHOTO'+(count===1?'':'S')+' · '+(count>1?'OPEN ALBUM':'OPEN PHOTO')+' <b>↗</b></span></figcaption></figure>';
     },'No gallery items published yet.','gallery-card');
   }
   if(window.YYCObserveReveals) window.YYCObserveReveals(document);
@@ -1015,28 +1071,48 @@ function yycOpenContentDetail(kind,item){
     history.replaceState(null,'',u.toString());
   }
 }
-function yycOpenGalleryLightbox(index){
-  var items=publicData&&publicData.gallery||[];
-  if(!items.length) return;
-  index=Math.max(0,Math.min(items.length-1,index));
-  window.__yycGalleryIndex=index;
-  var g=items[index]||{};
+function yycOpenGalleryLightbox(albumIndex,photoIndex){
+  var albums=yycBuildGalleryAlbums();
+  if(!albums.length) return;
+  albumIndex=Math.max(0,Math.min(albums.length-1,Number(albumIndex)||0));
+  var album=albums[albumIndex]||{};
+  var photos=album.items||[];
+  if(!photos.length)return;
+  photoIndex=Math.max(0,Math.min(photos.length-1,Number(photoIndex)||0));
+  window.__yycGalleryIndex=albumIndex;
+  window.__yycGalleryPhotoIndex=photoIndex;
+  window.__yycGalleryAlbumKey=album.key;
+  var g=photos[photoIndex]||{};
   var image=g.src||g.image_url||'';
   var shareUrl=yycPublicShareUrl('gallery',g);
+  var caption=String(g.caption||'').replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim();
+  if(!caption)caption=String(g.title||album.title||'').replace(/\s*[·|–—-]\s*Photo\s*\d+\s*$/i,'').trim();
+  var nav=photos.length>1?'<button type="button" class="yyc-lightbox-nav yyc-lightbox-prev" data-yyc-album-nav="prev" aria-label="Previous photo" '+(photoIndex===0?'disabled':'')+'>‹</button><button type="button" class="yyc-lightbox-nav yyc-lightbox-next" data-yyc-album-nav="next" aria-label="Next photo" '+(photoIndex===photos.length-1?'disabled':'')+'>›</button>':'';
+  var thumbs=photos.length>1?'<div class="yyc-gallery-thumb-strip" aria-label="Photos in '+esc(album.title)+'">'+photos.map(function(photo,i){
+    var src=photo.src||photo.image_url||'';
+    return '<button type="button" class="yyc-gallery-thumb '+(i===photoIndex?'active':'')+'" data-yyc-album-photo="'+i+'" aria-label="Show photo '+(i+1)+'" '+(i===photoIndex?'aria-current="true"':'')+'><img src="'+esc(src)+'" alt="" loading="lazy" decoding="async"></button>';
+  }).join('')+'</div>':'';
   openModal(
-    '<div class="yyc-lightbox">'+
-      '<div class="yyc-lightbox-top"><div><span class="yyc-detail-kicker">GALLERY</span><h2 class="modal-title">'+esc(g.title||'YYC Gallery')+'</h2></div><span class="yyc-lightbox-count">'+(index+1)+' / '+items.length+'</span></div>'+
-      '<div class="yyc-lightbox-stage"><button type="button" class="yyc-lightbox-nav yyc-lightbox-prev" data-yyc-lightbox="prev" aria-label="Previous photo">‹</button><img src="'+esc(image)+'" alt="'+esc(g.title||'YYC Gallery photo')+'" loading="eager" decoding="async"><button type="button" class="yyc-lightbox-nav yyc-lightbox-next" data-yyc-lightbox="next" aria-label="Next photo">›</button></div>'+
-      (g.caption?'<p class="yyc-lightbox-caption">'+esc(g.caption)+'</p>':'')+
+    '<div class="yyc-lightbox yyc-album-lightbox">'+
+      '<div class="yyc-lightbox-top"><div><span class="yyc-detail-kicker">YYC GALLERY ALBUM</span><h2 class="modal-title">'+esc(album.title||'YYC Gallery')+'</h2><p class="yyc-album-progress">'+photos.length+' photo'+(photos.length===1?'':'s')+' from the same event</p></div><span class="yyc-lightbox-count">'+(photoIndex+1)+' / '+photos.length+'</span></div>'+
+      '<div class="yyc-lightbox-stage">'+nav+'<img src="'+esc(image)+'" alt="'+esc(g.title||album.title||'YYC Gallery photo')+'" loading="eager" decoding="async">'+ '</div>'+
+      (caption?'<p class="yyc-lightbox-caption">'+esc(caption)+'</p>':'')+
+      thumbs+
       '<div class="yyc-detail-actions"><button type="button" class="btn gold" id="yycLightboxShare">SHARE <span>↗</span></button><button type="button" class="mini-btn" id="yycLightboxCopy">COPY LINK</button></div>'+
     '</div>'
   );
   var share=$('#yycLightboxShare'),copy=$('#yycLightboxCopy');
   if(share) share.addEventListener('click',async function(){
-    try{if(navigator.share) await navigator.share({title:g.title||'YYC Gallery',text:g.caption||'',url:shareUrl});else{await yycCopyText(shareUrl);toast('Share link copied');}}
+    try{if(navigator.share) await navigator.share({title:album.title||g.title||'YYC Gallery',text:caption||'',url:shareUrl});else{await yycCopyText(shareUrl);toast('Share link copied');}}
     catch(e){if(e&&e.name!=='AbortError')toast('Could not share this photo');}
   });
   if(copy) copy.addEventListener('click',async function(){try{await yycCopyText(shareUrl);copy.textContent='COPIED ✓';setTimeout(function(){if(copy)copy.textContent='COPY LINK';},1500);}catch(e){toast('Could not copy link');}});
+  var prev=$('[data-yyc-album-nav="prev"]'),next=$('[data-yyc-album-nav="next"]');
+  if(prev)prev.addEventListener('click',function(){if(photoIndex>0)yycOpenGalleryLightbox(albumIndex,photoIndex-1);});
+  if(next)next.addEventListener('click',function(){if(photoIndex<photos.length-1)yycOpenGalleryLightbox(albumIndex,photoIndex+1);});
+  $$('#modalContent [data-yyc-album-photo]').forEach(function(btn){
+    btn.addEventListener('click',function(){yycOpenGalleryLightbox(albumIndex,Number(btn.getAttribute('data-yyc-album-photo')));});
+  });
   window.__yycDeepLinkKey='gallery';
   if(history.replaceState){var u=new URL(window.location.href);u.search='';u.hash='';if(g.slug)u.searchParams.set('gallery',g.slug);else if(g.id)u.searchParams.set('gallery',g.id);history.replaceState(null,'',u.toString());}
 }
@@ -1071,7 +1147,7 @@ function yycDecoratePublicCards(){
   }
   decorate('#eventsGrid',publicData.events||[],'.event-card');
   decorate('#updatesGrid',publicData.updates||[],'.update-card');
-  decorate('#galleryGrid',publicData.gallery||[],'.gallery-card');
+  decorate('#galleryGrid',yycBuildGalleryAlbums(),'.gallery-card');
 }
 function yycInstallPublicContentChrome(){
   if(window.__yycPublicContentChrome) return;
@@ -1156,16 +1232,29 @@ function yycInstallPublicContentChrome(){
       if(idx>=0 && publicData.updates[idx]){e.preventDefault();yycOpenContentDetail('update',publicData.updates[idx]);}
       return;
     }
-    if(galleryCard){
+    if(galleryCard&&!galleryCard.closest('#modalContent')){
       var cardsG=Array.prototype.slice.call(document.querySelectorAll('#galleryGrid .gallery-card'));
       var idxG=cardsG.indexOf(galleryCard);
-      if(idxG>=0){e.preventDefault();yycOpenGalleryLightbox(idxG);}
+      if(idxG>=0){e.preventDefault();yycOpenGalleryLightbox(idxG,0);}
     }
   });
   document.addEventListener('keydown',function(e){
-    if(!window.__yycGalleryIndex && window.__yycGalleryIndex!==0) return;
-    if(e.key==='ArrowRight'){yycOpenGalleryLightbox(window.__yycGalleryIndex+1);}
-    if(e.key==='ArrowLeft'){yycOpenGalleryLightbox(window.__yycGalleryIndex-1);}
+    var focusedAlbum=e.target&&e.target.closest?e.target.closest('#galleryGrid .yyc-gallery-album-card'):null;
+    if(focusedAlbum&&(e.key==='Enter'||e.key===' ')){
+      e.preventDefault();
+      var publicAlbums=yycBuildGalleryAlbums();
+      var albumCards=Array.prototype.slice.call(document.querySelectorAll('#galleryGrid .yyc-gallery-album-card'));
+      var albumIndex=albumCards.indexOf(focusedAlbum);
+      if(albumIndex>=0)yycOpenGalleryLightbox(albumIndex,0);
+      return;
+    }
+    if(!document.querySelector('#modal.open .yyc-lightbox')) return;
+    var photoIndex=Number(window.__yycGalleryPhotoIndex)||0;
+    var albums=yycBuildGalleryAlbums();
+    var activeAlbum=albums[Number(window.__yycGalleryIndex)]||{};
+    var photos=activeAlbum.items||[];
+    if(e.key==='ArrowRight'&&photoIndex<photos.length-1){e.preventDefault();yycOpenGalleryLightbox(window.__yycGalleryIndex,photoIndex+1);}
+    if(e.key==='ArrowLeft'&&photoIndex>0){e.preventDefault();yycOpenGalleryLightbox(window.__yycGalleryIndex,photoIndex-1);}
   });
 }
 function yycHandlePublicDeepLink(){
@@ -1177,7 +1266,16 @@ function yycHandlePublicDeepLink(){
     var kind=keys[i][1];
     var arr=kind==='event'?publicData.events||[]:kind==='update'?publicData.updates||[]:publicData.gallery||[];
     var found=arr.find(function(x){return String(x.slug||x.id)===String(raw);});
-    if(found){setTimeout(function(k,x){return function(){if(k==='gallery')yycOpenGalleryLightbox(arr.indexOf(x));else yycOpenContentDetail(k,x);};}(kind,found),80);}
+    if(found){
+      setTimeout(function(k,x){
+        return function(){
+          if(k==='gallery'){
+            var position=yycFindGalleryPosition(x);
+            if(position)yycOpenGalleryLightbox(position.albumIndex,position.photoIndex);
+          }else yycOpenContentDetail(k,x);
+        };
+      }(kind,found),80);
+    }
     break;
   }
 }
@@ -1185,7 +1283,11 @@ function yycOpenSearch(){
   var items=[];
   (publicData&&publicData.events||[]).forEach(function(x){items.push({kind:'event',item:x,terms:[x.title,x.description,x.location,x.category]});});
   (publicData&&publicData.updates||[]).forEach(function(x){items.push({kind:'update',item:x,terms:[x.title,x.body,x.category]});});
-  (publicData&&publicData.gallery||[]).forEach(function(x){items.push({kind:'gallery',item:x,terms:[x.title,x.caption,x.album]});});
+  yycBuildGalleryAlbums().forEach(function(album){
+    var terms=[album.title,album.album];
+    (album.items||[]).forEach(function(photo){terms.push(photo.title,photo.caption);});
+    items.push({kind:'gallery',item:album,terms:terms});
+  });
   (publicData&&publicData.leaders||[]).forEach(function(x){items.push({kind:'leader',item:x,terms:[x.name,x.role,x.line]});});
   openModal(
     '<div class="yyc-search-modal"><div class="yyc-detail-kicker">YYC SEARCH</div><h2 class="modal-title">Find something.</h2><p class="modal-sub">Search Events, Updates, Gallery and Leaders.</p>'+
@@ -1210,8 +1312,10 @@ function yycOpenSearch(){
     var x=results.__yycFound[Number(b.getAttribute('data-search-index'))];
     if(!x) return;
     if(x.kind==='leader'){closeModal();var lg=document.querySelector('#leadersGrid');if(lg){var cs=Array.prototype.slice.call(lg.querySelectorAll('.leader-card'));var ix=(publicData.leaders||[]).indexOf(x.item);if(ix>=0&&cs[ix])cs[ix].scrollIntoView({behavior:'smooth',block:'center'});}return;}
-    if(x.kind==='gallery') yycOpenGalleryLightbox((publicData.gallery||[]).indexOf(x.item));
-    else yycOpenContentDetail(x.kind,x.item);
+    if(x.kind==='gallery'){
+      var albumPosition=yycFindGalleryPosition(x.item);
+      if(albumPosition)yycOpenGalleryLightbox(albumPosition.albumIndex,0);
+    }else yycOpenContentDetail(x.kind,x.item);
   });
   setTimeout(function(){input.focus();render('');},30);
 }
