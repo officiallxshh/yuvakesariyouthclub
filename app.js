@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-10';
+var YYC_APP_BUILD='20261010-11';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -2175,8 +2175,8 @@ function yycMemberOverviewHTML(kind){
   var leader=kind==='leader';
   var title=leader?'MY YYC LEADERSHIP DASHBOARD':'MY YYC DASHBOARD';
   var subtitle=leader?'Your attendance record, participation percentage and upcoming programmes.':'Your membership, programmes and personal updates in one place.';
-  var extraLabel=leader?'COMPLETED EVENTS':'UNREAD UPDATES';
-  var extraHelp=leader?'Published past programmes':'Member notifications';
+  var extraLabel=leader?'ATTENDANCE RECORDS':'UNREAD UPDATES';
+  var extraHelp=leader?'Events with an explicit status':'Member notifications';
   return '<section class="yyc-member-overview" id="yycMemberOverview" aria-labelledby="yycMemberOverviewTitle" aria-busy="true">'+
     '<div class="yyc-member-overview-head"><div><span class="yyc-member-overview-kicker">'+title+'</span><h3 id="yycMemberOverviewTitle">'+(leader?'Your leadership at a glance.':'Your activity at a glance.')+'</h3><p>'+subtitle+'</p></div><button type="button" class="yyc-dashboard-refresh" id="yycDashboardRefresh" aria-label="Refresh your YYC dashboard">↻ <span>REFRESH</span></button></div>'+
     '<div class="yyc-member-stats">'+
@@ -2204,7 +2204,7 @@ function yycMemberDashboardOverviewRender(result,kind){
   var leader=kind==='leader';
   var summary=result.summary||{};
   var eventsAttended=Number(summary.events_attended)||0;
-  var completedEvents=Number(summary.completed_events)||0;
+  var recordedEvents=Number(summary.recorded_events)||0;
   var attended=$('#yycDashAttended'),percent=$('#yycDashPercent'),percentMeta=$('#yycDashPercentMeta'),percentBar=$('#yycDashPercentBar');
   var upcomingCount=$('#yycDashUpcoming'),extra=$('#yycDashUnread');
   if(attended)attended.textContent=String(eventsAttended);
@@ -2214,9 +2214,9 @@ function yycMemberDashboardOverviewRender(result,kind){
     percent.textContent=pct===null?'—':(Number.isInteger(pct)?String(pct):pct.toFixed(1))+'%';
     if(percentBar)percentBar.style.width=(pct===null?0:pct)+'%';
   }
-  if(percentMeta)percentMeta.textContent=completedEvents>0?(eventsAttended+' of '+completedEvents+' completed events'):'No completed events yet';
+  if(percentMeta)percentMeta.textContent=recordedEvents>0?(eventsAttended+' of '+recordedEvents+' recorded events'):'No attendance records yet';
   if(upcomingCount)upcomingCount.textContent=String(Number(summary.upcoming_events)||0);
-  if(extra)extra.textContent=String(leader?completedEvents:(Number(summary.unread_notifications)||0));
+  if(extra)extra.textContent=String(leader?recordedEvents:(Number(summary.unread_notifications)||0));
   var upcoming=result.upcoming_events||[];
   var attendedEvents=result.attended_events||[];
   var activity=result.activity||[];
