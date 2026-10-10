@@ -974,11 +974,13 @@ Deno.serve(async(req:Request)=>{
     }
 
 
-    if(event==="member_broadcast"){
+    if(event==="member_broadcast" || event==="leader_broadcast"){
       const adminToken=clean(b?.admin_token,500);
       if(!(await adminOK(adminToken))) return out(req,{ok:false,error:"Unauthorized"},401);
-      if(b?.confirm_all!==true) return out(req,{ok:false,error:"Explicit confirmation is required for an all-members broadcast"},400);
+      if(b?.confirm_all!==true) return out(req,{ok:false,error:"Explicit confirmation is required for a broadcast"},400);
 
+      const targetKind=event==="member_broadcast"?"member":"leader";
+      const audience=targetKind==="member"?"approved_members":"active_leaders";
       const title=clean(b?.title,160);
       const body=clean(b?.body,2000);
       const type=clean(b?.type,30)||"general";
@@ -997,16 +999,25 @@ Deno.serve(async(req:Request)=>{
       const from=Deno.env.get("RESEND_FROM_EMAIL") ?? "";
       if(!key || !from) return out(req,{ok:false,error:"Resend email is not configured"},503);
 
-      const {data:memberRows,error:memberError}=await db.from("members")
-        .select("id,name,email,role_number,status,approved,duplicate_of")
-        .eq("status","approved")
-        .eq("approved",true)
-        .is("duplicate_of",null)
-        .order("name",{ascending:true});
-      if(memberError) return out(req,{ok:false,error:"Could not load the approved-member list"},500);
-      const recipients=memberRows||[];
-      if(!recipients.length) return out(req,{ok:false,error:"There are no approved members to email"},409);
-      if(recipients.length>500) return out(req,{ok:false,error:"Broadcast safety limit is 500 approved members per send"},413);
+      let recipients:any[]=[];
+      if(targetKind==="member"){
+        const {data:memberRows,error:memberError}=await db.from("members")
+          .select("id,name,email,role_number,status,approved,duplicate_of")
+          .eq("status","approved")
+          .eq("approved",true)
+          .is("duplicate_of",null)
+          .order("name",{ascending:true});
+        if(memberError) return out(req,{ok:false,error:"Could not load the approved-member list"},500);
+        recipients=memberRows||[];
+      }else{
+        const {data:leaderRows,error:leaderError}=await db.from("leaders")
+          .select("id,name,email,role_number,role,status")
+          .order("name",{ascending:true});
+        if(leaderError) return out(req,{ok:false,error:"Could not load the leader list"},500);
+        recipients=(leaderRows||[]).filter((leader:any)=>String(leader.status||"active").toLowerCase()!=="inactive");
+      }
+      if(!recipients.length) return out(req,{ok:false,error:"There are no "+audience.replace("_"," ")+" to email"},409);
+      if(recipients.length>500) return out(req,{ok:false,error:"Broadcast safety limit is 500 recipients per send"},413);
 
       const batchId=crypto.randomUUID();
       const subject=clean("YYC Notice: "+title,200);
@@ -1017,16 +1028,16 @@ Deno.serve(async(req:Request)=>{
       const logEntries:any[]=[];
       const resultsById=new Map<string,any>();
 
-      for(const member of recipients){
-        const email=clean(member.email,320);
-        const name=clean(member.name,120)||"YYC Member";
+      for(const recipient of recipients){
+        const email=clean(recipient.email,320);
+        const name=clean(recipient.name,120)||(targetKind==="leader"?"YYC Leader":"YYC Member");
         const usable=validEmail(email);
-        if(usable) emailTargets.push({id:String(member.id),name,email,role_number:member.role_number});
-        else resultsById.set(String(member.id),{status:"skipped",reason:"No valid email address on record"});
+        if(usable) emailTargets.push({id:String(recipient.id),name,email,role_number:recipient.role_number});
+        else resultsById.set(String(recipient.id),{status:"skipped",reason:"No valid email address on record"});
         logEntries.push({
           batch_id:batchId,
-          recipient_kind:"member",
-          recipient_id:member.id,
+          recipient_kind:targetKind,
+          recipient_id:recipient.id,
           recipient_name:name,
           channel:"email",
           message_type:type,
@@ -1038,7 +1049,7 @@ Deno.serve(async(req:Request)=>{
           provider:"resend",
           recipient_address:usable?maskContact(email,"email"):null,
           error_message:usable?null:"No valid email address on record",
-          metadata:{broadcast:true,audience:"approved_members",batch_id:batchId}
+          metadata:{broadcast:true,audience,batch_id:batchId}
         });
       }
 
@@ -1104,9 +1115,10 @@ Deno.serve(async(req:Request)=>{
       const skipped=Array.from(resultsById.values()).filter((x:any)=>x.status==="skipped").length;
       return out(req,{
         ok:true,
-        event:"member_broadcast",
+        event,
         delivery:{
-          audience:"approved_members",
+          audience,
+          target_kind:targetKind,
           batch_id:batchId,
           total:recipients.length,
           sent,
