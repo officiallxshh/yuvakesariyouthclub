@@ -1818,7 +1818,7 @@ async function downloadYYCDigitalCard(data,kind,button){
 
     var html2canvas=await yycLoadHtml2Canvas();
     var qrGenerator=await yycLoadQrGenerator();
-    var verify=yycVerifyUrl(data.role_number);
+    var verify=yycVerifyUrl(kind==='leader'?data.role_number:(data.id||data.role_number));
     var qrMaker=qrGenerator(0,'M');
     qrMaker.addData(String(verify));
     qrMaker.make();
@@ -2288,7 +2288,7 @@ function memberDashboard(data){
     (data.__adminView?'':yycMemberOverviewHTML('member'))+
     yycActionCenterHTML('member',data)+
     yycDigitalCard(data,'member')+
-    '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
+    '<div class="yyc-card-download-bar"><div><b>YOUR CURRENT YYC ID CARD</b><span>Refresh the latest official details before reissuing · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button><button type="button" class="btn outline" id="memberReissueBtn">REFRESH / REISSUE ID ↻</button><button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="memberEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
     '<div class="notice portal-note" style="margin-top:12px">Click the digital card to flip between front and back. Scan the QR code to verify the official YYC record.</div>'+
     yycSessionSection('member',[])+
@@ -2310,7 +2310,45 @@ function memberDashboard(data){
   bindPortalAccountMenu('member',data);
   var editProfile=$('#memberEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){memberEditSubmission(data);});
   var verify=$('#memberVerifyBtn');
-  if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.role_number),'_blank','noopener');});
+  if(verify) verify.addEventListener('click',function(){window.open(yycVerifyUrl(data.id||data.role_number),'_blank','noopener');});
+  var reissue=$('#memberReissueBtn');
+  if(reissue) reissue.addEventListener('click',async function(){
+    if(!memberToken){toast('Please log in again to refresh your official ID.');return;}
+    var previousText=reissue.textContent;
+    reissue.disabled=true;
+    reissue.textContent='REFRESHING…';
+    try{
+      var latest=await rpc('member_me',{p_token:memberToken},{timeoutMs:15000,retries:1});
+      if(!latest||!latest.ok||!latest.member){
+        if(latest&&/session expired/i.test(String(latest.error||''))){
+          yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+          yycSafeRemove(localStorage,'yyc_member_profile_v1');
+          memberToken='';
+        }
+        throw new Error(latest&&latest.error||'Could not refresh the official member record.');
+      }
+      var currentMember=latest.member;
+      if(currentMember.approved!==true||String(currentMember.status||'').toLowerCase()!=='approved'){
+        yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+        yycSafeRemove(localStorage,'yyc_member_profile_v1');
+        memberToken='';
+        closeModal();
+        toast('This member account is no longer active. Contact YYC administration.');
+        return;
+      }
+      yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(currentMember));
+      memberDashboard(currentMember);
+      toast('Latest official ID loaded. Preparing your reissued card…');
+      window.setTimeout(function(){
+        var freshDownload=$('#memberDownloadBtn');
+        if(freshDownload) freshDownload.click();
+      },350);
+    }catch(err){
+      reissue.disabled=false;
+      reissue.textContent=previousText||'REFRESH / REISSUE ID ↻';
+      toast(err.message||'ID card refresh failed.');
+    }
+  });
   var download=$('#memberDownloadBtn');
   if(download) download.addEventListener('click',function(){downloadYYCDigitalCard(data,'member',download).catch(function(e){toast(e.message||'ID card download failed.');});});
   if(!data.__adminView) yycLoadDeviceSessions('member');
@@ -2464,20 +2502,35 @@ function memberLogin(){
   if(memberToken){
     var cachedMember=null;
     try{cachedMember=JSON.parse(yycSafeGet(localStorage,'yyc_member_profile_v1')||'null');}catch(e){}
-    if(cachedMember && cachedMember.role_number){
-      memberDashboard(cachedMember);
-      return;
-    }
+    /* Always fetch current server-side details so changed roll numbers are reflected. */
     return rpc('member_me',{p_token:memberToken}).then(function(r){
       if(r&&r.ok&&r.member){
+        var status=String(r.member.status||'').toLowerCase();
+        if(r.member.approved!==true||status!=='approved'){
+          yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+          yycSafeRemove(localStorage,'yyc_member_profile_v1');
+          memberToken='';
+          toast('This member account is no longer active. Contact YYC administration.');
+          memberLogin();
+          return;
+        }
         yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(r.member));
         memberDashboard(r.member);
         return;
       }
       yycSafeRemove(localStorage,MEMBER_TOKEN_KEY);
+      yycSafeRemove(localStorage,'yyc_member_profile_v1');
       memberToken='';
       memberLogin();
-    }).catch(function(e){toast(e.message||'Could not restore member session');});
+    }).catch(function(e){
+      /* Do not lock members out on a temporary connection issue. */
+      if(cachedMember&&cachedMember.role_number){
+        memberDashboard(cachedMember);
+        toast('Showing saved profile. Use Refresh / Reissue ID when your connection returns.');
+        return;
+      }
+      toast(e.message||'Could not restore member session');
+    });
   }
   openModal(
     '<div class="access-login-screen member-access-screen"><button type="button" class="access-inline-close" data-access-close aria-label="Close member login">×</button>'+
