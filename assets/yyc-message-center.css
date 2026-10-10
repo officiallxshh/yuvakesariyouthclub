@@ -105,3 +105,9 @@
   .yyc-message-history-meta small{text-align:left}
   .yyc-delivery-result-head{align-items:flex-start;flex-direction:column;gap:4px}
 }
+
+/* Hidden controls must stay hidden despite component display rules. */
+.yyc-message-form #anTargetField[hidden],
+.yyc-message-form #anWhatsappChoice[hidden]{
+  display:none!important;
+}
