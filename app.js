@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-03';
+var YYC_APP_BUILD='20261010-04';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -2803,7 +2803,8 @@ function renderAdminTab(tab,d){
       if(!host)return;
       delivery=delivery||{};
       var total=Number(delivery.total||0),sent=Number(delivery.sent||0),failed=Number(delivery.failed||0),skipped=Number(delivery.skipped||0);
-      host.innerHTML='<div class="yyc-delivery-result-head"><strong>All-members email result</strong><span>'+sent+' of '+total+' accepted by provider</span></div>'+
+      var audienceLabel=delivery.audience==='active_leaders'?'All-leaders':'All-members';
+      host.innerHTML='<div class="yyc-delivery-result-head"><strong>'+audienceLabel+' email result</strong><span>'+sent+' of '+total+' accepted by provider</span></div>'+
         '<div class="yyc-delivery-result-grid">'+
           '<span class="yyc-delivery-pill yyc-delivery-queued">TOTAL '+total+'</span>'+
           '<span class="yyc-delivery-pill yyc-delivery-ok">✓ ACCEPTED '+sent+'</span>'+
@@ -2851,14 +2852,14 @@ function renderAdminTab(tab,d){
       });
     }
 
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send individual messages or email an important notice to every approved member. Broadcast emails are sent privately and recorded per recipient.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send individual messages or email important notices to all approved members or active leaders. Broadcast emails are sent privately and recorded per recipient.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
       '<div class="yyc-provider-strip">'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">✉</span><div><b>Email</b><small id="yycEmailProviderStatus">Checking…</small></div></div>'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">◉</span><div><b>WhatsApp</b><small id="yycWhatsappProviderStatus">Checking…</small></div></div>'+
         '<div class="yyc-provider-note"><strong>Delivery tracking</strong><span>Every send is logged. A green ✓ means the provider accepted the message for sending.</span></div>'+
       '</div>'+
       '<form id="adminNotificationForm" class="admin-form yyc-message-form"><div class="form-grid">'+
-        '<div class="field"><label>Send to</label><select id="anTargetKind" required><option value="member">One member</option><option value="leader">One leader</option><option value="all_members">All approved members · Email only</option></select></div>'+
+        '<div class="field"><label>Send to</label><select id="anTargetKind" required><option value="member">One member</option><option value="leader">One leader</option><option value="all_members">All approved members · Email only</option><option value="all_leaders">All active leaders · Email only</option></select></div>'+
         '<div class="field" id="anTargetField"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option></select></div>'+
         '<div class="field"><label>Message type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div>'+
         '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="e.g. Swachatha Abhiyaan"></div>'+
@@ -2876,14 +2877,17 @@ function renderAdminTab(tab,d){
     var targetKind=$('#anTargetKind'),targetId=$('#anTargetId');
     function syncTargetOptions(){
       var kind=targetKind.value;
-      var isBroadcast=kind==='all_members';
+      var isBroadcast=kind==='all_members'||kind==='all_leaders';
+      var isLeaderBroadcast=kind==='all_leaders';
+      var broadcastAudience=isLeaderBroadcast?activeLeaders:approvedMembers;
+      var broadcastLabel=isLeaderBroadcast?'LEADERS':'MEMBERS';
       var targetField=$('#anTargetField');
       if(targetField)targetField.hidden=isBroadcast;
       targetId.disabled=isBroadcast;
       targetId.required=!isBroadcast;
       if(isBroadcast){
         targetId.value='';
-        targetId.innerHTML='<option value="">All approved members</option>';
+        targetId.innerHTML='<option value="">'+(isLeaderBroadcast?'All active leaders':'All approved members')+'</option>';
       }else{
         var list=kind==='member'?approvedMembers:activeLeaders;
         targetId.innerHTML='<option value="">Select '+(kind==='member'?'member':'leader')+'</option>'+list.map(function(x){return '<option value="'+kind+':'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.role_number||kind.toUpperCase())+'</option>';}).join('');
@@ -2892,10 +2896,12 @@ function renderAdminTab(tab,d){
       if(emailChoice){emailChoice.disabled=isBroadcast;emailChoice.checked=true;}
       if(whatsappChoice){whatsappChoice.disabled=isBroadcast;whatsappChoice.checked=!isBroadcast;}
       if(whatsappLabel)whatsappLabel.hidden=isBroadcast;
-      var allOption=targetKind.querySelector('option[value="all_members"]');
-      if(allOption)allOption.disabled=approvedMembers.length===0;
+      var allMembersOption=targetKind.querySelector('option[value="all_members"]');
+      var allLeadersOption=targetKind.querySelector('option[value="all_leaders"]');
+      if(allMembersOption){allMembersOption.disabled=approvedMembers.length===0;allMembersOption.textContent='All approved members · Email only ('+approvedMembers.length+')';}
+      if(allLeadersOption){allLeadersOption.disabled=activeLeaders.length===0;allLeadersOption.textContent='All active leaders · Email only ('+activeLeaders.length+')';}
       var sendButton=$('#yycSendMessageBtn');
-      if(sendButton)sendButton.innerHTML=isBroadcast?'EMAIL ALL '+approvedMembers.length+' MEMBERS <span>→</span>':'SEND MESSAGE <span>→</span>';
+      if(sendButton)sendButton.innerHTML=isBroadcast?'EMAIL ALL '+broadcastAudience.length+' '+broadcastLabel+' <span>→</span>':'SEND MESSAGE <span>→</span>';
     }
     targetKind.addEventListener('change',syncTargetOptions);
     syncTargetOptions();
@@ -2909,11 +2915,14 @@ function renderAdminTab(tab,d){
       var resultHost=$('#yycMessageSendResult');
       if(resultHost){resultHost.hidden=true;resultHost.innerHTML='';}
       try{
-        if(targetKind.value==='all_members'){
-          if(!approvedMembers.length) throw new Error('There are no approved members to email');
-          if(!confirm('Send this notice by email to all '+approvedMembers.length+' approved YYC members? Each member receives a separate private email. This cannot be recalled.')) return;
+        if(targetKind.value==='all_members'||targetKind.value==='all_leaders'){
+          var leaderBroadcast=targetKind.value==='all_leaders';
+          var broadcastList=leaderBroadcast?activeLeaders:approvedMembers;
+          var broadcastLabel=leaderBroadcast?'active YYC leaders':'approved YYC members';
+          if(!broadcastList.length) throw new Error('There are no '+broadcastLabel+' to email');
+          if(!confirm('Send this notice by email to all '+broadcastList.length+' '+broadcastLabel+'? Each recipient receives a separate private email. This cannot be recalled.')) return;
           var broadcast=await yycSendExternalAlert({
-            event:'member_broadcast',
+            event:leaderBroadcast?'leader_broadcast':'member_broadcast',
             admin_token:adminToken,
             confirm_all:true,
             title:$('#anTitle').value.trim(),
@@ -2924,7 +2933,7 @@ function renderAdminTab(tab,d){
           if(!broadcast||!broadcast.ok) throw new Error(broadcast&&broadcast.error||'Could not send the broadcast');
           var summary=broadcast.delivery||{};
           renderBroadcastResults(summary);
-          if(summary.sent) toast('Email accepted for '+summary.sent+' member(s) ✓');
+          if(summary.sent) toast('Email accepted for '+summary.sent+' '+(leaderBroadcast?'leader(s)':'member(s)')+' ✓');
           else toast('Broadcast finished with no emails accepted');
           nf.reset();
           syncTargetOptions();
