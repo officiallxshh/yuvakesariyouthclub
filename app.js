@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261005-04';
+var YYC_APP_BUILD='20261010-01';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -20,7 +20,17 @@ function yycSafeSet(store,key,value){
 function yycSafeRemove(store,key){
   try{store.removeItem(key);}catch(e){}
 }
-var adminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
+/* Keep the admin bearer token tab-scoped. Migrate the existing tab's token once
+   so a code refresh does not unexpectedly log out an administrator. */
+var adminToken = yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
+if(!adminToken){
+  var legacyAdminToken = yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
+  if(legacyAdminToken){
+    adminToken = legacyAdminToken;
+    yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,legacyAdminToken);
+    yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);
+  }
+}
 var memberToken = yycSafeGet(localStorage,MEMBER_TOKEN_KEY);
 var leaderToken = yycSafeGet(localStorage,LEADER_TOKEN_KEY);
 var publicData = null;
@@ -2305,7 +2315,7 @@ function adminLogin(){
       var r=await rpc('admin_login',{p_username:$('#aUser').value.trim(),p_password:$('#aPass').value});
       if(!r.ok) throw new Error(r.error||'Invalid credentials');
       setLoginStatus('adminLoginForm','Login successful. Opening admin control center…',false);
-      adminToken=r.token; yycSafeSet(localStorage,ADMIN_TOKEN_KEY,adminToken); adminData=null; closeModal(); adminPanel();
+      adminToken=r.token; yycSafeSet(sessionStorage,ADMIN_TOKEN_KEY,adminToken); yycSafeRemove(localStorage,ADMIN_TOKEN_KEY); adminData=null; closeModal(); adminPanel();
     }catch(err){
       if(btn){btn.dataset.busy='0';btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=btn.dataset.originalText||'ENTER ADMIN →';}
       setLoginStatus('adminLoginForm',err.message,true);
@@ -2315,13 +2325,14 @@ function adminLogin(){
 }
 
 function getAdmin(force){
-  if(!adminToken) adminToken=yycSafeGet(localStorage,ADMIN_TOKEN_KEY);
+  if(!adminToken) adminToken=yycSafeGet(sessionStorage,ADMIN_TOKEN_KEY);
   if(!adminToken){adminLogin();return null;}
   if(!force && adminData && adminData.ok!==false) return Promise.resolve(adminData);
   return rpc('admin_dashboard',{p_token:adminToken}).then(function(d){
     if(!d || d.ok===false){
       var msg=d&&d.error ? String(d.error) : 'Could not load admin data';
       if(/^unauthorized$/i.test(msg.trim()) || /invalid.*token|session.*invalid|token.*invalid/i.test(msg)){
+        yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);
         yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);
         adminToken='';
         adminData=null;
@@ -2549,7 +2560,7 @@ function adminPanel(tab,forceRefresh){
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-head-tools"><div class="yyc-admin-global-tools"><div class="yyc-admin-add-wrap"><button type="button" class="mini-btn gold yyc-admin-add-btn" id="yycAdminAddBtn" aria-expanded="false"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>ADD</span></button><div class="yyc-admin-add-menu" id="yycAdminAddMenu" hidden><button type="button" data-admin-add="member">+ Member</button><button type="button" data-admin-add="leader">+ Leader</button><button type="button" data-admin-add="update">+ Update</button><button type="button" data-admin-add="gallery">+ Photo</button><button type="button" data-admin-add="event">+ Event</button><button type="button" data-admin-add="swag">+ Swag</button></div></div><div class="yyc-admin-global-search"><span aria-hidden="true">⌕</span><input id="yycAdminGlobalSearch" type="search" placeholder="Search all admin records" autocomplete="off"><div class="yyc-admin-search-results" id="yycAdminSearchResults" hidden></div></div></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     yycAdminBindTools(d);
-    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
+    $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
     var adminRefreshBtn=$('#yycAdminRefresh');
     if(adminRefreshBtn) adminRefreshBtn.addEventListener('click',function(){
       adminRefreshBtn.disabled=true;adminRefreshBtn.textContent='REFRESHING…';
