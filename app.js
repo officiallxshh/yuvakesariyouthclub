@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261010-01';
+var YYC_APP_BUILD='20261010-02';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -2798,6 +2798,21 @@ function renderAdminTab(tab,d){
         ((delivery.email&&delivery.email.reason)|| (delivery.whatsapp&&delivery.whatsapp.reason)?'<div class="yyc-delivery-result-note">'+esc([delivery.email,delivery.whatsapp].filter(function(x){return x&&x.reason;}).map(function(x){return x.reason;}).join(' · '))+'</div>':'');
       host.hidden=false;
     }
+    function renderBroadcastResults(delivery){
+      var host=$('#yycMessageSendResult');
+      if(!host)return;
+      delivery=delivery||{};
+      var total=Number(delivery.total||0),sent=Number(delivery.sent||0),failed=Number(delivery.failed||0),skipped=Number(delivery.skipped||0);
+      host.innerHTML='<div class="yyc-delivery-result-head"><strong>All-members email result</strong><span>'+sent+' of '+total+' accepted by provider</span></div>'+
+        '<div class="yyc-delivery-result-grid">'+
+          '<span class="yyc-delivery-pill yyc-delivery-queued">TOTAL '+total+'</span>'+
+          '<span class="yyc-delivery-pill yyc-delivery-ok">✓ ACCEPTED '+sent+'</span>'+
+          '<span class="yyc-delivery-pill yyc-delivery-failed">! FAILED '+failed+'</span>'+
+          '<span class="yyc-delivery-pill yyc-delivery-skipped">— SKIPPED '+skipped+'</span>'+
+        '</div>'+
+        (delivery.logging_warning?'<div class="yyc-delivery-result-note error">'+esc(delivery.logging_warning)+'</div>':'');
+      host.hidden=false;
+    }
     function renderHistory(items){
       var host=$('#yycMessageHistory');
       if(!host)return;
@@ -2836,20 +2851,20 @@ function renderAdminTab(tab,d){
       });
     }
 
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send a message to an approved member or active leader through Email, WhatsApp, or the in-app notification system.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
+    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send individual messages or email an important notice to every approved member. Broadcast emails are sent privately and recorded per recipient.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
       '<div class="yyc-provider-strip">'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">✉</span><div><b>Email</b><small id="yycEmailProviderStatus">Checking…</small></div></div>'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">◉</span><div><b>WhatsApp</b><small id="yycWhatsappProviderStatus">Checking…</small></div></div>'+
         '<div class="yyc-provider-note"><strong>Delivery tracking</strong><span>Every send is logged. A green ✓ means the provider accepted the message for sending.</span></div>'+
       '</div>'+
       '<form id="adminNotificationForm" class="admin-form yyc-message-form"><div class="form-grid">'+
-        '<div class="field"><label>Recipient type</label><select id="anTargetKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
-        '<div class="field"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option></select></div>'+
+        '<div class="field"><label>Send to</label><select id="anTargetKind" required><option value="member">One member</option><option value="leader">One leader</option><option value="all_members">All approved members · Email only</option></select></div>'+
+        '<div class="field" id="anTargetField"><label>Recipient</label><select id="anTargetId" required><option value="">Select recipient</option></select></div>'+
         '<div class="field"><label>Message type</label><select id="anType"><option value="general">General</option><option value="membership">Membership</option><option value="event">Event</option><option value="system">System</option></select></div>'+
         '<div class="field full"><label>Title</label><input id="anTitle" maxlength="160" required placeholder="e.g. Swachatha Abhiyaan"></div>'+
         '<div class="field full"><label>Message</label><textarea id="anBody" maxlength="2000" rows="6" required placeholder="Write the message to the member or leader…"></textarea></div>'+
         '<div class="field full"><label>Optional link</label><input id="anLink" maxlength="500" type="url" placeholder="https://www.yuvakesariyouthclub.in/…"></div>'+
-        '<div class="field full"><label class="yyc-channel-choice">Delivery channels <span class="field-note">Choose one or both</span></label><div class="yyc-channel-pills yyc-message-channels"><label><input type="checkbox" id="anEmail" checked> <span>✉ Email</span></label><label><input type="checkbox" id="anWhatsapp" checked> <span>◉ WhatsApp</span></label></div></div>'+
+        '<div class="field full"><label class="yyc-channel-choice">Delivery channels <span class="field-note">Choose one or both</span></label><div class="yyc-channel-pills yyc-message-channels"><label id="anEmailChoice"><input type="checkbox" id="anEmail" checked> <span>✉ Email</span></label><label id="anWhatsappChoice"><input type="checkbox" id="anWhatsapp" checked> <span>◉ WhatsApp</span></label></div></div>'+
       '</div><div class="form-actions"><button type="submit" class="btn gold" id="yycSendMessageBtn">SEND MESSAGE <span>→</span></button></div>'+
       '<div class="yyc-delivery-result" id="yycMessageSendResult" hidden></div>'+
       '<div class="notice" style="margin-top:12px">Email uses the configured Resend sender. WhatsApp uses the official WhatsApp Business Cloud API and an approved template when configured. Delivery failures never remove the in-app notification record.</div>'+
@@ -2861,8 +2876,26 @@ function renderAdminTab(tab,d){
     var targetKind=$('#anTargetKind'),targetId=$('#anTargetId');
     function syncTargetOptions(){
       var kind=targetKind.value;
-      var list=kind==='member'?approvedMembers:activeLeaders;
-      targetId.innerHTML='<option value="">Select '+(kind==='member'?'member':'leader')+'</option>'+list.map(function(x){return '<option value="'+kind+':'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.role_number||kind.toUpperCase())+'</option>';}).join('');
+      var isBroadcast=kind==='all_members';
+      var targetField=$('#anTargetField');
+      if(targetField)targetField.hidden=isBroadcast;
+      targetId.disabled=isBroadcast;
+      targetId.required=!isBroadcast;
+      if(isBroadcast){
+        targetId.value='';
+        targetId.innerHTML='<option value="">All approved members</option>';
+      }else{
+        var list=kind==='member'?approvedMembers:activeLeaders;
+        targetId.innerHTML='<option value="">Select '+(kind==='member'?'member':'leader')+'</option>'+list.map(function(x){return '<option value="'+kind+':'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.role_number||kind.toUpperCase())+'</option>';}).join('');
+      }
+      var emailChoice=$('#anEmail'),whatsappChoice=$('#anWhatsapp'),whatsappLabel=$('#anWhatsappChoice');
+      if(emailChoice){emailChoice.disabled=isBroadcast;emailChoice.checked=true;}
+      if(whatsappChoice){whatsappChoice.disabled=isBroadcast;whatsappChoice.checked=!isBroadcast;}
+      if(whatsappLabel)whatsappLabel.hidden=isBroadcast;
+      var allOption=targetKind.querySelector('option[value="all_members"]');
+      if(allOption)allOption.disabled=approvedMembers.length===0;
+      var sendButton=$('#yycSendMessageBtn');
+      if(sendButton)sendButton.innerHTML=isBroadcast?'EMAIL ALL '+approvedMembers.length+' MEMBERS <span>→</span>':'SEND MESSAGE <span>→</span>';
     }
     targetKind.addEventListener('change',syncTargetOptions);
     syncTargetOptions();
@@ -2876,6 +2909,28 @@ function renderAdminTab(tab,d){
       var resultHost=$('#yycMessageSendResult');
       if(resultHost){resultHost.hidden=true;resultHost.innerHTML='';}
       try{
+        if(targetKind.value==='all_members'){
+          if(!approvedMembers.length) throw new Error('There are no approved members to email');
+          if(!confirm('Send this notice by email to all '+approvedMembers.length+' approved YYC members? Each member receives a separate private email. This cannot be recalled.')) return;
+          var broadcast=await yycSendExternalAlert({
+            event:'member_broadcast',
+            admin_token:adminToken,
+            confirm_all:true,
+            title:$('#anTitle').value.trim(),
+            body:$('#anBody').value.trim(),
+            type:$('#anType').value,
+            link:$('#anLink').value.trim()
+          });
+          if(!broadcast||!broadcast.ok) throw new Error(broadcast&&broadcast.error||'Could not send the broadcast');
+          var summary=broadcast.delivery||{};
+          renderBroadcastResults(summary);
+          if(summary.sent) toast('Email accepted for '+summary.sent+' member(s) ✓');
+          else toast('Broadcast finished with no emails accepted');
+          nf.reset();
+          syncTargetOptions();
+          await refreshMessageHistory();
+          return;
+        }
         var selected=targetId.value.split(':');
         var kind=selected[0]||'',id=selected.slice(1).join(':');
         if(!kind||!id) throw new Error('Please select a recipient');
