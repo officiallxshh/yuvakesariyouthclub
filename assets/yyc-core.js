@@ -48,11 +48,13 @@
       if (baseUrl === void 0) { baseUrl = window.location.href; }
       var member = normalizeMember(input);
       var roleNumber = normalizeRoleNumber(member.role_number);
+      /* The displayed member roll number can change after a deletion. Use the stable UUID in the QR so it always verifies the same person. Leader IDs remain role-number based. */
+      var verifyIdentity = kind === "leader" ? roleNumber : text(member.id, roleNumber);
       return {
         member: member,
         kind: kind,
         roleNumber: roleNumber,
-        verifyUrl: buildVerifyUrl(roleNumber, baseUrl),
+        verifyUrl: buildVerifyUrl(verifyIdentity, baseUrl),
         photoUrl: getPhotoUrl(member)
       };
     };
