@@ -237,6 +237,100 @@ async function sendDecisionEmail(id: string, token: string, decision: "approved"
   return { ok: true, event: "decision", email: finished };
 }
 
+
+async function sendAdminTestEmail(token: string) {
+  if (!(await adminOK(token))) return { ok: false, error: "Unauthorized" };
+  const { data: settings, error } = await db.from("site_settings")
+    .select("contact_email").eq("id", true).maybeSingle();
+  const recipient = clean(settings?.contact_email, 320);
+  if (error || !validEmail(recipient)) {
+    return { ok: false, error: "Configure a valid Site Settings contact email before testing notifications" };
+  }
+  const result = await sendEmail(
+    recipient,
+    "YYC Email Configuration Test",
+    emailShell(
+      "Email configuration test",
+      "YYC Admin Team",
+      "This test message confirms that the YYC notification function received an authorized test request and the email provider accepted the message request.",
+      "<strong>Result:</strong> Provider accepted the test request"
+    )
+  );
+  if (result.status !== "sent") {
+    return { ok: false, error: result.reason || "Email provider is not configured or rejected the test", email: { status: result.status } };
+  }
+  return { ok: true, event: "admin_test", email: { status: "sent", recipient: maskEmail(recipient) } };
+}
+
+async function retryVolunteerEmail(id: string, token: string, kind: string) {
+  if (!(await adminOK(token))) return { ok: false, error: "Unauthorized" };
+  const volunteer = await getVolunteer(id);
+  if (!volunteer) return { ok: false, error: "Volunteer application not found" };
+  const source = String(volunteer.source || "");
+  const status = String(volunteer.status || "pending").toLowerCase();
+  const name = clean(volunteer.name || "Volunteer", 120);
+
+  if (kind === "application") {
+    if (source !== "website" || status !== "pending" || volunteer.application_email_status !== "failed") {
+      return { ok: false, error: "Applicant confirmation can only be retried after a failed email for a pending website application" };
+    }
+    const details = [
+      "<strong>Application status:</strong> Pending review",
+      volunteer.area ? "<strong>Area:</strong> " + escapeHtml(volunteer.area, 120) : "",
+      volunteer.skills ? "<strong>Skills / interests:</strong> " + escapeHtml(volunteer.skills, 240) : "",
+      volunteer.availability ? "<strong>Availability:</strong> " + escapeHtml(volunteer.availability, 120) : ""
+    ].filter(Boolean).join("<br>");
+    const email = await sendTrackedVolunteerEmail({
+      id, statusField: "application_email_status", sentAtField: "application_email_sent_at", errorField: "application_email_error",
+      to: clean(volunteer.email, 320), subject: "YYC Volunteer Application Received",
+      html: emailShell("We received your volunteer application", name,
+        "Thank you for registering your interest in volunteering with Yuvakesari Youth Club. Your application has been saved successfully and is pending admin review. The team will contact you after reviewing your details.",
+        details),
+      expectedStatus: "pending"
+    });
+    return { ok: true, event: "retry", kind, email };
+  }
+
+  if (kind === "admin_alert") {
+    if (source !== "website" || status === "archived" || volunteer.admin_alert_email_status !== "failed") {
+      return { ok: false, error: "Only a failed admin alert for an active website application can be retried" };
+    }
+    const { data: settings, error } = await db.from("site_settings")
+      .select("contact_email").eq("id", true).maybeSingle();
+    const recipient = clean(settings?.contact_email, 320);
+    if (error || !validEmail(recipient)) {
+      return { ok: false, error: "Configure a valid Site Settings contact email before retrying the admin alert" };
+    }
+    const details = [
+      "<strong>Applicant:</strong> " + escapeHtml(name, 120),
+      "<strong>Email:</strong> " + escapeHtml(volunteer.email || "Not provided", 320),
+      "<strong>Phone:</strong> " + escapeHtml(volunteer.phone || "Not provided", 80),
+      "<strong>Area:</strong> " + escapeHtml(volunteer.area || "Not provided", 120),
+      "<strong>Skills:</strong> " + escapeHtml(volunteer.skills || "Not provided", 240),
+      "<strong>Availability:</strong> " + escapeHtml(volunteer.availability || "Not provided", 120),
+      "<strong>Message:</strong> " + escapeHtml(volunteer.message || "Not provided", 1000),
+      "<strong>Current application status:</strong> " + escapeHtml(status, 30)
+    ].join("<br>");
+    const email = await sendTrackedVolunteerEmail({
+      id, statusField: "admin_alert_email_status", sentAtField: "admin_alert_email_sent_at", errorField: "admin_alert_email_error",
+      to: recipient, subject: "YYC Volunteer Application Notification Retry — " + name,
+      html: emailShell("Retried volunteer application notification", "YYC Admin Team",
+        "This is a retry of an earlier notification that was not sent successfully.", details)
+    });
+    return { ok: true, event: "retry", kind, email, recipient: maskEmail(recipient) };
+  }
+
+  if (kind === "decision") {
+    const decision = String(volunteer.decision_email_for_status || "").toLowerCase();
+    if (volunteer.decision_email_status !== "failed" || !["approved", "denied"].includes(decision) || status !== decision) {
+      return { ok: false, error: "Only the failed email matching the application's current decision can be retried" };
+    }
+    return await sendDecisionEmail(id, token, decision as "approved" | "denied");
+  }
+
+  return { ok: false, error: "Unknown volunteer email retry type" };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return out(req, { ok: true });
   if (req.method !== "POST") return out(req, { ok: false, error: "POST required" }, 405);
@@ -245,6 +339,21 @@ Deno.serve(async (req: Request) => {
 
   const event = clean(body?.event, 40);
   try {
+    if (event === "admin_test") {
+      const token = clean(body?.admin_token, 500);
+      const result = await sendAdminTestEmail(token);
+      return out(req, result, result.ok ? 200 : result.error === "Unauthorized" ? 401 : 400);
+    }
+    if (event === "retry") {
+      const id = clean(body?.volunteer_id, 80);
+      const token = clean(body?.admin_token, 500);
+      const kind = clean(body?.kind, 40);
+      if (!isUuid(id) || !["application", "admin_alert", "decision"].includes(kind)) {
+        return out(req, { ok: false, error: "A volunteer application and valid retry type are required" }, 400);
+      }
+      const result = await retryVolunteerEmail(id, token, kind);
+      return out(req, result, result.ok ? 200 : result.error === "Unauthorized" ? 401 : 400);
+    }
     if (event === "application") {
       const id = clean(body?.volunteer_id, 80);
       if (!isUuid(id)) return out(req, { ok: false, error: "Volunteer application ID is required" }, 400);
