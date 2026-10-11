@@ -2415,17 +2415,97 @@ function leaderEditProfile(data){
   });
 }
 
+
+function yycLeaderMemberOrderHTML(){
+  return '<section class="yyc-leader-member-order" style="margin-top:18px;padding:18px;border:1px solid rgba(229,191,107,.22);border-radius:18px;background:rgba(10,15,20,.72)">'+
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
+      '<div><b style="display:block;font-size:13px;letter-spacing:.08em;color:#f0d38f">APPROVED MEMBER ORDER</b>'+
+      '<span style="display:block;margin-top:6px;color:#9da59e;font-size:11px;line-height:1.6">Move one member up or down. Role numbers and member ID records update together.</span></div>'+
+      '<button type="button" class="btn outline" id="yycLeaderOrderRefresh">↻ REFRESH</button></div>'+
+    '<div id="yycLeaderOrderNotice" role="status" aria-live="polite" style="margin-top:12px;color:#aeb7ae;font-size:11px">Loading approved members…</div>'+
+    '<div id="yycLeaderMemberOrderList" style="display:grid;gap:8px;margin-top:12px;max-height:360px;overflow:auto">Loading…</div>'+
+    '<p style="margin:12px 0 0;color:#7e8982;font-size:10px;line-height:1.6">QR codes remain linked to each member’s stable record. Scanning an existing card will show the current role number; members can refresh/reissue their card to print the new number.</p>'+
+  '</section>';
+}
+function yycRenderLeaderMemberOrder(members){
+  var root=$('#yycLeaderMemberOrderList');
+  var notice=$('#yycLeaderOrderNotice');
+  if(!root)return;
+  if(!Array.isArray(members)||!members.length){
+    root.innerHTML='<div style="padding:16px;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:#8e9991;font-size:12px">No approved members found.</div>';
+    if(notice)notice.textContent='Only approved members can be reordered.';
+    return;
+  }
+  root.innerHTML=members.map(function(m,i){
+    var photo=m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" loading="lazy" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;object-fit:cover;background:#111820">':'<span aria-hidden="true" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:grid;place-items:center;background:#161d22;color:#d7bb79;font-size:11px">YYC</span>';
+    return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(255,255,255,.018)">'+
+      '<span style="min-width:24px;color:#bda76f;font-size:11px;font-weight:800;text-align:center">'+(i+1)+'</span>'+photo+
+      '<div style="flex:1;min-width:110px"><b style="display:block;color:#eee5d3;font-size:12px;overflow-wrap:anywhere">'+esc(m.name||'YYC Member')+'</b>'+
+      '<span style="display:block;margin-top:4px;color:#8d9991;font-size:10px">'+esc(m.role_number||'No role number')+' · '+esc(m.position||'MEMBER')+'</span></div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      '<button type="button" class="btn outline yyc-leader-order-move" data-member-id="'+esc(m.id)+'" data-direction="up" '+(i===0?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' up" style="padding:8px 10px;min-height:36px">↑ UP</button>'+
+      '<button type="button" class="btn outline yyc-leader-order-move" data-member-id="'+esc(m.id)+'" data-direction="down" '+(i===members.length-1?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' down" style="padding:8px 10px;min-height:36px">↓ DOWN</button>'+
+      '</div></div>';
+  }).join('');
+  if(notice)notice.textContent=members.length+' approved members · Changes apply to the official role-number sequence.';
+  root.querySelectorAll('.yyc-leader-order-move').forEach(function(btn){
+    btn.addEventListener('click',async function(){
+      if(!leaderToken){toast('Leader session expired. Please log in again.');return;}
+      var memberId=btn.getAttribute('data-member-id');
+      var direction=btn.getAttribute('data-direction');
+      if(!memberId||!direction)return;
+      var row=btn.closest('div[style*="display:flex"]');
+      var buttons=root.querySelectorAll('.yyc-leader-order-move');
+      buttons.forEach(function(b){b.disabled=true;});
+      if(notice)notice.textContent='Updating member order and role numbers…';
+      try{
+        var result=await rpc('leader_reorder_member',{p_token:leaderToken,p_member_id:memberId,p_direction:direction},{timeoutMs:20000,retries:0});
+        if(!result||!result.ok)throw new Error(result&&result.error||'Could not update member order');
+        if(result.moved===false){
+          toast(result.message||'Member is already at that end of the list');
+        }else{
+          toast('Member order saved · New role number '+(result.role_number||'updated'));
+        }
+        await yycLoadLeaderMemberOrder();
+      }catch(err){
+        if(notice)notice.textContent=err.message||'Could not update member order.';
+        toast(err.message||'Could not update member order');
+        buttons.forEach(function(b){b.disabled=false;});
+      }
+    });
+  });
+}
+async function yycLoadLeaderMemberOrder(){
+  var root=$('#yycLeaderMemberOrderList');
+  if(!root||!leaderToken)return;
+  var notice=$('#yycLeaderOrderNotice');
+  root.innerHTML='<div style="padding:14px;color:#8e9991;font-size:12px">Loading approved members…</div>';
+  if(notice)notice.textContent='Loading official member order…';
+  try{
+    var result=await rpc('leader_member_order_data',{p_token:leaderToken},{timeoutMs:15000,retries:1});
+    if(!result||!result.ok)throw new Error(result&&result.error||'Could not load approved members');
+    yycRenderLeaderMemberOrder(result.members||[]);
+  }catch(err){
+    root.innerHTML='<div style="padding:14px;border:1px solid rgba(235,145,120,.22);border-radius:12px;color:#d6a18f;font-size:12px">Could not load member order. Please refresh and try again.</div>';
+    if(notice)notice.textContent=err.message||'Could not load approved members.';
+  }
+}
+
 function leaderDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
     (data.__adminView?'':yycMemberOverviewHTML('leader'))+
     yycDigitalCard(data,'leader')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
+    (data.__adminView?'':yycLeaderMemberOrderHTML())+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="leaderEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
     yycSessionSection('leader',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
+  var memberOrderRefresh=$('#yycLeaderOrderRefresh');
+  if(memberOrderRefresh)memberOrderRefresh.addEventListener('click',function(){yycLoadLeaderMemberOrder();});
+  if(!data.__adminView)yycLoadLeaderMemberOrder();
   var dashboardRefresh=$('#yycDashboardRefresh');
   if(dashboardRefresh)dashboardRefresh.addEventListener('click',function(){yycLoadMemberDashboard('leader');});
   var dashboardEvents=$('#yycDashboardViewEvents');
