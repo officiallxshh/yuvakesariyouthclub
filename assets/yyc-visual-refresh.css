@@ -6,12 +6,6 @@
 
 /* HERO: layered entrance complements the existing automatic background zoom. */
 @media(prefers-reduced-motion:no-preference){
-  .hero .hero-logo-stage{
-    animation:yycMotionLogoIn .95s var(--yyc-motion-ease) .04s both;
-  }
-  .hero .brand-lockup h1{
-    animation:yycMotionTitleIn .85s var(--yyc-motion-ease) .14s both;
-  }
   .hero .lockup-line,
   .hero .hero-establishment{
     animation:yycMotionFadeUp .68s var(--yyc-motion-ease) .24s both;
@@ -22,16 +16,10 @@
   .hero .slogan{animation:yycMotionFadeUp .72s var(--yyc-motion-ease) .37s both}
   .hero .gold-quote{animation:yycMotionFadeUp .78s var(--yyc-motion-ease) .43s both}
   .hero .social-row{animation:yycMotionFadeUp .7s var(--yyc-motion-ease) .50s both}
-  .hero .hero-actions{animation:yycMotionFadeUp .72s var(--yyc-motion-ease) .56s both}
-  .hero .culture-overline{animation:yycMotionFadeUp .8s var(--yyc-motion-ease) .25s both}
-  .hero .culture-copy{animation:yycMotionFadeUp .78s var(--yyc-motion-ease) .34s both}
   .hero .culture-orb{animation:yycMotionOrbIn .85s var(--yyc-motion-ease) both}
   .hero .culture-orb:nth-child(1){animation-delay:.38s}
   .hero .culture-orb:nth-child(2){animation-delay:.47s}
   .hero .culture-orb:nth-child(3){animation-delay:.56s}
-  .hero .culture-rule,.hero .culture-foot{
-    animation:yycMotionFadeUp .7s var(--yyc-motion-ease) .60s both;
-  }
 }
 
 /* NAVIGATION: quick, restrained feedback instead of large movement. */
@@ -113,30 +101,12 @@
   .admin-shell .admin-form-top .mini-btn:hover{transform:translateY(-1px)}
 }
 
-/* MODALS: animate open state and respect the existing close flow. */
-@media(prefers-reduced-motion:no-preference){
-  .modal[aria-hidden="false"] .modal-shell{
-    animation:yycMotionModalIn .34s var(--yyc-motion-ease) both;
-  }
-  .modal[aria-hidden="false"] .modal-backdrop{
-    animation:yycMotionBackdropIn .28s ease both;
-  }
-  .modal[aria-hidden="false"] .access-login-screen .access-login-hero,
-  .modal[aria-hidden="false"] .access-login-screen .access-login-form{
-    animation:yycMotionFadeUp .42s var(--yyc-motion-ease) .04s both;
-  }
-}
-.modal-shell,.modal-backdrop{transform-origin:center center}
+/* Retain the modal's existing entrance animation to avoid stacking. */
 
 /* PORTALS: subtle active-tab and dashboard transition. */
 @media(prefers-reduced-motion:no-preference){
   .admin-tab.active{animation:yycMotionTabIn .24s var(--yyc-motion-ease) both}
   .yyc-admin-quick:active,.admin-shell .admin-quick-action:active{transform:scale(.985)}
-  .yyc-count-animating{animation:yycMotionCount .42s var(--yyc-motion-ease) both}
-  .admin-shell .admin-stats>div{animation:yycMotionFadeUp .38s var(--yyc-motion-ease) both}
-  .admin-shell .admin-stats>div:nth-child(2){animation-delay:.04s}
-  .admin-shell .admin-stats>div:nth-child(3){animation-delay:.08s}
-  .admin-shell .admin-stats>div:nth-child(4){animation-delay:.12s}
 }
 
 /* Keyframes: all transform/opacity-based for light rendering. */
@@ -148,10 +118,6 @@
   from{opacity:0;transform:translateY(12px) scale(.965)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
-@keyframes yycMotionTitleIn{
-  from{opacity:0;transform:translateY(10px);letter-spacing:.11em}
-  to{opacity:1;transform:translateY(0)}
-}
 @keyframes yycMotionOrbIn{
   from{opacity:0;transform:translateY(14px) scale(.96)}
   to{opacity:1;transform:translateY(0) scale(1)}
@@ -160,13 +126,7 @@
   from{opacity:.55;transform:translateY(12px)}
   to{opacity:1;transform:translateY(0)}
 }
-@keyframes yycMotionModalIn{
-  from{opacity:0;transform:translateY(12px) scale(.99)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes yycMotionBackdropIn{from{opacity:0}to{opacity:1}}
 @keyframes yycMotionTabIn{from{filter:brightness(.92)}to{filter:brightness(1)}}
-@keyframes yycMotionCount{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
 /* Touch screens retain motion but never depend on hover to reveal information. */
 @media(max-width:700px) and (prefers-reduced-motion:no-preference){
@@ -176,15 +136,12 @@
 
 /* Respect OS-level motion preferences for this entire enhancement layer. */
 @media(prefers-reduced-motion:reduce){
-  .hero .hero-logo-stage,.hero .brand-lockup h1,.hero .lockup-line,
+  .hero .lockup-line,
   .hero .hero-establishment,.hero .association-wrap,.hero .slogan,.hero .gold-quote,
-  .hero .social-row,.hero .hero-actions,.hero .culture-overline,.hero .culture-copy,
+  .hero .social-row,
   .hero .culture-orb,.hero .culture-rule,.hero .culture-foot,
   body.yyc-scroll-ready .section .reveal.yyc-scroll-in,
-  .modal[aria-hidden="false"] .modal-shell,.modal[aria-hidden="false"] .modal-backdrop,
-  .modal[aria-hidden="false"] .access-login-screen .access-login-hero,
-  .modal[aria-hidden="false"] .access-login-screen .access-login-form,
-  .admin-tab.active,.yyc-count-animating,.admin-shell .admin-stats>div{
+  .admin-tab.active{
     animation:none!important;
   }
   .topbar,.desktop-nav .nav-link,.desktop-nav .nav-admin,.menu-btn,
