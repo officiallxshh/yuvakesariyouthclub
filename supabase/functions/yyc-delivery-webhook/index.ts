@@ -230,7 +230,7 @@ async function handleResend(req: Request, rawBody: string) {
 
 function metaTimestamp(value: unknown) {
   const raw = String(value ?? "");
-  if (/^\\d{9,13}$/.test(raw)) return safeDate(Number(raw));
+  if (/^\d{9,13}$/.test(raw)) return safeDate(Number(raw));
   return safeDate(value);
 }
 
