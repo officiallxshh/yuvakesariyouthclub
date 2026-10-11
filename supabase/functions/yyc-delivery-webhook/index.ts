@@ -98,6 +98,7 @@ function shouldApplyStatus(current: string, incoming: string) {
   if (current === "complained" && incoming !== "complained") return false;
   if (current === "bounced" && !["bounced", "complained"].includes(incoming)) return false;
   if (current === "delivered" && ["queued", "sent", "delayed", "failed"].includes(incoming)) return false;
+  if (current === "delayed" && ["queued", "sent"].includes(incoming)) return false;
   if (current === "failed" && ["queued", "sent", "delayed"].includes(incoming)) return false;
   if (incoming === "queued" || incoming === "skipped") return false;
   return true;
@@ -228,6 +229,8 @@ async function handleResend(req: Request, rawBody: string) {
 }
 
 function metaTimestamp(value: unknown) {
+  const raw = String(value ?? "");
+  if (/^\\d{9,13}$/.test(raw)) return safeDate(Number(raw));
   return safeDate(value);
 }
 
