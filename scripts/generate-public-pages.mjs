@@ -145,7 +145,7 @@ function detailPage(type, item, fileSlug) {
       (item.album ? '<span class="tag">' + esc(item.album) + '</span>' : '') +
       (item.role ? '<span class="tag">' + esc(item.role) + '</span>' : '') +
     '</div><div class="body">' + esc(desc) + '</div>' +
-    '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
+    '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../index.html">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
 }
 function categoryIndexPage(title, description, route, entries) {
   const rows = entries.map(e =>
@@ -263,21 +263,28 @@ for (const [type, route, title, description] of routeDefs) {
   await fs.writeFile(path.join(ROOT, route, 'index.html'), categoryIndexPage(title, description, route, entries), 'utf8');
 }
 
-/* Keep the designed public leadership directory in sync with the same approved
-   Supabase records used to build individual crawlable leader pages. */
+/* Keep the designed public leadership directory and its structured data synchronized
+   with the same approved Supabase records used to build individual leader pages. */
 const leadersFile = path.join(ROOT, 'leaders.html');
 const leadersHtml = await fs.readFile(leadersFile, 'utf8');
 const leaderItems = (site.leaders || []).filter(item => item && itemTitle('leader', item));
 if (leaderItems.length) {
-  const usedLeaderSlugs = new Map();
+  const usedLeaderSlugs = new Set();
+  const leaderProfiles = [];
   const cards = leaderItems.map((item, i) => {
     const name = itemTitle('leader', item);
     const role = String(item.role || item.position || 'YYC Leader');
     const image = itemImage(item);
     const base = slug(item.slug || name || item.id);
-    const count = usedLeaderSlugs.get(base) || 0;
-    usedLeaderSlugs.set(base, count + 1);
-    const fileSlug = count ? base + '-' + slug(item.id || String(count + 1)).slice(-12) : base;
+    let fileSlug = base;
+    if (usedLeaderSlugs.has(fileSlug)) {
+      const suffix = slug(item.id || item.created_at || String(usedLeaderSlugs.size)).slice(-12);
+      fileSlug = (base.slice(0, 76) + '-' + suffix).replace(/-+$/g, '');
+      let n = 2;
+      while (usedLeaderSlugs.has(fileSlug)) fileSlug = base.slice(0, 76) + '-' + n++;
+    }
+    usedLeaderSlugs.add(fileSlug);
+    leaderProfiles.push({ item, name, role, image, fileSlug });
     const imageHtml = image
       ? '<div class="photo"><img src="' + esc(image) + '" alt="' + esc(name + ', ' + role + ' at Yuvakesari Youth Club') + '" loading="lazy" decoding="async"></div>'
       : '<div class="photo" aria-hidden="true"></div>';
@@ -288,7 +295,41 @@ if (leaderItems.length) {
   }).join('\n');
   const gridRegex = /<section class="grid" aria-label="YYC leadership team">[\s\S]*?<\/section>/;
   if (!gridRegex.test(leadersHtml)) throw new Error('Could not locate leadership card grid; refusing to overwrite leaders.html');
-  const nextLeadersHtml = leadersHtml.replace(gridRegex, '<section class="grid" aria-label="YYC leadership team">' + cards + '</section>');
+  let nextLeadersHtml = leadersHtml.replace(gridRegex, '<section class="grid" aria-label="YYC leadership team">' + cards + '</section>');
+
+  const jsonPattern = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
+  const jsonMatch = nextLeadersHtml.match(jsonPattern);
+  if (!jsonMatch) throw new Error('Could not locate leadership CollectionPage JSON-LD; refusing to write a stale schema.');
+  let schema;
+  try { schema = JSON.parse(jsonMatch[1]); }
+  catch { throw new Error('Leadership JSON-LD is invalid; refusing to overwrite leaders.html.'); }
+  if (schema['@type'] !== 'CollectionPage' || !schema.mainEntity) {
+    throw new Error('Leadership JSON-LD schema shape is unexpected; refusing to overwrite leaders.html.');
+  }
+  schema.mainEntity.numberOfItems = leaderProfiles.length;
+  schema.mainEntity.itemListElement = leaderProfiles.map((leader, index) => {
+    const profileUrl = BASE + '/leaders/auto/' + leader.fileSlug + '.html';
+    const person = {
+      '@type': 'Person',
+      '@id': profileUrl + '#person',
+      name: leader.name,
+      url: profileUrl,
+      worksFor: { '@id': BASE + '/#organization' }
+    };
+    if (leader.role) person.jobTitle = leader.role;
+    if (leader.image) person.image = leader.image;
+    return { '@type': 'ListItem', position: index + 1, item: person };
+  });
+  nextLeadersHtml = nextLeadersHtml.replace(
+    jsonPattern,
+    '<script type="application/ld+json">\n' + JSON.stringify(schema, null, 2) + '\n</script>'
+  );
+  const keywords = 'YYC leaders, Yuvakesari Youth Club leaders, youth club Subrahmanya, ' +
+    leaderProfiles.map(leader => leader.name).join(', ') + ', ಯುವಕೇಸರಿ ಯೂತ್ ಕ್ಲಬ್';
+  nextLeadersHtml = nextLeadersHtml.replace(
+    /<meta name="keywords" content="[^"]*">/,
+    '<meta name="keywords" content="' + esc(keywords) + '">'
+  );
   await fs.writeFile(leadersFile, nextLeadersHtml, 'utf8');
 }
 
