@@ -2416,20 +2416,20 @@ function leaderEditProfile(data){
 }
 
 
-function yycLeaderMemberOrderHTML(){
-  return '<section class="yyc-leader-member-order" style="margin-top:18px;padding:18px;border:1px solid rgba(229,191,107,.22);border-radius:18px;background:rgba(10,15,20,.72)">'+
+function yycAdminMemberOrderHTML(){
+  return '<section class="yyc-admin-member-order" style="margin-top:18px;padding:18px;border:1px solid rgba(229,191,107,.22);border-radius:18px;background:rgba(10,15,20,.72)">'+
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
       '<div><b style="display:block;font-size:13px;letter-spacing:.08em;color:#f0d38f">APPROVED MEMBER ORDER</b>'+
       '<span style="display:block;margin-top:6px;color:#9da59e;font-size:11px;line-height:1.6">Move one member up or down. Role numbers and member ID records update together.</span></div>'+
-      '<button type="button" class="btn outline" id="yycLeaderOrderRefresh">↻ REFRESH</button></div>'+
-    '<div id="yycLeaderOrderNotice" role="status" aria-live="polite" style="margin-top:12px;color:#aeb7ae;font-size:11px">Loading approved members…</div>'+
-    '<div id="yycLeaderMemberOrderList" style="display:grid;gap:8px;margin-top:12px;max-height:360px;overflow:auto">Loading…</div>'+
+      '<button type="button" class="btn outline" id="yycAdminOrderRefresh">↻ REFRESH</button></div>'+
+    '<div id="yycAdminOrderNotice" role="status" aria-live="polite" style="margin-top:12px;color:#aeb7ae;font-size:11px">Loading approved members…</div>'+
+    '<div id="yycAdminMemberOrderList" style="display:grid;gap:8px;margin-top:12px;max-height:360px;overflow:auto">Loading…</div>'+
     '<p style="margin:12px 0 0;color:#7e8982;font-size:10px;line-height:1.6">QR codes remain linked to each member’s stable record. Scanning an existing card will show the current role number; members can refresh/reissue their card to print the new number.</p>'+
   '</section>';
 }
-function yycRenderLeaderMemberOrder(members){
-  var root=$('#yycLeaderMemberOrderList');
-  var notice=$('#yycLeaderOrderNotice');
+function yycRenderAdminMemberOrder(members){
+  var root=$('#yycAdminMemberOrderList');
+  var notice=$('#yycAdminOrderNotice');
   if(!root)return;
   if(!Array.isArray(members)||!members.length){
     root.innerHTML='<div style="padding:16px;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:#8e9991;font-size:12px">No approved members found.</div>';
@@ -2443,30 +2443,30 @@ function yycRenderLeaderMemberOrder(members){
       '<div style="flex:1;min-width:110px"><b style="display:block;color:#eee5d3;font-size:12px;overflow-wrap:anywhere">'+esc(m.name||'YYC Member')+'</b>'+
       '<span style="display:block;margin-top:4px;color:#8d9991;font-size:10px">'+esc(m.role_number||'No role number')+' · '+esc(m.position||'MEMBER')+'</span></div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-      '<button type="button" class="btn outline yyc-leader-order-move" data-member-id="'+esc(m.id)+'" data-direction="up" '+(i===0?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' up" style="padding:8px 10px;min-height:36px">↑ UP</button>'+
-      '<button type="button" class="btn outline yyc-leader-order-move" data-member-id="'+esc(m.id)+'" data-direction="down" '+(i===members.length-1?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' down" style="padding:8px 10px;min-height:36px">↓ DOWN</button>'+
+      '<button type="button" class="btn outline yyc-admin-order-move" data-member-id="'+esc(m.id)+'" data-direction="up" '+(i===0?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' up" style="padding:8px 10px;min-height:36px">↑ UP</button>'+
+      '<button type="button" class="btn outline yyc-admin-order-move" data-member-id="'+esc(m.id)+'" data-direction="down" '+(i===members.length-1?'disabled':'')+' aria-label="Move '+esc(m.name||'member')+' down" style="padding:8px 10px;min-height:36px">↓ DOWN</button>'+
       '</div></div>';
   }).join('');
   if(notice)notice.textContent=members.length+' approved members · Changes apply to the official role-number sequence.';
-  root.querySelectorAll('.yyc-leader-order-move').forEach(function(btn){
+  root.querySelectorAll('.yyc-admin-order-move').forEach(function(btn){
     btn.addEventListener('click',async function(){
-      if(!leaderToken){toast('Leader session expired. Please log in again.');return;}
+      if(!adminToken){toast('Admin session expired. Please log in again.');return;}
       var memberId=btn.getAttribute('data-member-id');
       var direction=btn.getAttribute('data-direction');
       if(!memberId||!direction)return;
       var row=btn.closest('div[style*="display:flex"]');
-      var buttons=root.querySelectorAll('.yyc-leader-order-move');
+      var buttons=root.querySelectorAll('.yyc-admin-order-move');
       buttons.forEach(function(b){b.disabled=true;});
       if(notice)notice.textContent='Updating member order and role numbers…';
       try{
-        var result=await rpc('leader_reorder_member',{p_token:leaderToken,p_member_id:memberId,p_direction:direction},{timeoutMs:20000,retries:0});
+        var result=await rpc('admin_reorder_member',{p_token:adminToken,p_member_id:memberId,p_direction:direction},{timeoutMs:20000,retries:0});
         if(!result||!result.ok)throw new Error(result&&result.error||'Could not update member order');
         if(result.moved===false){
           toast(result.message||'Member is already at that end of the list');
         }else{
           toast('Member order saved · New role number '+(result.role_number||'updated'));
         }
-        await yycLoadLeaderMemberOrder();
+        await yycLoadAdminMemberOrder();
       }catch(err){
         if(notice)notice.textContent=err.message||'Could not update member order.';
         toast(err.message||'Could not update member order');
@@ -2475,16 +2475,16 @@ function yycRenderLeaderMemberOrder(members){
     });
   });
 }
-async function yycLoadLeaderMemberOrder(){
-  var root=$('#yycLeaderMemberOrderList');
-  if(!root||!leaderToken)return;
-  var notice=$('#yycLeaderOrderNotice');
+async function yycLoadAdminMemberOrder(){
+  var root=$('#yycAdminMemberOrderList');
+  if(!root||!adminToken)return;
+  var notice=$('#yycAdminOrderNotice');
   root.innerHTML='<div style="padding:14px;color:#8e9991;font-size:12px">Loading approved members…</div>';
   if(notice)notice.textContent='Loading official member order…';
   try{
-    var result=await rpc('leader_member_order_data',{p_token:leaderToken},{timeoutMs:15000,retries:1});
+    var result=await rpc('admin_member_order_data',{p_token:adminToken},{timeoutMs:15000,retries:1});
     if(!result||!result.ok)throw new Error(result&&result.error||'Could not load approved members');
-    yycRenderLeaderMemberOrder(result.members||[]);
+    yycRenderAdminMemberOrder(result.members||[]);
   }catch(err){
     root.innerHTML='<div style="padding:14px;border:1px solid rgba(235,145,120,.22);border-radius:12px;color:#d6a18f;font-size:12px">Could not load member order. Please refresh and try again.</div>';
     if(notice)notice.textContent=err.message||'Could not load approved members.';
@@ -2497,15 +2497,12 @@ function leaderDashboard(data){
     (data.__adminView?'':yycMemberOverviewHTML('leader'))+
     yycDigitalCard(data,'leader')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
-    (data.__adminView?'':yycLeaderMemberOrderHTML())+
+    
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="leaderEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
     yycSessionSection('leader',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
-  var memberOrderRefresh=$('#yycLeaderOrderRefresh');
-  if(memberOrderRefresh)memberOrderRefresh.addEventListener('click',function(){yycLoadLeaderMemberOrder();});
-  if(!data.__adminView)yycLoadLeaderMemberOrder();
   var dashboardRefresh=$('#yycDashboardRefresh');
   if(dashboardRefresh)dashboardRefresh.addEventListener('click',function(){yycLoadMemberDashboard('leader');});
   var dashboardEvents=$('#yycDashboardViewEvents');
@@ -3114,11 +3111,12 @@ function renderAdminTab(tab,d){
 
   if(tab==='leaders'){
     var ls=d.leaders||[];
-    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add leader</span></button></div></div><div class="admin-toolbar"><input id="adminLeaderSearch" class="admin-search" placeholder="Search leader, role, number or email" autocomplete="off"><span class="admin-result-count" id="adminLeaderCount"></span><button type="button" class="mini-btn" id="exportLeadersCSV">Export CSV</button></div>'+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>Card</span></button><button class="mini-btn" data-download-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">↓</span><span>Download ID</span></button><button class="mini-btn" data-edit-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">🔑</span><span>PASSWORD</span></button><button class="mini-btn" data-del-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No leaders yet.</div>');
+    a.innerHTML='<div class="admin-top"><h2>Leaders</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addLeaderBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add leader</span></button></div></div><div class="admin-toolbar"><input id="adminLeaderSearch" class="admin-search" placeholder="Search leader, role, number or email" autocomplete="off"><span class="admin-result-count" id="adminLeaderCount"></span><button type="button" class="mini-btn" id="exportLeadersCSV">Export CSV</button></div>'+yycAdminMemberOrderHTML()+ (ls.length?'<div class="admin-card-list">'+ls.map(function(l){return '<div class="approval-card"><div class="meta"><strong>'+esc(l.name)+'</strong><small>'+esc(l.role)+' · '+esc(l.role_number||'PENDING')+'</small><small>'+esc(l.line||'')+'</small><small>'+((l.login_enabled)?'Login enabled':'Login not set')+' · '+esc(l.status||'active')+'</small></div><div class="admin-actions"><button class="mini-btn" data-card-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">◉</span><span>Card</span></button><button class="mini-btn" data-download-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">↓</span><span>Download ID</span></button><button class="mini-btn" data-edit-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-reset-leader="'+l.id+'"><span class="yyc-admin-action-icon" aria-hidden="true">🔑</span><span>PASSWORD</span></button><button class="mini-btn" data-del-leader="'+l.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No leaders yet.</div>');
     $('#addLeaderBtn').addEventListener('click',function(){adminLeaderForm(null);});
     $('#adminLeaderSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase();var rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=!q||row.textContent.toLowerCase().indexOf(q)>=0;row.style.display=hit?'':'none';if(hit)shown++;});$('#adminLeaderCount').textContent=shown+' of '+rows.length+' shown';});
     $('#adminLeaderSearch').dispatchEvent(new Event('input'));
     $('#exportLeadersCSV').addEventListener('click',function(){exportYYCLeadersCSV(ls);});
+    yycLoadAdminMemberOrder();
     return;
   }
   if(tab==='updates'){
