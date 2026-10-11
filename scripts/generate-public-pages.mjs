@@ -287,12 +287,12 @@ if (leaderItems.length) {
       '<div class="person-body"><div class="num">YYC LEADER · ' + String(i + 1).padStart(2, '0') + '</div>' +
       '<h2 class="name">' + esc(name) + '</h2><p class="role">' + esc(role) + '</p>' +
       '<a class="person-link" href="./leaders/auto/' + fileSlug + '.html">VIEW PROFILE ↗</a></div></article>';
-  }).join('\\n');
-  const gridRegex = /<section class="grid" aria-label="YYC leadership team">[\\s\\S]*?<\\/section>/;
+  }).join('\n');
+  const gridRegex = /<section class="grid" aria-label="YYC leadership team">[\s\S]*?<\/section>/;
   if (!gridRegex.test(leadersHtml)) throw new Error('Could not locate leadership card grid; refusing to overwrite leaders.html');
   let nextLeadersHtml = leadersHtml.replace(gridRegex, '<section class="grid" aria-label="YYC leadership team">' + cards + '</section>');
 
-  const jsonPattern = /<script type="application\\/ld\\+json">([\\s\\S]*?)<\\/script>/;
+  const jsonPattern = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
   const jsonMatch = nextLeadersHtml.match(jsonPattern);
   if (!jsonMatch) throw new Error('Could not locate leadership CollectionPage JSON-LD; refusing to write a stale schema.');
   let schema;
@@ -317,7 +317,7 @@ if (leaderItems.length) {
   });
   nextLeadersHtml = nextLeadersHtml.replace(
     jsonPattern,
-    '<script type="application/ld+json">\\n' + JSON.stringify(schema, null, 2) + '\\n</script>'
+    '<script type="application/ld+json">\n' + JSON.stringify(schema, null, 2) + '\n</script>'
   );
   const keywords = 'YYC leaders, Yuvakesari Youth Club leaders, youth club Subrahmanya, ' +
     leaderProfiles.map(leader => leader.name).join(', ') + ', ಯುವಕೇಸರಿ ಯೂತ್ ಕ್ಲಬ್';
