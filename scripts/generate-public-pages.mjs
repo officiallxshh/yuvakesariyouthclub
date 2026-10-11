@@ -145,7 +145,7 @@ function detailPage(type, item, fileSlug) {
       (item.album ? '<span class="tag">' + esc(item.album) + '</span>' : '') +
       (item.role ? '<span class="tag">' + esc(item.role) + '</span>' : '') +
     '</div><div class="body">' + esc(desc) + '</div>' +
-    '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
+    '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../index.html">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
 }
 function categoryIndexPage(title, description, route, entries) {
   const rows = entries.map(e =>
