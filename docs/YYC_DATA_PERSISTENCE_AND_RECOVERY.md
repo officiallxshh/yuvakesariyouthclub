@@ -8,7 +8,7 @@ Uploaded photos and media are stored separately through Supabase Storage buckets
 
 ## Application-level daily snapshots
 
-The existing `yyc-daily-backup` pg_cron job runs at **02:15 UTC daily**. This migration upgrades its snapshot format to version 2 and includes these persisted records: settings, members (without password hashes), leaders (without password hashes), announcements, news, events, gallery, swags, volunteers, achievements, club history, finance, contact messages, attendance, member cards, event RSVPs, member notifications, admin activity history, email/WhatsApp delivery history, delivery events, and a manifest of media object paths and metadata.
+The existing `yyc-daily-backup` pg_cron job runs at **02:15 UTC daily**. This migration upgrades its snapshot format to version 2 and includes these persisted records: settings, administrator account metadata (without password hashes), members (without password hashes), leaders (without password hashes), announcements, news, events, gallery, swags, volunteers, achievements, club history, finance, contact messages, attendance, member cards, event RSVPs, member notifications, admin activity history, email/WhatsApp delivery history, delivery events, and a manifest of media object paths and metadata.
 
 The snapshot also records table counts so an administrator can see whether a snapshot includes the expected modules. Active session-token hashes, password hashes, and login-throttling state are intentionally excluded. The storage manifest is only an inventory; it does **not** back up the binary contents of photos/certificates.
 
