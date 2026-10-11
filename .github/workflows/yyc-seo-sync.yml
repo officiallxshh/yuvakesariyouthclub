@@ -1,28 +1,82 @@
 name: YYC Public SEO Sync
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app.js'
+      - 'scripts/generate-public-pages.mjs'
+      - 'events/**'
+      - 'updates/**'
+      - 'gallery/**'
+      - 'leaders/**'
+      - 'achievements/**'
+      - 'media.html'
+      - 'instagram.html'
+      - 'leaders.html'
   schedule:
-    - cron: '30 0 * * *'
+    - cron: '*/30 * * * *'
+
 permissions:
   contents: write
+
+concurrency:
+  group: yyc-public-seo-sync
+  cancel-in-progress: false
+
 jobs:
   generate:
+    # Skip only the push event caused by this workflow's own commit.
+    if: github.actor != 'github-actions[bot]' || github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 20
-      - name: Generate public pages
+
+      - name: Validate generator syntax
+        run: node --check scripts/generate-public-pages.mjs
+
+      - name: Generate crawlable public pages and sitemap
         run: node scripts/generate-public-pages.mjs
+
+      - name: Validate sitemap
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const xml = fs.readFileSync('sitemap.xml', 'utf8');
+          const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
+          if (!xml.startsWith('<?xml')) throw new Error('Sitemap XML declaration is missing');
+          if (!urls.length) throw new Error('Sitemap contains no URLs');
+          if (new Set(urls).size !== urls.length) throw new Error('Sitemap contains duplicate URLs');
+          for (const required of [
+            'https://www.yuvakesariyouthclub.in/',
+            'https://www.yuvakesariyouthclub.in/media.html',
+            'https://www.yuvakesariyouthclub.in/instagram.html',
+            'https://www.yuvakesariyouthclub.in/leaders.html',
+            'https://www.yuvakesariyouthclub.in/events/',
+            'https://www.yuvakesariyouthclub.in/gallery/'
+          ]) {
+            if (!urls.includes(required)) throw new Error('Required URL missing from sitemap: ' + required);
+          }
+          console.log('Validated sitemap URLs:', urls.length);
+          NODE
+
       - name: Commit generated public pages
         run: |
           git config user.name "YYC Website Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add sitemap.xml events updates gallery leaders achievements
-          git diff --cached --quiet || git commit -m "Sync YYC public SEO pages"
-          git push
+          git add -A sitemap.xml events updates gallery leaders achievements
+          if git diff --cached --quiet; then
+            echo "No public SEO changes to commit."
+            exit 0
+          fi
+          git commit -m "Sync published YYC content for search engines"
+          git pull --rebase origin main
+          git push origin HEAD:main
