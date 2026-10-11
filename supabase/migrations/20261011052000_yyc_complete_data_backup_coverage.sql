@@ -13,6 +13,7 @@ AS $function$
     'backup_scope', 'yyc_business_data_and_audit',
     'generated_at', clock_timestamp(),
     'settings', (SELECT to_jsonb(s) FROM public.site_settings s WHERE s.id = true),
+    'admin_accounts', COALESCE((SELECT jsonb_agg(to_jsonb(au) - 'password_hash' ORDER BY au.created_at, au.id) FROM public.admin_users au), '[]'::jsonb),
     'members', COALESCE((SELECT jsonb_agg(to_jsonb(m) - 'password_hash' ORDER BY m.created_at, m.id) FROM public.members m), '[]'::jsonb),
     'leaders', COALESCE((SELECT jsonb_agg(to_jsonb(l) - 'password_hash' ORDER BY l.created_at, l.id) FROM public.leaders l), '[]'::jsonb),
     'announcements', COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.published_at, a.id) FROM public.announcements a), '[]'::jsonb),
@@ -47,6 +48,7 @@ AS $function$
       WHERE o.bucket_id IN ('member-photos', 'yyc-media', 'yyc-certificates')
     ), '[]'::jsonb),
     'table_counts', jsonb_build_object(
+      'admin_accounts', (SELECT count(*) FROM public.admin_users),
       'members', (SELECT count(*) FROM public.members),
       'leaders', (SELECT count(*) FROM public.leaders),
       'announcements', (SELECT count(*) FROM public.announcements),
