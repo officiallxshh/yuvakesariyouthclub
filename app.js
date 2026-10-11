@@ -3168,8 +3168,8 @@ function renderAdminTab(tab,d){
       host.innerHTML=items.map(function(x){
         var status=String(x.status||'skipped').toLowerCase();
         var bad=status==='failed'||status==='bounced'||status==='complained';
-        var state=(status==='sent'||status==='delivered')?'ok':bad?'failed':(status==='queued'||status==='delayed')?'queued':'skipped';
-        var icon=state==='ok'?'✓':state==='failed'?'!':state==='queued'?'…':'—';
+        var state=(status==='sent'||status==='delivered')?'ok':bad?'failed':status==='delayed'?'delayed':status==='queued'?'queued':'skipped';
+        var icon=state==='ok'?'✓':state==='failed'?'!':(state==='queued'||state==='delayed')?'…':'—';
         var channel=String(x.channel||'').toUpperCase();
         var statusLabels={queued:'QUEUED',sent:'SENT · ACCEPTED',delayed:'DELAYED',delivered:'DELIVERED · CONFIRMED',bounced:'BOUNCED',complained:'COMPLAINT',failed:'FAILED',skipped:'SKIPPED'};
         var stamp=x.status_updated_at||x.provider_event_at||x.delivered_at||x.sent_at||x.created_at;
