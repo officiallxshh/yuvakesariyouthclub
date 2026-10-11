@@ -269,16 +269,21 @@ const leadersFile = path.join(ROOT, 'leaders.html');
 const leadersHtml = await fs.readFile(leadersFile, 'utf8');
 const leaderItems = (site.leaders || []).filter(item => item && itemTitle('leader', item));
 if (leaderItems.length) {
-  const usedLeaderSlugs = new Map();
+  const usedLeaderSlugs = new Set();
   const leaderProfiles = [];
   const cards = leaderItems.map((item, i) => {
     const name = itemTitle('leader', item);
     const role = String(item.role || item.position || 'YYC Leader');
     const image = itemImage(item);
     const base = slug(item.slug || name || item.id);
-    const count = usedLeaderSlugs.get(base) || 0;
-    usedLeaderSlugs.set(base, count + 1);
-    const fileSlug = count ? base + '-' + slug(item.id || String(count + 1)).slice(-12) : base;
+    let fileSlug = base;
+    if (usedLeaderSlugs.has(fileSlug)) {
+      const suffix = slug(item.id || item.created_at || String(usedLeaderSlugs.size)).slice(-12);
+      fileSlug = (base.slice(0, 76) + '-' + suffix).replace(/-+$/g, '');
+      let n = 2;
+      while (usedLeaderSlugs.has(fileSlug)) fileSlug = base.slice(0, 76) + '-' + n++;
+    }
+    usedLeaderSlugs.add(fileSlug);
     leaderProfiles.push({ item, name, role, image, fileSlug });
     const imageHtml = image
       ? '<div class="photo"><img src="' + esc(image) + '" alt="' + esc(name + ', ' + role + ' at Yuvakesari Youth Club') + '" loading="lazy" decoding="async"></div>'
