@@ -472,13 +472,24 @@
   }
   function renderVolunteers90(d){
     var rows=d.volunteers||[];
+    var duplicateIds={};
+    rows.forEach(function(v,i){
+      var email=String(v.email||'').trim().toLowerCase();
+      var phone=String(v.phone||'').replace(/\D/g,'');
+      rows.forEach(function(other,j){
+        if(i===j)return;
+        var otherEmail=String(other.email||'').trim().toLowerCase();
+        var otherPhone=String(other.phone||'').replace(/\D/g,'');
+        if((email&&email===otherEmail)||(phone.length>=7&&phone===otherPhone))duplicateIds[String(v.id)]=true;
+      });
+    });
     var contactEmail=String((d.settings||{}).contact_email||'').trim();
     var contactConfigured=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail);
     var emailHint=contactConfigured?'Contact email is configured. Use the test to verify provider acceptance.':'Configure Admin → Site Settings → Contact Email before relying on admin alerts.';
     return adminHeader90('Volunteers')+
       '<div class="notice" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><strong>EMAIL NOTIFICATION CHECK</strong><br><small>'+esc90(emailHint)+'</small></div><button type="button" class="mini-btn gold" data-v90-test-email>Send test email</button></div>'+
-      '<div class="admin-toolbar"><input id="v90Search" class="admin-search" placeholder="Search volunteer, area or skill"><select id="v90Status"><option value="">All status</option><option>pending</option><option>approved</option><option>denied</option><option>archived</option></select><span class="admin-result-count" id="v90Count"></span></div>'+
-      '<div class="admin-card-list">'+(rows.length?rows.map(function(v){return '<div class="approval-card yyc90-volunteer-row" data-status="'+esc90(v.status)+'"><div class="meta"><strong>'+esc90(v.name)+'</strong><small>'+esc90(v.area||'Area not set')+' · '+esc90(v.skills||'')+'</small><small>'+esc90(v.email||'Email not provided')+' · '+esc90(v.phone||'')+'</small><small>'+esc90(v.availability||'')+' · '+esc90(v.status||'pending').toUpperCase()+'</small>'+volunteerEmailBadge90(v.application_email_status,'Applicant email',v.application_email_sent_at)+volunteerEmailBadge90(v.admin_alert_email_status,'Admin alert',v.admin_alert_email_sent_at)+(v.decision_email_for_status?volunteerEmailBadge90(v.decision_email_status,'Decision email · '+v.decision_email_for_status,v.decision_email_sent_at):'')+'</div><div class="admin-actions"><button class="mini-btn" data-v90-review="'+v.id+'">Review</button>'+(v.status==='pending'?'<button class="mini-btn gold" data-v90-action="approve" data-v90-id="'+v.id+'">Approve</button><button class="mini-btn" data-v90-action="deny" data-v90-id="'+v.id+'">Deny</button>':'<button class="mini-btn" data-v90-action="pending" data-v90-id="'+v.id+'">Set Pending</button>')+'<button class="mini-btn" data-v90-action="archive" data-v90-id="'+v.id+'">Archive</button></div></div>';}).join(''):'<div class="empty">No volunteer applications yet.</div>')+'</div>';
+      '<div class="admin-toolbar"><input id="v90Search" class="admin-search" placeholder="Search volunteer, area or skill"><select id="v90Status"><option value="">All status</option><option>pending</option><option>approved</option><option>denied</option><option>archived</option><option value="duplicate">Possible duplicate</option></select><span class="admin-result-count" id="v90Count"></span></div><small style="display:block;margin:-4px 0 12px;opacity:.75">Duplicate flags are advisory only. Matching applications are never merged, blocked, or deleted.</small>'+
+      '<div class="admin-card-list">'+(rows.length?rows.map(function(v){return '<div class="approval-card yyc90-volunteer-row" data-status="'+esc90(v.status)+'" data-duplicate="'+(duplicateIds[String(v.id)]?'true':'false')+'"><div class="meta"><strong>'+esc90(v.name)+'</strong><small>'+esc90(v.area||'Area not set')+' · '+esc90(v.skills||'')+'</small><small>'+esc90(v.email||'Email not provided')+' · '+esc90(v.phone||'')+'</small><small>'+esc90(v.availability||'')+' · '+esc90(v.status||'pending').toUpperCase()+'</small>'+volunteerEmailBadge90(v.application_email_status,'Applicant email',v.application_email_sent_at)+volunteerEmailBadge90(v.admin_alert_email_status,'Admin alert',v.admin_alert_email_sent_at)+(v.decision_email_for_status?volunteerEmailBadge90(v.decision_email_status,'Decision email · '+v.decision_email_for_status,v.decision_email_sent_at):'')+(duplicateIds[String(v.id)]?'<small class="yyc90-status-pill is-pending" style="display:inline-block;margin:6px 0">POSSIBLE DUPLICATE · MATCHING EMAIL / PHONE</small>':'')+'</div><div class="admin-actions"><button class="mini-btn" data-v90-review="'+v.id+'">Review</button>'+(v.status==='pending'?'<button class="mini-btn gold" data-v90-action="approve" data-v90-id="'+v.id+'">Approve</button><button class="mini-btn" data-v90-action="deny" data-v90-id="'+v.id+'">Deny</button>':'<button class="mini-btn" data-v90-action="pending" data-v90-id="'+v.id+'">Set Pending</button>')+'<button class="mini-btn" data-v90-action="archive" data-v90-id="'+v.id+'">Archive</button></div></div>';}).join(''):'<div class="empty">No volunteer applications yet.</div>')+'</div>';
   }
   function renderVolunteerReview90(v){
     if(!v)return adminHeader90('Volunteer Review')+'<div class="empty">Volunteer application not found.</div>';
@@ -1060,7 +1071,7 @@
     var w=q('#adminWorkspace');if(!w)return;
     var back=w.querySelector('[data-yyc90-back]');if(back)back.onclick=function(){if(typeof window.adminPanel==='function')window.adminPanel('overview',true);};
     if(tab==='volunteers'){
-      var filter=function(){var qv=(q('#v90Search').value||'').toLowerCase(),st=q('#v90Status').value,rows=qa('.yyc90-volunteer-row'),n=0;rows.forEach(function(r){var hit=(!qv||r.textContent.toLowerCase().indexOf(qv)>=0)&&(!st||r.getAttribute('data-status')===st);r.style.display=hit?'':'none';if(hit)n++;});q('#v90Count').textContent=n+' of '+rows.length+' shown';};
+      var filter=function(){var qv=(q('#v90Search').value||'').toLowerCase(),st=q('#v90Status').value,rows=qa('.yyc90-volunteer-row'),n=0;rows.forEach(function(r){var statusHit=!st||(st==='duplicate'?r.getAttribute('data-duplicate')==='true':r.getAttribute('data-status')===st);var hit=(!qv||r.textContent.toLowerCase().indexOf(qv)>=0)&&statusHit;r.style.display=hit?'':'none';if(hit)n++;});q('#v90Count').textContent=n+' of '+rows.length+' shown';};
       q('#v90Search').addEventListener('input',filter);q('#v90Status').addEventListener('change',filter);filter();
     }
     if(tab==='analytics'){
