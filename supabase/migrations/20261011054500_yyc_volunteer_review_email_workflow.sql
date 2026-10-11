@@ -105,41 +105,43 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO 'public', 'pg_temp'
 AS $function$
-DECLARE v_status text;
+DECLARE v_status text; v_current_status text; v_next_status text; v_next_approved boolean;
 BEGIN
   IF NOT public._admin_ok(p_token) THEN
     RETURN jsonb_build_object('ok',false,'error','Unauthorized');
   END IF;
 
+  SELECT status INTO v_current_status FROM public.volunteers WHERE id=p_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok',false,'error','Volunteer application not found');
+  END IF;
+
   IF lower(p_action)='approve' THEN
-    UPDATE public.volunteers SET status='approved',approved=true,
-      decision_email_status='pending',decision_email_for_status=NULL,
-      decision_email_sent_at=NULL,decision_email_error=NULL
-    WHERE id=p_id RETURNING status INTO v_status;
+    v_next_status:='approved'; v_next_approved:=true;
   ELSIF lower(p_action)='deny' THEN
-    UPDATE public.volunteers SET status='denied',approved=false,
-      decision_email_status='pending',decision_email_for_status=NULL,
-      decision_email_sent_at=NULL,decision_email_error=NULL
-    WHERE id=p_id RETURNING status INTO v_status;
+    v_next_status:='denied'; v_next_approved:=false;
   ELSIF lower(p_action)='archive' THEN
-    UPDATE public.volunteers SET status='archived',
-      decision_email_status='pending',decision_email_for_status=NULL,
-      decision_email_sent_at=NULL,decision_email_error=NULL
-    WHERE id=p_id RETURNING status INTO v_status;
+    v_next_status:='archived'; v_next_approved:=NULL;
   ELSIF lower(p_action)='pending' THEN
-    UPDATE public.volunteers SET status='pending',approved=false,
-      decision_email_status='pending',decision_email_for_status=NULL,
-      decision_email_sent_at=NULL,decision_email_error=NULL
-    WHERE id=p_id RETURNING status INTO v_status;
+    v_next_status:='pending'; v_next_approved:=false;
   ELSE
     RETURN jsonb_build_object('ok',false,'error','Invalid action');
   END IF;
 
-  IF v_status IS NULL THEN
-    RETURN jsonb_build_object('ok',false,'error','Volunteer application not found');
+  IF coalesce(v_current_status,'pending')=v_next_status THEN
+    RETURN jsonb_build_object('ok',true,'status',v_next_status,'id',p_id,'unchanged',true);
   END IF;
 
+  UPDATE public.volunteers
+  SET status=v_next_status,
+      approved=CASE WHEN v_next_approved IS NULL THEN approved ELSE v_next_approved END,
+      decision_email_status='pending',
+      decision_email_for_status=NULL,
+      decision_email_sent_at=NULL,
+      decision_email_error=NULL
+  WHERE id=p_id RETURNING status INTO v_status;
+
   PERFORM public.admin_log_activity(p_token,'volunteer_'||lower(p_action),'volunteer',p_id,'Volunteer status changed');
-  RETURN jsonb_build_object('ok',true,'status',v_status,'id',p_id);
+  RETURN jsonb_build_object('ok',true,'status',v_status,'id',p_id,'unchanged',false);
 END
 $function$;
