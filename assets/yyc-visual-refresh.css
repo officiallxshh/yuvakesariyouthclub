@@ -1,467 +1,154 @@
-/* YYC VISUAL REFRESH · 11 OCT 2026
-   Presentation-only layer. No content, Supabase, auth, session, or role logic.
-   Loaded last intentionally; remove this file/link to revert the visual pass. */
+/* YYC MOTION PASS · 11 OCT 2026
+   Animation-only enhancement layer. Existing layout, colour, content, auth,
+   Supabase data, session and permission logic are intentionally unchanged. */
 
-:root{
-  --yyc-bg:#05090c;
-  --yyc-surface:#0b1115;
-  --yyc-surface-raised:#10191e;
-  --yyc-gold:#e4bd70;
-  --yyc-gold-bright:#f5d99a;
-  --yyc-teal:#78b9a4;
-  --yyc-text:#f1eee5;
-  --yyc-muted:#a7b0ad;
-  --yyc-line:rgba(228,189,112,.17);
-  --yyc-radius-sm:12px;
-  --yyc-radius-md:18px;
-  --yyc-radius-lg:26px;
-  --yyc-ease:cubic-bezier(.2,.75,.25,1);
+:root{--yyc-motion-ease:cubic-bezier(.16,1,.3,1)}
+
+/* HERO: layered entrance complements the existing automatic background zoom. */
+@media(prefers-reduced-motion:no-preference){
+  .hero .lockup-line,
+  .hero .hero-establishment{
+    animation:yycMotionFadeUp .68s var(--yyc-motion-ease) .24s both;
+  }
+  .hero .association-wrap{
+    animation:yycMotionFadeUp .72s var(--yyc-motion-ease) .30s both;
+  }
+  .hero .slogan{animation:yycMotionFadeUp .72s var(--yyc-motion-ease) .37s both}
+  .hero .gold-quote{animation:yycMotionFadeUp .78s var(--yyc-motion-ease) .43s both}
+  .hero .social-row{animation:yycMotionFadeUp .7s var(--yyc-motion-ease) .50s both}
+  .hero .culture-orb{animation:yycMotionOrbIn .85s var(--yyc-motion-ease) both}
+  .hero .culture-orb:nth-child(1){animation-delay:.38s}
+  .hero .culture-orb:nth-child(2){animation-delay:.47s}
+  .hero .culture-orb:nth-child(3){animation-delay:.56s}
 }
 
-/* A single visual rhythm for controls, fields, and focus feedback. */
-html{scroll-padding-top:92px}
-body{
-  color:var(--yyc-text);
-  text-rendering:optimizeLegibility;
-  -webkit-font-smoothing:antialiased;
-}
-::selection{background:rgba(120,185,164,.3);color:#fff}
-a,button,input,select,textarea{accent-color:var(--yyc-gold)}
-:where(a[href],button,input,select,textarea,[role="button"],[tabindex]:not([tabindex="-1"])):focus-visible{
-  outline:2px solid var(--yyc-gold-bright);
-  outline-offset:3px;
-}
-:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea){
-  border-radius:var(--yyc-radius-sm);
-}
-:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea):focus-visible{
-  border-color:rgba(245,217,154,.72)!important;
-  box-shadow:0 0 0 3px rgba(228,189,112,.14);
-}
-:where(button,a.btn,.btn,.link-btn,.nav-admin,.mini-btn,.admin-tab){
+/* NAVIGATION: quick, restrained feedback instead of large movement. */
+.topbar,.desktop-nav .nav-link,.desktop-nav .nav-admin,.menu-btn,
+.mobile-panel>a,.mobile-panel .nav-admin{
   transition:
-    color .2s var(--yyc-ease),
-    background-color .2s var(--yyc-ease),
-    border-color .2s var(--yyc-ease),
-    box-shadow .2s var(--yyc-ease),
-    transform .2s var(--yyc-ease),
-    filter .2s var(--yyc-ease);
+    background-color .22s var(--yyc-motion-ease),
+    color .22s var(--yyc-motion-ease),
+    border-color .22s var(--yyc-motion-ease),
+    box-shadow .22s var(--yyc-motion-ease),
+    transform .22s var(--yyc-motion-ease);
 }
-:where(button:disabled,input:disabled,select:disabled,textarea:disabled,[aria-disabled="true"]){
-  cursor:not-allowed;
-  opacity:.66;
+.desktop-nav .nav-link:active,.desktop-nav .nav-admin:active,
+.mobile-panel>a:active,.mobile-panel .nav-admin:active{
+  transform:scale(.975);
 }
+.menu-btn i{transition:transform .28s var(--yyc-motion-ease),opacity .2s ease}
 
-/* Header: keep YYC identity prominent without squeezing the navigation. */
-.topbar{
-  min-height:72px;
-  padding-left:clamp(14px,2.1vw,30px);
-  padding-right:clamp(14px,2.1vw,30px);
-  background:linear-gradient(180deg,rgba(3,7,10,.97),rgba(5,10,13,.88));
-  border-bottom-color:rgba(228,189,112,.16);
-}
-.brand{gap:11px}
-.brand-mark{
-  flex:0 0 auto;
-  box-shadow:0 0 0 4px rgba(228,189,112,.035),0 8px 26px rgba(0,0,0,.24);
-}
-.brand-type b{letter-spacing:.12em}
-.desktop-nav{gap:3px}
-.desktop-nav>a,.nav-admin{
-  border-radius:999px;
-}
-.desktop-nav>a{
-  padding-inline:clamp(7px,.8vw,12px);
-  font-size:12px;
-}
-.desktop-nav>a.active{
-  background:linear-gradient(180deg,rgba(228,189,112,.095),rgba(228,189,112,.025));
-}
-.desktop-nav>a.active:after,.desktop-nav>a:hover:after{
-  left:19%;right:19%;bottom:0;
-}
-.desktop-nav .nav-admin{
-  min-height:40px;
-  padding-inline:12px;
-  font-size:11px;
-  letter-spacing:0;
-}
-.nav-admin:focus-visible,.menu-btn:focus-visible{
-  outline-offset:3px;
-}
-.menu-btn{
-  border-radius:14px;
-  background:rgba(228,189,112,.045);
-  box-shadow:inset 0 0 0 1px rgba(228,189,112,.025);
-}
-.mobile-panel{
-  border:1px solid rgba(228,189,112,.16);
-  border-radius:0 0 22px 22px;
-  background:rgba(5,10,13,.97);
-  box-shadow:0 24px 60px rgba(0,0,0,.38);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-}
-.mobile-panel>a{
-  border-radius:12px;
-  transition:background .2s var(--yyc-ease),color .2s var(--yyc-ease);
-}
-.mobile-panel>a:hover,.mobile-panel>a:focus-visible{
-  background:rgba(228,189,112,.07);
-  color:var(--yyc-gold-bright);
-}
-
-/* Hero: balanced composition, readable brand lockup, restrained cinematic light. */
-@media(min-width:1101px){
-  .hero{
-    grid-template-columns:minmax(0,1.08fr) minmax(390px,.82fr);
-    gap:clamp(26px,3vw,46px);
-    padding-left:clamp(32px,3.3vw,58px);
-    padding-right:clamp(32px,3.3vw,58px);
+/* PAGE SECTIONS: use the current reveal hook; never hide unrevealed content. */
+@media(prefers-reduced-motion:no-preference){
+  body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
+    animation:yycMotionSectionReveal .62s var(--yyc-motion-ease) both;
   }
-}
-.hero-main{max-width:790px}
-.hero-logo{
-  box-shadow:0 0 0 7px rgba(7,10,13,.27),0 0 0 8px rgba(221,174,83,.12),0 22px 58px rgba(0,0,0,.3);
-}
-.brand-lockup h1{
-  text-wrap:balance;
-  text-shadow:0 6px 30px rgba(0,0,0,.42);
-}
-.slogan{line-height:1.4}
-.gold-quote{line-height:1.12}
-.hero-actions{gap:12px}
-.hero-actions .btn{
-  min-height:48px;
-  padding-inline:clamp(17px,1.7vw,24px);
-}
-.btn.gold{
-  background:linear-gradient(135deg,#f0cc7d,#d0a14d);
-  border-color:rgba(255,226,163,.6);
-  box-shadow:0 10px 28px rgba(146,99,26,.18);
-}
-.btn.glass{
-  border-color:rgba(239,205,135,.35);
-  background:rgba(5,10,13,.43);
-}
-.culture-panel{
-  border-left:1px solid rgba(228,189,112,.13);
-  padding-left:clamp(18px,2vw,30px);
-}
-.culture-overline em{line-height:1}
-.culture-copy{font-size:12px;line-height:1.75}
-.culture-orbs{gap:clamp(8px,1vw,14px)}
-.orb-image{
-  box-shadow:0 0 0 5px rgba(4,8,11,.55),0 0 0 6px rgba(236,193,105,.13),0 18px 35px rgba(0,0,0,.3);
-}
-.hero-bottom{align-items:center}
-.bottom-rail{border-color:rgba(228,189,112,.22)}
-.scroll-cue{opacity:.84;transition:opacity .2s var(--yyc-ease),transform .2s var(--yyc-ease)}
-.scroll-cue:hover{opacity:1;transform:translateY(3px)}
-
-/* Section rhythm: more consistent widths, breathing room and editorial hierarchy. */
-.section{
-  width:min(100%,1600px);
-  padding-inline:clamp(20px,4.4vw,68px);
-  padding-block:clamp(72px,7.2vw,112px);
-  min-height:0;
-}
-.section:before{
-  left:clamp(20px,4.4vw,68px);
-  right:clamp(20px,4.4vw,68px);
-}
-.section-kicker{
-  display:block;
-  color:#d9c28f;
-  font-size:10px;
-  line-height:1.5;
-  letter-spacing:.22em!important;
-}
-.section-head{
-  gap:clamp(20px,3vw,42px);
-  margin-top:16px;
-  margin-bottom:clamp(24px,3vw,38px);
-}
-.section-head h2{
-  max-width:900px;
-  font-size:clamp(38px,4.7vw,66px);
-  line-height:1.02;
-  text-wrap:balance;
-}
-.section-head p{
-  max-width:420px;
-  font-size:13px;
-  line-height:1.75;
-}
-.section-head .link-btn{flex:0 0 auto}
-.glimpse-grid,.leaders-grid,.swag-grid,.updates-list,.events-grid,.gallery-grid{
-  align-items:stretch;
-}
-.glimpse-feature,.glimpse-card,.leader-card,.event-card,.update-card,.gallery-card,.join-card{
-  border-color:rgba(228,189,112,.13);
-  box-shadow:0 8px 28px rgba(0,0,0,.12);
-}
-.glimpse-feature,.glimpse-card,.leader-card,.event-card:not(.event-skeleton),.gallery-card{
-  border-radius:var(--yyc-radius-md);
-  overflow:hidden;
-}
-.glimpse-feature img,.glimpse-card img,.leader-photo img,.gallery-card img{
-  backface-visibility:hidden;
-}
-.glimpse-feature figcaption,.glimpse-card figcaption{
-  line-height:1.5;
-}
-.leader-info{padding:18px}
-.leader-info strong{line-height:1.3}
-.update-card{border-radius:var(--yyc-radius-md)}
-.update-card time{flex:0 0 auto}
-.event-card:not(.event-skeleton){border-radius:var(--yyc-radius-md)}
-.gallery-card figcaption{line-height:1.5}
-.join-card{
-  gap:clamp(24px,4vw,54px);
-  border-radius:var(--yyc-radius-lg);
-  padding:clamp(22px,4vw,46px);
-  background:
-    radial-gradient(circle at 90% 10%,rgba(120,185,164,.075),transparent 35%),
-    linear-gradient(145deg,rgba(17,27,30,.96),rgba(7,12,15,.97));
-}
-.join-card h2{line-height:1.06;text-wrap:balance}
-.join-card p{line-height:1.75}
-
-/* Search and message feedback stay legible without dominating the page. */
-#toast.toast{
-  z-index:2147482000;
-  max-width:min(460px,calc(100vw - 28px));
-  line-height:1.5;
-  overflow-wrap:anywhere;
-}
-.link-btn{
-  border-radius:999px;
-  min-height:42px;
-  padding-inline:15px;
+  body.yyc-scroll-ready .section .glimpse-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .leaders-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .events-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .updates-list .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .gallery-grid .reveal.yyc-scroll-in{
+    animation:yycMotionSectionReveal .62s var(--yyc-motion-ease) both;
+  }
+  body.yyc-scroll-ready .section .glimpse-grid .reveal.yyc-scroll-in:nth-child(2),
+  body.yyc-scroll-ready .section .leaders-grid .reveal.yyc-scroll-in:nth-child(2),
+  body.yyc-scroll-ready .section .events-grid .reveal.yyc-scroll-in:nth-child(2),
+  body.yyc-scroll-ready .section .updates-list .reveal.yyc-scroll-in:nth-child(2),
+  body.yyc-scroll-ready .section .gallery-grid .reveal.yyc-scroll-in:nth-child(2){animation-delay:.06s}
+  body.yyc-scroll-ready .section .glimpse-grid .reveal.yyc-scroll-in:nth-child(3),
+  body.yyc-scroll-ready .section .leaders-grid .reveal.yyc-scroll-in:nth-child(3),
+  body.yyc-scroll-ready .section .events-grid .reveal.yyc-scroll-in:nth-child(3),
+  body.yyc-scroll-ready .section .updates-list .reveal.yyc-scroll-in:nth-child(3),
+  body.yyc-scroll-ready .section .gallery-grid .reveal.yyc-scroll-in:nth-child(3){animation-delay:.12s}
+  body.yyc-scroll-ready .section .glimpse-grid .reveal.yyc-scroll-in:nth-child(4),
+  body.yyc-scroll-ready .section .leaders-grid .reveal.yyc-scroll-in:nth-child(4),
+  body.yyc-scroll-ready .section .events-grid .reveal.yyc-scroll-in:nth-child(4),
+  body.yyc-scroll-ready .section .updates-list .reveal.yyc-scroll-in:nth-child(4),
+  body.yyc-scroll-ready .section .gallery-grid .reveal.yyc-scroll-in:nth-child(4){animation-delay:.18s}
 }
 
-/* Login and dashboard panels: comfortable reading, accessible close control,
-   and independent scroll rather than content being clipped by the viewport. */
-.modal{
-  overscroll-behavior:contain;
+/* IMAGE CARDS: soft image-only zoom on true hover devices. */
+.glimpse-feature,.glimpse-card,.leader-card,.gallery-card,.event-card:not(.event-skeleton){
+  transition:transform .32s var(--yyc-motion-ease),border-color .28s ease,box-shadow .32s ease;
 }
-.modal-shell{
-  max-height:calc(100vh - 28px);
-  max-height:calc(100dvh - 28px);
-  overscroll-behavior:contain;
-  scrollbar-gutter:stable;
-}
-.modal-shell:has(.access-login-screen),
-.modal-shell:has(.premium-member-dashboard),
-.modal-shell:has(.admin-shell){
-  border-color:rgba(228,189,112,.22);
-  box-shadow:0 30px 110px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.015) inset;
-}
-.modal-shell>.modal-close{
-  z-index:50;
-  display:grid;
-  place-items:center;
-  min-width:42px;
-  min-height:42px;
-  border-radius:14px;
-  background:rgba(5,10,13,.94);
-  box-shadow:0 6px 22px rgba(0,0,0,.22);
-}
-.access-login-screen{border-radius:20px}
-.access-login-form,.access-login-hero{min-width:0}
-.access-login-screen input,.access-login-screen select,.access-login-screen textarea{
-  min-height:46px;
-}
-.access-login-screen button,.access-login-screen .btn{min-height:44px}
-.admin-header .modal-sub{font-size:11px;line-height:1.65}
-.admin-tabs{
-  border-color:rgba(228,189,112,.15);
-  border-radius:16px;
-}
-.admin-tab{
-  min-height:42px;
-  padding-inline:14px;
-  font-size:9px;
-}
-.admin-workspace .card,.admin-workspace .panel,.admin-workspace .notice,
-.admin-workspace .table-wrap,.admin-workspace .form-shell,.admin-workspace .admin-section,
-.admin-workspace .admin-card,.admin-workspace .yyc90-card{
-  border-radius:var(--yyc-radius-md);
-}
-.admin-shell .admin-actions .mini-btn,
-.admin-shell .admin-top-actions .mini-btn,
-.admin-shell .admin-form-top .mini-btn{
-  min-height:40px;
-}
-.portal-action-row{align-items:center}
-.portal-action-row .btn{min-height:42px}
-.portal-summary-card{border-color:rgba(228,189,112,.12)}
-.portal-summary-card span,.portal-summary-card small,
-.portal-action-row>div:first-child span,.portal-note p{
-  line-height:1.5;
-}
-
-/* Tables and long forms should scroll within their own region on small displays. */
-.admin-workspace,.yyc-admin-report,.yyc-admin-table-wrap,.table-wrap{
-  scrollbar-width:thin;
-  scrollbar-color:rgba(228,189,112,.28) rgba(255,255,255,.025);
-}
-.admin-workspace table,.yyc-admin-report table,.table-wrap table{
-  border-collapse:separate;
-  border-spacing:0;
-}
-.admin-workspace th,.yyc-admin-report th,.table-wrap th{
-  line-height:1.45;
-}
-.admin-workspace td,.yyc-admin-report td,.table-wrap td{
-  line-height:1.5;
-}
-
-/* Card movement only on devices that really have hover. */
 @media(hover:hover) and (pointer:fine){
-  .glimpse-feature:hover,.glimpse-card:hover,.leader-card:hover,
-  .event-card:not(.event-skeleton):hover,.gallery-card:hover{
-    transform:translateY(-3px);
-    border-color:rgba(228,189,112,.28);
-    box-shadow:0 16px 38px rgba(0,0,0,.2);
-  }
-  .glimpse-feature img,.glimpse-card img,.leader-photo img,.gallery-card img{
-    transition:transform .6s var(--yyc-ease),filter .6s var(--yyc-ease);
+  .glimpse-feature img,.glimpse-card img,.leader-photo img,.gallery-card img,.event-card img{
+    transition:transform .65s var(--yyc-motion-ease),filter .45s ease;
   }
   .glimpse-feature:hover img,.glimpse-card:hover img,.leader-card:hover .leader-photo img,
-  .gallery-card:hover img{
-    transform:scale(1.025);
+  .gallery-card:hover img,.event-card:not(.event-skeleton):hover img{
+    transform:scale(1.035);
   }
+  .glimpse-feature:hover,.glimpse-card:hover,.leader-card:hover,
+  .gallery-card:hover,.event-card:not(.event-skeleton):hover{
+    transform:translateY(-3px);
+  }
+  .culture-orb .orb-image img{transition:transform .55s var(--yyc-motion-ease)}
+  .culture-orb:hover .orb-image img{transform:scale(1.055)}
 }
 
-/* Small laptop: compact the existing desktop navigation without hiding links. */
-@media(min-width:981px) and (max-width:1240px){
-  .brand{min-width:220px;gap:8px}
-  .brand-mark{width:46px;height:46px}
-  .brand-mark img{width:42px;height:42px}
-  .brand-type b{font-size:22px;letter-spacing:.09em}
-  .brand-type small{font-size:8px;letter-spacing:.32em}
-  .desktop-nav{gap:0}
-  .desktop-nav>a{padding-inline:6px;font-size:10px}
-  .desktop-nav .nav-icon{display:none}
-  .desktop-nav .nav-admin{padding-inline:8px;font-size:9px}
+/* BUTTONS: tactile press and subtle hover lift; no constant flashing. */
+.btn,.link-btn,.nav-admin,.mini-btn,.admin-tab,.yyc-admin-quick{
+  transition:transform .2s var(--yyc-motion-ease),filter .2s ease,box-shadow .2s ease,border-color .2s ease,background-color .2s ease;
+}
+:where(.btn,.link-btn,.nav-admin,.mini-btn,.admin-tab):active:not(:disabled){
+  transform:scale(.98);
+}
+@media(hover:hover) and (pointer:fine){
+  .hero-actions .btn:hover,.join-card .btn:hover{transform:translateY(-2px)}
+  .admin-shell .admin-actions .mini-btn:hover,
+  .admin-shell .admin-top-actions .mini-btn:hover,
+  .admin-shell .admin-form-top .mini-btn:hover{transform:translateY(-1px)}
 }
 
-/* Tablet and phone: convert dense editorial grids to a natural reading flow. */
-@media(max-width:980px){
-  .topbar{min-height:64px}
-  .hero{
-    gap:24px;
-    padding-left:clamp(16px,4vw,30px);
-    padding-right:clamp(16px,4vw,30px);
-  }
-  .culture-panel{
-    border-left:0;
-    border-top:1px solid rgba(228,189,112,.13);
-    padding:24px 0 0;
-  }
-  .section{
-    padding-inline:clamp(17px,4vw,32px);
-    padding-block:clamp(60px,9vw,82px);
-  }
-  .section-head{
-    align-items:flex-start;
-    flex-wrap:wrap;
-  }
-  .section-head p{max-width:680px}
-  .join-card{align-items:flex-start}
-  .modal-shell{
-    max-height:calc(100vh - 20px);
-    max-height:calc(100dvh - 20px);
-  }
-  .admin-header{align-items:flex-start;flex-wrap:wrap}
-  .admin-tabs{top:6px}
-}
-@media(max-width:700px){
-  .section-head h2{font-size:clamp(34px,8vw,48px)}
-  .glimpse-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    grid-template-rows:auto;
-    gap:10px;
-  }
-  .glimpse-feature{grid-column:1/-1;grid-row:auto;min-height:300px}
-  .glimpse-card{min-height:180px}
-  .leaders-grid,.events-grid,.gallery-grid,.swag-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
-  }
-  .updates-list{gap:10px}
-  .update-card{padding:15px;gap:12px}
-  .join-card{flex-direction:column;align-items:stretch}
-  .join-card>.btn,.join-card>button{width:100%}
-  .footer-main{align-items:flex-start;flex-wrap:wrap}
-  .footer-official-social{justify-content:flex-start}
-  .modal-shell:has(.access-login-screen),
-  .modal-shell:has(.premium-member-dashboard),
-  .modal-shell:has(.admin-shell){
-    width:calc(100vw - 16px)!important;
-    max-width:calc(100vw - 16px)!important;
-    max-height:calc(100dvh - 16px)!important;
-    margin:8px auto!important;
-    padding:10px!important;
-    border-radius:18px!important;
-  }
-  .access-login-screen{
-    grid-template-columns:minmax(0,1fr);
-    grid-template-rows:auto auto;
-    min-height:0;
-  }
-  .access-login-hero{
-    grid-column:1;
-    grid-row:1;
-    min-height:0;
-    padding:26px 22px 20px;
-  }
-  .access-login-screen::after{display:none}
-  .admin-header .modal-title{font-size:clamp(34px,8vw,48px)}
-  .admin-tabs{top:0}
-  .admin-workspace{overflow-x:auto;max-width:100%}
-  .admin-shell .admin-actions{justify-content:flex-start}
-}
-@media(max-width:480px){
-  .hero{gap:18px}
-  .section-head{gap:12px}
-  .section-head p{font-size:12px}
-  .glimpse-grid{gap:8px}
-  .glimpse-feature{min-height:240px;border-radius:15px}
-  .glimpse-card{min-height:145px;border-radius:13px}
-  .glimpse-card figcaption{padding:10px}
-  .glimpse-card figcaption b{font-size:10px}
-  .leaders-grid,.events-grid,.gallery-grid,.swag-grid{grid-template-columns:minmax(0,1fr)}
-  .update-card{grid-template-columns:1fr}
-  .update-card time{font-size:9px}
-  .link-btn{max-width:100%;white-space:normal}
-  .footer-legal{flex-wrap:wrap;gap:8px}
-  .admin-tabs{gap:4px;padding:5px}
-  .admin-tab{padding-inline:10px;font-size:8px}
-  .portal-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:360px){
-  .brand-type b{font-size:16px}
-  .section{padding-inline:14px}
-  .modal-shell:has(.access-login-screen),
-  .modal-shell:has(.premium-member-dashboard),
-  .modal-shell:has(.admin-shell){
-    width:calc(100vw - 12px)!important;
-    max-width:calc(100vw - 12px)!important;
-    padding:8px!important;
-  }
+/* Retain the modal's existing entrance animation to avoid stacking. */
+
+/* PORTALS: subtle active-tab and dashboard transition. */
+@media(prefers-reduced-motion:no-preference){
+  .admin-tab.active{animation:yycMotionTabIn .24s var(--yyc-motion-ease) both}
+  .yyc-admin-quick:active,.admin-shell .admin-quick-action:active{transform:scale(.985)}
 }
 
-/* Respect reduced motion globally, including decorative elements defined earlier. */
+/* Keyframes: all transform/opacity-based for light rendering. */
+@keyframes yycMotionFadeUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes yycMotionLogoIn{
+  from{opacity:0;transform:translateY(12px) scale(.965)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes yycMotionOrbIn{
+  from{opacity:0;transform:translateY(14px) scale(.96)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes yycMotionSectionReveal{
+  from{opacity:.55;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes yycMotionTabIn{from{filter:brightness(.92)}to{filter:brightness(1)}}
+
+/* Touch screens retain motion but never depend on hover to reveal information. */
+@media(max-width:700px) and (prefers-reduced-motion:no-preference){
+  .hero .culture-orb{animation-duration:.68s}
+  .glimpse-feature:hover,.glimpse-card:hover,.leader-card:hover,.gallery-card:hover{transform:none}
+}
+
+/* Respect OS-level motion preferences for this entire enhancement layer. */
 @media(prefers-reduced-motion:reduce){
-  html,html:focus-within{scroll-behavior:auto!important}
-  *,*::before,*::after{
-    animation-duration:.01ms!important;
-    animation-iteration-count:1!important;
-    transition-duration:.01ms!important;
-    scroll-behavior:auto!important;
+  .hero .lockup-line,
+  .hero .hero-establishment,.hero .association-wrap,.hero .slogan,.hero .gold-quote,
+  .hero .social-row,
+  .hero .culture-orb,.hero .culture-rule,.hero .culture-foot,
+  body.yyc-scroll-ready .section .reveal.yyc-scroll-in,
+  .admin-tab.active{
+    animation:none!important;
   }
-  .hero-photo{animation:none!important;transform:none!important}
+  .topbar,.desktop-nav .nav-link,.desktop-nav .nav-admin,.menu-btn,
+  .mobile-panel>a,.mobile-panel .nav-admin,.glimpse-feature,.glimpse-card,
+  .leader-card,.gallery-card,.event-card,.glimpse-feature img,.glimpse-card img,
+  .leader-photo img,.gallery-card img,.event-card img,.culture-orb .orb-image img,
+  .btn,.link-btn,.nav-admin,.mini-btn,.admin-tab,.yyc-admin-quick{
+    transition:none!important;
+  }
 }
