@@ -2713,7 +2713,8 @@ function yycAdminDataSignature(d){
     swags:(d.swags||[]).length,
     pendingMembers:countByStatus(d.members,'pending'),
     pendingUpdates:(d.pending_updates||[]).length,
-    pendingGallery:(d.pending_gallery||[]).length
+    pendingGallery:(d.pending_gallery||[]).length,
+    pendingVolunteers:(d.pending_volunteers||[]).length || (d.volunteers||[]).filter(function(v){return String(v.status||'pending').toLowerCase()==='pending';}).length
   });
 }
 function yycAdminSyncLabel(message,online){
@@ -2904,7 +2905,7 @@ function adminPanel(tab,forceRefresh){
     tab=tab||'overview';
     var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Messaging'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
-    var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length;
+    var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length+(d.pending_volunteers||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-head-tools"><div class="yyc-admin-global-tools"><div class="yyc-admin-add-wrap"><button type="button" class="mini-btn gold yyc-admin-add-btn" id="yycAdminAddBtn" aria-expanded="false"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>ADD</span></button><div class="yyc-admin-add-menu" id="yycAdminAddMenu" hidden><button type="button" data-admin-add="member">+ Member</button><button type="button" data-admin-add="leader">+ Leader</button><button type="button" data-admin-add="update">+ Update</button><button type="button" data-admin-add="gallery">+ Photo</button><button type="button" data-admin-add="event">+ Event</button><button type="button" data-admin-add="swag">+ Swag</button></div></div><div class="yyc-admin-global-search"><span aria-hidden="true">⌕</span><input id="yycAdminGlobalSearch" type="search" placeholder="Search all admin records" autocomplete="off"><div class="yyc-admin-search-results" id="yycAdminSearchResults" hidden></div></div></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
     yycAdminBindTools(d);
     $('#adminLogout').addEventListener('click',async function(){try{await rpc('admin_logout',{p_token:adminToken});}catch(e){}yycSafeRemove(sessionStorage,ADMIN_TOKEN_KEY);yycSafeRemove(localStorage,ADMIN_TOKEN_KEY);adminToken='';adminData=null;closeModal();toast('Admin logged out');});
@@ -3082,16 +3083,21 @@ function renderAdminTab(tab,d){
   if(tab==='approvals'){
     var pendingMembers=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';});
     var pUpdates=d.pending_updates||[], pGallery=d.pending_gallery||[];
-    a.innerHTML='<div class="admin-top"><h2>Approval Queue</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="approvalRefresh">↻ Refresh</button><span class="approval-count">'+(pendingMembers.length+pUpdates.length+pGallery.length)+' pending</span></div>'+(
-      pendingMembers.concat(pUpdates.map(function(x){x.__kind='update';return x;}),pGallery.map(function(x){x.__kind='gallery';return x;})).length
+    var pVolunteers=d.pending_volunteers||(d.volunteers||[]).filter(function(v){return String(v.status||'pending').toLowerCase()==='pending';});
+    a.innerHTML='<div class="admin-top"><h2>Approval Queue</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="approvalRefresh">↻ Refresh</button><span class="approval-count">'+(pendingMembers.length+pUpdates.length+pGallery.length+pVolunteers.length)+' pending</span></div>'+(
+      pendingMembers.length+pUpdates.length+pGallery.length+pVolunteers.length
       ? '<div class="admin-card-list">'+pendingMembers.map(function(m){return '<div class="approval-card"><div class="meta"><strong>'+esc(m.name)+' · MEMBER</strong><small>'+esc(m.email||'')+' · '+esc(m.phone||'')+'</small></div><div class="admin-actions"><button class="mini-btn" data-review-member="'+m.id+'">Review</button><button class="mini-btn" data-edit-member="'+m.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn gold" data-am="'+m.id+'">Approve</button><button class="mini-btn" data-dm="'+m.id+'">Deny</button></div></div>';}).join('')+
       pUpdates.map(function(u){return '<div class="approval-card"><div class="meta"><strong>'+esc(u.title)+' · UPDATE</strong><small>'+esc(u.body)+'</small></div><div class="admin-actions"><button class="mini-btn" data-edit-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn gold" data-au="'+u.id+'">Publish</button><button class="mini-btn" data-du="'+u.id+'">Deny</button></div></div>';}).join('')+
-      pGallery.map(function(g){return '<div class="approval-card"><div class="meta"><strong>'+esc(g.title)+' · GALLERY</strong><small>Photo submission</small></div><div class="admin-actions"><button class="mini-btn" data-edit-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn gold" data-ag="'+g.id+'">Publish</button><button class="mini-btn" data-dg="'+g.id+'">Deny</button></div></div>'}).join('')
-      +'</div>' : '<div class="empty">No pending submissions.</div>');
+      pGallery.map(function(g){return '<div class="approval-card"><div class="meta"><strong>'+esc(g.title)+' · GALLERY</strong><small>Photo submission</small></div><div class="admin-actions"><button class="mini-btn" data-edit-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn gold" data-ag="'+g.id+'">Publish</button><button class="mini-btn" data-dg="'+g.id+'">Deny</button></div></div>';}).join('')+
+      pVolunteers.map(function(v){return '<div class="approval-card"><div class="meta"><strong>'+esc(v.name||'Volunteer')+' · VOLUNTEER</strong><small>'+esc(v.email||'Email not provided')+' · '+esc(v.phone||'Phone not provided')+'</small><div class="yyc-volunteer-review-details" id="yycVolunteerReview'+v.id+'" hidden><small>Area: '+esc(v.area||'Not provided')+'</small><small>Skills: '+esc(v.skills||'Not provided')+'</small><small>Availability: '+esc(v.availability||'Not provided')+'</small><p>'+esc(v.message||'No message provided')+'</p></div></div><div class="admin-actions"><button type="button" class="mini-btn" data-review-volunteer="'+v.id+'">Review</button><button type="button" class="mini-btn gold" data-av="'+v.id+'">Approve</button><button type="button" class="mini-btn" data-dv="'+v.id+'">Deny</button></div></div>';}).join('')+
+      '</div>' : '<div class="empty">No pending submissions.</div>');
     Array.prototype.slice.call(document.querySelectorAll('[data-review-member]')).forEach(function(b){b.addEventListener('click',function(){adminReviewMember(b.getAttribute('data-review-member'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-member]')).forEach(function(b){b.addEventListener('click',function(){adminMemberForm(b.getAttribute('data-edit-member'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-review-volunteer]')).forEach(function(b){b.addEventListener('click',function(){var details=document.getElementById('yycVolunteerReview'+b.getAttribute('data-review-volunteer'));if(!details)return;details.hidden=!details.hidden;b.textContent=details.hidden?'Review':'Hide review';});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-av]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_volunteer_action',{p_id:b.getAttribute('data-av'),p_action:'approve'},'Volunteer approved');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-dv]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_volunteer_action',{p_id:b.getAttribute('data-dv'),p_action:'deny'},'Volunteer denied');});});
     Array.prototype.slice.call(document.querySelectorAll('[data-am]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-am'),p_action:'approve'},'Member approved and ID assigned');});});
     Array.prototype.slice.call(document.querySelectorAll('[data-dm]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_member_action',{p_member_id:b.getAttribute('data-dm'),p_action:'deny'},'Member denied');});});
     Array.prototype.slice.call(document.querySelectorAll('[data-au]')).forEach(function(b){b.addEventListener('click',async function(){await adminAction('admin_approve_content',{p_kind:'update',p_id:b.getAttribute('data-au'),p_action:'approve'},'Update published');});});
@@ -3469,6 +3475,18 @@ async function adminAction(name,args,msg){
         }
       }else{
         toast('Member approved · acceptance email failed: '+((approvalNotice&&approvalNotice.error)||'notification service unavailable'));
+      }
+    }
+    if(name==='admin_volunteer_action' && args && ['approve','deny'].includes(String(args.p_action||'').toLowerCase()) && typeof window.YYC90NotifyVolunteer==='function'){
+      var volunteerNotice=await window.YYC90NotifyVolunteer({
+        event:'decision',admin_token:adminToken,volunteer_id:args.p_id,
+        decision:String(args.p_action).toLowerCase()==='approve'?'approved':'denied'
+      });
+      var volunteerEmail=volunteerNotice&&volunteerNotice.email;
+      if(volunteerNotice&&volunteerNotice.ok&&volunteerEmail&&volunteerEmail.status==='sent'){
+        toast('Volunteer status saved · email request accepted');
+      }else{
+        toast('Volunteer status saved · decision email '+((volunteerEmail&&volunteerEmail.status)||'not sent'));
       }
     }
     var d=await rpc('admin_dashboard',{p_token:adminToken});adminData=d;renderAdminTab('overview',d);adminPanel('overview');
