@@ -1083,7 +1083,7 @@ function yycOpenContentDetail(kind,item){
   if(kind==='gallery' && item.album) meta.push('<span><b>ALBUM</b>'+esc(item.album)+'</span>');
   var shareUrl=yycPublicShareUrl(kind,item);
   var eventRsvpHtml='';
-  if(kind==='event'){
+  if(kind==='event' && String(item.status||'published').toLowerCase()==='published'){
     if(memberToken){
       var currentRsvp=yycMemberRsvpMap[String(item.id||'')]||'';
       eventRsvpHtml='<div class="yyc-event-rsvp" data-event-id="'+esc(item.id||'')+'"><div><span class="portal-profile-kicker">MEMBER RSVP</span><strong>Will you attend this YYC programme?</strong><small>Select your response. You can change it later.</small></div><div class="yyc-rsvp-buttons">'+
@@ -1101,6 +1101,7 @@ function yycOpenContentDetail(kind,item){
       (image?'<div class="yyc-detail-image"><img src="'+esc(image)+'" alt="'+esc(title)+'" loading="eager" decoding="async"></div>':'')+
       (meta.length?'<div class="yyc-detail-meta">'+meta.join('')+'</div>':'')+
       (textBody?'<div class="yyc-detail-copy">'+esc(textBody).replace(/\n/g,'<br>')+'</div>':'')+
+      eventRsvpHtml+
       '<div class="yyc-detail-actions"><button type="button" class="btn gold" id="yycDetailShare">SHARE <span>↗</span></button><button type="button" class="mini-btn" id="yycDetailCopy">COPY LINK</button></div>'+
     '</div>'
   );
