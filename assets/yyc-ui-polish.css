@@ -1,0 +1,95 @@
+/* YYC UI POLISH — 11 October 2026
+   Additive presentation-only layer. No JavaScript, auth, database, or layout workflows changed. */
+
+:root {
+  --yyc-ui-focus: rgba(239, 201, 121, .96);
+  --yyc-ui-focus-halo: rgba(239, 201, 121, .17);
+}
+
+::selection {
+  color: #fffaf0;
+  background: rgba(202, 157, 70, .58);
+}
+
+/* Consistent, clearly visible keyboard focus across public pages and portals. */
+:where(a[href], button, input, select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--yyc-ui-focus);
+  outline-offset: 3px;
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):focus-visible {
+  box-shadow: 0 0 0 3px var(--yyc-ui-focus-halo);
+}
+
+:where(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button:disabled, input:disabled, select:disabled, textarea:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+}
+
+/* Small tactile response; avoids layout movement and does not alter click behavior. */
+.nav-admin:active:not(:disabled),
+.btn:active:not(:disabled),
+.mini-btn:active:not(:disabled),
+.link-btn:active:not(:disabled),
+.yyc-calendar-btn:active:not(:disabled),
+.yyc-dashboard-refresh:active:not(:disabled) {
+  filter: brightness(.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-admin:hover:not(:disabled),
+  .mini-btn:hover:not(:disabled),
+  .link-btn:hover:not(:disabled),
+  .yyc-calendar-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  .culture-orb:focus-visible,
+  .yyc-gallery-album-card:focus-visible {
+    box-shadow: 0 0 0 1px rgba(239, 201, 121, .3), 0 18px 42px rgba(0, 0, 0, .24);
+  }
+}
+
+/* Make transient feedback feel intentional and stay readable on narrow screens. */
+#toast.toast {
+  max-width: min(460px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
+  padding: 12px 16px;
+  border-color: rgba(237, 193, 105, .34);
+  border-radius: 14px;
+  background: rgba(7, 13, 17, .94);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .38), 0 0 0 1px rgba(237, 193, 105, .035);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  line-height: 1.5;
+}
+
+#toast.toast.show {
+  border-color: rgba(237, 193, 105, .48);
+}
+
+@media (max-width: 620px) {
+  #toast.toast {
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 14px;
+    width: auto;
+    max-width: none;
+    text-align: center;
+  }
+}
+
+/* Match the existing site's reduced-motion and low-data safeguards. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-admin,
+  .btn,
+  .mini-btn,
+  .link-btn,
+  .yyc-calendar-btn,
+  .yyc-dashboard-refresh {
+    transition: none !important;
+  }
+}
