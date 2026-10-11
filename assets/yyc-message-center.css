@@ -192,3 +192,6 @@
   .yyc-gallery-upload-card input[type=file]{grid-column:1;grid-row:2}
   .yyc-gallery-upload-preview{grid-column:2;grid-row:2;aspect-ratio:1/1;min-height:0}
 }
+
+/* Verified provider delivery-state hints. */
+.yyc-message-history-icon.delayed{color:#e0c27d;background:rgba(224,194,125,.06);border:1px solid rgba(224,194,125,.17)}
