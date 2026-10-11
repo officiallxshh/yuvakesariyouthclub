@@ -42,3 +42,44 @@
   .yyc90-volunteer-review .admin-actions button:first-child{grid-column:1/-1}
   .yyc90-volunteer-email-status{gap:6px}
 }
+
+/* Private volunteer review notes: administrator-only review surface. */
+.yyc90-review-notes{
+  margin:18px 0 4px;padding:16px;
+  border:1px solid rgba(226,191,114,.18);border-radius:15px;
+  background:rgba(0,0,0,.16);
+}
+.yyc90-review-notes-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.yyc90-review-notes-head strong{
+  display:block;color:#e9ce8c;font-size:10px;font-weight:850;letter-spacing:.12em;
+}
+.yyc90-review-notes-head small{
+  display:block;margin-top:6px;color:#9aa49f;font-size:11px;line-height:1.6;
+}
+.yyc90-review-notes-head>span{
+  color:#9aa49f;font-size:10px;line-height:1.5;
+}
+.yyc90-review-notes-label{
+  display:block;margin:0 0 7px;color:#d6dcd6;font-size:11px;font-weight:750;
+}
+.yyc90-review-notes textarea{
+  display:block;width:100%;min-height:118px;resize:vertical;box-sizing:border-box;
+  padding:12px 13px;border:1px solid rgba(255,255,255,.12);border-radius:11px;
+  background:rgba(255,255,255,.035);color:#f0eee6;font:inherit;font-size:12px;line-height:1.7;
+  outline:none;
+}
+.yyc90-review-notes textarea:focus{
+  border-color:rgba(226,191,114,.62);box-shadow:0 0 0 3px rgba(226,191,114,.08);
+}
+.yyc90-review-notes-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px;
+}
+.yyc90-review-notes-footer>span{color:#8f9a94;font-size:10px}
+@media(max-width:620px){
+  .yyc90-review-notes{padding:12px}
+  .yyc90-review-notes-footer{align-items:stretch}
+  .yyc90-review-notes-footer button{width:100%}
+}
