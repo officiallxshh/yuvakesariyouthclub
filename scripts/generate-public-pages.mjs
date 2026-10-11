@@ -263,6 +263,35 @@ for (const [type, route, title, description] of routeDefs) {
   await fs.writeFile(path.join(ROOT, route, 'index.html'), categoryIndexPage(title, description, route, entries), 'utf8');
 }
 
+/* Keep the designed public leadership directory in sync with the same approved
+   Supabase records used to build individual crawlable leader pages. */
+const leadersFile = path.join(ROOT, 'leaders.html');
+const leadersHtml = await fs.readFile(leadersFile, 'utf8');
+const leaderItems = (site.leaders || []).filter(item => item && itemTitle('leader', item));
+if (leaderItems.length) {
+  const usedLeaderSlugs = new Map();
+  const cards = leaderItems.map((item, i) => {
+    const name = itemTitle('leader', item);
+    const role = String(item.role || item.position || 'YYC Leader');
+    const image = itemImage(item);
+    const base = slug(item.slug || name || item.id);
+    const count = usedLeaderSlugs.get(base) || 0;
+    usedLeaderSlugs.set(base, count + 1);
+    const fileSlug = count ? base + '-' + slug(item.id || String(count + 1)).slice(-12) : base;
+    const imageHtml = image
+      ? '<div class="photo"><img src="' + esc(image) + '" alt="' + esc(name + ', ' + role + ' at Yuvakesari Youth Club') + '" loading="lazy" decoding="async"></div>'
+      : '<div class="photo" aria-hidden="true"></div>';
+    return '<article class="person" id="leader-' + String(i + 1).padStart(2, '0') + '">' + imageHtml +
+      '<div class="person-body"><div class="num">YYC LEADER · ' + String(i + 1).padStart(2, '0') + '</div>' +
+      '<h2 class="name">' + esc(name) + '</h2><p class="role">' + esc(role) + '</p>' +
+      '<a class="person-link" href="./leaders/auto/' + fileSlug + '.html">VIEW PROFILE ↗</a></div></article>';
+  }).join('\n');
+  const gridRegex = /<section class="grid" aria-label="YYC leadership team">[\s\S]*?<\/section>/;
+  if (!gridRegex.test(leadersHtml)) throw new Error('Could not locate leadership card grid; refusing to overwrite leaders.html');
+  const nextLeadersHtml = leadersHtml.replace(gridRegex, '<section class="grid" aria-label="YYC leadership team">' + cards + '</section>');
+  await fs.writeFile(leadersFile, nextLeadersHtml, 'utf8');
+}
+
 const fixedPaths = [
   '/', '/about.html', '/contact.html', '/privacy.html', '/terms.html',
   '/instagram.html', '/media.html', '/leaders.html'
