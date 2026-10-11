@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261011-19';
+var YYC_APP_BUILD='20261011-20';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -294,6 +294,16 @@ function fmtDate(v){
   if(!v) return '';
   var d=new Date(v+'T00:00:00');
   return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+function yycUpdateBodyHTML(update){
+  var body=String(update&&update.body||'');
+  var marker=/(?:\r?\n)ARTICLE_URL:\s*(https:\/\/[^\s]+)/i.exec(body);
+  if(!marker)return '<p>'+esc(body)+'</p>';
+  var href=marker[1].replace(/[),.]+$/,'');
+  /* Only render links to the official YYC Blogger site from this explicit marker. */
+  if(!/^https:\/\/yuvakesariyouthclub\.blogspot\.com\//i.test(href))return '<p>'+esc(body)+'</p>';
+  var intro=body.replace(marker[0],'').trim();
+  return '<p>'+esc(intro)+'</p><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:#e9c779;font-weight:800;font-size:10px;letter-spacing:.09em;text-decoration:none;border-bottom:1px solid rgba(233,199,121,.35);padding-bottom:3px">READ FULL STORY ↗</a>';
 }
 function yycLocalDateTime(value){
   if(!value) return '';
@@ -967,7 +977,7 @@ function renderPublic(){
     var ups=publicData.updates||[];
     ug.innerHTML=yycLimitedSectionHTML('updates',ups,function(u){
       var m=yycImageFormatMeta(u.image_format); var image=u.image_url ? yycMediaFrame(m.key,'<div class="update-card-media-inner"><img src="'+esc(u.image_url)+'" alt="'+esc(u.title||'YYC announcement')+'" loading="lazy" decoding="async"></div>') : '';
-      return '<article class="update-card '+(image?'has-image':'')+' reveal">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3><p>'+esc(u.body||'')+'</p></div><span></span></article>';
+      return '<article class="update-card '+(image?'has-image':'')+' reveal">'+image+'<time>'+esc(fmtDate(u.event_date || u.published_at))+'</time><div><h3>'+esc(u.title)+'</h3>'+yycUpdateBodyHTML(u)+'</div><span></span></article>';
     },'No updates published yet.','update-card');
   }
 
