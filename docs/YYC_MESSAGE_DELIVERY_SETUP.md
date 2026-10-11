@@ -130,3 +130,38 @@ https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/wh
 
 Resend:
 https://resend.com/docs/api-reference/emails/send-email
+
+
+## Verified delivery tracking (provider webhooks)
+
+The Admin → Messaging history can now distinguish a provider-accepted send from a provider-confirmed delivery. The webhook receiver is deployed as a separate Supabase Edge Function so normal login, attendance, member and admin APIs remain untouched.
+
+Webhook endpoint:
+
+`https://vrllozfzheikjbhxvpkx.supabase.co/functions/v1/yyc-delivery-webhook`
+
+### Resend email statuses
+
+1. In Resend, open **Webhooks** and create a webhook for the endpoint above.
+2. Subscribe to `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, and `email.failed` (you may also subscribe to `email.sent`, `email.opened`, and `email.clicked`).
+3. Copy the endpoint's signing secret (starts with `whsec_`) and save it in Supabase Edge Function secrets as `RESEND_WEBHOOK_SECRET`.
+4. Keep the existing `RESEND_API_KEY` and `RESEND_FROM_EMAIL` settings unchanged.
+
+### WhatsApp status tracking (optional)
+
+If YYC's WhatsApp Business Cloud API is configured, set these Supabase Edge Function secrets:
+
+- `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: a long random value you create.
+- `WHATSAPP_APP_SECRET`: the Meta app secret from the Meta developer dashboard.
+
+Set the same verify token in Meta's webhook configuration, use the endpoint above as the callback URL, and subscribe the WhatsApp Business Account to the `messages` webhook field. Incoming requests are checked against Meta's `X-Hub-Signature-256` signature.
+
+### What the statuses mean
+
+- **SENT** means the provider accepted the message request; it does not prove inbox delivery.
+- **DELIVERED** means a verified provider webhook confirmed delivery.
+- **DELAYED** means Resend reported a temporary delivery delay; a later webhook can update it.
+- **BOUNCED / COMPLAINED / FAILED** show a provider-reported problem.
+- Repeated webhook events are recorded idempotently. The raw webhook payload is not stored, and webhook secrets must never be placed in client-side code or GitHub.
+
+After configuring the webhook and secrets, open Admin → Messaging and click **Refresh** under Recent messages to see the latest statuses.

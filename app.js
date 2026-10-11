@@ -3166,15 +3166,19 @@ function renderAdminTab(tab,d){
       if(!host)return;
       if(!items||!items.length){host.innerHTML='<div class="empty">No message delivery history yet.</div>';return;}
       host.innerHTML=items.map(function(x){
-        var state=x.status==='sent'||x.status==='delivered'?'ok':x.status==='failed'?'failed':x.status==='queued'?'queued':'skipped';
-        var icon=state==='ok'?'✓':state==='failed'?'!':state==='queued'?'…':'—';
+        var status=String(x.status||'skipped').toLowerCase();
+        var bad=status==='failed'||status==='bounced'||status==='complained';
+        var state=(status==='sent'||status==='delivered')?'ok':bad?'failed':status==='delayed'?'delayed':status==='queued'?'queued':'skipped';
+        var icon=state==='ok'?'✓':state==='failed'?'!':(state==='queued'||state==='delayed')?'…':'—';
         var channel=String(x.channel||'').toUpperCase();
-        var when=x.created_at?new Date(x.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
-        var statusText=x.status==='delivered'?'DELIVERED':x.status==='sent'?'SENT':x.status==='failed'?'FAILED':x.status==='queued'?'QUEUED':'SKIPPED';
+        var statusLabels={queued:'QUEUED',sent:'SENT · ACCEPTED',delayed:'DELAYED',delivered:'DELIVERED · CONFIRMED',bounced:'BOUNCED',complained:'COMPLAINT',failed:'FAILED',skipped:'SKIPPED'};
+        var stamp=x.status_updated_at||x.provider_event_at||x.delivered_at||x.sent_at||x.created_at;
+        var when=stamp?new Date(stamp).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+        var source=x.provider_event_type?'<small>PROVIDER EVENT · '+esc(x.provider_event_type)+'</small>':'';
         return '<article class="yyc-message-history-row">'+
           '<div class="yyc-message-history-icon '+state+'">'+icon+'</div>'+
-          '<div class="yyc-message-history-main"><strong>'+esc(x.recipient_name||'Recipient')+'</strong><span>'+esc(channel)+' · '+esc(statusText)+' · '+esc(when)+'</span><p>'+esc(x.title||'YYC message')+'</p></div>'+
-          '<div class="yyc-message-history-meta">'+(x.recipient_address?'<small>'+esc(x.recipient_address)+'</small>':'')+(x.error_message?'<small class="error">'+esc(x.error_message)+'</small>':'')+'</div>'+
+          '<div class="yyc-message-history-main"><strong>'+esc(x.recipient_name||'Recipient')+'</strong><span>'+esc(channel)+' · '+esc(statusLabels[status]||status.toUpperCase())+' · '+esc(when)+'</span><p>'+esc(x.title||'YYC message')+'</p></div>'+
+          '<div class="yyc-message-history-meta">'+(x.recipient_address?'<small>'+esc(x.recipient_address)+'</small>':'')+source+(x.failure_code?'<small class="error">CODE '+esc(x.failure_code)+'</small>':'')+(x.error_message?'<small class="error">'+esc(x.error_message)+'</small>':'')+'</div>'+
         '</article>';
       }).join('');
     }
