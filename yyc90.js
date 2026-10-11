@@ -1420,6 +1420,11 @@
 
     document.addEventListener('input',function(e){
       var f=e.target.closest&&e.target.closest('#modal form');if(f)duplicateWarning90(f);
+      var noteFieldInput=e.target.closest&&e.target.closest('#v90ReviewNotes');
+      if(noteFieldInput){
+        var lengthLabel=q('#v90ReviewNoteLength');
+        if(lengthLabel)lengthLabel.textContent=noteFieldInput.value.length+'/2000 characters';
+      }
     },true);
 
     document.addEventListener('keydown',function(e){
