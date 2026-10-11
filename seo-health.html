@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05080b">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Private-use technical SEO diagnostics for the Yuvakesari Youth Club website.">
+<link rel="canonical" href="https://www.yuvakesariyouthclub.in/seo-health.html">
+<link rel="icon" type="image/svg+xml" href="./assets/yyc-lion-favicon-redesigned.svg">
+<title>SEO Health Check | Yuvakesari Youth Club</title>
+<style>
+:root{color-scheme:dark;--bg:#05080b;--panel:#0c1217;--line:rgba(229,191,107,.2);--gold:#f1d58f;--muted:#a5aea9;--ok:#83d6a3;--warn:#f0c36a;--bad:#ff9187}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182027 0,#080c10 45%,var(--bg) 100%);color:#e9e1d0;font:15px/1.6 Inter,system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1100px,92vw);margin:auto;padding:28px 0 70px}.back{color:var(--gold);text-decoration:none;font-size:12px;font-weight:800;letter-spacing:.08em}.hero{padding:clamp(22px,5vw,46px);margin-top:22px;border:1px solid var(--line);border-radius:24px;background:rgba(10,15,20,.88)}.eyebrow{color:#bfa873;font-size:10px;font-weight:800;letter-spacing:.2em}.title{font:600 clamp(36px,7vw,60px)/1.06 Georgia,serif;color:var(--gold);margin:12px 0}.lead{color:#bac2bd;max-width:760px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.btn{border:1px solid var(--line);border-radius:999px;padding:12px 17px;background:#161d21;color:#f1d58f;font-weight:800;cursor:pointer;text-decoration:none;font:inherit;font-size:12px}.btn.primary{background:var(--gold);color:#11150f;border-color:var(--gold)}.btn:disabled{opacity:.55;cursor:wait}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.metric,.panel{border:1px solid var(--line);border-radius:17px;background:rgba(10,15,20,.86);padding:18px;min-width:0}.metric small{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase}.metric strong{display:block;font-size:29px;color:var(--gold);margin-top:4px;overflow-wrap:anywhere}.panel{margin-top:16px}.panel h2{font:600 23px/1.2 Georgia,serif;color:#ead09a;margin:0 0 10px}.hint{color:var(--muted);font-size:12px}.status{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800}.pass{color:var(--ok)}.warning{color:var(--warn)}.fail{color:var(--bad)}.checks{display:grid;gap:8px;margin-top:14px}.check{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.06);padding:10px 0}.check:last-child{border-bottom:0}.check strong{display:block;font-size:13px}.check p{margin:3px 0 0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.tablewrap{overflow:auto;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:top}th{color:#cdbb94;font-size:10px;text-transform:uppercase;letter-spacing:.08em}td a{color:var(--gold);overflow-wrap:anywhere}.note{border-left:2px solid var(--warn);padding:10px 13px;background:rgba(240,195,106,.05);color:#b9b9aa;font-size:12px;margin-top:15px}.footer{color:#737f79;font-size:11px;margin-top:24px}.hidden{display:none}@media(max-width:760px){.grid{grid-template-columns:1fr}.check{gap:10px}.wrap{width:min(100% - 28px,1100px)}}@media(prefers-reduced-motion:no-preference){.hero,.panel,.metric{animation:rise .35s ease both}@keyframes rise{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<a class="back" href="./index.html">← BACK TO YYC WEBSITE</a>
+<header class="hero">
+<div class="eyebrow">YUVAKESARI YOUTH CLUB · SITE DIAGNOSTICS</div>
+<h1 class="title">SEO Health Check</h1>
+<p class="lead">Run a read-only technical check of public pages listed in the YYC sitemap. It checks page responses, titles, descriptions, canonical URLs, robots directives, headings and structured data. It does not edit website content or access private member data.</p>
+<div class="actions"><button id="run" class="btn primary" type="button">Run SEO audit</button><a class="btn" href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fwww.yuvakesariyouthclub.in%2F" target="_blank" rel="noopener noreferrer">Open Google Search Console ↗</a><a class="btn" href="./sitemap.xml" target="_blank" rel="noopener noreferrer">View sitemap ↗</a></div>
+<p id="status" class="hint" role="status" aria-live="polite">Ready. The audit may take a little time depending on the number of sitemap URLs.</p>
+</header>
+<section class="grid" aria-label="Audit summary">
+<div class="metric"><small>Pages checked</small><strong id="pages">—</strong></div>
+<div class="metric"><small>Passed checks</small><strong id="passed">—</strong></div>
+<div class="metric"><small>Warnings / errors</small><strong id="issues">—</strong></div>
+</section>
+<section class="panel"><h2>Audit findings</h2><p class="hint">Findings are based on what this browser can fetch now. Search indexing and ranking are controlled by Google and must be verified in Search Console.</p><div id="findings" class="checks"><div class="hint">Select “Run SEO audit” to begin.</div></div></section>
+<section class="panel"><h2>Page-by-page results</h2><div class="tablewrap"><table><thead><tr><th>URL</th><th>HTTP</th><th>Title</th><th>Description</th><th>Canonical</th><th>Findings</th></tr></thead><tbody id="results"><tr><td colspan="6" class="hint">No audit run yet.</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Google indexing checks</h2><p class="hint">A successful HTTP response does not prove that Google indexed a page. Use these official tools to check indexing, sitemap processing and any manual actions.</p><div class="actions"><a class="btn" href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Search Console</a><a class="btn" href="https://search.google.com/test/rich-results" target="_blank" rel="noopener noreferrer">Rich Results Test</a><a class="btn" href="https://pagespeed.web.dev/" target="_blank" rel="noopener noreferrer">PageSpeed Insights</a></div><div class="note">This dashboard does not connect to the Google Search Console API and cannot show indexed-page counts, clicks, impressions or crawl status directly. Sign in to the verified property to see those metrics.</div></section>
+<p class="footer">YYC technical diagnostics · Read-only · No data is sent to a third-party analytics service by this page.</p>
+</main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const origin=location.origin;
+const maxPages=100;
+function safeUrl(raw){try{const u=new URL(raw,origin);return u.origin===origin?u:null}catch{return null}}
+function statusClass(level){return level==='pass'?'pass':level==='error'?'fail':'warning'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function finding(level,title,detail){return {level,title,detail}}
+async function fetchText(url,timeout=9000){
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout);
+ try{const res=await fetch(url,{signal:controller.signal,cache:'no-store',credentials:'same-origin'});return {res,text:await res.text()}}
+ finally{clearTimeout(timer)}
+}
+function inspectHtml(url,html,http){
+ const doc=new DOMParser().parseFromString(html,'text/html');
+ const title=(doc.querySelector('title')?.textContent||'').trim();
+ const description=(doc.querySelector('meta[name="description"]')?.content||'').trim();
+ const canon=doc.querySelector('link[rel="canonical"]')?.href||'';
+ const robots=(doc.querySelector('meta[name="robots"]')?.content||'').toLowerCase();
+ const h1=doc.querySelectorAll('h1').length;
+ const schema=[...doc.querySelectorAll('script[type="application/ld+json"]')];
+ const issues=[];
+ if(http<200||http>=400)issues.push(finding('error','Page response', 'HTTP '+http));
+ if(!title)issues.push(finding('error','Missing title','Add a unique, descriptive title.'));
+ else if(title.length<15||title.length>65)issues.push(finding('warning','Title length',title.length+' characters; review clarity and truncation.'));
+ if(!description)issues.push(finding('warning','Missing meta description','Add a useful page-specific description.'));
+ else if(description.length<70||description.length>170)issues.push(finding('warning','Description length',description.length+' characters; review for clarity.'));
+ if(!canon)issues.push(finding('warning','Missing canonical','Specify the preferred absolute URL.'));
+ else if(new URL(canon,origin).origin!==origin)issues.push(finding('error','Canonical points off-site',canon));
+ else if(new URL(canon,origin).pathname!==new URL(url).pathname)issues.push(finding('warning','Canonical path differs',canon));
+ if(/(^|,)\s*noindex\b/.test(robots))issues.push(finding('error','Page is marked noindex','Google is instructed not to index this page.'));
+ if(!h1)issues.push(finding('warning','Missing H1','Add one clear primary page heading.'));
+ else if(h1>1)issues.push(finding('warning','Multiple H1 headings',h1+' H1 headings detected; confirm this is intentional.'));
+ if(!schema.length)issues.push(finding('warning','No JSON-LD detected','Structured data may help when appropriate; it is not required for indexing.'));
+ for(const s of schema){try{JSON.parse(s.textContent)}catch{issues.push(finding('error','Invalid JSON-LD','A structured-data script could not be parsed.'));break}}
+ const images=[...doc.images].filter(img=>!img.getAttribute('alt')?.trim()).length;
+ if(images)issues.push(finding('warning','Images missing alt text',images+' image(s) have no descriptive alt text.'));
+ const links=[...doc.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(h=>h&&!h.startsWith('#')&&!/^(https?:|mailto:|tel:|javascript:|data:)/i.test(h));
+ const brokenLocal=links.filter(h=>h.startsWith('/')&&!safeUrl(new URL(h,origin).href));
+ return {url,http,title,description,canonical:canon,issues,linkCount:links.length,imagesWithoutAlt:images};
+}
+async function run(){
+ const button=$('run');button.disabled=true;$('status').textContent='Fetching sitemap…';$('findings').innerHTML='';$('results').innerHTML='';
+ let all=[];
+ try{
+  const sm=await fetchText('/sitemap.xml');
+  if(!sm.res.ok)throw new Error('Sitemap request returned HTTP '+sm.res.status);
+  const xml=new DOMParser().parseFromString(sm.text,'application/xml');
+  if(xml.querySelector('parsererror'))throw new Error('Sitemap XML could not be parsed.');
+  const urls=[...xml.getElementsByTagNameNS('http://www.sitemaps.org/schemas/sitemap/0.9','loc')].map(n=>n.textContent.trim());
+  if(!urls.length)throw new Error('No URLs found in sitemap.xml.');
+  const unique=[...new Set(urls)].slice(0,maxPages);
+  $('status').textContent='Checking '+unique.length+' sitemap URLs…';
+  let cursor=0;
+  async function worker(){while(cursor<unique.length){const url=unique[cursor++];const safe=safeUrl(url);if(!safe){all.push({url,http:'SKIP',title:'',description:'',canonical:'',issues:[finding('error','Off-site sitemap URL','This URL is not on the current site origin.')]});continue}
+   try{const f=await fetchText(safe.href);const type=f.res.headers.get('content-type')||'';if(!f.res.ok)all.push({url,http:f.res.status,title:'',description:'',canonical:'',issues:[finding('error','Page response','HTTP '+f.res.status)]});else if(!type.includes('text/html'))all.push({url,http:f.res.status,title:'(not HTML)',description:'',canonical:'',issues:[finding('warning','Non-HTML URL','Content type: '+type)]});else all.push(inspectHtml(safe.href,f.text,f.res.status))}
+   catch(e){all.push({url,http:'ERR',title:'',description:'',canonical:'',issues:[finding('error','Fetch failed',String(e.name==='AbortError'?'Timed out':e.message||e))]})}
+   $('status').textContent='Checked '+all.length+' of '+unique.length+' URLs…';
+  }}
+  await Promise.all(Array.from({length:Math.min(4,unique.length)},worker));
+  const titleCounts=new Map(),canonCounts=new Map();
+  for(const p of all){if(p.title&&p.title!=='(not HTML)')titleCounts.set(p.title,(titleCounts.get(p.title)||0)+1);if(p.canonical)canonCounts.set(new URL(p.canonical,origin).href,(canonCounts.get(new URL(p.canonical,origin).href)||0)+1)}
+  for(const p of all){if(p.title&&titleCounts.get(p.title)>1)p.issues.push(finding('warning','Duplicate title','This title appears on '+titleCounts.get(p.title)+' sitemap pages.'));if(p.canonical&&canonCounts.get(new URL(p.canonical,origin).href)>1)p.issues.push(finding('warning','Repeated canonical','This canonical is used by '+canonCounts.get(new URL(p.canonical,origin).href)+' sitemap pages.'))}
+  const errors=all.reduce((n,p)=>n+p.issues.filter(i=>i.level==='error').length,0);
+  const warnings=all.reduce((n,p)=>n+p.issues.filter(i=>i.level==='warning').length,0);
+  const passed=all.reduce((n,p)=>n+(p.issues.length===0?1:0),0);
+  $('pages').textContent=all.length;$('passed').textContent=passed;$('issues').textContent=errors+' / '+warnings;
+  const findings=all.flatMap(p=>p.issues.map(i=>({...i,url:p.url})));
+  $('findings').innerHTML=findings.length?findings.slice(0,150).map(i=>'<div class="check"><div><strong>'+esc(i.title)+'</strong><p>'+esc(i.detail)+' · <a href="'+esc(i.url)+'" target="_blank" rel="noopener">'+esc(new URL(i.url,origin).pathname)+'</a></p></div><span class="status '+statusClass(i.level)+'">'+esc(i.level.toUpperCase())+'</span></div>').join(''):'<div class="check"><div><strong>Nothing flagged by these checks</strong><p>This is not a guarantee of search indexing or ranking.</p></div><span class="status pass">PASS</span></div>';
+  $('results').innerHTML=all.map(p=>'<tr><td><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(new URL(p.url,origin).pathname)+'</a></td><td>'+esc(p.http)+'</td><td>'+esc(p.title||'—')+'</td><td>'+esc(p.description?p.description.length+' chars':'—')+'</td><td>'+esc(p.canonical?new URL(p.canonical,origin).pathname:'—')+'</td><td>'+esc(p.issues.length?p.issues.map(i=>i.title).join('; '):'No flags')+'</td></tr>').join('');
+  $('status').textContent='Audit finished: '+all.length+' URLs checked. '+errors+' error finding(s), '+warnings+' warning finding(s). '+(urls.length>maxPages?'Only the first '+maxPages+' unique URLs were checked.':'');
+ }catch(e){$('status').textContent='Audit could not finish: '+String(e.message||e);$('findings').innerHTML='<div class="check"><div><strong class="fail">Audit failed</strong><p>'+esc(e.message||e)+'</p></div></div>'}
+ finally{button.disabled=false}
+}
+$('run').addEventListener('click',run);
+})();
+</script>
+</body>
+</html>
