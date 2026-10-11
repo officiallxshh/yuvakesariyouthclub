@@ -31,7 +31,7 @@
     var controller=window.AbortController?new AbortController():null;
     var timer=window.setTimeout(function(){if(controller)controller.abort();},9000);
     try{
-      var response=await fetch(config.supabaseUrl.replace(/\\/$/,'')+'/functions/v1/yyc-volunteer-notify',{
+      var response=await fetch(config.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-volunteer-notify',{
         method:'POST',
         cache:'no-store',
         credentials:'omit',
@@ -478,7 +478,7 @@
   function renderVolunteerReview90(v){
     if(!v)return adminHeader90('Volunteer Review')+'<div class="empty">Volunteer application not found.</div>';
     var e=(v.email||'').trim();
-    var links=(e&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e))?'<a href="mailto:'+esc90(e)+'">Email applicant ↗</a>':'<span>Email address not provided.</span>';
+    var links=(e&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))?'<a href="mailto:'+esc90(e)+'">Email applicant ↗</a>':'<span>Email address not provided.</span>';
     return adminHeader90('Review volunteer application')+
       '<div class="yyc90-volunteer-review"><div class="yyc90-review-heading"><div><div class="modal-kicker">APPLICATION REVIEW</div><h3>'+esc90(v.name||'Volunteer')+'</h3></div><span class="yyc90-status-pill '+(v.status==='approved'?'is-approved':v.status==='denied'?'is-denied':'is-pending')+'">'+esc90(String(v.status||'pending').toUpperCase())+'</span></div>'+
       '<div class="yyc90-review-grid">'+
