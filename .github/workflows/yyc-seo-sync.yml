@@ -65,7 +65,20 @@ jobs:
           ]) {
             if (!urls.includes(required)) throw new Error('Required URL missing from sitemap: ' + required);
           }
-          console.log('Validated sitemap URLs:', urls.length);
+          const leadersHtml = fs.readFileSync('leaders.html', 'utf8');
+          const schemaMatch = leadersHtml.match(/<script type="application\\/ld\\+json">([\\s\\S]*?)<\\/script>/);
+          if (!schemaMatch) throw new Error('Leadership directory JSON-LD is missing');
+          const schema = JSON.parse(schemaMatch[1]);
+          const cards = [...leadersHtml.matchAll(/<article class="person"/g)].length;
+          if (!cards) throw new Error('Leadership directory has no published leader cards');
+          if (schema.mainEntity?.numberOfItems !== cards) throw new Error('Leadership card count and JSON-LD count do not match');
+          if ((schema.mainEntity?.itemListElement || []).length !== cards) throw new Error('Leadership JSON-LD entries do not match visible cards');
+          const profileLinks = [...leadersHtml.matchAll(/href="(\\.\\/leaders\\/auto\\/[^"]+\\.html)"/g)].map(m => 'https://www.yuvakesariyouthclub.in/' + m[1].slice(2));
+          if (profileLinks.length !== cards) throw new Error('Each visible leader must link to one generated profile');
+          for (const url of profileLinks) {
+            if (!urls.includes(url)) throw new Error('Leader profile missing from sitemap: ' + url);
+          }
+          console.log('Validated sitemap URLs:', urls.length, '| leader profiles:', cards);
           NODE
 
       - name: Commit generated public pages
