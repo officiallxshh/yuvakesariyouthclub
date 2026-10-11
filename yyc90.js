@@ -24,6 +24,32 @@
     if(typeof window.rpc!=='function') return Promise.reject(new Error('YYC connection is not ready'));
     return window.rpc(name,args||{});
   }
+
+  async function sendVolunteerNotice90(payload){
+    var config=window.YYC_CONFIG;
+    if(!config||!config.supabaseUrl||!config.supabaseKey)return {ok:false,error:'YYC notification configuration unavailable'};
+    var controller=window.AbortController?new AbortController():null;
+    var timer=window.setTimeout(function(){if(controller)controller.abort();},9000);
+    try{
+      var response=await fetch(config.supabaseUrl.replace(/\\/$/,'')+'/functions/v1/yyc-volunteer-notify',{
+        method:'POST',
+        cache:'no-store',
+        credentials:'omit',
+        headers:{'apikey':config.supabaseKey,'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify(payload||{}),
+        signal:controller?controller.signal:undefined
+      });
+      var text=await response.text(),data=null;
+      try{data=text?JSON.parse(text):null;}catch(e){}
+      if(!response.ok||!data||data.ok===false)return {ok:false,error:(data&&data.error)||'Volunteer email notification failed'};
+      return data;
+    }catch(error){
+      return {ok:false,error:error&&error.name==='AbortError'?'Volunteer email request timed out':'Volunteer email notification could not be reached'};
+    }finally{
+      window.clearTimeout(timer);
+    }
+  }
+  window.YYC90NotifyVolunteer=sendVolunteerNotice90;
   function open90(html){
     if(typeof window.openModal==='function') return window.openModal(html);
     var c=q('#modalContent'),m=q('#modal');
@@ -190,7 +216,7 @@
       '<form id="yyc90VolunteerForm"><div class="form-grid">'+
       '<div class="field"><label>Full name</label><input id="v90Name" required maxlength="120"></div>'+
       '<div class="field"><label>Phone</label><input id="v90Phone" maxlength="40"></div>'+
-      '<div class="field"><label>Email</label><input id="v90Email" type="email" maxlength="160"></div>'+
+      '<div class="field"><label>Email (for application updates)</label><input id="v90Email" type="email" maxlength="160" required autocomplete="email"></div>'+
       '<div class="field"><label>Area / locality</label><input id="v90Area" maxlength="120" placeholder="Subrahmanya / Kadaba"></div>'+
       '<div class="field"><label>Skills / interests</label><input id="v90Skills" maxlength="240" placeholder="Sports, events, technical, culture"></div>'+
       '<div class="field"><label>Availability</label><input id="v90Avail" maxlength="120" placeholder="Weekends / Evenings"></div>'+
@@ -201,7 +227,19 @@
       try{
         var r=await rpc90('public_submit_volunteer',{p_payload:{name:q('#v90Name').value.trim(),phone:q('#v90Phone').value.trim(),email:q('#v90Email').value.trim(),area:q('#v90Area').value.trim(),skills:q('#v90Skills').value.trim(),availability:q('#v90Avail').value.trim(),message:q('#v90Message').value.trim()}});
         if(!r||!r.ok)throw new Error(r&&r.error||'Could not submit application');
-        close90(true);toast90('Volunteer application submitted');
+        var emailNotice=await sendVolunteerNotice90({event:'application',volunteer_id:r.id});
+        close90(true);
+        if(emailNotice&&emailNotice.ok){
+          var applicantStatus=emailNotice.email&&emailNotice.email.status||'skipped';
+          var adminStatus=emailNotice.admin_alert&&emailNotice.admin_alert.status||'skipped';
+          if(applicantStatus==='sent'){
+            toast90('Application saved · confirmation email request accepted'+(adminStatus==='sent'?' · admin alerted':''));
+          }else{
+            toast90('Application saved · email not sent; the admin can still review it');
+          }
+        }else{
+          toast90('Application saved · email status could not be confirmed; the admin can still review it');
+        }
       }catch(err){b.disabled=false;b.textContent='SUBMIT APPLICATION';toast90(err.message);}
     });
   }
@@ -426,10 +464,30 @@
     return '<div class="admin-top"><div><div class="modal-kicker">YYC 90-FEATURE PLATFORM</div><h2 class="modal-title">'+esc90(tabName)+'</h2></div><div class="admin-top-actions"><button class="mini-btn" data-yyc90-back>← BACK TO ADMIN</button></div></div>';
   }
 
+  function volunteerEmailBadge90(status,label,when){
+    var value=String(status||'pending').toLowerCase();
+    var text=value==='sent'?'REQUEST ACCEPTED':value==='failed'?'FAILED':value==='skipped'?'NOT SENT':value==='sending'?'SENDING…':'PENDING';
+    var cls=value==='sent'?'is-approved':value==='failed'?'is-denied':value==='skipped'?'is-muted':'is-pending';
+    return '<div class="yyc90-volunteer-email-status"><span class="yyc90-status-pill '+cls+'">'+esc90(text)+'</span><small>'+esc90(label)+(when?' · '+esc90(format90Date(when)):'')+'</small></div>';
+  }
   function renderVolunteers90(d){
     var rows=d.volunteers||[];
     return adminHeader90('Volunteers')+'<div class="admin-toolbar"><input id="v90Search" class="admin-search" placeholder="Search volunteer, area or skill"><select id="v90Status"><option value="">All status</option><option>pending</option><option>approved</option><option>denied</option><option>archived</option></select><span class="admin-result-count" id="v90Count"></span></div>'+
-      '<div class="admin-card-list">'+(rows.length?rows.map(function(v){return '<div class="approval-card yyc90-volunteer-row" data-status="'+esc90(v.status)+'"><div class="meta"><strong>'+esc90(v.name)+'</strong><small>'+esc90(v.area||'Area not set')+' · '+esc90(v.skills||'')+'</small><small>'+esc90(v.email||'')+' · '+esc90(v.phone||'')+'</small><small>'+esc90(v.availability||'')+'</small><p>'+esc90(v.message||'')+'</p></div><div class="admin-actions">'+(v.status==='pending'?'<button class="mini-btn gold" data-v90-action="approve" data-v90-id="'+v.id+'">Approve</button><button class="mini-btn" data-v90-action="deny" data-v90-id="'+v.id+'">Deny</button>':'<button class="mini-btn" data-v90-action="pending" data-v90-id="'+v.id+'">Set Pending</button>')+'<button class="mini-btn" data-v90-action="archive" data-v90-id="'+v.id+'">Archive</button></div></div>';}).join(''):'<div class="empty">No volunteer applications yet.</div>')+'</div>';
+      '<div class="admin-card-list">'+(rows.length?rows.map(function(v){return '<div class="approval-card yyc90-volunteer-row" data-status="'+esc90(v.status)+'"><div class="meta"><strong>'+esc90(v.name)+'</strong><small>'+esc90(v.area||'Area not set')+' · '+esc90(v.skills||'')+'</small><small>'+esc90(v.email||'Email not provided')+' · '+esc90(v.phone||'')+'</small><small>'+esc90(v.availability||'')+' · '+esc90(v.status||'pending').toUpperCase()+'</small>'+volunteerEmailBadge90(v.application_email_status,'Applicant email',v.application_email_sent_at)+volunteerEmailBadge90(v.admin_alert_email_status,'Admin alert',v.admin_alert_email_sent_at)+(v.decision_email_for_status?volunteerEmailBadge90(v.decision_email_status,'Decision email · '+v.decision_email_for_status,v.decision_email_sent_at):'')+'</div><div class="admin-actions"><button class="mini-btn" data-v90-review="'+v.id+'">Review</button>'+(v.status==='pending'?'<button class="mini-btn gold" data-v90-action="approve" data-v90-id="'+v.id+'">Approve</button><button class="mini-btn" data-v90-action="deny" data-v90-id="'+v.id+'">Deny</button>':'<button class="mini-btn" data-v90-action="pending" data-v90-id="'+v.id+'">Set Pending</button>')+'<button class="mini-btn" data-v90-action="archive" data-v90-id="'+v.id+'">Archive</button></div></div>';}).join(''):'<div class="empty">No volunteer applications yet.</div>')+'</div>';
+  }
+  function renderVolunteerReview90(v){
+    if(!v)return adminHeader90('Volunteer Review')+'<div class="empty">Volunteer application not found.</div>';
+    var e=(v.email||'').trim();
+    var links=(e&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e))?'<a href="mailto:'+esc90(e)+'">Email applicant ↗</a>':'<span>Email address not provided.</span>';
+    return adminHeader90('Review volunteer application')+
+      '<div class="yyc90-volunteer-review"><div class="yyc90-review-heading"><div><div class="modal-kicker">APPLICATION REVIEW</div><h3>'+esc90(v.name||'Volunteer')+'</h3></div><span class="yyc90-status-pill '+(v.status==='approved'?'is-approved':v.status==='denied'?'is-denied':'is-pending')+'">'+esc90(String(v.status||'pending').toUpperCase())+'</span></div>'+
+      '<div class="yyc90-review-grid">'+
+      [['EMAIL',e||'Not provided'],['PHONE',v.phone||'Not provided'],['AREA / LOCALITY',v.area||'Not provided'],['SKILLS / INTERESTS',v.skills||'Not provided'],['AVAILABILITY',v.availability||'Not provided'],['SUBMITTED',format90Date(v.created_at)],['MESSAGE',v.message||'No message provided']].map(function(item){return '<div class="yyc90-review-field"><small>'+esc90(item[0])+'</small><p>'+esc90(item[1])+'</p></div>';}).join('')+
+      '</div><div class="yyc90-review-contact">'+links+'</div><div class="yyc90-review-email-grid">'+
+      volunteerEmailBadge90(v.application_email_status,'Applicant confirmation',v.application_email_sent_at)+
+      volunteerEmailBadge90(v.admin_alert_email_status,'Admin notification',v.admin_alert_email_sent_at)+
+      (v.decision_email_for_status?volunteerEmailBadge90(v.decision_email_status,'Latest decision · '+v.decision_email_for_status,v.decision_email_sent_at):'')+
+      '</div><div class="admin-actions"><button type="button" class="mini-btn" data-v90-review-back>← Back to volunteers</button>'+(v.status==='pending'?'<button type="button" class="mini-btn gold" data-v90-action="approve" data-v90-id="'+v.id+'">Approve application</button><button type="button" class="mini-btn" data-v90-action="deny" data-v90-id="'+v.id+'">Deny application</button>':'<button type="button" class="mini-btn" data-v90-action="pending" data-v90-id="'+v.id+'">Set Pending</button>')+'<button type="button" class="mini-btn" data-v90-action="archive" data-v90-id="'+v.id+'">Archive</button></div></div>';
   }
 
   function renderAchievements90(d){
@@ -1254,10 +1312,33 @@
         admin90Open(b.getAttribute('data-yyc90-tab'));
         return;
       }
+      var reviewBack=e.target.closest&&e.target.closest('[data-v90-review-back]');
+      if(reviewBack){e.preventDefault();e.stopImmediatePropagation();admin90Open('volunteers',true);return;}
+      var review=e.target.closest&&e.target.closest('[data-v90-review]');
+      if(review){
+        e.preventDefault();e.stopImmediatePropagation();
+        var reviewId=review.getAttribute('data-v90-review');
+        admin90DataCache().then(function(d){
+          var item=(d.volunteers||[]).find(function(x){return String(x.id)===String(reviewId);});
+          var workspace=q('#adminWorkspace');
+          if(workspace)workspace.innerHTML=renderVolunteerReview90(item);
+        }).catch(function(err){toast90(err.message||'Could not load volunteer review');});
+        return;
+      }
       var v=e.target.closest&&e.target.closest('[data-v90-action]');
       if(v){
         e.preventDefault();e.stopImmediatePropagation();
-        rpc90('admin_volunteer_action',{p_token:window.adminToken,p_id:v.getAttribute('data-v90-id'),p_action:v.getAttribute('data-v90-action')}).then(function(r){if(!r||!r.ok)throw new Error(r&&r.error||'Unable to update volunteer');toast90('Volunteer updated');featureData=null;admin90Open('volunteers',true);}).catch(function(err){toast90(err.message);});
+        var volunteerId=v.getAttribute('data-v90-id'),volunteerAction=v.getAttribute('data-v90-action');
+        rpc90('admin_volunteer_action',{p_token:window.adminToken,p_id:volunteerId,p_action:volunteerAction}).then(async function(r){
+          if(!r||!r.ok)throw new Error(r&&r.error||'Unable to update volunteer');
+          if((volunteerAction==='approve'||volunteerAction==='deny')&&typeof window.YYC90NotifyVolunteer==='function'){
+            var notice=await window.YYC90NotifyVolunteer({event:'decision',admin_token:window.adminToken,volunteer_id:volunteerId,decision:volunteerAction==='approve'?'approved':'denied'});
+            var email=notice&&notice.email;
+            if(notice&&notice.ok&&email&&email.status==='sent')toast90('Volunteer status saved · email request accepted');
+            else toast90('Volunteer status saved · decision email '+((email&&email.status)||'not sent'));
+          }else{toast90('Volunteer updated');}
+          featureData=null;admin90Open('volunteers',true);
+        }).catch(function(err){toast90(err.message);});
         return;
       }
       var dev=e.target.closest&&e.target.closest('[data-dev]');
