@@ -472,16 +472,17 @@
   }
   function renderVolunteers90(d){
     var rows=d.volunteers||[];
-    var duplicateIds={};
-    rows.forEach(function(v,i){
+    var duplicateIds={},emailCounts=Object.create(null),phoneCounts=Object.create(null);
+    rows.forEach(function(v){
       var email=String(v.email||'').trim().toLowerCase();
       var phone=String(v.phone||'').replace(/\D/g,'');
-      rows.forEach(function(other,j){
-        if(i===j)return;
-        var otherEmail=String(other.email||'').trim().toLowerCase();
-        var otherPhone=String(other.phone||'').replace(/\D/g,'');
-        if((email&&email===otherEmail)||(phone.length>=7&&phone===otherPhone))duplicateIds[String(v.id)]=true;
-      });
+      if(email)emailCounts[email]=(emailCounts[email]||0)+1;
+      if(phone.length>=7)phoneCounts[phone]=(phoneCounts[phone]||0)+1;
+    });
+    rows.forEach(function(v){
+      var email=String(v.email||'').trim().toLowerCase();
+      var phone=String(v.phone||'').replace(/\D/g,'');
+      if((email&&emailCounts[email]>1)||(phone.length>=7&&phoneCounts[phone]>1))duplicateIds[String(v.id)]=true;
     });
     var contactEmail=String((d.settings||{}).contact_email||'').trim();
     var contactConfigured=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail);
