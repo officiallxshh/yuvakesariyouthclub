@@ -503,7 +503,7 @@
       volunteerEmailBadge90(v.application_email_status,'Applicant confirmation',v.application_email_sent_at)+
       volunteerEmailBadge90(v.admin_alert_email_status,'Admin notification',v.admin_alert_email_sent_at)+
       (v.decision_email_for_status?volunteerEmailBadge90(v.decision_email_status,'Latest decision · '+v.decision_email_for_status,v.decision_email_sent_at):'')+
-      '</div><div class="admin-actions">'+
+      '</div><section class="yyc90-review-notes" aria-labelledby="v90ReviewNotesTitle"><div class="yyc90-review-notes-head"><div><strong id="v90ReviewNotesTitle">PRIVATE ADMIN REVIEW NOTES</strong><small>Visible to authorized administrators only. Notes do not change the application status.</small></div><span>'+(v.review_notes_updated_at?'Last saved '+esc90(format90Date(v.review_notes_updated_at)):'Not saved yet')+'</span></div><label for="v90ReviewNotes" class="yyc90-review-notes-label">Internal follow-up notes</label><textarea id="v90ReviewNotes" maxlength="2000" rows="5" placeholder="Record follow-up actions or details for other admins…">'+esc90(v.review_notes||'')+'</textarea><div class="yyc90-review-notes-footer"><span id="v90ReviewNoteLength">'+String((v.review_notes||'').length)+'/2000 characters</span><button type="button" class="mini-btn gold" data-v90-save-note data-v90-id="'+v.id+'">Save private note</button></div></section><div class="admin-actions">'+
       (v.application_email_status==='failed'&&v.status==='pending'?'<button type="button" class="mini-btn" data-v90-retry="application" data-v90-id="'+v.id+'">Retry applicant email</button>':'')+
       (v.admin_alert_email_status==='failed'?'<button type="button" class="mini-btn" data-v90-retry="admin_alert" data-v90-id="'+v.id+'">Retry admin alert</button>':'')+
       (v.decision_email_status==='failed'&&v.decision_email_for_status===v.status&&['approved','denied'].includes(v.status)?'<button type="button" class="mini-btn" data-v90-retry="decision" data-v90-id="'+v.id+'">Retry decision email</button>':'')+
@@ -1331,6 +1331,33 @@
         e.preventDefault();e.stopImmediatePropagation();
         admin90Open(b.getAttribute('data-yyc90-tab'));
         return;
+      }
+      var saveNote=e.target.closest&&e.target.closest('[data-v90-save-note]');
+      if(saveNote){
+        e.preventDefault();e.stopImmediatePropagation();
+        var noteId=saveNote.getAttribute('data-v90-id'),noteField=q('#v90ReviewNotes');
+        if(!noteField){toast90('Review note field is unavailable');return;}
+        var noteValue=noteField.value;
+        if(noteValue.length>2000){toast90('Review notes must be 2000 characters or fewer');return;}
+        var saveLabel=saveNote.textContent;saveNote.disabled=true;saveNote.textContent='SAVING NOTE…';
+        rpc90('admin_volunteer_save_review_note',{p_token:window.adminToken,p_id:noteId,p_notes:noteValue}).then(function(r){
+          if(!r||!r.ok)throw new Error(r&&r.error||'Could not save private review note');
+          toast90('Private review note saved');
+          featureData=null;
+          return admin90DataCache();
+        }).then(function(d){
+          var item=(d.volunteers||[]).find(function(x){return String(x.id)===String(noteId);});
+          var workspace=q('#adminWorkspace');
+          if(workspace)workspace.innerHTML=renderVolunteerReview90(item);
+        }).catch(function(err){toast90(err.message||'Could not save private review note');}).finally(function(){
+          saveNote.disabled=false;saveNote.textContent=saveLabel;
+        });
+        return;
+      }
+      var noteFieldInput=e.target.closest&&e.target.closest('#v90ReviewNotes');
+      if(noteFieldInput){
+        var lengthLabel=q('#v90ReviewNoteLength');
+        if(lengthLabel)lengthLabel.textContent=noteFieldInput.value.length+'/2000 characters';
       }
       var emailTest=e.target.closest&&e.target.closest('[data-v90-test-email]');
       if(emailTest){
