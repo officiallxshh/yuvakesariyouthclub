@@ -1,0 +1,44 @@
+/* YYC volunteer review and notification status surfaces — additive UI only. */
+.yyc90-volunteer-email-status{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px;
+  color:#89928d;font-size:10px;line-height:1.4;
+}
+.yyc90-status-pill{
+  display:inline-flex;align-items:center;justify-content:center;min-height:22px;
+  padding:4px 8px;border:1px solid rgba(226,191,114,.22);border-radius:999px;
+  background:rgba(226,191,114,.06);color:#e1c47c;font-size:8px;font-weight:850;
+  letter-spacing:.08em;line-height:1.2;white-space:nowrap;
+}
+.yyc90-status-pill.is-approved{border-color:rgba(115,205,151,.24);background:rgba(115,205,151,.07);color:#8bd6aa}
+.yyc90-status-pill.is-denied{border-color:rgba(224,133,115,.24);background:rgba(224,133,115,.07);color:#e7a08f}
+.yyc90-status-pill.is-muted{border-color:rgba(160,170,166,.18);background:rgba(160,170,166,.045);color:#9aa4a0}
+.yyc90-volunteer-review{
+  max-width:940px;margin:10px auto;padding:clamp(14px,2.8vw,24px);
+  border:1px solid rgba(226,191,114,.18);border-radius:20px;
+  background:linear-gradient(145deg,rgba(16,25,29,.93),rgba(7,12,15,.94));
+  box-shadow:0 18px 48px rgba(0,0,0,.2);
+}
+.yyc90-review-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:19px}
+.yyc90-review-heading h3{margin:8px 0 0;color:#f0e6d2;font-size:clamp(22px,3.5vw,30px);letter-spacing:-.02em}
+.yyc90-review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.yyc90-review-field{min-width:0;padding:13px;border:1px solid rgba(255,255,255,.07);border-radius:13px;background:rgba(255,255,255,.025)}
+.yyc90-review-field:last-child{grid-column:1/-1}
+.yyc90-review-field small{display:block;color:#9aa49f;font-size:8px;font-weight:850;letter-spacing:.13em}
+.yyc90-review-field p{margin:7px 0 0;color:#e4e2d8;font-size:12px;line-height:1.65;overflow-wrap:anywhere;white-space:pre-wrap}
+.yyc90-review-contact{margin:13px 0;color:#d7b66d;font-size:11px}
+.yyc90-review-contact a{color:#e8ca83;font-weight:750;text-decoration:none}
+.yyc90-review-contact a:hover{text-decoration:underline;text-underline-offset:3px}
+.yyc90-review-email-grid{display:grid;gap:8px;margin:15px 0;padding:13px;border:1px solid rgba(255,255,255,.065);border-radius:14px;background:rgba(0,0,0,.12)}
+.yyc-volunteer-review-details{grid-column:1/-1;margin-top:10px;padding:12px;border:1px solid rgba(225,190,111,.15);border-radius:10px;background:rgba(225,190,111,.035)}
+.yyc-volunteer-review-details[hidden]{display:none!important}
+.yyc-volunteer-review-details small{display:block;color:#b6bdb7;font-size:11px;line-height:1.6}
+.yyc-volunteer-review-details p{margin:8px 0 0;color:#e0e2dc;font-size:12px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:620px){
+  .yyc90-review-grid{grid-template-columns:minmax(0,1fr)}
+  .yyc90-review-field:last-child{grid-column:auto}
+  .yyc90-review-heading{align-items:flex-start}
+  .yyc90-volunteer-review{padding:13px;border-radius:16px}
+  .yyc90-volunteer-review .admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .yyc90-volunteer-review .admin-actions button:first-child{grid-column:1/-1}
+  .yyc90-volunteer-email-status{gap:6px}
+}
