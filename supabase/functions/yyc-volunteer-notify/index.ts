@@ -165,14 +165,12 @@ async function sendApplicationEmails(id: string) {
     volunteer.skills ? "<strong>Skills / interests:</strong> " + escapeHtml(volunteer.skills, 240) : "",
     volunteer.availability ? "<strong>Availability:</strong> " + escapeHtml(volunteer.availability, 120) : ""
   ].filter(Boolean).join("<br>");
-  const applicantEmail = validEmail(clean(volunteer.email, 320))
-    ? await sendTrackedVolunteerEmail({
-      id, statusField: "application_email_status", sentAtField: "application_email_sent_at", errorField: "application_email_error",
-      to: clean(volunteer.email, 320), subject: "YYC Volunteer Application Received",
-      html: emailShell("We received your volunteer application", name, applicationBody, applicationDetail),
-      expectedStatus: "pending"
-    })
-    : { status: "skipped", reason: "No valid volunteer email on record" };
+  const applicantEmail = await sendTrackedVolunteerEmail({
+    id, statusField: "application_email_status", sentAtField: "application_email_sent_at", errorField: "application_email_error",
+    to: clean(volunteer.email, 320), subject: "YYC Volunteer Application Received",
+    html: emailShell("We received your volunteer application", name, applicationBody, applicationDetail),
+    expectedStatus: "pending"
+  });
 
   const { data: settings, error: settingsError } = await db.from("site_settings")
     .select("contact_email").eq("id", true).maybeSingle();
