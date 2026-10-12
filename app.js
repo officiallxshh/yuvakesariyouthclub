@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-40-build15-hash-reload-fix';
+var YYC_APP_BUILD='20261012-41-build15-hash-reload-fix';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1541,7 +1541,7 @@ function updateYYCActiveSection(){
 function activeNav(){
   var rawTarget=location.hash ? location.hash.slice(1) : '';
   var target=rawTarget||'home';
-  var links=$('.desktop-nav .nav-link');
+  var links=$$('.desktop-nav .nav-link');
   var exists=links.some(function(a){return (a.getAttribute('href')||'').slice(1)===target;});
   if(!exists) target='home';
   var targetLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)===target;});
