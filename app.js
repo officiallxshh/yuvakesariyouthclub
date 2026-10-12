@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-27-reel-fullscreen-contain';
+var YYC_APP_BUILD='20261012-28-reel-fullscreen-exit-toggle';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
