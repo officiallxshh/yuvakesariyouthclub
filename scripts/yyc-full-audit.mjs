@@ -285,7 +285,7 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-40-build15-hash-reload-fix";
+const currentBuild = "20261012-41-build15-hash-reload-fix";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||
