@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-35-smooth-tab-highlight';
+var YYC_APP_BUILD='20261012-36-responsive-active-highlight';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1554,7 +1554,16 @@ function bindNavigation(){
      finish at an older section while the URL/highlight shows the latest one. */
   var navigationSequence=0;
   var lastUserScrollIntent=0;
-  function noteUserScrollIntent(){lastUserScrollIntent=Date.now();}
+  function noteUserScrollIntent(){
+    lastUserScrollIntent=Date.now();
+    /* A deliberate user scroll cancels the clicked-tab lock immediately.
+       The active state must follow the section the visitor is actually viewing. */
+    if(Number(window.__yycNavLockUntil||0)>lastUserScrollIntent){
+      window.__yycNavLockUntil=0;
+      window.__yycNavTargetId='';
+      window.requestAnimationFrame(function(){updateYYCActiveSection();});
+    }
+  }
   window.addEventListener('wheel',noteUserScrollIntent,{passive:true});
   window.addEventListener('touchstart',noteUserScrollIntent,{passive:true});
   window.addEventListener('keydown',function(e){
@@ -1618,12 +1627,30 @@ function bindNavigation(){
 
       /* Images/fonts and smooth-scroll timing can shift the target after the click.
          Re-check once motion settles; sequence and user-input guards prevent races. */
-      window.setTimeout(function(){alignTarget(sequence,target,startedAt,false);},850);
-      window.setTimeout(function(){alignTarget(sequence,target,startedAt,false);},1550);
+      function releaseLockWhenSettled(){
+        if(sequence!==navigationSequence)return;
+        /* If the visitor interrupts the transition, never pin the highlight
+           to the old destination. Otherwise unlock as soon as alignment settles. */
+        if(lastUserScrollIntent>startedAt ||
+           Math.abs(target.getBoundingClientRect().top-fixedHeaderOffset())<=36){
+          window.__yycNavLockUntil=0;
+          window.__yycNavTargetId='';
+          updateYYCActiveSection();
+        }
+      }
+      window.setTimeout(function(){
+        alignTarget(sequence,target,startedAt,false);
+        releaseLockWhenSettled();
+      },850);
+      window.setTimeout(function(){
+        alignTarget(sequence,target,startedAt,false);
+        releaseLockWhenSettled();
+      },1550);
       window.setTimeout(function(){
         alignTarget(sequence,target,startedAt,true);
         if(sequence!==navigationSequence)return;
         window.__yycNavLockUntil=0;
+        window.__yycNavTargetId='';
         updateYYCActiveSection();
         updateYYCScrollProgress();
       },2450);
@@ -1641,6 +1668,9 @@ function bindNavigation(){
     navScrollTicking=true;
     requestAnimationFrame(function(){
       navScrollTicking=false;
+      /* Do not rely solely on IntersectionObserver threshold crossings:
+         some sections may remain inside its range while the visible section changes. */
+      updateYYCActiveSection();
       updateYYCScrollProgress();
     });
   },{passive:true});
