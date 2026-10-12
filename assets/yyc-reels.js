@@ -295,12 +295,25 @@
         attachVideoSource(target);
         target.controls=true;
         if(err)err.hidden=true;
-        /* Request fullscreen synchronously from the click; don't wait for media loading. */
+        /* Toggle the same control: clicking again exits fullscreen instead of trapping the page zoomed in. */
+        var isPlayerFullscreen=!!(parent&&(
+          document.fullscreenElement===parent ||
+          document.webkitFullscreenElement===parent
+        ));
+        if(isPlayerFullscreen){
+          try{
+            var exitResult;
+            if(document.exitFullscreen)exitResult=document.exitFullscreen();
+            else if(document.webkitExitFullscreen)exitResult=document.webkitExitFullscreen();
+            if(exitResult&&typeof exitResult.catch==='function')exitResult.catch(function(){});
+          }catch(e){}
+          return;
+        }
+        /* Request fullscreen synchronously from the click; preserve the complete video frame. */
         try{
           var fullscreenResult;
-          /* Fullscreen the player container first so CSS can letterbox the video without cropping. */
           if(parent&&parent.requestFullscreen)fullscreenResult=parent.requestFullscreen();
-          else if(target.webkitEnterFullscreen)target.webkitEnterFullscreen();
+          else if(target.webkitEnterFullscreen)fullscreenResult=target.webkitEnterFullscreen();
           else if(target.requestFullscreen)fullscreenResult=target.requestFullscreen();
           if(fullscreenResult&&typeof fullscreenResult.catch==='function')fullscreenResult.catch(function(){});
         }catch(e){}
@@ -316,6 +329,21 @@
         return;
       }
     });
+    function syncFullscreenButton(player){
+      if(!player)return;
+      var button=player.querySelector('[data-reel-fullscreen]');
+      if(!button)return;
+      var active=document.fullscreenElement===player||document.webkitFullscreenElement===player;
+      button.textContent=active?'×':'⛶';
+      button.title=active?'Exit fullscreen':'Fullscreen';
+      button.setAttribute('aria-label',active?'Exit Reel fullscreen':'View Reel fullscreen');
+      button.setAttribute('aria-pressed',active?'true':'false');
+    }
+    function syncAllFullscreenButtons(){
+      document.querySelectorAll('.yyc-reel-player').forEach(syncFullscreenButton);
+    }
+    document.addEventListener('fullscreenchange',syncAllFullscreenButtons);
+    document.addEventListener('webkitfullscreenchange',syncAllFullscreenButtons);
     document.addEventListener('keydown',function(event){if(event.key==='Escape')closeEventModal();});
     document.addEventListener('ended',function(event){
       var video=event.target;
