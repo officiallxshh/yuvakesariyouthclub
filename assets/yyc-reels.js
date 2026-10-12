@@ -298,9 +298,10 @@
         /* Request fullscreen synchronously from the click; don't wait for media loading. */
         try{
           var fullscreenResult;
-          if(target.requestFullscreen)fullscreenResult=target.requestFullscreen();
+          /* Fullscreen the player container first so CSS can letterbox the video without cropping. */
+          if(parent&&parent.requestFullscreen)fullscreenResult=parent.requestFullscreen();
           else if(target.webkitEnterFullscreen)target.webkitEnterFullscreen();
-          else if(parent&&parent.requestFullscreen)fullscreenResult=parent.requestFullscreen();
+          else if(target.requestFullscreen)fullscreenResult=target.requestFullscreen();
           if(fullscreenResult&&typeof fullscreenResult.catch==='function')fullscreenResult.catch(function(){});
         }catch(e){}
         var playback;
