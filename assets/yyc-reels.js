@@ -6,6 +6,7 @@
   var publicLoading=false;
   var publicReels=[];
   var publicEventGroups=[];
+  var eventModalOpener=null;
   var adminReels=[];
   var adminBusy=false;
 
@@ -199,15 +200,20 @@
     grid.innerHTML=markup;
     startWarmingVideos(grid);
   }
-  function closeEventModal(){
+  function closeEventModal(restoreFocus){
     var modal=byId('yycReelEventModal');
     if(modal)modal.remove();
     document.body.classList.remove('yyc-reel-modal-open');
+    var opener=eventModalOpener;
+    eventModalOpener=null;
+    if(restoreFocus!==false&&opener&&document.contains(opener)&&typeof opener.focus==='function')opener.focus();
   }
   function openEventModal(index){
     var group=publicEventGroups[Number(index)];
     if(!group)return;
-    closeEventModal();
+    var trigger=document.querySelector('[data-reel-event-open="'+Number(index)+'"]');
+    closeEventModal(false);
+    eventModalOpener=trigger||null;
     var markup='<div class="yyc-reel-event-modal" id="yycReelEventModal">'+
       '<section class="yyc-reel-event-dialog" role="dialog" aria-modal="true" aria-labelledby="yycReelEventDialogTitle">'+
         '<header class="yyc-reel-event-dialog-head"><div><span class="yyc-reel-event-kicker">YYC EVENT COLLECTION</span><h2 id="yycReelEventDialogTitle">'+escapeHTML(group.name)+'</h2><p>'+group.reels.length+' '+(group.reels.length===1?'Reel':'Reels')+' · shown in numbered order</p></div>'+
