@@ -4040,8 +4040,8 @@ function adminUpdateForm(id){
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE UPDATE';}toast(err.message);}
   });
 }
-function adminGalleryForm(id){
-  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:'GENERAL',publish_at:'',sort_order:0};
+function adminGalleryForm(id,albumPreset,titlePreset){
+  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:titlePreset||'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:albumPreset||'',publish_at:'',sort_order:0};
   var obj={photo:existing.src||''};
   var batchPhotos=[];
   var maxBatchPhotos=20;
