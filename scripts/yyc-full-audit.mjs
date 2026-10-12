@@ -206,6 +206,72 @@ if (large.length) {
   warnings.push("Large source files: " + large.map(x => x.f + " (" + Math.round(x.n/1024) + " KB)").join(", "));
 }
 
+
+/* Navigation regression guard: a section anchor has exactly one source of active
+   state, and the exclusive styling must be the final stylesheet in the page. */
+const desktopNavMatch = index.match(/<nav\\b[^>]*class=["'][^"']*\\bdesktop-nav\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/nav>/i);
+if (!desktopNavMatch) {
+  issues.push("Desktop primary navigation is missing.");
+} else {
+  const navMarkup = desktopNavMatch[1];
+  const navTargets = [...navMarkup.matchAll(/<a\\b[^>]*class=["'][^"']*\\bnav-link\\b[^"']*["'][^>]*>/gi)]
+    .map(m => {
+      const href = (m[0].match(/\\bhref=["']#([^"']+)["']/i) || [])[1];
+      return href || "";
+    });
+  if (!navTargets.length) issues.push("Desktop navigation has no section links.");
+  const targetCounts = new Map();
+  for (const target of navTargets) {
+    targetCounts.set(target, (targetCounts.get(target) || 0) + 1);
+    if (!target) {
+      issues.push("Desktop navigation contains a nav-link without a local section target.");
+      continue;
+    }
+    if (!index.includes('id="' + target + '"') && !index.includes("id='" + target + "'")) {
+      issues.push("Desktop navigation target is missing: #" + target);
+    }
+  }
+  for (const [target, count] of targetCounts) {
+    if (count > 1) issues.push("Duplicate desktop navigation target: #" + target);
+  }
+}
+const navActiveCssPath = "assets/yyc-nav-active-state.css";
+if (!fileSet.has(navActiveCssPath)) {
+  issues.push("Exclusive navigation stylesheet is missing.");
+} else {
+  const navCss = read(navActiveCssPath);
+  if (!navCss.includes(".desktop-nav > a.nav-link:not(.active)") ||
+      !navCss.includes(".desktop-nav > a.nav-link.active") ||
+      !navCss.includes("content: none !important") ||
+      !navCss.includes(".yyc-nav-highlight")) {
+    issues.push("Exclusive navigation stylesheet is missing one or more single-active-state safeguards.");
+  }
+}
+const stylesheetLinks = [...index.matchAll(/<link\\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
+const finalStylesheetTag = stylesheetLinks.length ? stylesheetLinks[stylesheetLinks.length - 1][0] : "";
+if (!finalStylesheetTag.includes(navActiveCssPath)) {
+  issues.push("Exclusive navigation stylesheet must be the final linked stylesheet in index.html.");
+}
+if ((app.match(/function\\s+setYYCNavActive\\s*\\(/g) || []).length !== 1) {
+  issues.push("Navigation should have exactly one setYYCNavActive controller.");
+}
+if (!/a\\.classList\\.toggle\\(['"]active['"],\\s*selected\\)/.test(app) ||
+    !app.includes("a.removeAttribute('aria-current')")) {
+  issues.push("Navigation controller must synchronize the single active class and aria-current state.");
+}
+if (/function\\s+syncYYCNavHighlight\\s*\\(/.test(app) ||
+    /id=["']yycNavHighlight["']/.test(index)) {
+  issues.push("Legacy moving navigation highlight was reintroduced.");
+}
+const currentBuild = "20261012-34-build14-nav-audit";
+if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
+    !index.includes('styles.css?v=' + currentBuild) ||
+    !index.includes('app.js?v=' + currentBuild) ||
+    !index.includes('yyc-nav-active-state.css?v=' + currentBuild) ||
+    !app.includes("var YYC_APP_BUILD='" + currentBuild + "'")) {
+  issues.push("Navigation fix cache-busting/build identifiers are inconsistent.");
+}
+
 console.log("YYC FULL SITE AUDIT");
 console.log("Files scanned:", files.length);
 console.log("JavaScript files checked:", jsFiles.length);
