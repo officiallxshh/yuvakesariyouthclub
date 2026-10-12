@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-32-single-active-nav';
+var YYC_APP_BUILD='20261012-33-nav-exclusive-active-state';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1462,10 +1462,6 @@ async function loadPublic(){
     if(!renderedCached) toast('Public data is loading from the backup design.');
   }
 }
-function activeNav(){
-  var target=location.hash ? location.hash.slice(1) : 'home';
-  Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link')).forEach(function(a){var h=(a.getAttribute('href')||'').slice(1);a.classList.toggle('active',h===target);});
-}
 function updateYYCScrollProgress(){
   var bar=$('#yycScrollProgressBar');
   if(!bar) return;
@@ -1474,32 +1470,14 @@ function updateYYCScrollProgress(){
   var p=Math.max(0,Math.min(1,window.scrollY/max));
   bar.style.transform='scaleX('+p.toFixed(4)+')';
 }
-function syncYYCNavHighlight(activeLink){
-  var nav=document.querySelector('.desktop-nav');
-  var indicator=document.getElementById('yycNavHighlight');
-  if(!nav||!indicator) return;
-  if(window.innerWidth<=980){
-    indicator.classList.remove('is-visible');
-    return;
-  }
-  var link=activeLink;
-  if(!link){
-    var active=nav.querySelector('.nav-link.active');
-    link=active||nav.querySelector('.nav-link');
-  }
-  if(!link) return;
-  var nr=nav.getBoundingClientRect();
-  var lr=link.getBoundingClientRect();
-  var left=Math.max(0,lr.left-nr.left);
-  var width=Math.max(42,lr.width);
-  indicator.style.width=width+'px';
-  indicator.style.transform='translate3d('+left+'px,0,0)';
-  indicator.classList.add('is-visible');
-}
 function setYYCNavActive(link){
   var links=Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link'));
-  links.forEach(function(a){a.classList.toggle('active',a===link);});
-  syncYYCNavHighlight(link);
+  links.forEach(function(a){
+    var selected=a===link;
+    a.classList.toggle('active',selected);
+    if(selected)a.setAttribute('aria-current','location');
+    else a.removeAttribute('aria-current');
+  });
 }
 function updateYYCActiveSection(){
   var links=Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link'));
@@ -1666,9 +1644,8 @@ function bindNavigation(){
       updateYYCScrollProgress();
     });
   },{passive:true});
-  window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();syncYYCNavHighlight();},{passive:true});
+  window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();},{passive:true});
   activeNav();
-  syncYYCNavHighlight();
   updateYYCScrollProgress();
 }
 function submitUpdate(){
