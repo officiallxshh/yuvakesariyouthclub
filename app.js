@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-37-build15-reliability-performance';
+var YYC_APP_BUILD='20261012-38-build15-hash-navigation';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1539,11 +1539,54 @@ function updateYYCActiveSection(){
   setYYCNavActive(activeLink||links[0]);
 }
 function activeNav(){
-  var target=location.hash ? location.hash.slice(1) : 'home';
-  var links=$$('.desktop-nav .nav-link');
+  var rawTarget=location.hash ? location.hash.slice(1) : '';
+  var target=rawTarget||'home';
+  var links=$('.desktop-nav .nav-link');
   var exists=links.some(function(a){return (a.getAttribute('href')||'').slice(1)===target;});
   if(!exists) target='home';
   var targetLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)===target;});
+  var sequence=(Number(window.__yycHashNavSequence)||0)+1;
+  window.__yycHashNavSequence=sequence;
+  setYYCNavActive(targetLink||links[0]);
+
+  /* A direct URL, refresh, or browser back/forward must honor its section hash.
+     Lock that destination while we align below the fixed header, then return to
+     normal scroll-based tracking. This prevents the initial Home state from
+     overwriting #events/#reel/etc. before the browser has finished positioning. */
+  if(rawTarget && exists && targetLink){
+    var section=document.getElementById(target);
+    if(section){
+      window.__yycNavTargetId=target;
+      window.__yycNavLockUntil=Date.now()+2000;
+      function alignHashTarget(){
+        if(Number(window.__yycHashNavSequence)!==sequence ||
+           location.hash.slice(1)!==target) return;
+        var header=document.querySelector('.topbar');
+        var offset=header ? Math.max(0,header.getBoundingClientRect().bottom) : 0;
+        var difference=section.getBoundingClientRect().top-offset-12;
+        var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if(Math.abs(difference)>24){
+          window.scrollTo({top:Math.max(0,window.scrollY+difference),behavior:reduce?'auto':'smooth'});
+        }
+        setYYCNavActive(targetLink);
+        updateYYCScrollProgress();
+      }
+      window.requestAnimationFrame(alignHashTarget);
+      window.setTimeout(function(){
+        if(Number(window.__yycHashNavSequence)!==sequence ||
+           location.hash.slice(1)!==target) return;
+        window.__yycNavLockUntil=0;
+        window.__yycNavTargetId='';
+        updateYYCActiveSection();
+        updateYYCScrollProgress();
+      },2050);
+      updateYYCScrollProgress();
+      return;
+    }
+  }
+
+  window.__yycNavLockUntil=0;
+  window.__yycNavTargetId='';
   setYYCNavActive(targetLink||links[0]);
   updateYYCActiveSection();
   updateYYCScrollProgress();
@@ -1609,6 +1652,7 @@ function bindNavigation(){
 
       var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var sequence=++navigationSequence,startedAt=Date.now();
+      window.__yycHashNavSequence=(Number(window.__yycHashNavSequence)||0)+1;
       window.__yycNavTargetId=target.id||targetId;
       window.__yycNavLockUntil=startedAt+2500;
       lastUserScrollIntent=Math.min(lastUserScrollIntent,startedAt);
