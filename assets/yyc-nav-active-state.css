@@ -1,15 +1,48 @@
 /* YYC navigation active state — one source of truth.
    The active anchor class controls the only highlight; hover never imitates active. */
 
-/* Disable legacy and animated underline pseudo-elements. */
-.desktop-nav > a.nav-link::before,
+.desktop-nav > a.nav-link {
+  position: relative !important;
+  isolation: isolate;
+}
+
+/* Animated box surface: fades and settles into the selected item without a drifting
+   shared indicator. Keep all text/icons above the decorative layer. */
+.desktop-nav > a.nav-link::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  inset: 4px 2px 5px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1px solid rgba(236,193,105,0);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(236,193,105,.105), rgba(236,193,105,.035) 78%, rgba(236,193,105,.012));
+  box-shadow: inset 0 1px 0 rgba(255,239,195,0), 0 3px 12px rgba(0,0,0,0);
+  opacity: 0;
+  transform: translateY(3px) scale(.965);
+  transform-origin: center;
+  transition:
+    opacity 260ms cubic-bezier(.2,.7,.2,1),
+    transform 340ms cubic-bezier(.2,.7,.2,1),
+    border-color 260ms ease,
+    box-shadow 300ms ease;
+}
+
+/* Disable old underline layers; the active state now uses the animated box above. */
 .desktop-nav > a.nav-link::after,
 .desktop-nav > a.nav-link .nav-label::after {
   content: none !important;
   display: none !important;
 }
 
-/* Idle and hovered non-active links stay visually neutral. */
+.desktop-nav > a.nav-link .nav-icon,
+.desktop-nav > a.nav-link .nav-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* Idle and hovered non-active links stay neutral: hover never impersonates active. */
 .desktop-nav > a.nav-link:not(.active),
 .desktop-nav > a.nav-link:not(.active):hover,
 .desktop-nav > a.nav-link:not(.active):focus-visible {
@@ -19,22 +52,38 @@
   color: #ddd5c6 !important;
   transform: none !important;
 }
+
+.desktop-nav > a.nav-link:not(.active)::before {
+  opacity: 0;
+  transform: translateY(3px) scale(.965);
+  border-color: rgba(236,193,105,0);
+  box-shadow: inset 0 1px 0 rgba(255,239,195,0), 0 3px 12px rgba(0,0,0,0);
+}
+
 .desktop-nav > a.nav-link:not(.active):hover .nav-icon,
 .desktop-nav > a.nav-link:not(.active):focus-visible .nav-icon {
   color: inherit !important;
   transform: none !important;
 }
 
-/* Only the single .active item has a selected background and inset underline. */
+/* The one active tab reveals its box smoothly; keep the subtle lower gold edge. */
 .desktop-nav > a.nav-link.active,
 .desktop-nav > a.nav-link.active:hover,
 .desktop-nav > a.nav-link.active:focus-visible {
-  background: linear-gradient(180deg, rgba(236,193,105,.075), rgba(236,193,105,.018) 78%, transparent) !important;
+  background: transparent !important;
   box-shadow: inset 0 -2px 0 var(--gold, #d7ae66) !important;
   color: #f5d58f !important;
   text-shadow: 0 0 18px rgba(239,202,123,.12) !important;
   transform: none !important;
 }
+
+.desktop-nav > a.nav-link.active::before {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  border-color: rgba(236,193,105,.23);
+  box-shadow: inset 0 1px 0 rgba(255,239,195,.08), 0 3px 12px rgba(0,0,0,.12);
+}
+
 .desktop-nav > a.nav-link.active .nav-icon {
   color: #f3d08b !important;
   transform: none !important;
@@ -44,4 +93,12 @@
 .desktop-nav > #yycNavHighlight,
 .desktop-nav .yyc-nav-highlight {
   display: none !important;
+}
+
+/* Respect operating-system reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .desktop-nav > a.nav-link::before {
+    transition: none !important;
+    transform: none !important;
+  }
 }

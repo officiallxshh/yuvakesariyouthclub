@@ -246,6 +246,11 @@ if (!fileSet.has(navActiveCssPath)) {
       !navCss.includes(".yyc-nav-highlight")) {
     issues.push("Exclusive navigation stylesheet is missing one or more single-active-state safeguards.");
   }
+  if (!navCss.includes(".desktop-nav > a.nav-link.active::before") ||
+      !navCss.includes("transition:") ||
+      !navCss.includes("@media (prefers-reduced-motion: reduce)")) {
+    issues.push("Smooth active-tab box animation or reduced-motion support is missing.");
+  }
 }
 const stylesheetLinks = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
 const finalStylesheetTag = stylesheetLinks.length ? stylesheetLinks[stylesheetLinks.length - 1][0] : "";
@@ -263,7 +268,7 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-34-build14-nav-audit";
+const currentBuild = "20261012-35-smooth-tab-highlight";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||

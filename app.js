@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-34-build14-nav-audit';
+var YYC_APP_BUILD='20261012-35-smooth-tab-highlight';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
