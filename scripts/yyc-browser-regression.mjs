@@ -130,6 +130,8 @@ try {
   }, null, { timeout: 3000 });
   console.log('MOBILE NAV PASS: Reel anchor closes the menu and activates the matching desktop state');
 
+  await page.setViewportSize({ width: 1365, height: 900 });
+
   /* Use a fake administrator session/data so the media admin UI can be tested
      without touching production records or requiring real credentials. */
   const stubImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
