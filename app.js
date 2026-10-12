@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-24-event-single-cube';
+var YYC_APP_BUILD='20261012-25-reel-upload-cors-single-add';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
