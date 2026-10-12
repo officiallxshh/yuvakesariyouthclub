@@ -77,9 +77,9 @@
     var signed=await callUploadService({action:'sign-upload',kind:kind,fileName:file.name,contentType:mime,size:file.size});
     var c=config();
     var encodedPath=String(signed.path||'').split('/').map(function(part){return encodeURIComponent(part);}).join('/');
-    var uploadUrl=c.supabaseUrl.replace(/\/$/,'')+'/storage/v1/object/upload/sign/'+encodedPath+'?token='+encodeURIComponent(signed.token);
+    var uploadUrl=c.supabaseUrl.replace(/\/$/,'')+'/storage/v1/object/upload/sign/'+BUCKET+'/'+encodedPath+'?token='+encodeURIComponent(signed.token);
     var response=await fetch(uploadUrl,{
-      method:'POST',cache:'no-store',credentials:'omit',
+      method:'PUT',cache:'no-store',credentials:'omit',
       headers:{'apikey':c.supabaseKey,'Authorization':'Bearer '+c.supabaseKey,'Content-Type':mime,'x-upsert':'false'},
       body:file
     });
