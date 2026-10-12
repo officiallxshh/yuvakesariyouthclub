@@ -396,6 +396,15 @@ if (!robotsTxt.includes("Sitemap: https://www.yuvakesariyouthclub.in/sitemap.xml
   issues.push("robots.txt must advertise both the main sitemap and the automatic video sitemap.");
 }
 
+/* Build 18: ensure new published Reels gain thumbnails automatically, not by manual uploads. */
+if (!publicSeoGenerator.includes("async function ensureReelThumbnail(item, fileSlug)") ||
+    !publicSeoGenerator.includes("spawnSync('ffmpeg'") ||
+    !publicSeoGenerator.includes("reels/thumbnails/auto/") ||
+    !publicSeoGenerator.includes("await ensureReelThumbnail(item, fileSlug)") ||
+    !seoSyncWorkflow.includes("Ensure video thumbnail tooling is available")) {
+  issues.push("Published Reels must get an automatic, cached thumbnail before they are added to video sitemap metadata.");
+}
+
 console.log("YYC FULL SITE AUDIT");
 console.log("Files scanned:", files.length);
 console.log("JavaScript files checked:", jsFiles.length);
