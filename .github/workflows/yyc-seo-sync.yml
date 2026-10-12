@@ -10,6 +10,7 @@ on:
       - 'video-sitemap.xml'
       - 'robots.txt'
       - 'reels/**'
+      - 'swags/**'
       - 'events/**'
       - 'updates/**'
       - 'gallery/**'
@@ -47,6 +48,14 @@ jobs:
       - name: Validate generator syntax
         run: node --check scripts/generate-public-pages.mjs
 
+      - name: Ensure FFmpeg is available for automatic Reel thumbnails
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+
       - name: Generate crawlable public pages and sitemap
         run: node scripts/generate-public-pages.mjs
 
@@ -66,7 +75,8 @@ jobs:
             'https://www.yuvakesariyouthclub.in/leaders.html',
             'https://www.yuvakesariyouthclub.in/events/',
             'https://www.yuvakesariyouthclub.in/gallery/',
-            'https://www.yuvakesariyouthclub.in/reels/'
+            'https://www.yuvakesariyouthclub.in/reels/',
+            'https://www.yuvakesariyouthclub.in/swags/'
           ]) {
             if (!urls.includes(required)) throw new Error('Required URL missing from sitemap: ' + required);
           }
@@ -77,6 +87,9 @@ jobs:
           const videoBlocks = [...videoXml.matchAll(/<video:video>([\s\S]*?)<\/video:video>/g)].map(m => m[1]);
           if (videoUrls.length !== videoBlocks.length) throw new Error('Each video sitemap URL must contain exactly one video entry');
           if (new Set(videoUrls).size !== videoUrls.length) throw new Error('Video sitemap contains duplicate URLs');
+          const reelsHtml = fs.readFileSync('reels/index.html', 'utf8');
+          const reelPageFiles = [...new Set([...reelsHtml.matchAll(/href="\.\/auto\/([^"]+\.html)"/g)].map(m => m[1]))];
+          if (videoUrls.length !== reelPageFiles.length) throw new Error('Every published Reel watch page must have one video sitemap entry with an automatic thumbnail. Watch pages: ' + reelPageFiles.length + '; video sitemap entries: ' + videoUrls.length);
           for (let i = 0; i < videoUrls.length; i++) {
             const url = videoUrls[i];
             if (!urls.includes(url)) throw new Error('Video watch page missing from main sitemap: ' + url);
@@ -86,6 +99,14 @@ jobs:
             if (!html.includes('"@type":"VideoObject"') || !html.includes('<video')) throw new Error('Video watch page is missing VideoObject schema or a crawlable HTML video: ' + url);
             for (const tag of ['<video:thumbnail_loc>', '<video:title>', '<video:description>', '<video:content_loc>']) {
               if (!videoBlocks[i].includes(tag)) throw new Error('Video sitemap entry missing ' + tag + ' for ' + url);
+            }
+            const thumbnail = (videoBlocks[i].match(/<video:thumbnail_loc>(.*?)<\/video:thumbnail_loc>/) || [])[1];
+            if (!thumbnail) throw new Error('Video sitemap thumbnail URL is missing for ' + url);
+            const thumbnailUrl = new URL(thumbnail);
+            if (thumbnailUrl.protocol !== 'https:') throw new Error('Video thumbnail must use HTTPS: ' + thumbnail);
+            if (thumbnailUrl.origin === 'https://www.yuvakesariyouthclub.in') {
+              const thumbnailPath = thumbnailUrl.pathname.replace(/^\/+/, '');
+              if (!fs.existsSync(thumbnailPath)) throw new Error('Generated Reel thumbnail file is missing: ' + thumbnailPath);
             }
           }
           const leadersHtml = fs.readFileSync('leaders.html', 'utf8');
@@ -108,7 +129,7 @@ jobs:
         run: |
           git config user.name "YYC Website Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels leaders achievements leaders.html
+          git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels swags leaders achievements leaders.html
           if git diff --cached --quiet; then
             echo "No public SEO changes to commit."
             exit 0

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 
 const ROOT = process.cwd();
 const BASE = 'https://www.yuvakesariyouthclub.in';
@@ -43,10 +44,10 @@ function sitemapDate(v) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 function typeRoute(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', leader: 'leaders', achievement: 'achievements' })[type] || type;
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', swag: 'swags', leader: 'leaders', achievement: 'achievements' })[type] || type;
 }
 function sectionAnchor(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', swag: 'swags', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
 }
 function itemTitle(type, item) {
   return String((type === 'leader' ? item.name : item.title) || item.name || item.title || '').trim();
@@ -58,6 +59,77 @@ function itemImage(item) {
 function itemVideo(item) {
   const raw = String(item?.video_url || '');
   return /^https:\/\/vrllozfzheikjbhxvpkx\.supabase\.co\/storage\/v1\/object\/public\/yyc-reels\/reels\/video\//i.test(raw) ? raw : '';
+}
+function generatedReelThumbnailName(item) {
+  const identity = item?.id || itemTitle('reel', item) || 'video';
+  return 'generated-' + slug(identity).slice(0, 82) + '.jpg';
+}
+async function pathHasImage(filePath) {
+  try {
+    const stat = await fs.stat(filePath);
+    return stat.isFile() && stat.size > 1024;
+  } catch { return false; }
+}
+function extractVideoThumbnail(videoUrl, outputPath) {
+  return new Promise(resolve => {
+    let finished = false;
+    const finish = result => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const child = spawn('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-ss', '00:00:01', '-i', videoUrl,
+      '-an', '-frames:v', '1',
+      '-vf', 'scale=640:360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2',
+      '-q:v', '3', outputPath
+    ], { stdio: 'ignore' });
+    const timer = setTimeout(() => {
+      try { child.kill('SIGKILL'); } catch {}
+      finish(false);
+    }, 45000);
+    child.once('error', () => finish(false));
+    child.once('close', code => finish(code === 0));
+  });
+}
+async function ensurePublishedReelThumbnails(reels) {
+  const directory = path.join(ROOT, 'reels', 'thumbnails');
+  await fs.mkdir(directory, { recursive: true });
+  const candidates = (reels || []).filter(item => item && String(item.status || '').toLowerCase() === 'published' && itemVideo(item));
+  const usedGenerated = new Set();
+  let cursor = 0;
+  const failures = [];
+  async function worker() {
+    while (cursor < candidates.length) {
+      const item = candidates[cursor++];
+      if (itemImage(item)) continue;
+      const name = generatedReelThumbnailName(item);
+      const outputPath = path.join(directory, name);
+      if (!(await pathHasImage(outputPath))) {
+        const ok = await extractVideoThumbnail(itemVideo(item), outputPath);
+        if (!ok || !(await pathHasImage(outputPath))) {
+          await fs.rm(outputPath, { force: true }).catch(() => {});
+          failures.push(itemTitle('reel', item) || item.id || 'Untitled Reel');
+          continue;
+        }
+      }
+      item.thumbnail_url = BASE + '/reels/thumbnails/' + name;
+      usedGenerated.add(name);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(3, candidates.length) }, worker));
+  const existing = await fs.readdir(directory).catch(() => []);
+  for (const name of existing) {
+    if (name.startsWith('generated-') && name.endsWith('.jpg') && !usedGenerated.has(name)) {
+      await fs.rm(path.join(directory, name), { force: true });
+    }
+  }
+  if (failures.length) {
+    throw new Error('Could not automatically generate thumbnails for these published Reels: ' + failures.join(', ') + '. The SEO sync will stop rather than silently publish an incomplete video sitemap.');
+  }
+  console.log('Published Reel thumbnails ready:', candidates.length, '| generated locally:', usedGenerated.size);
 }
 function itemDescription(type, item) {
   return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
@@ -111,6 +183,14 @@ function structuredData(type, item, image, canonical, title, route) {
     contentUrl: itemVideo(item) || undefined,
     publisher: org,
     inLanguage: 'en-IN'
+  });
+  if (type === 'swag') graph.push({
+    '@type': 'Product',
+    name: title,
+    description: itemDescription(type, item).slice(0, 2048),
+    image: image ? [image] : undefined,
+    category: item.category || undefined,
+    brand: org
   });
   if (type === 'achievement') graph.push({
     '@type': 'Article',
@@ -213,12 +293,15 @@ async function walkHtml(dir) {
 const site = await rpc('public_site_data');
 const feature = await rpc('public_feature_data');
 const reelPayload = await rpc('yyc_reels_public_list');
-const publicReels = Array.isArray(reelPayload?.reels) ? reelPayload.reels : [];
+const publicReels = Array.isArray(reelPayload?.reels) ? reelPayload.reels.filter(item => item && String(item.status || '').toLowerCase() === 'published') : [];
+await ensurePublishedReelThumbnails(publicReels);
+const publicSwags = Array.isArray(site.swags) ? site.swags.filter(item => item && !['draft', 'hidden', 'private', 'deleted', 'archived', 'denied', 'rejected'].includes(String(item.status || '').toLowerCase())) : [];
 const routeDefs = [
   ['event', 'events', 'Events', 'Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.'],
   ['update', 'updates', 'Updates', 'Latest approved news and announcements from Yuvakesari Youth Club.'],
   ['gallery', 'gallery', 'Gallery', 'Published community photos, programmes and youth activities by Yuvakesari Youth Club.'],
   ['reel', 'reels', 'Reels', 'Published community videos and event Reels from Yuvakesari Youth Club.'],
+  ['swag', 'swags', 'Swags', 'Official Yuvakesari Youth Club merchandise, jerseys and community items.'],
   ['leader', 'leaders', 'Leaders', 'Public leadership profiles of Yuvakesari Youth Club.'],
   ['achievement', 'achievements', 'Achievements', 'Published milestones and achievements of Yuvakesari Youth Club.']
 ];
@@ -238,7 +321,8 @@ const allCollections = [
   ['event', site.events || []],
   ['update', site.updates || []],
   ['gallery', site.gallery || []],
-  ['reel', publicReels.filter(item => item && String(item.status || '').toLowerCase() === 'published')],
+  ['reel', publicReels],
+  ['swag', publicSwags],
   ['leader', site.leaders || []],
   ['achievement', feature.achievements || []]
 ];
