@@ -40,6 +40,12 @@ const fileSet = new Set(files);
 const issues = [];
 const warnings = [];
 
+function localTargetExists(target) {
+  if (fileSet.has(target)) return true;
+  const directoryIndex = target.replace(/\/+$/, "") + "/index.html";
+  return fileSet.has(directoryIndex);
+}
+
 const jsFiles = files.filter(f => /\.(?:js|mjs|cjs)$/i.test(f));
 for (const file of jsFiles) {
   const r = spawnSync(process.execPath, ["--check", file], { cwd: ROOT, encoding: "utf8" });
@@ -72,7 +78,7 @@ for (const file of files.filter(f => /\.html?$/i.test(f))) {
   const refs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/gi)].map(m => m[1]);
   for (const ref of refs) {
     const target = normalizeTarget(file, ref);
-    if (target && !fileSet.has(target)) {
+    if (target && !localTargetExists(target)) {
       issues.push("Missing local reference: " + file + " -> " + ref + " (resolved " + target + ")");
     }
   }
@@ -99,7 +105,7 @@ for (const file of files.filter(f => /\.css$/i.test(f))) {
     const raw = String(m[1] || "").split("?")[0].split("#")[0];
     if (!raw || /^(https?:|data:|blob:|javascript:|%23)/i.test(raw)) continue;
     const target = normalizeTarget(file, raw);
-    if (target && !fileSet.has(target)) {
+    if (target && !localTargetExists(target)) {
       issues.push("Missing CSS local reference: " + file + " -> " + raw + " (resolved " + target + ")");
     }
   }
