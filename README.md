@@ -25,15 +25,13 @@ assets/
   social-facebook.png
 ```
 
-## Design changes
-- No image panel on the left side of the hero.
-- Left side now uses **LAND OF CULTURE** with four compact culture boxes: Rivers, Temples, Tradition and People.
-- The old left-side “Tulunadu Glimpse” heading/art block is removed.
-- Right side keeps the heritage information panel and circular River, Temple and Bhuta Kola visuals.
-- The old “Rooted in Tradition” overlay box is removed.
-- Hero button is now **EXPLORE YYC**.
-- Social buttons use local PNG app icons.
-- YYC branding uses a cleaned circular logo asset with the square black corners removed.
+## Current site experience
+
+- Premium YYC visual identity with the club logo, regional culture imagery, mobile-responsive layouts and dark/gold styling.
+- Main sections include Home, Tulunad Glimpse, Leaders, Swags, Updates, Events, Gallery, Reel and Join YYC.
+- The primary navigation uses one active tab at a time and follows the section selected or currently viewed.
+- Reel videos keep their media source detached until a visitor chooses to play, reducing unnecessary video downloads on mobile.
+- Respect for reduced-motion preferences is built into the interface.
 
 ## Admin
 Admin credentials are managed through the YYC/Supabase backend and are intentionally not stored in this public repository.
