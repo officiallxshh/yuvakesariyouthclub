@@ -134,6 +134,7 @@ jobs:
 
       - name: Commit generated public pages
         run: |
+          set -euo pipefail
           git config user.name "YYC Website Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels swags leaders achievements leaders.html
@@ -142,7 +143,19 @@ jobs:
             exit 0
           fi
           git commit -m "Sync published YYC content for search engines"
-          git pull --rebase origin main
+          if ! git pull --rebase origin main; then
+            echo "Concurrent SEO sync changed generated files; refresh from main and regenerate from the latest source."
+            git rebase --abort || true
+            git fetch origin main
+            git reset --hard origin/main
+            node scripts/generate-public-pages.mjs
+            git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels swags leaders achievements leaders.html
+            if git diff --cached --quiet; then
+              echo "Latest main already contains the regenerated public SEO output."
+              exit 0
+            fi
+            git commit -m "Sync published YYC content for search engines"
+          fi
           git push origin HEAD:main
 
       - name: Notify IndexNow about published public pages
