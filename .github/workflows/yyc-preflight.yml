@@ -42,6 +42,8 @@ jobs:
           node --check access.js
           node --check scripts/generate-public-pages.mjs
           node --check scripts/backup-supabase.mjs
+          node --check scripts/validate-backup.mjs
+          node --check scripts/yyc-browser-regression.mjs
           node --check scripts/production-monitor.mjs
 
       - name: Full repository audit
