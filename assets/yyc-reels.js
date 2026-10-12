@@ -43,11 +43,16 @@
   async function callUploadService(payload){
     var c=config(), token=getAdminToken();
     if(!token)throw new Error('Admin session is missing. Please log in again.');
-    var response=await fetch(c.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-reel-upload',{
-      method:'POST',credentials:'omit',cache:'no-store',
-      headers:{'apikey':c.supabaseKey,'Authorization':'Bearer '+c.supabaseKey,'Content-Type':'application/json'},
-      body:JSON.stringify(Object.assign({},payload,{token:token}))
-    });
+    var response;
+    try{
+      response=await fetch(c.supabaseUrl.replace(/\/$/,'')+'/functions/v1/yyc-reel-upload',{
+        method:'POST',credentials:'omit',cache:'no-store',
+        headers:{'apikey':c.supabaseKey,'Authorization':'Bearer '+c.supabaseKey,'Content-Type':'application/json'},
+        body:JSON.stringify(Object.assign({},payload,{token:token}))
+      });
+    }catch(fetchError){
+      throw new Error('Could not reach the YYC upload service. Check the connection and retry; the upload request did not return a response.');
+    }
     var raw=await response.text(), data={};
     try{data=raw?JSON.parse(raw):{};}catch(e){data={error:raw};}
     if(!response.ok||data.ok===false)throw new Error(data.error||('Reel storage request failed ('+response.status+').'));
@@ -76,11 +81,16 @@
     var c=config();
     var encodedPath=String(signed.path||'').split('/').map(function(part){return encodeURIComponent(part);}).join('/');
     var uploadUrl=c.supabaseUrl.replace(/\/$/,'')+'/storage/v1/object/upload/sign/'+BUCKET+'/'+encodedPath+'?token='+encodeURIComponent(signed.token);
-    var response=await fetch(uploadUrl,{
-      method:'PUT',cache:'no-store',credentials:'omit',
-      headers:{'apikey':c.supabaseKey,'Authorization':'Bearer '+c.supabaseKey,'Content-Type':mime,'x-upsert':'false'},
-      body:file
-    });
+    var response;
+    try{
+      response=await fetch(uploadUrl,{
+        method:'PUT',cache:'no-store',credentials:'omit',
+        headers:{'apikey':c.supabaseKey,'Authorization':'Bearer '+c.supabaseKey,'Content-Type':mime,'x-upsert':'false'},
+        body:file
+      });
+    }catch(fetchError){
+      throw new Error('Could not reach file storage. Check your connection and retry; the upload did not return a response.');
+    }
     if(!response.ok){
       var errorText='';try{errorText=(await response.text()).slice(0,500);}catch(e){}
       throw new Error('Upload failed ('+response.status+'). '+(errorText||'Please try again.'));
@@ -329,9 +339,9 @@
     var status=byId('yycReelBatchStatus');
     if(!workspace||!form||!slots||!submit)return;
     var cleanName=String(eventName||'').trim();
-    var count=Math.max(1,Math.min(30,parseInt(total,10)||1));
-    if(!cleanName){if(status)status.textContent='Enter the event name first.';return;}
-    var existing=getEventRows(cleanName);
+    var count=Math.max(1,Math.min(100,parseInt(total,10)||1));
+    if(!cleanName&&count!==1){if(status)status.textContent='Enter an event name when adding multiple Reels. Leave it blank for one standalone Reel.';submit.disabled=true;return;}
+    var existing=cleanName?getEventRows(cleanName):[];
     if(existing.length)cleanName=existing[0].event_name;
     var taken={};
     existing.forEach(function(r){taken[Number(r.reel_number)||1]=r;});
@@ -352,10 +362,10 @@
       if(status)status.textContent='No new upload slots are needed.';
       return;
     }
-    var note=existing.length?'<div class="yyc-reel-admin-note">Existing Reels are kept. Fill the missing numbers below; saving will update this event to '+count+' total Reels.</div>':'<div class="yyc-reel-admin-note">Upload the numbered slots below. Each Reel will be grouped under this event and displayed in number order.</div>';
+    var note=existing.length?'<div class="yyc-reel-admin-note">Existing Reels are kept. Fill the missing numbers below; saving will update this event to '+count+' total Reels.</div>':(cleanName?'<div class="yyc-reel-admin-note">Upload the numbered slots below. Each Reel will be grouped under this event and displayed in number order.</div>':'<div class="yyc-reel-admin-note">This is a standalone Reel. It will appear as its own card, not inside an event cube.</div>');
     slots.innerHTML=note+missing.map(function(n){
       return '<fieldset class="yyc-reel-batch-slot"><legend>REEL '+n+' / '+count+'</legend><div class="yyc-reel-admin-fields">'+
-        '<div class="yyc-reel-admin-field"><label for="yycBatchTitle'+n+'">Reel '+n+' title *</label><input id="yycBatchTitle'+n+'" data-batch-title="'+n+'" maxlength="140" required placeholder="'+escapeHTML(cleanName+' · Reel '+n)+'"></div>'+
+        '<div class="yyc-reel-admin-field"><label for="yycBatchTitle'+n+'">Reel '+n+' title *</label><input id="yycBatchTitle'+n+'" data-batch-title="'+n+'" maxlength="140" required placeholder="'+escapeHTML(cleanName?cleanName+' · Reel '+n:'YYC Reel '+n)+'"></div>'+
         '<div class="yyc-reel-admin-field"><label for="yycBatchVideo'+n+'">Reel '+n+' video *</label><input id="yycBatchVideo'+n+'" data-batch-video="'+n+'" type="file" accept="video/*" required><small>MP4 (H.264/AAC) is recommended for reliable playback.</small></div>'+
         '<div class="yyc-reel-admin-field is-full"><label for="yycBatchCaption'+n+'">Caption (optional)</label><textarea id="yycBatchCaption'+n+'" data-batch-caption="'+n+'" maxlength="2400" placeholder="Short description for Reel '+n+'…"></textarea></div>'+
         '<div class="yyc-reel-admin-field is-full"><label for="yycBatchThumb'+n+'">Thumbnail (optional)</label><input id="yycBatchThumb'+n+'" data-batch-thumb="'+n+'" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WebP.</small></div>'+
@@ -366,10 +376,10 @@
   }
   function renderEventBatchForm(){
     var workspace=byId('adminWorkspace');if(!workspace)return;
-    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Event Reel Set</h3><p>Choose the event and total number of Reels first. Upload slots will be numbered automatically.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-batch-cancel>← Back to Reels</button></div></div>'+
+    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Add Reels</h3><p>Upload one standalone Reel or group multiple Reels under one event. Set the total to 1 for a single Reel.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-batch-cancel>← Back to Reels</button></div></div>'+
       '<form class="yyc-reel-admin-form" id="yycReelBatchForm" novalidate><div class="yyc-reel-admin-fields">'+
-      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name *</label><input id="yycBatchEventName" maxlength="160" required placeholder="YYC Cleanliness Drive 2026"><small>Use the same event name to add more Reels to an existing collection.</small></div>'+
-      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Total number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="30" step="1" value="3" required><small>Choose 1–30. Existing Reel numbers will be kept; only missing slots are shown.</small></div>'+
+      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name (optional for one standalone Reel)</label><input id="yycBatchEventName" maxlength="160" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group Reels. Leave blank when uploading only one standalone Reel.</small></div>'+
+      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="100" step="1" value="1" required><small>Choose 1–100. Existing Reel numbers are kept; only missing slots are generated.</small></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycBatchVisibility">Visibility for new Reels</label><select id="yycBatchVisibility"><option value="draft" selected>Draft — publish later</option><option value="published">Published — visible on the website</option><option value="hidden">Hidden — not public</option></select></div>'+
       '</div><div class="yyc-reel-batch-generate"><button type="button" class="mini-btn gold" id="yycBatchGenerate">Generate numbered upload slots</button></div>'+
       '<div id="yycReelBatchSlots"><div class="yyc-reel-state"><strong>Set your event and count.</strong><span>Then generate the numbered upload slots below.</span></div></div>'+
@@ -386,8 +396,8 @@
     totalInput.addEventListener('change',invalidateSlots);
     byId('yycBatchGenerate').addEventListener('click',function(){
       var count=Number(totalInput.value);
-      if(!eventInput.value.trim()){eventInput.focus();byId('yycReelBatchStatus').textContent='Enter the event name first.';return;}
-      if(!Number.isInteger(count)||count<1||count>30){totalInput.focus();byId('yycReelBatchStatus').textContent='Choose a whole number between 1 and 30.';return;}
+      if(!Number.isInteger(count)||count<1||count>100){totalInput.focus();byId('yycReelBatchStatus').textContent='Choose a whole number between 1 and 100.';return;}
+      if(!eventInput.value.trim()&&count!==1){eventInput.focus();byId('yycReelBatchStatus').textContent='Enter an event name when adding multiple Reels, or choose 1 for a standalone Reel.';return;}
       buildBatchSlots(eventInput.value,count);
     });
     form.addEventListener('submit',async function(event){
@@ -396,8 +406,8 @@
       var status=byId('yycReelBatchStatus'), save=byId('yycReelBatchSave');
       var name=String(form.dataset.eventName||'').trim();
       var total=Number(form.dataset.total)||0;
-      if(!name||!total||save.disabled){if(status)status.textContent='Generate numbered upload slots before saving.';return;}
-      var existing=getEventRows(name), taken={};
+      if((!name&&total!==1)||!total||save.disabled){if(status)status.textContent='Generate valid upload slots before saving.';return;}
+      var existing=name?getEventRows(name):[], taken={};
       existing.forEach(function(r){taken[Number(r.reel_number)||1]=true;});
       var numbers=[];
       for(var n=1;n<=total;n++){if(!taken[n])numbers.push(n);}
@@ -423,7 +433,7 @@
           if(thumbFile){thumb=await uploadFile(thumbFile,'thumbnail');pendingPaths.push(thumb.path);}
           var result=await callRPC('yyc_reels_admin_save',{
             p_token:getAdminToken(),p_id:null,p_title:titleInput.value.trim(),
-            p_caption:captionInput.value.trim(),p_category:'Events',
+            p_caption:captionInput.value.trim(),p_category:name?'Events':'Community',
             p_video_url:video.url,p_video_path:video.path,
             p_thumbnail_url:thumb.url,p_thumbnail_path:thumb.path,
             p_status:visibility,p_sort_order:number,
@@ -434,12 +444,16 @@
           savedCount++;
         }
         adminBusy=false;
-        notify(savedCount+' numbered Reel'+(savedCount===1?'':'s')+' saved for '+name+'.');
-        await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
+        notify(name?(savedCount+' Reel'+(savedCount===1?'':'s')+' saved for '+name+'.'):(savedCount+' standalone Reel saved.'));
+        try{await loadAdminReels();renderAdminList(adminReels);loadPublic(true);}catch(refreshError){
+          if(status)status.textContent='Upload succeeded and is saved, but the Reel list could not refresh. Click “Refresh Reel List” below — do not upload it again.';
+          if(save){save.disabled=false;save.type='button';save.textContent='Refresh Reel List';save.onclick=function(){renderAdminPanel();};}
+          return;
+        }
       }catch(error){
         if(pendingPaths.length)await cleanupPaths(pendingPaths);
         adminBusy=false;
-        var message=(savedCount?'Saved '+savedCount+' Reel'+(savedCount===1?'':'s')+' before the next upload failed. You can reopen this event set and generate slots again. ':'')+(error.message||'Batch upload failed.');
+        var message=(savedCount?'Saved '+savedCount+' Reel'+(savedCount===1?'':'s')+' before a later upload failed. Reopen Add Reels and generate the missing slots again. ':'')+((error&&error.message)||'Upload failed. Check your connection and retry.');
         if(status)status.textContent=message;
         notify(message);
         if(save){save.disabled=false;save.textContent='Retry missing numbered Reels';}
@@ -458,7 +472,7 @@
   function renderAdminList(reels){
     var workspace=byId('adminWorkspace');if(!workspace)return;
     adminReels=(reels||[]).slice();
-    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Reel Studio</h3><p>Upload, draft, publish, edit or remove official YYC videos.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button><button type="button" class="mini-btn" data-reel-admin-batch>＋ Event Reel Set</button><button type="button" class="mini-btn gold" data-reel-admin-add>＋ Add Reel</button></div></div>'+
+    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Reel Studio</h3><p>Upload, draft, publish, edit or remove official YYC videos.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button><button type="button" class="mini-btn gold" data-reel-admin-add>＋ Add Reels</button></div></div>'+
       '<div class="yyc-reel-admin-note">For smooth playback, MP4 (H.264 video + AAC audio) is recommended. The Reel Studio does not impose a separate size cap; Supabase project-wide upload limits may still apply. Other formats may play differently across browsers. Videos are stored separately from GitHub.</div>'+
       '<input type="search" class="yyc-reel-admin-search" id="yycReelAdminSearch" placeholder="Search title, caption, category or status…" autocomplete="off" aria-label="Search reels">'+
       '<div class="yyc-reel-admin-grid" id="yycReelAdminGrid">'+
@@ -470,14 +484,13 @@
           '<div><h4>'+escapeHTML(r.title)+'</h4><p>'+escapeHTML(r.caption||'No caption')+'</p>'+
           '<span class="yyc-reel-admin-pill '+(status==='published'?'is-published':'')+'">'+escapeHTML(status)+'</span><span class="yyc-reel-admin-pill">'+escapeHTML(r.category||'Community')+'</span>'+(String(r.event_name||'').trim()?'<span class="yyc-reel-admin-pill">'+escapeHTML(r.event_name)+' · Reel '+(Number(r.reel_number)||1)+' / '+(Number(r.reel_total)||1)+'</span>':'')+
           '<div class="yyc-reel-admin-actions"><button type="button" data-reel-edit="'+escapeHTML(r.id)+'">Edit</button><button type="button" data-reel-toggle="'+escapeHTML(r.id)+'">'+(status==='published'?'Unpublish':'Publish')+'</button><button type="button" class="is-danger" data-reel-delete="'+escapeHTML(r.id)+'">Delete</button></div></div></article>';
-      }).join(''):'<div class="yyc-reel-state"><strong>No reels added yet.</strong><span>Choose “Add Reel” to upload the first YYC video.</span></div>')+
+      }).join(''):'<div class="yyc-reel-state"><strong>No reels added yet.</strong><span>Choose “Add Reels” to upload one Reel or a complete event collection.</span></div>')+
       '</div>';
     workspace.querySelector('[data-reel-admin-back]').addEventListener('click',function(){
       var tab=document.querySelector('.admin-tab[data-tab="overview"]');
       if(tab)tab.click();
     });
-    workspace.querySelector('[data-reel-admin-add]').addEventListener('click',function(){renderAdminForm(null);});
-    workspace.querySelector('[data-reel-admin-batch]').addEventListener('click',renderEventBatchForm);
+    workspace.querySelector('[data-reel-admin-add]').addEventListener('click',renderEventBatchForm);
     var search=byId('yycReelAdminSearch');
     if(search)search.addEventListener('input',function(){
       var q=search.value.trim().toLowerCase();
@@ -513,7 +526,7 @@
       ['Community','Events','Cleanliness Drive','Culture','Sports','Celebrations','Club Edits','Other'].map(function(c){return '<option value="'+escapeHTML(c)+'"'+((reel&&reel.category||'Community')===c?' selected':'')+'>'+escapeHTML(c)+'</option>';}).join('')+
       '</select></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycReelEventName">Event name (optional)</label><input id="yycReelEventName" name="event_name" maxlength="160" value="'+escapeHTML(reel&&reel.event_name||'')+'" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group this Reel with the other Reels from the event.</small></div>'+
-      '<div class="yyc-reel-admin-field"><label for="yycReelNumber">Reel number</label><input id="yycReelNumber" name="reel_number" type="number" min="1" max="30" step="1" value="'+escapeHTML(reel&&Number(reel.reel_number)>0?reel.reel_number:1)+'"></div>'+
+      '<div class="yyc-reel-admin-field"><label for="yycReelNumber">Reel number</label><input id="yycReelNumber" name="reel_number" type="number" min="1" max="100" step="1" value="'+escapeHTML(reel&&Number(reel.reel_number)>0?reel.reel_number:1)+'"></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycReelTotal">Total Reels in event</label><input id="yycReelTotal" name="reel_total" type="number" min="1" max="30" step="1" value="'+escapeHTML(reel&&Number(reel.reel_total)>0?reel.reel_total:1)+'"><small>If event name is blank, numbering is ignored.</small></div>'+
       '<div class="yyc-reel-admin-field is-full"><label for="yycReelCaption">Caption</label><textarea id="yycReelCaption" name="caption" maxlength="2400" placeholder="Add a short description…">'+escapeHTML(reel&&reel.caption||'')+'</textarea><small>Maximum 2,400 characters.</small></div>'+
       '<div class="yyc-reel-admin-field is-full"><label for="yycReelVideo">Video '+(isEdit?'(optional — choose only to replace)':'*')+'</label><input id="yycReelVideo" name="video" type="file" accept="video/*" '+(isEdit?'':'required')+'><small>Common video formats are accepted. MP4 is recommended for the smoothest playback; larger uploads may take longer.</small>'+(isEdit?'<span class="yyc-reel-admin-current">Current video is saved. Leave this blank to keep it.</span>':'')+'</div>'+
@@ -539,7 +552,7 @@
         var groupingName=byId('yycReelEventName').value.trim();
         var groupingNumber=parseInt(byId('yycReelNumber').value,10)||1;
         var groupingTotal=parseInt(byId('yycReelTotal').value,10)||1;
-        if(groupingName&&(groupingNumber<1||groupingTotal<1||groupingTotal>30||groupingNumber>groupingTotal))throw new Error('For an event Reel, choose a Reel number between 1 and the event total (maximum 30).');
+        if(groupingName&&(groupingNumber<1||groupingTotal<1||groupingTotal>100||groupingNumber>groupingTotal))throw new Error('For an event Reel, choose a Reel number between 1 and the event total (maximum 100).');
         if(videoFile){
           var uploadedVideo=await uploadFile(videoFile,'video');videoUrl=uploadedVideo.url;videoPath=uploadedVideo.path;newPaths.push(videoPath);
         }
@@ -561,15 +574,22 @@
         };
         var saved=await callRPC('yyc_reels_admin_save',payload);
         if(!saved||saved.ok!==true)throw new Error(saved&&saved.error||'Could not save this Reel.');
+        newPaths=[];
         var oldPaths=[];
         if(reel&&videoFile&&reel.video_path&&reel.video_path!==videoPath)oldPaths.push(reel.video_path);
         if(reel&&thumbFile&&reel.thumbnail_path&&reel.thumbnail_path!==thumbPath)oldPaths.push(reel.thumbnail_path);
         if(oldPaths.length)await cleanupPaths(oldPaths);
         adminBusy=false;
         notify(payload.p_status==='published'?'Reel published successfully.':'Reel saved successfully.');
-        await loadAdminReels();
-        renderAdminList(adminReels);
-        loadPublic(true);
+        try{
+          await loadAdminReels();
+          renderAdminList(adminReels);
+          loadPublic(true);
+        }catch(refreshError){
+          if(status)status.textContent='Reel saved successfully, but the Reel list could not refresh. Use “Refresh Reel List” below — do not upload it again.';
+          if(save){save.disabled=false;save.type='button';save.textContent='Refresh Reel List';save.onclick=function(){renderAdminPanel();};}
+          return;
+        }
       }catch(error){
         await cleanupPaths(newPaths);
         if(status)status.textContent=error.message||'Upload failed. Please try again.';
