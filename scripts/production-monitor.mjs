@@ -38,7 +38,7 @@ function checkHtml(label, html, expectedMarker){
   if(expectedMarker && getBuildMarker(html)!==expectedMarker){
     fail(label+': build marker mismatch (expected '+expectedMarker+', got '+(getBuildMarker(html)||'none')+')');
   }
-  for(const id of ['home','glimpse','leaders','swags','updates','events','gallery','join']){
+  for(const id of ['home','glimpse','leaders','swags','updates','events','gallery','reel','join']){
     if(!new RegExp("id=[\"']"+id+"[\"']","i").test(html)) fail(label+': missing section #'+id);
   }
   if(/ReferenceError|SyntaxError|installImageInputReset/i.test(html)){
@@ -62,7 +62,7 @@ const localPages = [
 for(const path of localPages){
   const html=fs.readFileSync(path,'utf8');
   if(!/Yuvakesari Youth Club/i.test(html)) fail(path+': missing YYC marker');
-  if(path==='index.html' && getBuildMarker(html)!==expectedMarker) fail(path+': build marker mismatch');
+  if(path==='index.html') checkHtml(path,html,expectedMarker);
   console.log('OK local page',path);
 }
 
