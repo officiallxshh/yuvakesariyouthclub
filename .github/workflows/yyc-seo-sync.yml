@@ -73,14 +73,14 @@ jobs:
           const videoXml = fs.readFileSync('video-sitemap.xml', 'utf8');
           if (!videoXml.startsWith('<?xml')) throw new Error('Video sitemap XML declaration is missing');
           if (!videoXml.includes('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')) throw new Error('Video sitemap namespace is missing');
-          const videoUrls = [...videoXml.matchAll(/<loc>(.*?)<\\/loc>/g)].map(m => m[1]);
-          const videoBlocks = [...videoXml.matchAll(/<video:video>([\\s\\S]*?)<\\/video:video>/g)].map(m => m[1]);
+          const videoUrls = [...videoXml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
+          const videoBlocks = [...videoXml.matchAll(/<video:video>([\s\S]*?)<\/video:video>/g)].map(m => m[1]);
           if (videoUrls.length !== videoBlocks.length) throw new Error('Each video sitemap URL must contain exactly one video entry');
           if (new Set(videoUrls).size !== videoUrls.length) throw new Error('Video sitemap contains duplicate URLs');
           for (let i = 0; i < videoUrls.length; i++) {
             const url = videoUrls[i];
             if (!urls.includes(url)) throw new Error('Video watch page missing from main sitemap: ' + url);
-            const pathname = new URL(url).pathname.replace(/^\\/+/, '');
+            const pathname = new URL(url).pathname.replace(/^\/+/, '');
             if (!fs.existsSync(pathname)) throw new Error('Video watch page file missing: ' + pathname);
             const html = fs.readFileSync(pathname, 'utf8');
             if (!html.includes('"@type":"VideoObject"') || !html.includes('<video')) throw new Error('Video watch page is missing VideoObject schema or a crawlable HTML video: ' + url);
