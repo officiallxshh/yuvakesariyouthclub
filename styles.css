@@ -172,8 +172,8 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 
 /* Center the active highlight directly under the Tulunad Glimpse text. */
 @media(min-width:981px){
-  .desktop-nav>a:nth-child(2).active:after,
-  .desktop-nav>a:nth-child(2):hover:after{
+  .desktop-nav>a[href="#glimpse"].active:after,
+  .desktop-nav>a[href="#glimpse"]:hover:after{
     left:50%;
     right:auto;
     width:52px;
@@ -183,8 +183,8 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 
 /* Exact visual centering for the Tulunad Glimpse highlight: center on the text, not the icon. */
 @media(min-width:981px){
-  .desktop-nav>a:nth-child(2).active:after,
-  .desktop-nav>a:nth-child(2):hover:after{
+  .desktop-nav>a[href="#glimpse"].active:after,
+  .desktop-nav>a[href="#glimpse"]:hover:after{
     left:calc(50% + 8px);
     right:auto;
     width:64px;
@@ -194,10 +194,10 @@ html{scroll-behavior:smooth}img{max-width:100%;height:auto}button,a,input,select
 
 /* Reduce only the visual gap between Tulunad Glimpse and Leaders. */
 @media(min-width:981px){
-  .desktop-nav>a:nth-child(2){
+  .desktop-nav>a[href="#glimpse"]{
     margin-right:-12px;
   }
-  .desktop-nav>a:nth-child(3){
+  .desktop-nav>a[href="#leaders"]{
     margin-left:0;
   }
 }
@@ -4279,8 +4279,8 @@ body.yyC-opening .hero-logo{
 }
 /* Remove the old special-case Glimpse positioning; every tab now uses the same label-relative underline. */
 @media(min-width:981px){
-  .desktop-nav>a:nth-child(2){margin-right:0!important;}
-  .desktop-nav>a:nth-child(2) .nav-label::after{left:0!important;right:0!important;width:auto!important;}
+  .desktop-nav>a[href="#glimpse"]{margin-right:0!important;}
+  .desktop-nav>a[href="#glimpse"] .nav-label::after{left:0!important;right:0!important;width:auto!important;}
 }
 
 /* Leadership visibility guard: keep the public leader list visible independently of optional motion effects. */
