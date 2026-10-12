@@ -130,3 +130,59 @@ body.yyc-reel-modal-open{overflow:hidden}
 
 .yyc-reel-event-cube-cover.is-double .yyc-reel-event-cover-tile:first-child{grid-column:1;grid-row:1/-1}
 .yyc-reel-event-cube-cover.is-double .yyc-reel-event-cover-tile:last-child{grid-column:2;grid-row:1/-1}
+
+
+/* Fullscreen must show the entire video frame instead of the card's cover-cropped view. */
+.yyc-reel-player:fullscreen,
+.yyc-reel-player:-webkit-full-screen{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100vw;
+  height:100vh;
+  height:100dvh;
+  max-width:100vw;
+  max-height:100dvh;
+  aspect-ratio:auto;
+  overflow:hidden;
+  border:0;
+  border-radius:0;
+  background:#000;
+  z-index:2147483647;
+}
+.yyc-reel-player:fullscreen .yyc-reel-video,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-video{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100vw;
+  max-height:100dvh;
+  object-fit:contain !important;
+  object-position:center center;
+  background:#000;
+}
+.yyc-reel-video:fullscreen,
+.yyc-reel-video:-webkit-full-screen{
+  width:100vw !important;
+  height:100vh !important;
+  height:100dvh !important;
+  max-width:100vw;
+  max-height:100dvh;
+  object-fit:contain !important;
+  object-position:center center;
+  background:#000;
+}
+.yyc-reel-player:fullscreen .yyc-reel-expand,
+.yyc-reel-player:fullscreen .yyc-reel-chip,
+.yyc-reel-player:fullscreen .yyc-reel-number-badge,
+.yyc-reel-player:fullscreen .yyc-reel-play,
+.yyc-reel-player:fullscreen .yyc-reel-player-error,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-expand,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-chip,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-number-badge,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-play,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-player-error{
+  display:none !important;
+}
