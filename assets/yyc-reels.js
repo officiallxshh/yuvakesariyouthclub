@@ -433,7 +433,7 @@
           if(thumbFile){thumb=await uploadFile(thumbFile,'thumbnail');pendingPaths.push(thumb.path);}
           var result=await callRPC('yyc_reels_admin_save',{
             p_token:getAdminToken(),p_id:null,p_title:titleInput.value.trim(),
-            p_caption:captionInput.value.trim(),p_category:'Events',
+            p_caption:captionInput.value.trim(),p_category:name?'Events':'Community',
             p_video_url:video.url,p_video_path:video.path,
             p_thumbnail_url:thumb.url,p_thumbnail_path:thumb.path,
             p_status:visibility,p_sort_order:number,
@@ -581,9 +581,15 @@
         if(oldPaths.length)await cleanupPaths(oldPaths);
         adminBusy=false;
         notify(payload.p_status==='published'?'Reel published successfully.':'Reel saved successfully.');
-        await loadAdminReels();
-        renderAdminList(adminReels);
-        loadPublic(true);
+        try{
+          await loadAdminReels();
+          renderAdminList(adminReels);
+          loadPublic(true);
+        }catch(refreshError){
+          if(status)status.textContent='Reel saved successfully, but the Reel list could not refresh. Use “Refresh Reel List” below — do not upload it again.';
+          if(save){save.disabled=false;save.type='button';save.textContent='Refresh Reel List';save.onclick=function(){renderAdminPanel();};}
+          return;
+        }
       }catch(error){
         await cleanupPaths(newPaths);
         if(status)status.textContent=error.message||'Upload failed. Please try again.';
