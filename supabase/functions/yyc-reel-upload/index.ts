@@ -24,7 +24,7 @@ function reply(origin: string, body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {status,headers:{...headersFor(origin),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 }
 function cleanExtension(fileName: string, kind: string) {
-  const match=String(fileName||"").toLowerCase().match(/\\.([a-z0-9]{1,8})$/);
+  const match=String(fileName||"").toLowerCase().match(/\.([a-z0-9]{1,8})$/);
   const ext=match?.[1]||"";
   if(kind==="thumbnail")return ["jpg","jpeg","png","webp"].includes(ext)?(ext==="jpeg"?"jpg":ext):"jpg";
   return ext||"video";
@@ -36,7 +36,7 @@ Deno.serve(async(req:Request)=>{
   const origin=req.headers.get("origin")??"";
   if(req.method==="OPTIONS"){
     if(!ALLOWED_ORIGINS.has(origin))return new Response("Origin not allowed",{status:403,headers:headersFor(origin)});
-    return new Response("ok",{status:204,headers:headersFor(origin)});
+    return new Response(null,{status:204,headers:headersFor(origin)});
   }
   if(req.method!=="POST")return reply(origin,{ok:false,error:"Method not allowed."},405);
   if(!ALLOWED_ORIGINS.has(origin))return reply(origin,{ok:false,error:"Origin not allowed."},403);
