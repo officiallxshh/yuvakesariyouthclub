@@ -57,7 +57,7 @@ Deno.serve(async(req:Request)=>{
     if(kind!=="video"&&kind!=="thumbnail")return reply(origin,{ok:false,error:"Unknown upload type."},400);
     // No application-level size cap; the project-wide Supabase Storage settings remain authoritative.
     if(!Number.isFinite(size)||size<1)return reply(origin,{ok:false,error:"The file is empty or its size could not be read."},400);
-    const validType=kind==="video"?/^video\\/[a-z0-9.+-]+$/i.test(contentType):ALLOWED_THUMBNAILS.has(contentType);
+    const validType=kind==="video"?/^video\/[a-z0-9.+-]+$/i.test(contentType):ALLOWED_THUMBNAILS.has(contentType);
     if(!validType)return reply(origin,{ok:false,error:kind==="video"?"Choose a video file. MP4 is recommended for smooth playback.":"Use a JPG, PNG or WebP thumbnail."},415);
     const path="reels/"+kind+"/"+crypto.randomUUID()+"."+cleanExtension(fileName,kind);
     const {data,error}=await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
