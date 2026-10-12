@@ -7,7 +7,9 @@ const js = [
   'yyc90-final.js',
   'yyc-production.js',
   'scripts/generate-public-pages.mjs',
-  'scripts/backup-supabase.mjs'
+  'scripts/backup-supabase.mjs',
+  'scripts/validate-backup.mjs',
+  'scripts/yyc-browser-regression.mjs'
 ];
 
 for (const file of js) {
