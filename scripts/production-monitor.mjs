@@ -116,6 +116,8 @@ const js = [
   'yyc-production.js',
   'scripts/generate-public-pages.mjs',
   'scripts/backup-supabase.mjs',
+  'scripts/validate-backup.mjs',
+  'scripts/yyc-browser-regression.mjs',
   'scripts/production-monitor.mjs'
 ];
 for(const file of js){
