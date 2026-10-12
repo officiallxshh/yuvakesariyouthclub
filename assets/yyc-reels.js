@@ -202,7 +202,12 @@
   }
   function closeEventModal(restoreFocus){
     var modal=byId('yycReelEventModal');
-    if(modal)modal.remove();
+    if(modal){
+      modal.querySelectorAll('.yyc-reel-video').forEach(function(video){
+        try{video.pause();}catch(e){}
+      });
+      modal.remove();
+    }
     document.body.classList.remove('yyc-reel-modal-open');
     var opener=eventModalOpener;
     eventModalOpener=null;
