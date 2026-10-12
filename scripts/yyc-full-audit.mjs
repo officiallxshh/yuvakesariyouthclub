@@ -396,6 +396,27 @@ if (!robotsTxt.includes("Sitemap: https://www.yuvakesariyouthclub.in/sitemap.xml
   issues.push("robots.txt must advertise both the main sitemap and the automatic video sitemap.");
 }
 
+/* Build 18: all public content types sync automatically; Reel thumbnails are generated when absent. */
+if (!publicSeoGenerator.includes("ensurePublishedReelThumbnails") ||
+    !publicSeoGenerator.includes("spawn('ffmpeg'") ||
+    !publicSeoGenerator.includes("const publicSwags") ||
+    !publicSeoGenerator.includes("['swag', 'swags'") ||
+    !publicSeoGenerator.includes("site.events || []") ||
+    !publicSeoGenerator.includes("site.updates || []") ||
+    !publicSeoGenerator.includes("site.gallery || []") ||
+    !publicSeoGenerator.includes("site.leaders || []") ||
+    !publicSeoGenerator.includes("['reel', publicReels]") ||
+    !publicSeoGenerator.includes("feature.achievements || []")) {
+  issues.push("Automatic public SEO generation must include events, updates, gallery, Reels, swags, leaders and achievements, including missing Reel thumbnail generation.");
+}
+if (!seoSyncWorkflow.includes("cron: '*/30 * * * *'") ||
+    !seoSyncWorkflow.includes("command -v ffmpeg") ||
+    !seoSyncWorkflow.includes("Every published Reel watch page must have one video sitemap entry") ||
+    !seoSyncWorkflow.includes("'https://www.yuvakesariyouthclub.in/swags/'") ||
+    !seoSyncWorkflow.includes("git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels swags leaders achievements")) {
+  issues.push("Automatic SEO workflow must refresh all public sections, generate missing video thumbnails and validate completeness.");
+}
+
 console.log("YYC FULL SITE AUDIT");
 console.log("Files scanned:", files.length);
 console.log("JavaScript files checked:", jsFiles.length);
