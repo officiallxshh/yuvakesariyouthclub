@@ -48,6 +48,13 @@ try {
       active[0].getAttribute('href') === '#events' &&
       active[0].getAttribute('aria-current') === 'location';
   }, null, { timeout: 6000 });
+  await page.waitForFunction(() => {
+    const section = document.getElementById('events');
+    const header = document.querySelector('.topbar');
+    if (!section || !header) return false;
+    const expectedTop = header.getBoundingClientRect().bottom + 12;
+    return Math.abs(section.getBoundingClientRect().top - expectedTop) <= 48;
+  }, null, { timeout: 6000 });
   const firstHashAligned = await page.evaluate(() => {
     const section = document.getElementById('events');
     const header = document.querySelector('.topbar');
@@ -64,6 +71,13 @@ try {
     return active.length === 1 &&
       active[0].getAttribute('href') === '#events' &&
       active[0].getAttribute('aria-current') === 'location';
+  }, null, { timeout: 6000 });
+  await page.waitForFunction(() => {
+    const section = document.getElementById('events');
+    const header = document.querySelector('.topbar');
+    if (!section || !header) return false;
+    const expectedTop = header.getBoundingClientRect().bottom + 12;
+    return Math.abs(section.getBoundingClientRect().top - expectedTop) <= 48;
   }, null, { timeout: 6000 });
   const reloadHashAligned = await page.evaluate(() => {
     const section = document.getElementById('events');
