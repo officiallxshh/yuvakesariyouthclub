@@ -272,6 +272,37 @@ function detailPage(type, item, fileSlug) {
     '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../index.html">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
 }
 function categoryIndexPage(title, description, route, entries) {
+  const canonical = BASE + '/' + route + '/';
+  const collectionSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': canonical + '#webpage',
+        url: canonical,
+        name: title + ' | Yuvakesari Youth Club',
+        description,
+        isPartOf: { '@id': BASE + '/#website' },
+        about: { '@id': BASE + '/#organization' },
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: entries.slice(0, 100).map((entry, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: entry.title,
+            url: new URL(entry.href, canonical).href
+          }))
+        }
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE + '/' },
+          { '@type': 'ListItem', position: 2, name: title, item: canonical }
+        ]
+      }
+    ]
+  });
   const rows = entries.map(e =>
     '<article class="item"><h2><a href="' + esc(e.href) + '">' + esc(e.title) + '</a></h2>' +
     (e.date ? '<p class="item-date">' + esc(e.date) + '</p>' : '') +
@@ -283,6 +314,7 @@ function categoryIndexPage(title, description, route, entries) {
     '<meta name="theme-color" content="#05080b"><meta name="robots" content="index,follow,max-image-preview:large">' +
     '<link rel="canonical" href="' + BASE + '/' + route + '/"><link rel="icon" href="../assets/yyc-lion-favicon-redesigned.svg">' +
     '<meta name="description" content="' + esc(description) + '"><title>' + esc(title) + ' | Yuvakesari Youth Club</title>' +
+    '<script type="application/ld+json">' + collectionSchema.replace(/</g, '\\u003c') + '</script>' +
     '<link rel="stylesheet" href="../yyc-seo.css"><style>.listing{display:grid;gap:12px;margin-top:22px}.item{border:1px solid rgba(229,191,107,.15);background:rgba(255,255,255,.025);border-radius:16px;padding:18px}.item h2{font-size:21px;line-height:1.35;margin:0 0 7px}.item h2 a{color:#f1d58f;text-decoration:none}.item h2 a:hover{text-decoration:underline;text-underline-offset:4px}.item p{margin:6px 0;color:#aeb5b0;font-size:13px}.item-date{font-size:10px!important;letter-spacing:.08em;text-transform:uppercase}.item-image{display:block;margin-top:12px}.item-image img{max-width:100%;width:100%;max-height:300px;object-fit:cover;border-radius:10px}.empty{color:#89928c;font-size:13px;margin-top:20px}</style></head><body><main class="wrap">' +
     '<a class="back" href="../index.html">← Back to YYC</a><article class="card">' +
     '<img class="logo" src="../assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo"><div class="k">YUVAKESARI YOUTH CLUB</div>' +
@@ -329,13 +361,13 @@ const publicReels = Array.isArray(reelPayload?.reels) ? reelPayload.reels.filter
 await ensurePublishedReelThumbnails(publicReels);
 const publicSwags = Array.isArray(site.swags) ? site.swags.filter(item => item && !['draft', 'hidden', 'private', 'deleted', 'archived', 'denied', 'rejected'].includes(String(item.status || '').toLowerCase())) : [];
 const routeDefs = [
-  ['event', 'events', 'Events', 'Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.'],
-  ['update', 'updates', 'Updates', 'Latest approved news and announcements from Yuvakesari Youth Club.'],
-  ['gallery', 'gallery', 'Gallery', 'Published community photos, programmes and youth activities by Yuvakesari Youth Club.'],
-  ['reel', 'reels', 'Reels', 'Published community videos and event Reels from Yuvakesari Youth Club.'],
-  ['swag', 'swags', 'Swags', 'Official Yuvakesari Youth Club merchandise, jerseys and community items.'],
-  ['leader', 'leaders', 'Leaders', 'Public leadership profiles of Yuvakesari Youth Club.'],
-  ['achievement', 'achievements', 'Achievements', 'Published milestones and achievements of Yuvakesari Youth Club.']
+  ['event', 'events', 'YYC Events & Programmes', 'Explore published events, community programmes and youth initiatives from Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka.'],
+  ['update', 'updates', 'YYC News & Updates', 'Read official news, announcements and community updates from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka.'],
+  ['gallery', 'gallery', 'YYC Community Gallery', 'Browse published photos from Yuvakesari Youth Club (YYC), including community service, events and youth activities in Subrahmanya, Karnataka.'],
+  ['reel', 'reels', 'YYC Reels & Videos', 'Watch published videos and event Reels from Yuvakesari Youth Club (YYC), documenting community programmes and youth activities in Subrahmanya, Karnataka.'],
+  ['swag', 'swags', 'YYC Merchandise & Jerseys', 'View official Yuvakesari Youth Club (YYC) merchandise, jerseys and published club items from Subrahmanya, Karnataka.'],
+  ['leader', 'leaders', 'YYC Leadership Team', 'Meet the public leadership team of Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka, and explore the roles behind the club community activities.'],
+  ['achievement', 'achievements', 'YYC Achievements & Milestones', 'Explore published milestones and achievements from Yuvakesari Youth Club (YYC), highlighting community initiatives and youth activities in Subrahmanya, Karnataka.']
 ];
 const sitemapLastmod = new Map();
 const counts = {};
