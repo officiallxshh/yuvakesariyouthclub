@@ -3386,7 +3386,6 @@ function renderAdminTab(tab,d){
       if(albumFilter)albumFilter.addEventListener('input',filterGallery);
       filterGallery();
     }
-    $('#addGalleryBtn');
     renderGalleryAdmin('');
     return;
   }
@@ -4097,7 +4096,7 @@ function adminGalleryForm(id,albumPreset,titlePreset){
     '<form id="adminGalleryForm">'+
       '<div class="form-grid">'+
         '<div class="field"><label>'+(id?'Caption / title':'Event / gallery title')+'</label><input id="agTitle" maxlength="180" value="'+esc(existing.title||'')+'" placeholder="e.g. Swachatha Abhiyaan" required></div>'+
-        '<div class="field"><label>Album</label><input id="agAlbum" maxlength="120" value="'+esc(id?(existing.album||'GENERAL'):'')+'" placeholder="Defaults to the event title"></div>'+
+        '<div class="field"><label>Album</label><input id="agAlbum" maxlength="120" value="'+esc(id?(existing.album||'GENERAL'):(albumPreset||''))+'" placeholder="Defaults to the event title"></div>'+
         '<div class="field"><label>Status</label><select id="agStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
         '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="agPublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"></div>'+
         '<div class="field"><label>Display order</label><input id="agSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+
