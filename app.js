@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-41-build15-hash-reload-fix';
+var YYC_APP_BUILD='20261012-42-build16-admin-media-cubes';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -3261,11 +3261,132 @@ function renderAdminTab(tab,d){
   }
   if(tab==='gallery'){
     var gs=d.gallery||[];
-    a.innerHTML='<div class="admin-top"><h2>Gallery</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addGalleryBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add photo</span></button></div></div><div class="admin-toolbar"><input id="adminGallerySearch" class="admin-search" placeholder="Search photos or captions" autocomplete="off"><input id="adminGalleryAlbum" class="admin-search" placeholder="Filter album" autocomplete="off"><select id="adminGalleryStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminGalleryCount"></span></div><div class="admin-grid-2">'+(gs.length?gs.map(function(g){return '<figure class="gallery-card admin-gallery-card" data-content-status="'+esc(g.status||'published')+'" data-content-album="'+esc(g.album||'GENERAL')+'">'+yycMediaFrame(g.image_format,'<img src="'+esc(g.src||g.image_url)+'" alt="'+esc(g.title)+'">')+'<figcaption><strong>'+esc(g.title)+'</strong><small>'+esc(g.album||'GENERAL')+' · '+esc(yycImageFormatMeta(g.image_format).label)+(g.featured?' · FEATURED':'')+'</small><div class="admin-actions"><button class="mini-btn gold" data-edit-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-gallery="'+g.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></figcaption></figure>';}).join(''):'<div class="empty">No gallery.</div>')+'</div>';
-    $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
-    Array.prototype.slice.call(document.querySelectorAll('[data-edit-gallery]')).forEach(function(b){b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-gallery]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove photo?')) await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');});});
-    (function(){function filterGallery(){var q=$('#adminGallerySearch').value.trim().toLowerCase(),alb=$('#adminGalleryAlbum').value.trim().toLowerCase(),st=$('#adminGalleryStatus').value,rows=$$('#adminWorkspace .admin-gallery-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!alb||String(row.getAttribute('data-content-album')||'').toLowerCase().indexOf(alb)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminGalleryCount').textContent=shown+' of '+rows.length+' shown';}$('#adminGallerySearch').addEventListener('input',filterGallery);$('#adminGalleryAlbum').addEventListener('input',filterGallery);$('#adminGalleryStatus').addEventListener('change',filterGallery);filterGallery();})();
+    function galleryNormalize(value){
+      return String(value||'').toLocaleLowerCase().replace(/\s+/g,' ').trim();
+    }
+    function buildAdminGalleryAlbums(){
+      var albums=[],byKey=Object.create(null);
+      gs.forEach(function(item,index){
+        item=item||{};
+        var rawAlbum=String(item.album||'').trim();
+        var generic=!rawAlbum||/^(general|misc|miscellaneous)$/i.test(rawAlbum);
+        var rawTitle=String(item.title||item.caption||'YYC Gallery').trim();
+        var suffix=rawTitle.match(/^(.*?)\s*[·|–—-]\s*Photo\s*\d+\s*$/i);
+        var cleanTitle=suffix&&suffix[1].trim()?suffix[1].trim():rawTitle;
+        var key=generic?(suffix?'title:'+galleryNormalize(cleanTitle):'single:'+(item.id||index)):'album:'+galleryNormalize(rawAlbum);
+        var displayTitle=generic?cleanTitle:rawAlbum;
+        var album=byKey[key];
+        if(!album){
+          album={key:key,title:displayTitle||'YYC Gallery',rawAlbum:rawAlbum,items:[],featured:false};
+          byKey[key]=album;
+          albums.push(album);
+        }
+        album.items.push(item);
+        album.featured=album.featured||!!item.featured;
+      });
+      return albums;
+    }
+    function adminGalleryPhotoHTML(g,albumTitle){
+      var status=String(g.status||'published').toLowerCase();
+      var image=String(g.src||g.image_url||'');
+      return '<figure class="gallery-card admin-gallery-card" data-content-status="'+esc(status)+'" data-content-album="'+esc(albumTitle||g.album||'GENERAL')+'" data-gallery-search="'+esc([g.title,g.caption,g.album,albumTitle,status].join(' ').toLowerCase())+'">'+
+        yycMediaFrame(g.image_format,'<img src="'+esc(image)+'" alt="'+esc(g.title||albumTitle||'YYC photo')+'" loading="lazy" decoding="async">')+
+        '<figcaption><strong>'+esc(g.title||'Untitled photo')+'</strong><small>'+esc(g.album||albumTitle||'GENERAL')+' · '+esc(yycImageFormatMeta(g.image_format).label)+(g.featured?' · FEATURED':'')+' · '+esc(status.toUpperCase())+'</small>'+
+        (g.caption?'<p class="yyc-admin-gallery-caption">'+esc(g.caption)+'</p>':'')+
+        '<div class="admin-actions"><button type="button" class="mini-btn gold" data-edit-gallery="'+esc(g.id)+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button type="button" class="mini-btn" data-del-gallery="'+esc(g.id)+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></figcaption></figure>';
+    }
+    function bindGalleryPhotoActions(){
+      a.querySelectorAll('[data-edit-gallery]').forEach(function(b){
+        b.addEventListener('click',function(){adminGalleryForm(b.getAttribute('data-edit-gallery'));});
+      });
+      a.querySelectorAll('[data-del-gallery]').forEach(function(b){
+        b.addEventListener('click',async function(){
+          if(confirm('Remove photo?')){
+            await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');
+          }
+        });
+      });
+    }
+    function renderGalleryAdmin(selectedKey){
+      var albums=buildAdminGalleryAlbums();
+      var selected=selectedKey?albums.find(function(album){return album.key===selectedKey;}):null;
+      var queryHTML='<input id="adminGallerySearch" class="admin-search" placeholder="'+(selected?'Search this album’s photos or captions':'Search albums, photos or captions')+'" autocomplete="off" aria-label="Search gallery content">'+
+        '<select id="adminGalleryStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select>'+
+        '<span class="admin-result-count" id="adminGalleryCount"></span>';
+      if(selected){
+        var items=selected.items||[];
+        var published=items.filter(function(g){return String(g.status||'published').toLowerCase()==='published';}).length;
+        a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">GALLERY ALBUM</div><h2 class="modal-title">'+esc(selected.title)+'</h2><p class="admin-subline">'+items.length+' photo'+(items.length===1?'':'s')+' · '+published+' published · Edit, publish settings or remove each photo below.</p></div>'+
+          '<div class="admin-top-actions"><button type="button" class="mini-btn" id="adminGalleryBackAlbums">← Back to albums</button><button type="button" class="mini-btn gold" id="adminGalleryAddToAlbum">＋ Add photos to album</button></div></div>'+
+          '<div class="admin-toolbar">'+queryHTML+'</div>'+
+          '<div class="admin-grid-2 yyc-admin-gallery-detail" id="adminGalleryDetailGrid">'+
+          (items.length?items.map(function(g){return adminGalleryPhotoHTML(g,selected.title);}).join(''):'<div class="empty">This album is empty.</div>')+'</div>';
+        $('#adminGalleryBackAlbums').addEventListener('click',function(){renderGalleryAdmin('');});
+        $('#adminGalleryAddToAlbum').addEventListener('click',function(){
+          var first=items[0]||{};
+          var rawAlbum=String(first.album||'GENERAL').trim()||'GENERAL';
+          adminGalleryForm(null,rawAlbum,selected.title);
+        });
+        bindGalleryPhotoActions();
+      }else{
+        a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC MEDIA LIBRARY</div><h2 class="modal-title">Gallery albums</h2><p class="admin-subline">Photos are grouped into the same album cubes used on the public website. Open a cube to manage every photo inside it.</p></div>'+
+          '<div class="admin-top-actions"><button type="button" class="mini-btn" data-admin-overview>← Back to Admin</button><button type="button" class="mini-btn gold" id="addGalleryBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add photos</span></button></div></div>'+
+          '<div class="admin-toolbar">'+queryHTML+'<input id="adminGalleryAlbum" class="admin-search" placeholder="Filter album name" autocomplete="off" aria-label="Filter gallery albums"></div>'+
+          '<div class="admin-grid-2 yyc-admin-gallery-albums" id="adminGalleryAlbumsGrid">'+
+          (albums.length?albums.map(function(album){
+            var photos=album.items||[];
+            var publishedPhotos=photos.filter(function(g){return String(g.status||'published').toLowerCase()==='published';});
+            var previews=(publishedPhotos.length?publishedPhotos:photos).slice(0,4);
+            var cover=previews.map(function(photo){
+              var src=photo.src||photo.image_url||'';
+              return '<div class="yyc-gallery-cover-cell">'+(src?'<img src="'+esc(src)+'" alt="" loading="lazy" decoding="async">':'<span class="yyc-gallery-cover-empty">YYC</span>')+'</div>';
+            }).join('');
+            var count=photos.length;
+            var caption=photos[0]&&photos[0].caption?String(photos[0].caption).replace(/\s*[·|–—-]\s*\d+\s*$/,'').trim():'';
+            var statuses=photos.map(function(g){return String(g.status||'published').toLowerCase();});
+            return '<figure class="gallery-card yyc-gallery-album-card yyc-admin-gallery-cube" role="button" tabindex="0" aria-label="Open '+esc(album.title)+' album, '+count+' photo'+(count===1?'':'s')+'" data-admin-gallery-open="'+esc(album.key)+'" data-content-album="'+esc(album.title+' '+album.rawAlbum)+'" data-gallery-search="'+esc([album.title,album.rawAlbum].concat(photos.map(function(g){return [g.title,g.caption,g.album,g.status].join(' ');})).join(' ').toLowerCase())+'" data-gallery-statuses="'+esc(statuses.join('|'))+'">'+
+              '<div class="gallery-card-media yyc-gallery-album-media"><div class="yyc-gallery-cover-grid count-'+Math.min(previews.length,4)+'">'+cover+'</div>'+
+                (count>1?'<span class="yyc-gallery-photo-count">'+count+' PHOTOS</span>':'<span class="yyc-gallery-photo-count single">1 PHOTO</span>')+
+                (count>4?'<span class="yyc-gallery-extra">+'+(count-4)+'</span>':'')+
+              '</div><figcaption><strong>'+esc(album.title)+'</strong>'+
+                (caption?'<small>'+esc(caption)+'</small>':'')+
+                '<small>'+publishedPhotos.length+' published · '+(count-publishedPhotos.length)+' draft/hidden</small>'+
+                '<span class="yyc-gallery-album-meta">'+count+' PHOTO'+(count===1?'':'S')+' · OPEN TO MANAGE <b>↗</b></span></figcaption></figure>';
+          }).join(''):'<div class="empty">No gallery photos yet. Choose “Add photos” to create your first album cube.</div>')+'</div>';
+        $('#addGalleryBtn').addEventListener('click',function(){adminGalleryForm(null);});
+        a.querySelectorAll('[data-admin-gallery-open]').forEach(function(cube){
+          function openAlbum(){renderGalleryAdmin(cube.getAttribute('data-admin-gallery-open'));}
+          cube.addEventListener('click',openAlbum);
+          cube.addEventListener('keydown',function(event){
+            if(event.key==='Enter'||event.key===' '){event.preventDefault();openAlbum();}
+          });
+        });
+      }
+      var search=$('#adminGallerySearch'),status=$('#adminGalleryStatus'),albumFilter=$('#adminGalleryAlbum'),countLabel=$('#adminGalleryCount');
+      function filterGallery(){
+        var q=search?search.value.trim().toLowerCase():'';
+        var alb=albumFilter?albumFilter.value.trim().toLowerCase():'';
+        var st=status?status.value:'';
+        var rows=selected
+          ? a.querySelectorAll('#adminGalleryDetailGrid .admin-gallery-card')
+          : a.querySelectorAll('#adminGalleryAlbumsGrid .yyc-admin-gallery-cube');
+        var shown=0;
+        rows.forEach(function(row){
+          var text=selected?(row.getAttribute('data-gallery-search')||''):(row.getAttribute('data-gallery-search')||'');
+          var album=String(row.getAttribute('data-content-album')||'').toLowerCase();
+          var statuses=selected?[row.getAttribute('data-content-status')||'published']:(row.getAttribute('data-gallery-statuses')||'').split('|');
+          var hit=(!q||text.indexOf(q)>=0)&&(!alb||album.indexOf(alb)>=0)&&(!st||statuses.indexOf(st)>=0);
+          row.style.display=hit?'':'none';
+          if(hit)shown++;
+        });
+        if(countLabel)countLabel.textContent=shown+' of '+rows.length+' '+(selected?'photos':'albums');
+      }
+      if(search)search.addEventListener('input',filterGallery);
+      if(status)status.addEventListener('change',filterGallery);
+      if(albumFilter)albumFilter.addEventListener('input',filterGallery);
+      filterGallery();
+    }
+    renderGalleryAdmin('');
     return;
   }
   if(tab==='swags'){
@@ -3918,8 +4039,8 @@ function adminUpdateForm(id){
     }catch(err){if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'SAVE UPDATE';}toast(err.message);}
   });
 }
-function adminGalleryForm(id){
-  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:'GENERAL',publish_at:'',sort_order:0};
+function adminGalleryForm(id,albumPreset,titlePreset){
+  var existing=(adminData.gallery||[]).find(function(g){return String(g.id)===String(id);}) || {title:titlePreset||'',src:'',caption:'',image_format:'original',status:'published',featured:false,album:albumPreset||'',publish_at:'',sort_order:0};
   var obj={photo:existing.src||''};
   var batchPhotos=[];
   var maxBatchPhotos=20;
@@ -3975,7 +4096,7 @@ function adminGalleryForm(id){
     '<form id="adminGalleryForm">'+
       '<div class="form-grid">'+
         '<div class="field"><label>'+(id?'Caption / title':'Event / gallery title')+'</label><input id="agTitle" maxlength="180" value="'+esc(existing.title||'')+'" placeholder="e.g. Swachatha Abhiyaan" required></div>'+
-        '<div class="field"><label>Album</label><input id="agAlbum" maxlength="120" value="'+esc(id?(existing.album||'GENERAL'):'')+'" placeholder="Defaults to the event title"></div>'+
+        '<div class="field"><label>Album</label><input id="agAlbum" maxlength="120" value="'+esc(id?(existing.album||'GENERAL'):(albumPreset||''))+'" placeholder="Defaults to the event title"></div>'+
         '<div class="field"><label>Status</label><select id="agStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
         '<div class="field"><label>Publish at <span class="field-note">(optional)</span></label><input id="agPublishAt" type="datetime-local" value="'+esc(yycLocalDateTime(existing.publish_at))+'"></div>'+
         '<div class="field"><label>Display order</label><input id="agSort" type="number" step="1" value="'+esc(existing.sort_order||0)+'"></div>'+

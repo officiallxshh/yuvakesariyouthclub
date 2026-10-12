@@ -130,11 +130,128 @@ try {
   }, null, { timeout: 3000 });
   console.log('MOBILE NAV PASS: Reel anchor closes the menu and activates the matching desktop state');
 
+  await page.setViewportSize({ width: 1365, height: 900 });
+
+  /* Use a fake administrator session/data so the media admin UI can be tested
+     without touching production records or requiring real credentials. */
+  const stubImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+  const testGallery = [1, 2, 3].map((n) => ({
+    id: 'test-photo-' + n,
+    title: 'Cleanliness Drive 2026 · Photo ' + String(n).padStart(2, '0'),
+    src: stubImage,
+    image_url: stubImage,
+    caption: 'Browser fixture photo ' + n,
+    album: 'Cleanliness Drive 2026',
+    image_format: 'square',
+    status: 'published',
+    featured: n === 1,
+    sort_order: n
+  }));
+  const testReels = [1, 2, 3].map((n) => ({
+    id: 'test-reel-' + n,
+    title: 'Cleanliness Drive Reel ' + n,
+    caption: 'Browser fixture reel ' + n,
+    category: 'Community',
+    event_name: 'Cleanliness Drive 2026',
+    reel_number: n,
+    reel_total: 3,
+    video_url: 'https://example.invalid/test-reel-' + n + '.mp4',
+    video_path: 'reels/test-reel-' + n + '.mp4',
+    thumbnail_url: stubImage,
+    thumbnail_path: '',
+    status: 'published',
+    sort_order: n,
+    created_at: '2026-10-01T00:00:00.000Z'
+  }));
+  const testDashboard = {
+    ok: true,
+    members: [],
+    leaders: [],
+    updates: [],
+    gallery: testGallery,
+    events: [],
+    swags: [],
+    settings: {},
+    pending_updates: [],
+    pending_gallery: [],
+    pending_volunteers: [],
+    volunteers: []
+  };
+
+  await page.route('**/rest/v1/rpc/admin_login', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, token: 'browser-test-admin-token', username: 'browser-test' })
+  }));
+  await page.route('**/rest/v1/rpc/admin_dashboard', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(testDashboard)
+  }));
+  await page.route('**/rest/v1/rpc/yyc_reels_admin_list', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, reels: testReels })
+  }));
+
+  await page.locator('#adminOpenBtn').click();
+  await page.locator('#adminLoginForm').waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#aUser').fill('browser-test-admin');
+  await page.locator('#aPass').fill('browser-test-only');
+  await page.locator('#adminLoginForm button[type="submit"]').click();
+  await page.locator('.admin-shell').waitFor({ state: 'visible', timeout: 12000 });
+
+  await page.locator('.admin-tab[data-tab="gallery"]').click();
+  const galleryCube = page.locator('#adminGalleryAlbumsGrid .yyc-admin-gallery-cube');
+  await galleryCube.waitFor({ state: 'visible', timeout: 8000 });
+  if (await galleryCube.count() !== 1) {
+    throw new Error('Three photos from the same album should appear in one admin Gallery cube.');
+  }
+  if (!(await galleryCube.first().innerText()).includes('3 PHOTOS')) {
+    throw new Error('Admin Gallery cube should show the grouped photo count.');
+  }
+  await galleryCube.first().click();
+  const albumPhotos = page.locator('#adminGalleryDetailGrid .admin-gallery-card');
+  await albumPhotos.first().waitFor({ state: 'visible', timeout: 5000 });
+  if (await albumPhotos.count() !== 3 ||
+      await page.locator('#adminGalleryDetailGrid [data-edit-gallery]').count() !== 3 ||
+      await page.locator('#adminGalleryDetailGrid [data-del-gallery]').count() !== 3) {
+    throw new Error('Opening an admin Gallery cube must show all photos and their usual Edit/Remove actions.');
+  }
+  console.log('ADMIN GALLERY CUBE PASS: 3 photos grouped; Edit/Remove actions appear in the album');
+
+  await page.locator('#adminGalleryBackAlbums').click();
+  await page.locator('.admin-tab[data-tab="reels"]').click();
+  const reelCube = page.locator('#yycReelAdminGrid .yyc-reel-admin-event-cube');
+  await reelCube.waitFor({ state: 'visible', timeout: 8000 });
+  if (await reelCube.count() !== 1) {
+    throw new Error('Three Reels from the same event should appear in one admin Reel cube.');
+  }
+  if (!(await reelCube.first().innerText()).includes('3 REELS')) {
+    throw new Error('Admin Reel cube should show the grouped Reel count.');
+  }
+  await reelCube.first().locator('[data-admin-reel-group]').click();
+  const managedReels = page.locator('#yycReelAdminGrid .yyc-reel-admin-card');
+  await managedReels.first().waitFor({ state: 'visible', timeout: 5000 });
+  if (await managedReels.count() !== 3 ||
+      await page.locator('#yycReelAdminGrid [data-reel-edit]').count() !== 3 ||
+      await page.locator('#yycReelAdminGrid [data-reel-toggle]').count() !== 3 ||
+      await page.locator('#yycReelAdminGrid [data-reel-delete]').count() !== 3) {
+    throw new Error('Opening an admin Reel cube must show every Reel with Edit/Publish/Delete actions.');
+  }
+  await page.locator('[data-reel-admin-add]').click();
+  await page.locator('#yycReelBatchForm').waitFor({ state: 'visible', timeout: 5000 });
+  if (await page.locator('#yycBatchEventName').inputValue() !== 'Cleanliness Drive 2026' ||
+      !(await page.locator('[data-batch-video="4"]').count())) {
+    throw new Error('Add Reels from a collection should prefill the event and generate the next numbered upload slot.');
+  }
+  console.log('ADMIN REEL CUBE PASS: 3 Reels grouped; Edit/Publish/Delete actions and add-to-event flow work');
+
   if (failures.length) {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel admin cube workflows)');
 } finally {
   await browser.close();
 }

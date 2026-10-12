@@ -9,6 +9,7 @@
   var eventModalOpener=null;
   var adminReels=[];
   var adminBusy=false;
+  var adminSelectedGroupKey='';
 
   function byId(id){return document.getElementById(id);}
   function escapeHTML(value){
@@ -367,7 +368,7 @@
     adminReels=Array.isArray(data.reels)?data.reels:[];
     return adminReels;
   }
-  function backToReelList(){renderAdminList(adminReels);}
+  function backToReelList(){renderAdminList(adminReels,adminSelectedGroupKey);}
   function normalizeEventName(value){return String(value||'').trim().toLocaleLowerCase();}
   function getEventRows(name){
     var key=normalizeEventName(name);
@@ -416,12 +417,27 @@
     submit.disabled=false;
     if(status)status.textContent='Ready for '+missing.length+' new upload slot'+(missing.length===1?'':'s')+'. Existing numbered Reels will be kept.';
   }
-  function renderEventBatchForm(){
+  function renderEventBatchForm(prefillEventName){
     var workspace=byId('adminWorkspace');if(!workspace)return;
+    var initialEventName=String(prefillEventName||'').trim();
+    var initialTotal=1;
+    if(initialEventName){
+      var currentRows=getEventRows(initialEventName), taken=Object.create(null), currentMax=0;
+      currentRows.forEach(function(row){
+        var number=Number(row.reel_number)||1;
+        taken[number]=true;
+        currentMax=Math.max(currentMax,number,Number(row.reel_total)||0);
+      });
+      var hasMissing=false;
+      for(var currentNum=1;currentNum<=currentMax;currentNum++){
+        if(!taken[currentNum]){hasMissing=true;break;}
+      }
+      initialTotal=Math.max(1,currentMax+(hasMissing?0:1));
+    }
     workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Add Reels</h3><p>Upload one standalone Reel or group multiple Reels under one event. Set the total to 1 for a single Reel.</p><p class="yyc-reel-admin-note">Large videos use more project storage and take longer on mobile connections. Compress long clips before uploading; actual upload limits still depend on your Supabase project settings.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-batch-cancel>← Back to Reels</button></div></div>'+
       '<form class="yyc-reel-admin-form" id="yycReelBatchForm" novalidate><div class="yyc-reel-admin-fields">'+
-      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name (optional for one standalone Reel)</label><input id="yycBatchEventName" maxlength="160" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group Reels. Leave blank when uploading only one standalone Reel.</small></div>'+
-      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="100" step="1" value="1" required><small>Choose 1–100. Existing Reel numbers are kept; only missing slots are generated.</small></div>'+
+      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name (optional for one standalone Reel)</label><input id="yycBatchEventName" maxlength="160" value="'+escapeHTML(initialEventName)+'" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group Reels. Leave blank when uploading only one standalone Reel.</small></div>'+
+      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="100" step="1" value="'+initialTotal+'" required><small>Choose 1–100. Existing Reel numbers are kept; only missing slots are generated.</small></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycBatchVisibility">Visibility for new Reels</label><select id="yycBatchVisibility"><option value="draft" selected>Draft — publish later</option><option value="published">Published — visible on the website</option><option value="hidden">Hidden — not public</option></select></div>'+
       '</div><div class="yyc-reel-batch-generate"><button type="button" class="mini-btn gold" id="yycBatchGenerate">Generate numbered upload slots</button></div>'+
       '<div id="yycReelBatchSlots"><div class="yyc-reel-state"><strong>Set your event and count.</strong><span>Then generate the numbered upload slots below.</span></div></div>'+
@@ -436,6 +452,7 @@
     }
     eventInput.addEventListener('input',invalidateSlots);
     totalInput.addEventListener('change',invalidateSlots);
+    if(initialEventName)buildBatchSlots(initialEventName,initialTotal);
     byId('yycBatchGenerate').addEventListener('click',function(){
       var count=Number(totalInput.value);
       if(!Number.isInteger(count)||count<1||count>100){totalInput.focus();byId('yycReelBatchStatus').textContent='Choose a whole number between 1 and 100.';return;}
@@ -487,7 +504,7 @@
         }
         adminBusy=false;
         notify(name?(savedCount+' Reel'+(savedCount===1?'':'s')+' saved for '+name+'.'):(savedCount+' standalone Reel saved.'));
-        try{await loadAdminReels();renderAdminList(adminReels);loadPublic(true);}catch(refreshError){
+        try{await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);}catch(refreshError){
           if(status)status.textContent='Upload succeeded and is saved, but the Reel list could not refresh. Click “Refresh Reel List” below — do not upload it again.';
           if(save){save.disabled=false;save.type='button';save.textContent='Refresh Reel List';save.onclick=function(){renderAdminPanel();};}
           return;
@@ -504,6 +521,7 @@
     });
   }
   function renderAdminPanel(){
+    adminSelectedGroupKey='';
     var workspace=byId('adminWorkspace');if(!workspace)return;
     workspace.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Opening Reel Studio…</strong><span>Checking your admin session.</span></div>';
     loadAdminReels().then(renderAdminList).catch(function(e){
@@ -511,48 +529,132 @@
       workspace.querySelector('[data-reel-admin-retry]').addEventListener('click',renderAdminPanel);
     });
   }
-  function renderAdminList(reels){
-    var workspace=byId('adminWorkspace');if(!workspace)return;
-    adminReels=(reels||[]).slice();
-    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Reel Studio</h3><p>Upload, draft, publish, edit or remove official YYC videos.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button><button type="button" class="mini-btn gold" data-reel-admin-add>＋ Add Reels</button></div></div>'+
-      '<div class="yyc-reel-admin-note">For smooth playback, MP4 (H.264 video + AAC audio) is recommended. The Reel Studio does not impose a separate size cap; Supabase project-wide upload limits may still apply. Other formats may play differently across browsers. Videos are stored separately from GitHub.</div>'+
-      '<input type="search" class="yyc-reel-admin-search" id="yycReelAdminSearch" placeholder="Search title, caption, category or status…" autocomplete="off" aria-label="Search reels">'+
-      '<div class="yyc-reel-admin-grid" id="yycReelAdminGrid">'+
-      (adminReels.length?adminReels.map(function(r){
-        var img=r.thumbnail_url||'';
-        var status=String(r.status||'draft').toLowerCase();
-        return '<article class="yyc-reel-admin-card" data-admin-reel-card="'+escapeHTML(r.id)+'" data-reel-search="'+escapeHTML([r.title,r.caption,r.category,r.event_name,r.reel_number,r.reel_total,status].join(' ').toLowerCase())+'">'+
-          '<img class="yyc-reel-admin-thumb" src="'+(img?escapeHTML(img):'')+'" alt="" loading="lazy" '+(img?'':'hidden')+'>'+
-          '<div><h4>'+escapeHTML(r.title)+'</h4><p>'+escapeHTML(r.caption||'No caption')+'</p>'+
-          '<span class="yyc-reel-admin-pill '+(status==='published'?'is-published':'')+'">'+escapeHTML(status)+'</span><span class="yyc-reel-admin-pill">'+escapeHTML(r.category||'Community')+'</span>'+(String(r.event_name||'').trim()?'<span class="yyc-reel-admin-pill">'+escapeHTML(r.event_name)+' · Reel '+(Number(r.reel_number)||1)+' / '+(Number(r.reel_total)||1)+'</span>':'')+
-          '<div class="yyc-reel-admin-actions"><button type="button" data-reel-edit="'+escapeHTML(r.id)+'">Edit</button><button type="button" data-reel-toggle="'+escapeHTML(r.id)+'">'+(status==='published'?'Unpublish':'Publish')+'</button><button type="button" class="is-danger" data-reel-delete="'+escapeHTML(r.id)+'">Delete</button></div></div></article>';
-      }).join(''):'<div class="yyc-reel-state"><strong>No reels added yet.</strong><span>Choose “Add Reels” to upload one Reel or a complete event collection.</span></div>')+
+  function adminReelGroups(reels){
+    var standalone=[],map=Object.create(null),groups=[];
+    (reels||[]).forEach(function(r){
+      var name=String(r.event_name||'').trim();
+      if(!name){standalone.push(r);return;}
+      var key=normalizeEventName(name);
+      if(!map[key]){
+        map[key]={key:key,name:name,reels:[],sortOrder:Number(r.sort_order)||0,latest:String(r.created_at||'')};
+        groups.push(map[key]);
+      }
+      map[key].reels.push(r);
+      map[key].sortOrder=Math.min(map[key].sortOrder,Number(r.sort_order)||0);
+      if(String(r.created_at||'')>map[key].latest)map[key].latest=String(r.created_at||'');
+    });
+    standalone.sort(function(a,b){
+      return (Number(a.sort_order)||0)-(Number(b.sort_order)||0)||String(b.created_at||'').localeCompare(String(a.created_at||''));
+    });
+    groups.forEach(function(group){
+      group.reels.sort(function(a,b){
+        return (Number(a.reel_number)||1)-(Number(b.reel_number)||1)||
+          (Number(a.sort_order)||0)-(Number(b.sort_order)||0)||
+          String(a.created_at||'').localeCompare(String(b.created_at||''));
+      });
+      group.publishedCount=group.reels.filter(function(r){return String(r.status||'draft').toLowerCase()==='published'&&r.video_url;}).length;
+    });
+    groups.sort(function(a,b){
+      return a.sortOrder-b.sortOrder||b.latest.localeCompare(a.latest)||a.name.localeCompare(b.name);
+    });
+    return {standalone:standalone,groups:groups};
+  }
+  function adminReelCardHTML(r){
+    var img=r.thumbnail_url||'';
+    var status=String(r.status||'draft').toLowerCase();
+    var search=[r.title,r.caption,r.category,r.event_name,r.reel_number,r.reel_total,status].join(' ').toLowerCase();
+    return '<article class="yyc-reel-admin-card" data-admin-reel-card="'+escapeHTML(r.id)+'" data-reel-search="'+escapeHTML(search)+'">'+
+      '<img class="yyc-reel-admin-thumb" src="'+(img?escapeHTML(img):'')+'" alt="" loading="lazy" '+(img?'':'hidden')+'>'+
+      '<div><h4>'+escapeHTML(r.title)+'</h4><p>'+escapeHTML(r.caption||'No caption')+'</p>'+
+      '<span class="yyc-reel-admin-pill '+(status==='published'?'is-published':'')+'">'+escapeHTML(status)+'</span><span class="yyc-reel-admin-pill">'+escapeHTML(r.category||'Community')+'</span>'+
+      (String(r.event_name||'').trim()?'<span class="yyc-reel-admin-pill">'+escapeHTML(r.event_name)+' · Reel '+(Number(r.reel_number)||1)+' / '+(Number(r.reel_total)||1)+'</span>':'')+
+      '<div class="yyc-reel-admin-actions"><button type="button" data-reel-edit="'+escapeHTML(r.id)+'">Edit</button><button type="button" data-reel-toggle="'+escapeHTML(r.id)+'">'+(status==='published'?'Unpublish':'Publish')+'</button><button type="button" class="is-danger" data-reel-delete="'+escapeHTML(r.id)+'">Delete</button></div></div></article>';
+  }
+  function adminReelCubeHTML(group){
+    var published=group.reels.filter(function(r){return String(r.status||'draft').toLowerCase()==='published'&&r.video_url;});
+    var source=published.length?published:group.reels;
+    var covers=source.slice(0,4);
+    var search=group.reels.map(function(r){return [r.title,r.caption,r.category,r.status,r.event_name,r.reel_number].join(' ');}).join(' ').toLowerCase();
+    var coverMarkup=covers.map(function(r,slot){
+      var thumb=String(r.thumbnail_url||'');
+      var number=Math.max(1,parseInt(r.reel_number,10)||slot+1);
+      return '<div class="yyc-reel-event-cover-tile">'+
+        (thumb?'<img src="'+escapeHTML(thumb)+'" alt="" loading="lazy">':'<div class="yyc-reel-event-cover-placeholder"><span>REEL '+number+'</span></div>')+
+        (slot===3&&group.reels.length>4?'<span class="yyc-reel-event-more">+'+(group.reels.length-4)+'</span>':'')+
       '</div>';
-    workspace.querySelector('[data-reel-admin-back]').addEventListener('click',function(){
+    }).join('');
+    return '<article class="yyc-reel-event-cube yyc-reel-admin-event-cube" data-reel-search="'+escapeHTML(search)+'">'+
+      '<button type="button" class="yyc-reel-event-cube-button" data-admin-reel-group="'+escapeHTML(group.key)+'" aria-haspopup="true" aria-label="Manage '+escapeHTML(group.name)+' collection, '+group.reels.length+' Reels">'+
+        '<div class="yyc-reel-event-cube-cover '+(covers.length===1?'is-single':covers.length===2?'is-double':'is-mosaic')+'">'+coverMarkup+
+          '<span class="yyc-reel-event-cube-badge">'+group.reels.length+' '+(group.reels.length===1?'REEL':'REELS')+'</span>'+
+          '<span class="yyc-reel-event-cube-open"><span aria-hidden="true">✎</span> MANAGE COLLECTION</span>'+
+        '</div>'+
+        '<div class="yyc-reel-event-cube-meta"><span class="yyc-reel-event-kicker">EVENT COLLECTION · ADMIN</span>'+
+          '<h3>'+escapeHTML(group.name)+'</h3>'+
+          '<div class="yyc-reel-event-cube-foot"><span>'+group.reels.length+' Reels · '+group.publishedCount+' published</span><span class="yyc-reel-event-arrow" aria-hidden="true">↗</span></div>'+
+        '</div>'+
+      '</button>'+
+    '</article>';
+  }
+  function renderAdminList(reels,selectedGroupKey){
+    var workspace=byId('adminWorkspace');if(!workspace)return;
+    if(Array.isArray(reels))adminReels=reels.slice();
+    if(arguments.length>1)adminSelectedGroupKey=String(selectedGroupKey||'');
+    var grouped=adminReelGroups(adminReels);
+    var selectedGroup=adminSelectedGroupKey?grouped.groups.find(function(group){return group.key===adminSelectedGroupKey;}):null;
+    if(adminSelectedGroupKey&&!selectedGroup)adminSelectedGroupKey='';
+    var collectionMode=!!selectedGroup;
+    var items=collectionMode?selectedGroup.reels:grouped.standalone;
+    var searchText=collectionMode?selectedGroup.name:'';
+    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>'+(collectionMode?escapeHTML(selectedGroup.name):'Reel Studio')+'</h3><p>'+(collectionMode?'Manage every Reel in this event collection. Edit details, change visibility or delete individual Reels.':'Upload, draft, publish, edit or remove official YYC videos. Event-named Reels appear together in the same collection cube as on the public site.')+'</p></div><div class="admin-top-actions">'+
+      (collectionMode?'<button type="button" class="mini-btn" data-reel-admin-collections-back>← Back to collections</button>':'<button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button>')+
+      '<button type="button" class="mini-btn gold" data-reel-admin-add>'+(collectionMode?'＋ Add Reels to event':'＋ Add Reels')+'</button></div></div>'+
+      '<div class="yyc-reel-admin-note">For smooth playback, MP4 (H.264 video + AAC audio) is recommended. The Reel Studio does not impose a separate size cap; Supabase project-wide upload limits may still apply. Videos remain stored separately from GitHub.</div>'+
+      '<input type="search" class="yyc-reel-admin-search" id="yycReelAdminSearch" placeholder="'+(collectionMode?'Search this event’s Reels…':'Search title, caption, category, event or status…')+'" autocomplete="off" aria-label="Search Reels">'+
+      '<div class="yyc-reel-admin-grid yyc-reel-admin-collections" id="yycReelAdminGrid">'+
+      (collectionMode
+        ?(items.length?items.map(adminReelCardHTML).join(''):'<div class="yyc-reel-state"><strong>No Reels in this collection.</strong><span>Go back to the collection grid to add more.</span></div>')
+        :(grouped.standalone.map(adminReelCardHTML).join('')+grouped.groups.map(adminReelCubeHTML).join(''))||
+          '<div class="yyc-reel-state"><strong>No Reels added yet.</strong><span>Choose “Add Reels” to upload a standalone Reel or a complete event collection.</span></div>')+
+      '</div>';
+
+    var backAdmin=workspace.querySelector('[data-reel-admin-back]');
+    if(backAdmin)backAdmin.addEventListener('click',function(){
       var tab=document.querySelector('.admin-tab[data-tab="overview"]');
       if(tab)tab.click();
     });
-    workspace.querySelector('[data-reel-admin-add]').addEventListener('click',renderEventBatchForm);
+    var backCollections=workspace.querySelector('[data-reel-admin-collections-back]');
+    if(backCollections)backCollections.addEventListener('click',function(){renderAdminList(adminReels,'');});
+    var addButton=workspace.querySelector('[data-reel-admin-add]');
+    if(addButton)addButton.addEventListener('click',function(){renderEventBatchForm(collectionMode?selectedGroup.name:'');});
+
+    workspace.querySelectorAll('[data-admin-reel-group]').forEach(function(button){
+      button.addEventListener('click',function(){
+        renderAdminList(adminReels,button.getAttribute('data-admin-reel-group'));
+      });
+    });
     var search=byId('yycReelAdminSearch');
     if(search)search.addEventListener('input',function(){
       var q=search.value.trim().toLowerCase();
-      workspace.querySelectorAll('[data-admin-reel-card]').forEach(function(card){card.hidden=!!q&&card.getAttribute('data-reel-search').indexOf(q)<0;});
+      workspace.querySelectorAll('[data-reel-search]').forEach(function(card){
+        card.hidden=!!q&&String(card.getAttribute('data-reel-search')||'').indexOf(q)<0;
+      });
     });
     workspace.querySelectorAll('[data-reel-edit]').forEach(function(button){
       button.addEventListener('click',function(){
-        var reel=adminReels.find(function(item){return item.id===button.getAttribute('data-reel-edit');});
+        var reel=adminReels.find(function(item){return String(item.id)===String(button.getAttribute('data-reel-edit'));});
         if(reel)renderAdminForm(reel);
       });
     });
     workspace.querySelectorAll('[data-reel-toggle]').forEach(function(button){
       button.addEventListener('click',function(){
-        var reel=adminReels.find(function(item){return item.id===button.getAttribute('data-reel-toggle');});
+        var reel=adminReels.find(function(item){return String(item.id)===String(button.getAttribute('data-reel-toggle'));});
         if(reel)togglePublish(reel);
       });
     });
     workspace.querySelectorAll('[data-reel-delete]').forEach(function(button){
       button.addEventListener('click',function(){
-        var reel=adminReels.find(function(item){return item.id===button.getAttribute('data-reel-delete');});
+        var reel=adminReels.find(function(item){return String(item.id)===String(button.getAttribute('data-reel-delete'));});
         if(reel)deleteReel(reel);
       });
     });
@@ -656,7 +758,7 @@
       });
       if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not change Reel visibility.');
       notify(next==='published'?'Reel published.':'Reel unpublished.');
-      await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
+      await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);
     }catch(e){notify(e.message||'Could not update Reel.');}
     finally{adminBusy=false;}
   }
@@ -671,7 +773,7 @@
       var cleanupError='';
       if(paths.length){try{await callUploadService({action:'delete-files',paths:paths});}catch(e){cleanupError=e.message||'Media cleanup failed.';}}
       notify(cleanupError?'Reel deleted from the site, but a media file may remain in storage.':'Reel and its uploaded media deleted.');
-      await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
+      await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);
     }catch(e){notify(e.message||'Could not delete Reel.');}
     finally{adminBusy=false;}
   }

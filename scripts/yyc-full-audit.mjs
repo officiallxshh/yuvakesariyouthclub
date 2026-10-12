@@ -285,7 +285,7 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-41-build15-hash-reload-fix";
+const currentBuild = "20261012-42-build16-admin-media-cubes";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||
@@ -331,6 +331,48 @@ if (!/fonts\.googleapis\.com\/css2\?[^"']*display=swap/.test(index)) {
 }
 if (!read("assets/yyc-reels.js").includes("Large videos use more project storage")) {
   warnings.push("Reel uploader should remind administrators about storage usage and project upload limits.");
+}
+
+
+/* Build 16 grouped admin media regressions. */
+const galleryAdminStart = app.indexOf("  if(tab==='gallery'){");
+const galleryAdminEnd = app.indexOf("  if(tab==='swags'){", galleryAdminStart);
+const galleryAdminSource = galleryAdminStart >= 0 && galleryAdminEnd > galleryAdminStart
+  ? app.slice(galleryAdminStart, galleryAdminEnd)
+  : "";
+const reelsSource = read("assets/yyc-reels.js");
+const reelsCss = read("assets/yyc-reels.css");
+
+if (!galleryAdminSource.includes("function buildAdminGalleryAlbums()") ||
+    !galleryAdminSource.includes("data-admin-gallery-open") ||
+    !galleryAdminSource.includes("data-edit-gallery") ||
+    !galleryAdminSource.includes("data-del-gallery") ||
+    !galleryAdminSource.includes("adminGalleryForm(null,rawAlbum,selected.title)")) {
+  issues.push("Admin Gallery must group photos into album cubes and keep individual Edit/Remove actions available inside the cube.");
+}
+if (!reelsSource.includes("function adminReelGroups(reels)") ||
+    !reelsSource.includes("function adminReelCubeHTML(group)") ||
+    !reelsSource.includes("data-admin-reel-group") ||
+    !reelsSource.includes("data-reel-edit") ||
+    !reelsSource.includes("data-reel-toggle") ||
+    !reelsSource.includes("data-reel-delete") ||
+    !reelsSource.includes("function buildBatchSlots(eventName,total)") ||
+    !reelsSource.includes("function renderEventBatchForm(prefillEventName)")) {
+  issues.push("Reel Studio must group event Reels into cubes and preserve batch upload plus Edit/Publish/Delete actions.");
+}
+if (!reelsCss.includes(".yyc-admin-gallery-albums") ||
+    !reelsCss.includes(".yyc-reel-admin-grid.yyc-reel-admin-collections") ||
+    !reelsCss.includes(".yyc-reel-admin-event-cube")) {
+  issues.push("Admin Gallery/Reel cube responsive styles are missing.");
+}
+if (!browserRegression.includes("ADMIN GALLERY CUBE PASS") ||
+    !browserRegression.includes("ADMIN REEL CUBE PASS") ||
+    !browserRegression.includes("data-batch-video") ) {
+  issues.push("Chromium browser regression must test grouping, individual actions and adding Reels to an existing collection.");
+}
+if (!index.includes("assets/yyc-reels.css?v=20261012-10-admin-media-cubes") ||
+    !index.includes("assets/yyc-reels.js?v=20261012-12-admin-media-cubes")) {
+  issues.push("Build 16 admin media assets must use refreshed cache identifiers.");
 }
 
 console.log("YYC FULL SITE AUDIT");
