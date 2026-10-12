@@ -1,0 +1,47 @@
+/* YYC navigation active state — one source of truth.
+   The active anchor class controls the only highlight; hover never imitates active. */
+
+/* Disable legacy and animated underline pseudo-elements. */
+.desktop-nav > a.nav-link::before,
+.desktop-nav > a.nav-link::after,
+.desktop-nav > a.nav-link .nav-label::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Idle and hovered non-active links stay visually neutral. */
+.desktop-nav > a.nav-link:not(.active),
+.desktop-nav > a.nav-link:not(.active):hover,
+.desktop-nav > a.nav-link:not(.active):focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  color: #ddd5c6 !important;
+  transform: none !important;
+}
+.desktop-nav > a.nav-link:not(.active):hover .nav-icon,
+.desktop-nav > a.nav-link:not(.active):focus-visible .nav-icon {
+  color: inherit !important;
+  transform: none !important;
+}
+
+/* Only the single .active item has a selected background and inset underline. */
+.desktop-nav > a.nav-link.active,
+.desktop-nav > a.nav-link.active:hover,
+.desktop-nav > a.nav-link.active:focus-visible {
+  background: linear-gradient(180deg, rgba(236,193,105,.075), rgba(236,193,105,.018) 78%, transparent) !important;
+  box-shadow: inset 0 -2px 0 var(--gold, #d7ae66) !important;
+  color: #f5d58f !important;
+  text-shadow: 0 0 18px rgba(239,202,123,.12) !important;
+  transform: none !important;
+}
+.desktop-nav > a.nav-link.active .nav-icon {
+  color: #f3d08b !important;
+  transform: none !important;
+}
+
+/* Disable the former moving indicator; it could drift independently of .active. */
+.desktop-nav > #yycNavHighlight,
+.desktop-nav .yyc-nav-highlight {
+  display: none !important;
+}
