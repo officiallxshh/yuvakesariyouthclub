@@ -4654,3 +4654,31 @@ body.yyc-low-data .hero-photo{
   .desktop-nav>#yycNavHighlight.yyc-nav-highlight{display:none!important;}
 }
 
+
+
+/* ===== NAVIGATION FIX: only the active section may look highlighted =====
+   The previous hover background looked identical to the active Home tab,
+   making Home + Tulunad Glimpse appear selected at the same time when the
+   pointer rested on Glimpse. Keep the animated indicator as the sole active
+   marker; inactive hover/focus states must not paint another highlight. */
+@media (min-width:981px){
+  .desktop-nav>a.nav-link:not(.active):hover,
+  .desktop-nav>a.nav-link:not(.active):focus-visible{
+    background:transparent!important;
+    box-shadow:none!important;
+    text-shadow:none!important;
+    color:#ddd5c6!important;
+  }
+  .desktop-nav>a.nav-link:not(.active):hover::before,
+  .desktop-nav>a.nav-link:not(.active):hover::after,
+  .desktop-nav>a.nav-link:not(.active):focus-visible::before,
+  .desktop-nav>a.nav-link:not(.active):focus-visible::after,
+  .desktop-nav>a.nav-link:not(.active):hover .nav-label::after,
+  .desktop-nav>a.nav-link:not(.active):focus-visible .nav-label::after{
+    opacity:0!important;
+    transform:scaleX(0)!important;
+    box-shadow:none!important;
+    display:none!important;
+    content:none!important;
+  }
+}
