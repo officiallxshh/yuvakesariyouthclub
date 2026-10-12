@@ -208,12 +208,13 @@ function structuredData(type, item, image, canonical, title, route) {
     inLanguage: 'en-IN'
   });
   if (type === 'swag') graph.push({
-    '@type': 'Product',
+    '@type': 'CreativeWork',
     name: title,
     description: itemDescription(type, item).slice(0, 2048),
     image: image ? [image] : undefined,
     category: item.category || undefined,
-    brand: org
+    creator: org,
+    publisher: org
   });
   if (type === 'achievement') graph.push({
     '@type': 'Article',
