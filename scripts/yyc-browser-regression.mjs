@@ -90,9 +90,9 @@ try {
   console.log('DEEP LINK PASS: #events loads, aligns and survives a page reload');
 
   const loginPanels = [
-    { name: 'member', button: '#memberLoginBtn', form: '#memberLoginForm', close: '.member-access-screen [data-access-close]', field: '#mIdent', value: 'browser-test@example.invalid' },
-    { name: 'leader', button: '#leaderLoginBtn', form: '#leaderLoginForm', close: '.leader-access-screen [data-access-close]', field: '#lIdent', value: 'browser-test@example.invalid' },
-    { name: 'admin', button: '#adminOpenBtn', form: '#adminLoginForm', close: '.admin-access-screen [data-access-close]', field: '#aUser', value: 'browser-test-only' }
+    { name: 'member', button: '#memberLoginBtn', form: '#memberLoginForm', close: '.modal-shell > .modal-close', field: '#mIdent', value: 'browser-test@example.invalid' },
+    { name: 'leader', button: '#leaderLoginBtn', form: '#leaderLoginForm', close: '.modal-shell > .modal-close', field: '#lIdent', value: 'browser-test@example.invalid' },
+    { name: 'admin', button: '#adminOpenBtn', form: '#adminLoginForm', close: '.modal-shell > .modal-close', field: '#aUser', value: 'browser-test-only' }
   ];
   for (const panel of loginPanels) {
     await page.locator(panel.button).click();
