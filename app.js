@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-30-nav-scroll-race-fix';
+var YYC_APP_BUILD='20261012-32-single-active-nav';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
