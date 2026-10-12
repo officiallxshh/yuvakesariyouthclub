@@ -127,3 +127,6 @@ body.yyc-reel-modal-open{overflow:hidden}
 @media(max-width:760px){.yyc-reel-event-cube{border-radius:15px}.yyc-reel-event-cube-meta{padding:11px;gap:7px}.yyc-reel-event-cube-meta h3{font-size:16px}.yyc-reel-event-cube-badge{top:7px;left:7px;padding:6px 7px;font-size:8px}.yyc-reel-event-cube-open{right:7px;bottom:8px}.yyc-reel-event-dialog{border-radius:15px;max-height:94dvh}.yyc-reel-event-dialog-head{padding:15px 14px 12px}.yyc-reel-event-dialog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:12px}.yyc-reel-event-dialog-grid .yyc-reel-meta{padding:9px}.yyc-reel-event-dialog-grid .yyc-reel-meta h3{font-size:12px}}
 @media(max-width:390px){.yyc-reel-event-dialog-grid{grid-template-columns:1fr;max-width:335px;width:100%;margin:0 auto}.yyc-reel-event-dialog-head h2{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.yyc-reel-event-modal{animation:none}.yyc-reel-event-cube,.yyc-reel-event-cover-tile img,.yyc-reel-event-arrow,.yyc-reel-event-close{transition:none}}
+
+.yyc-reel-event-cube-cover.is-double .yyc-reel-event-cover-tile:first-child{grid-column:1;grid-row:1/-1}
+.yyc-reel-event-cube-cover.is-double .yyc-reel-event-cover-tile:last-child{grid-column:2;grid-row:1/-1}
