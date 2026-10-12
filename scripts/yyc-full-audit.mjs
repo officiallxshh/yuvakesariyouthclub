@@ -260,6 +260,23 @@ if (!finalStylesheetTag.includes(navActiveCssPath)) {
 if ((app.match(/function\s+setYYCNavActive\s*\(/g) || []).length !== 1) {
   issues.push("Navigation should have exactly one setYYCNavActive controller.");
 }
+const navigationSourceStart = app.indexOf("function bindNavigation()");
+const navigationSourceEnd = app.indexOf("function submitUpdate()", navigationSourceStart);
+const navigationSource = navigationSourceStart >= 0 && navigationSourceEnd > navigationSourceStart
+  ? app.slice(navigationSourceStart, navigationSourceEnd)
+  : "";
+const navigationScrollHandler = navigationSource.match(/window\.addEventListener\(['"]scroll['"],function\(\)\{([\s\S]*?)\},\{passive:true\}\);/);
+if (!navigationScrollHandler || !navigationScrollHandler[1].includes("updateYYCActiveSection()")) {
+  issues.push("Navigation scroll handler must refresh the active tab as the visible section changes.");
+}
+const userScrollHandler = navigationSource.match(/function noteUserScrollIntent\(\)\{([\s\S]*?)\n  \}/);
+if (!userScrollHandler || !userScrollHandler[1].includes("window.__yycNavLockUntil=0")) {
+  issues.push("Manual scrolling must cancel the navigation active-tab lock.");
+}
+if (!navigationSource.includes("releaseLockWhenSettled()") ||
+    !navigationSource.includes("window.__yycNavTargetId=''")) {
+  issues.push("Navigation lock must release when the destination settles or the visitor interrupts scrolling.");
+}
 if (!/a\.classList\.toggle\(['"]active['"],\s*selected\)/.test(app) ||
     !app.includes("a.removeAttribute('aria-current')")) {
   issues.push("Navigation controller must synchronize the single active class and aria-current state.");
@@ -268,7 +285,7 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-35-smooth-tab-highlight";
+const currentBuild = "20261012-36-responsive-active-highlight";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||
