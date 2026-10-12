@@ -521,6 +521,7 @@
     });
   }
   function renderAdminPanel(){
+    adminSelectedGroupKey='';
     var workspace=byId('adminWorkspace');if(!workspace)return;
     workspace.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Opening Reel Studio…</strong><span>Checking your admin session.</span></div>';
     loadAdminReels().then(renderAdminList).catch(function(e){
@@ -582,8 +583,8 @@
         (slot===3&&group.reels.length>4?'<span class="yyc-reel-event-more">+'+(group.reels.length-4)+'</span>':'')+
       '</div>';
     }).join('');
-    return '<article class="yyc-reel-event-cube yyc-reel-admin-event-cube">'+
-      '<button type="button" class="yyc-reel-event-cube-button" data-admin-reel-group="'+escapeHTML(group.key)+'" aria-haspopup="true" aria-label="Manage '+escapeHTML(group.name)+' collection, '+group.reels.length+' Reels" data-reel-search="'+escapeHTML(search)+'">'+
+    return '<article class="yyc-reel-event-cube yyc-reel-admin-event-cube" data-reel-search="'+escapeHTML(search)+'">'+
+      '<button type="button" class="yyc-reel-event-cube-button" data-admin-reel-group="'+escapeHTML(group.key)+'" aria-haspopup="true" aria-label="Manage '+escapeHTML(group.name)+' collection, '+group.reels.length+' Reels">'+
         '<div class="yyc-reel-event-cube-cover '+(covers.length===1?'is-single':covers.length===2?'is-double':'is-mosaic')+'">'+coverMarkup+
           '<span class="yyc-reel-event-cube-badge">'+group.reels.length+' '+(group.reels.length===1?'REEL':'REELS')+'</span>'+
           '<span class="yyc-reel-event-cube-open"><span aria-hidden="true">✎</span> MANAGE COLLECTION</span>'+
