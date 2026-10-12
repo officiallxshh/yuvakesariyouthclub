@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-23-event-reel-groups';
+var YYC_APP_BUILD='20261012-24-event-single-cube';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
