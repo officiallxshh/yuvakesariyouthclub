@@ -10,6 +10,8 @@ on:
       - 'video-sitemap.xml'
       - 'robots.txt'
       - 'reels/**'
+      - 'swags/**'
+      - 'history/**'
       - 'events/**'
       - 'updates/**'
       - 'gallery/**'
@@ -47,6 +49,14 @@ jobs:
       - name: Validate generator syntax
         run: node --check scripts/generate-public-pages.mjs
 
+      - name: Ensure automatic Reel thumbnail renderer
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+
       - name: Generate crawlable public pages and sitemap
         run: node scripts/generate-public-pages.mjs
 
@@ -66,7 +76,13 @@ jobs:
             'https://www.yuvakesariyouthclub.in/leaders.html',
             'https://www.yuvakesariyouthclub.in/events/',
             'https://www.yuvakesariyouthclub.in/gallery/',
-            'https://www.yuvakesariyouthclub.in/reels/'
+            'https://www.yuvakesariyouthclub.in/reels/',
+            'https://www.yuvakesariyouthclub.in/swags/',
+            'https://www.yuvakesariyouthclub.in/history/',
+            'https://www.yuvakesariyouthclub.in/about.html',
+            'https://www.yuvakesariyouthclub.in/contact.html',
+            'https://www.yuvakesariyouthclub.in/privacy.html',
+            'https://www.yuvakesariyouthclub.in/terms.html'
           ]) {
             if (!urls.includes(required)) throw new Error('Required URL missing from sitemap: ' + required);
           }
@@ -83,7 +99,7 @@ jobs:
             const pathname = new URL(url).pathname.replace(/^\/+/, '');
             if (!fs.existsSync(pathname)) throw new Error('Video watch page file missing: ' + pathname);
             const html = fs.readFileSync(pathname, 'utf8');
-            if (!html.includes('"@type":"VideoObject"') || !html.includes('<video')) throw new Error('Video watch page is missing VideoObject schema or a crawlable HTML video: ' + url);
+            if (!html.includes('"@type":"VideoObject"') || !html.includes('"thumbnailUrl"') || !html.includes('<video')) throw new Error('Video watch page is missing VideoObject schema, a thumbnail, or a crawlable HTML video: ' + url);
             for (const tag of ['<video:thumbnail_loc>', '<video:title>', '<video:description>', '<video:content_loc>']) {
               if (!videoBlocks[i].includes(tag)) throw new Error('Video sitemap entry missing ' + tag + ' for ' + url);
             }
@@ -101,14 +117,27 @@ jobs:
           for (const url of profileLinks) {
             if (!urls.includes(url)) throw new Error('Leader profile missing from sitemap: ' + url);
           }
-          console.log('Validated sitemap URLs:', urls.length, '| leader profiles:', cards);
+          for (const route of ['events', 'updates', 'gallery', 'reels', 'leaders', 'achievements', 'swags', 'history']) {
+            const indexPath = route + '/index.html';
+            const routeUrl = 'https://www.yuvakesariyouthclub.in/' + route + '/';
+            if (!fs.existsSync(indexPath)) throw new Error('Public collection index is missing: ' + indexPath);
+            if (!urls.includes(routeUrl)) throw new Error('Public collection is missing from sitemap: ' + routeUrl);
+            const indexHtml = fs.readFileSync(indexPath, 'utf8');
+            if (!indexHtml.includes('<meta name="robots" content="index,follow,max-image-preview:large">')) throw new Error('Public collection should be indexable: ' + routeUrl);
+          }
+          for (const url of urls) {
+            if (/\\/(?:admin|members|member-dashboard|leader-panel|admin-panel)(?:\\/|\\.|$)/i.test(new URL(url).pathname)) {
+              throw new Error('Private/admin URL must never appear in the public sitemap: ' + url);
+            }
+          }
+          console.log('Validated sitemap URLs:', urls.length, '| leader profiles:', cards, '| public collections: 8');
           NODE
 
       - name: Commit generated public pages
         run: |
           git config user.name "YYC Website Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels leaders achievements leaders.html
+          git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels leaders achievements swags history leaders.html
           if git diff --cached --quiet; then
             echo "No public SEO changes to commit."
             exit 0
