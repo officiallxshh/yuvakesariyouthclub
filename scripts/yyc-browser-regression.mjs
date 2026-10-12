@@ -14,6 +14,25 @@ try {
   await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.desktop-nav > a.nav-link[href^="#"]').first().waitFor({ state: 'visible', timeout: 15000 });
 
+  await page.waitForFunction(() => {
+    const links = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link'));
+    const active = links.filter((link) => link.classList.contains('active'));
+    return active.length === 1 &&
+      active[0].getAttribute('href') === '#home' &&
+      active[0].getAttribute('aria-current') === 'location';
+  }, null, { timeout: 6000 });
+
+  const initialHighlight = await page.evaluate(() => {
+    const links = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link'));
+    return links
+      .filter((link) => Number.parseFloat(getComputedStyle(link, '::before').opacity) > 0.5)
+      .map((link) => (link.getAttribute('href') || '').slice(1));
+  });
+  if (initialHighlight.length !== 1 || initialHighlight[0] !== 'home') {
+    throw new Error('At the top of the homepage, only Home may show the visible highlight. Visible highlights: ' + initialHighlight.join(', '));
+  }
+  console.log('HOME ACTIVE-STATE PASS: only Home is highlighted at initial page load');
+
   const targets = await page.locator('.desktop-nav > a.nav-link[href^="#"]').evaluateAll((links) => {
     return links.map((link) => (link.getAttribute('href') || '').slice(1)).filter(Boolean);
   });
