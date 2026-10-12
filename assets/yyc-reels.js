@@ -59,7 +59,7 @@
     var ext=(name.match(/\.([a-z0-9]{1,8})$/)||[])[1]||'';
     var known={
       mp4:'video/mp4',m4v:'video/mp4',webm:'video/webm',mov:'video/quicktime',
-      avi:'video/x-msvideo',mkv:'video/x-matroska',3gp:'video/3gpp',
+      avi:'video/x-msvideo',mkv:'video/x-matroska','3gp':'video/3gpp',
       mpg:'video/mpeg',mpeg:'video/mpeg',ogv:'video/ogg',ts:'video/mp2t',
       flv:'video/x-flv',wmv:'video/x-ms-wmv',jpg:'image/jpeg',jpeg:'image/jpeg',
       png:'image/png',webp:'image/webp'
