@@ -47,6 +47,13 @@ jobs:
       - name: Validate generator syntax
         run: node --check scripts/generate-public-pages.mjs
 
+      - name: Ensure video thumbnail tooling is available
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
       - name: Generate crawlable public pages and sitemap
         run: node scripts/generate-public-pages.mjs
 
