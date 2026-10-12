@@ -82,15 +82,15 @@ jobs:
             snapshotValidation: 'passed',
             encryptionRoundTrip: 'passed'
           };
-          await fs.writeFile('yyc-backup.manifest.json', JSON.stringify(manifest, null, 2) + '\\n');
-          await fs.writeFile('yyc-backup.json.enc.sha256', manifest.sha256 + '  yyc-backup.json.enc\\n');
+          await fs.writeFile('yyc-backup.manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          await fs.writeFile('yyc-backup.json.enc.sha256', manifest.sha256 + '  yyc-backup.json.enc\n');
           await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
-            '## YYC backup status: VERIFIED\\n\\n' +
-            '- Snapshot JSON validation: passed\\n' +
-            '- Encrypt/decrypt byte-for-byte check: passed\\n' +
-            '- Encrypted bytes: ' + manifest.encryptedBytes + '\\n' +
-            '- SHA-256: `' + manifest.sha256 + '`\\n' +
-            '- Artifact retention: 90 days\\n');
+            '## YYC backup status: VERIFIED\n\n' +
+            '- Snapshot JSON validation: passed\n' +
+            '- Encrypt/decrypt byte-for-byte check: passed\n' +
+            '- Encrypted bytes: ' + manifest.encryptedBytes + '\n' +
+            '- SHA-256: `' + manifest.sha256 + '`\n' +
+            '- Artifact retention: 90 days\n');
           console.log('YYC encrypted backup verified; SHA-256:', manifest.sha256);
           NODE
 
