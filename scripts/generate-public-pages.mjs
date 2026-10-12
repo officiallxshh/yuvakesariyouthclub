@@ -272,7 +272,15 @@ async function listManualPages(route) {
   const result = [];
   for (const entry of entries) {
     if (!entry.isFile() || !/\.html$/i.test(entry.name) || entry.name.toLowerCase() === 'index.html') continue;
-    const html = await fs.readFile(path.join(dir, entry.name), 'utf8').catch(() => '');
+    /* Legacy detail pages are superseded by generated /auto/ pages. Do not
+       keep advertising old leader IDs, or a root-level copy of an auto page,
+       as equally important links in the category directory. */
+    const legacyPath = path.join(dir, entry.name);
+    const sameSlugAuto = path.join(dir, 'auto', entry.name);
+    let hasAutoTwin = false;
+    try { await fs.access(sameSlugAuto); hasAutoTwin = true; } catch {}
+    if (route === 'leaders' || hasAutoTwin) continue;
+    const html = await fs.readFile(legacyPath, 'utf8').catch(() => '');
     const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
     const title = unescapeTitle(match ? match[1].replace(/<[^>]+>/g, '').trim() : entry.name.replace(/\.html$/i, '').replace(/[-_]+/g, ' '));
     result.push({ href: './' + entry.name, title, summary: '', date: '', image: '' });
@@ -469,11 +477,40 @@ for (const [, route] of routeDefs) {
   const files = await walkHtml(path.join(ROOT, route));
   for (const abs of files) {
     const rel = path.relative(ROOT, abs).split(path.sep).join('/');
+    const isCategoryIndex = rel === route + '/index.html' || rel === route + '/index.htm';
+    const isGeneratedDetail = rel.startsWith(route + '/auto/') && /\.html$/i.test(rel);
+    /* Only publish canonical category URLs and generated public detail URLs.
+       Old hand-written copies in the route root otherwise create duplicate
+       canonical pages and waste discovery/crawl attention. */
+    if (!isCategoryIndex && !isGeneratedDetail) continue;
     let urlPath = '/' + rel;
-    if (rel === route + '/index.html') urlPath = '/' + route + '/';
-    if (rel === route + '/index.htm') urlPath = '/' + route + '/';
+    if (isCategoryIndex) urlPath = '/' + route + '/';
     const loc = BASE + urlPath;
     urlEntries.set(loc, sitemapLastmod.get(loc) || '');
+  }
+}
+
+/* Keep superseded root-level detail copies accessible to visitors who already
+   have their URL, but ask search engines not to index these legacy duplicates.
+   The canonical /auto/ detail pages remain indexable and in the sitemap. */
+for (const [, route] of routeDefs) {
+  const dir = path.join(ROOT, route);
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (!entry.isFile() || !/\.html$/i.test(entry.name) || entry.name.toLowerCase() === 'index.html') continue;
+    let legacy = route === 'leaders';
+    if (!legacy) {
+      try { await fs.access(path.join(dir, 'auto', entry.name)); legacy = true; } catch {}
+    }
+    if (!legacy) continue;
+    const file = path.join(dir, entry.name);
+    const html = await fs.readFile(file, 'utf8').catch(() => '');
+    if (!html) continue;
+    let next = html.replace(/<meta\s+name=["']robots["']\s+content=["'][^"']*["']\s*\/?\s*>/i, '<meta name="robots" content="noindex,follow">');
+    if (next === html && !/<meta\s+name=["']robots["']/i.test(html)) {
+      next = html.replace(/<head[^>]*>/i, match => match + '<meta name="robots" content="noindex,follow">');
+    }
+    if (next !== html) await fs.writeFile(file, next, 'utf8');
   }
 }
 const unique = [...urlEntries.entries()].sort((a, b) => a[0].localeCompare(b[0]));
