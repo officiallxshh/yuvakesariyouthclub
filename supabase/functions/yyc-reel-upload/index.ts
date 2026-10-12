@@ -3,8 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BUCKET = "yyc-reels";
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const MAX_THUMB_BYTES = 5 * 1024 * 1024;
 const ALLOWED_ORIGINS = new Set([
   "https://www.yuvakesariyouthclub.in",
   "https://yuvakesariyouthclub.in",
@@ -57,7 +55,8 @@ Deno.serve(async(req:Request)=>{
     const fileName=String(input.fileName||"");
     const size=Number(input.size||0);
     if(kind!=="video"&&kind!=="thumbnail")return reply(origin,{ok:false,error:"Unknown upload type."},400);
-    if(!Number.isFinite(size)||size<1||size>(kind==="video"?MAX_FILE_BYTES:MAX_THUMB_BYTES))return reply(origin,{ok:false,error:kind==="video"?"Videos must be 50 MB or smaller for reliable upload.":"Thumbnails must be 5 MB or smaller."},413);
+    // No application-level size cap; the project-wide Supabase Storage settings remain authoritative.
+    if(!Number.isFinite(size)||size<1)return reply(origin,{ok:false,error:"The file is empty or its size could not be read."},400);
     const validType=kind==="video"?/^video\\/[a-z0-9.+-]+$/i.test(contentType):ALLOWED_THUMBNAILS.has(contentType);
     if(!validType)return reply(origin,{ok:false,error:kind==="video"?"Choose a video file. MP4 is recommended for smooth playback.":"Use a JPG, PNG or WebP thumbnail."},415);
     const path="reels/"+kind+"/"+crypto.randomUUID()+"."+cleanExtension(fileName,kind);
