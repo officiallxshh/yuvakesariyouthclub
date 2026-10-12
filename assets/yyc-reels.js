@@ -9,6 +9,7 @@
   var eventModalOpener=null;
   var adminReels=[];
   var adminBusy=false;
+  var adminSelectedGroupKey='';
 
   function byId(id){return document.getElementById(id);}
   function escapeHTML(value){
