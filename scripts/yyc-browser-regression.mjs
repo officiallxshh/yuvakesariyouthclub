@@ -48,7 +48,32 @@ try {
       active[0].getAttribute('href') === '#events' &&
       active[0].getAttribute('aria-current') === 'location';
   }, null, { timeout: 6000 });
-  console.log('DEEP LINK PASS: #events loads and survives a page reload');
+  const firstHashAligned = await page.evaluate(() => {
+    const section = document.getElementById('events');
+    const header = document.querySelector('.topbar');
+    if (!section || !header) return false;
+    const expectedTop = header.getBoundingClientRect().bottom + 12;
+    return Math.abs(section.getBoundingClientRect().top - expectedTop) <= 48;
+  });
+  if (!firstHashAligned) throw new Error('Direct #events link did not align the section below the fixed header.');
+  console.log('DEEP LINK PASS: #events loads and aligns correctly');
+
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForFunction(() => {
+    const active = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link.active'));
+    return active.length === 1 &&
+      active[0].getAttribute('href') === '#events' &&
+      active[0].getAttribute('aria-current') === 'location';
+  }, null, { timeout: 6000 });
+  const reloadHashAligned = await page.evaluate(() => {
+    const section = document.getElementById('events');
+    const header = document.querySelector('.topbar');
+    if (!section || !header) return false;
+    const expectedTop = header.getBoundingClientRect().bottom + 12;
+    return Math.abs(section.getBoundingClientRect().top - expectedTop) <= 48;
+  });
+  if (!reloadHashAligned) throw new Error('Reloaded #events link did not remain aligned below the fixed header.');
+  console.log('DEEP LINK PASS: #events loads, aligns and survives a page reload');
 
   const loginPanels = [
     { name: 'member', button: '#memberLoginBtn', form: '#memberLoginForm', field: '#mIdent', value: 'browser-test@example.invalid' },
