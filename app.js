@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-28-reel-fullscreen-exit-toggle';
+var YYC_APP_BUILD='20261012-29-nav-target-sync';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1507,6 +1507,15 @@ function updateYYCActiveSection(){
 
   var header=document.querySelector('.topbar');
   var headerHeight=header ? header.offsetHeight : 76;
+
+  /* During click-to-section scrolling, keep the clicked destination active.
+     The scroll observer must not switch to the section we are passing through. */
+  var lockedId=String(window.__yycNavTargetId||'');
+  if(lockedId && Date.now() < Number(window.__yycNavLockUntil||0)){
+    var lockedLink=links.find(function(a){return (a.getAttribute('href')||'').slice(1)===lockedId;});
+    if(lockedLink){setYYCNavActive(lockedLink);return;}
+  }
+
   var hero=document.getElementById('home');
 
   /* Fresh page / top of page is always Home. */
@@ -1571,19 +1580,24 @@ function bindNavigation(){
       e.preventDefault();
       if(typeof closeMobile==='function') closeMobile();
       var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var header=document.querySelector('.topbar');
-      var offset=header ? header.offsetHeight + 10 : 0;
-      var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
-      /* Highlight the tab immediately and keep it locked during the smooth scroll. */
-      window.__yycNavLockUntil=Date.now()+1800;
+      /* Resolve the exact fragment target, rather than a neighboring section.
+         CSS scroll-padding/scroll-margin already reserve space for the fixed header. */
+      window.__yycNavTargetId=target.id || href.slice(1);
+      window.__yycNavLockUntil=Date.now()+3000;
       setYYCNavActive(link);
       yycAnimateNavigation(target);
-      window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+      if(typeof target.scrollIntoView==='function'){
+        target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+      }else{
+        var header=document.querySelector('.topbar');
+        var offset=header ? header.offsetHeight + 10 : 0;
+        var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
+        window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
+      }
       if(history.pushState) history.pushState(null,'',href);
       setTimeout(activeNav,40);
     });
   });
-  Array.prototype.slice.call(document.querySelectorAll('.desktop-nav .nav-link')).forEach(function(a){a.addEventListener('click',function(){setTimeout(activeNav,140);});});
   if('IntersectionObserver' in window){
     var sectionObserver=new IntersectionObserver(function(){updateYYCActiveSection();},{root:null,rootMargin:'-22% 0px -62% 0px',threshold:[0,.01,.1,.3]});
     Array.prototype.slice.call(document.querySelectorAll('.section[id]')).forEach(function(section){sectionObserver.observe(section);});
