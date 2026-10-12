@@ -417,12 +417,27 @@
     submit.disabled=false;
     if(status)status.textContent='Ready for '+missing.length+' new upload slot'+(missing.length===1?'':'s')+'. Existing numbered Reels will be kept.';
   }
-  function renderEventBatchForm(){
+  function renderEventBatchForm(prefillEventName){
     var workspace=byId('adminWorkspace');if(!workspace)return;
+    var initialEventName=String(prefillEventName||'').trim();
+    var initialTotal=1;
+    if(initialEventName){
+      var currentRows=getEventRows(initialEventName), taken=Object.create(null), currentMax=0;
+      currentRows.forEach(function(row){
+        var number=Number(row.reel_number)||1;
+        taken[number]=true;
+        currentMax=Math.max(currentMax,number,Number(row.reel_total)||0);
+      });
+      var hasMissing=false;
+      for(var currentNum=1;currentNum<=currentMax;currentNum++){
+        if(!taken[currentNum]){hasMissing=true;break;}
+      }
+      initialTotal=Math.max(1,currentMax+(hasMissing?0:1));
+    }
     workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Add Reels</h3><p>Upload one standalone Reel or group multiple Reels under one event. Set the total to 1 for a single Reel.</p><p class="yyc-reel-admin-note">Large videos use more project storage and take longer on mobile connections. Compress long clips before uploading; actual upload limits still depend on your Supabase project settings.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-batch-cancel>← Back to Reels</button></div></div>'+
       '<form class="yyc-reel-admin-form" id="yycReelBatchForm" novalidate><div class="yyc-reel-admin-fields">'+
-      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name (optional for one standalone Reel)</label><input id="yycBatchEventName" maxlength="160" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group Reels. Leave blank when uploading only one standalone Reel.</small></div>'+
-      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="100" step="1" value="1" required><small>Choose 1–100. Existing Reel numbers are kept; only missing slots are generated.</small></div>'+
+      '<div class="yyc-reel-admin-field is-full"><label for="yycBatchEventName">Event name (optional for one standalone Reel)</label><input id="yycBatchEventName" maxlength="160" value="'+escapeHTML(initialEventName)+'" placeholder="YYC Cleanliness Drive 2026"><small>Use the same name to group Reels. Leave blank when uploading only one standalone Reel.</small></div>'+
+      '<div class="yyc-reel-admin-field"><label for="yycBatchTotal">Number of Reels *</label><input id="yycBatchTotal" type="number" min="1" max="100" step="1" value="'+initialTotal+'" required><small>Choose 1–100. Existing Reel numbers are kept; only missing slots are generated.</small></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycBatchVisibility">Visibility for new Reels</label><select id="yycBatchVisibility"><option value="draft" selected>Draft — publish later</option><option value="published">Published — visible on the website</option><option value="hidden">Hidden — not public</option></select></div>'+
       '</div><div class="yyc-reel-batch-generate"><button type="button" class="mini-btn gold" id="yycBatchGenerate">Generate numbered upload slots</button></div>'+
       '<div id="yycReelBatchSlots"><div class="yyc-reel-state"><strong>Set your event and count.</strong><span>Then generate the numbered upload slots below.</span></div></div>'+
@@ -437,6 +452,7 @@
     }
     eventInput.addEventListener('input',invalidateSlots);
     totalInput.addEventListener('change',invalidateSlots);
+    if(initialEventName)buildBatchSlots(initialEventName,initialTotal);
     byId('yycBatchGenerate').addEventListener('click',function(){
       var count=Number(totalInput.value);
       if(!Number.isInteger(count)||count<1||count>100){totalInput.focus();byId('yycReelBatchStatus').textContent='Choose a whole number between 1 and 100.';return;}
@@ -488,7 +504,7 @@
         }
         adminBusy=false;
         notify(name?(savedCount+' Reel'+(savedCount===1?'':'s')+' saved for '+name+'.'):(savedCount+' standalone Reel saved.'));
-        try{await loadAdminReels();renderAdminList(adminReels);loadPublic(true);}catch(refreshError){
+        try{await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);}catch(refreshError){
           if(status)status.textContent='Upload succeeded and is saved, but the Reel list could not refresh. Click “Refresh Reel List” below — do not upload it again.';
           if(save){save.disabled=false;save.type='button';save.textContent='Refresh Reel List';save.onclick=function(){renderAdminPanel();};}
           return;
@@ -741,7 +757,7 @@
       });
       if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not change Reel visibility.');
       notify(next==='published'?'Reel published.':'Reel unpublished.');
-      await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
+      await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);
     }catch(e){notify(e.message||'Could not update Reel.');}
     finally{adminBusy=false;}
   }
@@ -756,7 +772,7 @@
       var cleanupError='';
       if(paths.length){try{await callUploadService({action:'delete-files',paths:paths});}catch(e){cleanupError=e.message||'Media cleanup failed.';}}
       notify(cleanupError?'Reel deleted from the site, but a media file may remain in storage.':'Reel and its uploaded media deleted.');
-      await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
+      await loadAdminReels();renderAdminList(adminReels,adminSelectedGroupKey);loadPublic(true);
     }catch(e){notify(e.message||'Could not delete Reel.');}
     finally{adminBusy=false;}
   }
