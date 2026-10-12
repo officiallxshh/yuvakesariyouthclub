@@ -285,13 +285,50 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-36-responsive-active-highlight";
+const currentBuild = "20261012-37-build15-reliability-performance";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||
     !index.includes('yyc-nav-active-state.css?v=' + currentBuild) ||
     !app.includes("var YYC_APP_BUILD='" + currentBuild + "'")) {
   issues.push("Navigation fix cache-busting/build identifiers are inconsistent.");
+}
+
+
+/* Build 15 reliability checks: monitor the Reel section, validate backup truthfully,
+   and keep a real browser navigation regression test in the default CI path. */
+const productionMonitor = read("scripts/production-monitor.mjs");
+const backupWorkflow = read(".github/workflows/yyc-offsite-backup.yml");
+const backupValidator = read("scripts/validate-backup.mjs");
+const browserRegression = read("scripts/yyc-browser-regression.mjs");
+const browserWorkflow = read(".github/workflows/yyc-browser-regression.yml");
+
+if (!productionMonitor.includes("'reel'") ||
+    !productionMonitor.includes("checkHtml(path,html,expectedMarker)")) {
+  issues.push("Production monitor must execute the homepage section checks and include #reel.");
+}
+if (!backupWorkflow.includes("YYC backup status: FAILED") ||
+    !backupWorkflow.includes("exit 1") ||
+    !backupWorkflow.includes("node scripts/validate-backup.mjs yyc-backup.json") ||
+    !backupWorkflow.includes("cmp -s yyc-backup.json yyc-backup-verify.json") ||
+    !backupWorkflow.includes("if-no-files-found: error")) {
+  issues.push("Encrypted backup workflow must report missing configuration, validate its snapshot, and verify the encrypted artifact.");
+}
+if (!backupValidator.includes("snapshot.ok !== true") ||
+    !backupValidator.includes("JSON.parse")) {
+  issues.push("Backup snapshot validator is missing JSON or RPC success validation.");
+}
+if (!browserRegression.includes("playwright") ||
+    !browserRegression.includes("DESKTOP NAV PASS") ||
+    !browserRegression.includes("MOBILE NAV PASS") ||
+    !browserWorkflow.includes("node scripts/yyc-browser-regression.mjs")) {
+  issues.push("Real Chromium desktop/mobile navigation regression coverage is missing from CI.");
+}
+if (!/fonts\.googleapis\.com\/css2\?[^"']*display=swap/.test(index)) {
+  warnings.push("Google Fonts stylesheet should use display=swap to reduce invisible-text time.");
+}
+if (!read("assets/yyc-reels.js").includes("Large videos use more project storage")) {
+  warnings.push("Reel uploader should remind administrators about storage usage and project upload limits.");
 }
 
 console.log("YYC FULL SITE AUDIT");
