@@ -45,15 +45,19 @@ The live YYC site uses Supabase for centralized member registration, approval, a
 
 Latest hero refresh: Dharma Daiva, Aati Kalenja and Yakshagana assets are bundled locally as optimized 768px WebP files and cached by sw.js.
 
-## Navigation active-state fix
-The top navigation highlight now follows the section that was clicked. The Home tab is no longer permanently highlighted; clicking Tulunad Glimpse, Leaders, Updates, Gallery, or Join moves the gold underline to that tab and keeps it there until another navigation item is selected. Hash changes are also synchronized.
+## Navigation and release checks
 
+The desktop navigation has one active-state controller; the active tab follows clicks and manual scrolling. The active box uses a short transition and respects reduced-motion settings. Build 15 adds an automated Chromium check for desktop links and mobile navigation.
 
-Latest fix: exact slogan is “ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩”; below-hero sections now have persistent dark/gold visual backgrounds and static fallback cards so content is visible even before JavaScript renders dynamic data.
+Run repository checks before merging changes:
 
+```bash
+node scripts/yyc-full-audit.mjs
+node scripts/smoke-http.mjs
+node scripts/production-monitor.mjs
+```
 
-Latest hero-label correction: “YUVAKESARI YOUTH CLUB” is shown above “SUBRAHMANYA · KUKKE REGION · KARNATAKA” in the hero kicker.
-
+The GitHub browser-regression workflow exercises the local site with a real Chromium browser. Member/leader/admin actions that require authorized accounts or production data must still be tested manually with controlled accounts.
 
 ## Real backend
 Supabase project: `Yuvakesari Youth Club` (Asia South). Member registration, approval, login, sessions, digital cards, QR verification, leaders, updates, gallery and site settings use the hosted database. The frontend uses the Supabase publishable key; no secret/service-role key is included in GitHub.
