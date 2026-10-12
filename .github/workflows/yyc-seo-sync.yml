@@ -88,7 +88,7 @@ jobs:
           if (videoUrls.length !== videoBlocks.length) throw new Error('Each video sitemap URL must contain exactly one video entry');
           if (new Set(videoUrls).size !== videoUrls.length) throw new Error('Video sitemap contains duplicate URLs');
           const reelsHtml = fs.readFileSync('reels/index.html', 'utf8');
-          const reelPageFiles = [...new Set([...reelsHtml.matchAll(/href="\\.\\/auto\\/([^\"]+\\.html)"/g)].map(m => m[1]))];
+          const reelPageFiles = [...new Set([...reelsHtml.matchAll(/href="\.\/auto\/([^"]+\.html)"/g)].map(m => m[1]))];
           if (videoUrls.length !== reelPageFiles.length) throw new Error('Every published Reel watch page must have one video sitemap entry with an automatic thumbnail. Watch pages: ' + reelPageFiles.length + '; video sitemap entries: ' + videoUrls.length);
           for (let i = 0; i < videoUrls.length; i++) {
             const url = videoUrls[i];
@@ -100,9 +100,9 @@ jobs:
             for (const tag of ['<video:thumbnail_loc>', '<video:title>', '<video:description>', '<video:content_loc>']) {
               if (!videoBlocks[i].includes(tag)) throw new Error('Video sitemap entry missing ' + tag + ' for ' + url);
             }
-            const thumbnail = (videoBlocks[i].match(/<video:thumbnail_loc>(.*?)<\\/video:thumbnail_loc>/) || [])[1];
+            const thumbnail = (videoBlocks[i].match(/<video:thumbnail_loc>(.*?)<\/video:thumbnail_loc>/) || [])[1];
             if (!thumbnail) throw new Error('Video sitemap thumbnail URL is missing for ' + url);
-            const thumbnailPath = new URL(thumbnail).pathname.replace(/^\\/+/, '');
+            const thumbnailPath = new URL(thumbnail).pathname.replace(/^\/+/, '');
             if (!fs.existsSync(thumbnailPath)) throw new Error('Generated Reel thumbnail file is missing: ' + thumbnailPath);
           }
           const leadersHtml = fs.readFileSync('leaders.html', 'utf8');
