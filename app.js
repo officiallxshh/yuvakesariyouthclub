@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-41-build15-hash-reload-fix';
+var YYC_APP_BUILD='20261012-42-build16-admin-media-cubes';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
