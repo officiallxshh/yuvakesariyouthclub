@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const BASE = 'https://www.yuvakesariyouthclub.in';
@@ -58,6 +59,41 @@ function itemImage(item) {
 function itemVideo(item) {
   const raw = String(item?.video_url || '');
   return /^https:\/\/vrllozfzheikjbhxvpkx\.supabase\.co\/storage\/v1\/object\/public\/yyc-reels\/reels\/video\//i.test(raw) ? raw : '';
+}
+async function ensureReelThumbnail(item, fileSlug) {
+  if (itemImage(item)) return item;
+  const video = itemVideo(item);
+  if (!video) return item;
+  const relativePath = 'reels/thumbnails/auto/' + fileSlug + '.jpg';
+  const absolutePath = path.join(ROOT, relativePath);
+  try {
+    const cached = await fs.stat(absolutePath);
+    if (cached.isFile() && cached.size > 300) {
+      return { ...item, thumbnail_url: BASE + '/' + relativePath };
+    }
+  } catch {}
+  await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+  const baseArgs = ['-hide_banner', '-loglevel', 'error', '-y'];
+  const attempts = [
+    [...baseArgs, '-ss', '1', '-i', video, '-an', '-frames:v', '1', '-vf', 'scale=720:720:force_original_aspect_ratio=decrease', '-q:v', '4', absolutePath],
+    [...baseArgs, '-ss', '0.1', '-i', video, '-an', '-frames:v', '1', '-vf', 'scale=720:720:force_original_aspect_ratio=decrease', '-q:v', '4', absolutePath]
+  ];
+  for (const args of attempts) {
+    const result = spawnSync('ffmpeg', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 });
+    try {
+      const stat = await fs.stat(absolutePath);
+      if (result.status === 0 && stat.isFile() && stat.size > 300) {
+        return { ...item, thumbnail_url: BASE + '/' + relativePath };
+      }
+    } catch {}
+    await fs.rm(absolutePath, { force: true }).catch(() => {});
+    if (result.error && result.error.code === 'ENOENT') {
+      console.warn('ffmpeg is unavailable; leaving Reel thumbnail for a future sync:', fileSlug);
+      return item;
+    }
+  }
+  console.warn('Could not create an automatic video thumbnail; the Reel watch page remains in the main sitemap:', fileSlug);
+  return item;
 }
 function itemDescription(type, item) {
   return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
@@ -260,22 +296,23 @@ for (const [type, list] of allCollections) {
       while (usedSlugs.has(fileSlug)) fileSlug = baseSlug.slice(0, 76) + '-' + n++;
     }
     usedSlugs.add(fileSlug);
+    const pageItem = type === 'reel' ? await ensureReelThumbnail(item, fileSlug) : item;
     const filePath = path.join(ROOT, route, 'auto', fileSlug + '.html');
-    await fs.writeFile(filePath, detailPage(type, item, fileSlug), 'utf8');
-    const dateValue = item.event_date || item.achieved_on || item.published_at || item.updated_at || item.created_at || '';
+    await fs.writeFile(filePath, detailPage(type, pageItem, fileSlug), 'utf8');
+    const dateValue = pageItem.event_date || pageItem.achieved_on || pageItem.published_at || pageItem.updated_at || pageItem.created_at || '';
     const entry = {
       href: './auto/' + fileSlug + '.html',
-      title: itemTitle(type, item),
-      summary: itemDescription(type, item),
+      title: itemTitle(type, pageItem),
+      summary: itemDescription(type, pageItem),
       date: displayDate(dateValue),
-      image: itemImage(item),
-      lastmod: sitemapDate(item.updated_at || item.modified_at || item.published_at || item.created_at)
+      image: itemImage(pageItem),
+      lastmod: sitemapDate(pageItem.updated_at || pageItem.modified_at || pageItem.published_at || pageItem.created_at)
     };
     output.push(entry);
     if (type === 'reel' && entry.image && /^https:\/\//i.test(entry.image)) {
       videoSitemapEntries.push({
         page: BASE + '/' + route + '/auto/' + fileSlug + '.html',
-        video: itemVideo(item),
+        video: itemVideo(pageItem),
         thumbnail: entry.image,
         title: entry.title,
         description: entry.summary,
