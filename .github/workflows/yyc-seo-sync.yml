@@ -102,8 +102,12 @@ jobs:
             }
             const thumbnail = (videoBlocks[i].match(/<video:thumbnail_loc>(.*?)<\/video:thumbnail_loc>/) || [])[1];
             if (!thumbnail) throw new Error('Video sitemap thumbnail URL is missing for ' + url);
-            const thumbnailPath = new URL(thumbnail).pathname.replace(/^\/+/, '');
-            if (!fs.existsSync(thumbnailPath)) throw new Error('Generated Reel thumbnail file is missing: ' + thumbnailPath);
+            const thumbnailUrl = new URL(thumbnail);
+            if (thumbnailUrl.protocol !== 'https:') throw new Error('Video thumbnail must use HTTPS: ' + thumbnail);
+            if (thumbnailUrl.origin === 'https://www.yuvakesariyouthclub.in') {
+              const thumbnailPath = thumbnailUrl.pathname.replace(/^\/+/, '');
+              if (!fs.existsSync(thumbnailPath)) throw new Error('Generated Reel thumbnail file is missing: ' + thumbnailPath);
+            }
           }
           const leadersHtml = fs.readFileSync('leaders.html', 'utf8');
           const schemaRaw = leadersHtml.split('<script type="application/ld+json">')[1]?.split('</script>')[0];
