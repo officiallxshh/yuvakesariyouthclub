@@ -36,6 +36,37 @@ try {
     console.log('DESKTOP NAV PASS:', target);
   }
 
+  await page.goto(baseURL + '#events', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForFunction(() => {
+    const active = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link.active'));
+    return active.length === 1 && active[0].getAttribute('href') === '#events';
+  }, null, { timeout: 6000 });
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForFunction(() => {
+    const active = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link.active'));
+    return active.length === 1 &&
+      active[0].getAttribute('href') === '#events' &&
+      active[0].getAttribute('aria-current') === 'location';
+  }, null, { timeout: 6000 });
+  console.log('DEEP LINK PASS: #events loads and survives a page reload');
+
+  const loginPanels = [
+    { name: 'member', button: '#memberLoginBtn', form: '#memberLoginForm', field: '#mIdent', value: 'browser-test@example.invalid' },
+    { name: 'leader', button: '#leaderLoginBtn', form: '#leaderLoginForm', field: '#lIdent', value: 'browser-test@example.invalid' },
+    { name: 'admin', button: '#adminOpenBtn', form: '#adminLoginForm', field: '#aUser', value: 'browser-test-only' }
+  ];
+  for (const panel of loginPanels) {
+    await page.locator(panel.button).click();
+    await page.locator(panel.form).waitFor({ state: 'visible', timeout: 6000 });
+    await page.locator(panel.field).fill(panel.value);
+    await page.locator(panel.form + ' [data-access-close]').click();
+    await page.waitForFunction(() => {
+      const modal = document.getElementById('modal');
+      return !!modal && modal.getAttribute('aria-hidden') === 'true' && !modal.classList.contains('open');
+    }, null, { timeout: 4000 });
+    console.log('LOGIN PANEL CLOSE PASS:', panel.name);
+  }
+
   await page.setViewportSize({ width: 390, height: 844 });
   const menu = page.locator('#menuBtn');
   await menu.waitFor({ state: 'visible', timeout: 8000 });
@@ -64,7 +95,7 @@ try {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + mobile Reel navigation)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation)');
 } finally {
   await browser.close();
 }
