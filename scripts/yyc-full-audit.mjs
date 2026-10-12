@@ -209,14 +209,14 @@ if (large.length) {
 
 /* Navigation regression guard: a section anchor has exactly one source of active
    state, and the exclusive styling must be the final stylesheet in the page. */
-const desktopNavMatch = index.match(/<nav\\b[^>]*class=["'][^"']*\\bdesktop-nav\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/nav>/i);
+const desktopNavMatch = index.match(/<nav\b[^>]*class=["'][^"']*\bdesktop-nav\b[^"']*["'][^>]*>([\s\S]*?)<\/nav>/i);
 if (!desktopNavMatch) {
   issues.push("Desktop primary navigation is missing.");
 } else {
   const navMarkup = desktopNavMatch[1];
-  const navTargets = [...navMarkup.matchAll(/<a\\b[^>]*class=["'][^"']*\\bnav-link\\b[^"']*["'][^>]*>/gi)]
+  const navTargets = [...navMarkup.matchAll(/<a\b[^>]*class=["'][^"']*\bnav-link\b[^"']*["'][^>]*>/gi)]
     .map(m => {
-      const href = (m[0].match(/\\bhref=["']#([^"']+)["']/i) || [])[1];
+      const href = (m[0].match(/\bhref=["']#([^"']+)["']/i) || [])[1];
       return href || "";
     });
   if (!navTargets.length) issues.push("Desktop navigation has no section links.");
@@ -247,19 +247,19 @@ if (!fileSet.has(navActiveCssPath)) {
     issues.push("Exclusive navigation stylesheet is missing one or more single-active-state safeguards.");
   }
 }
-const stylesheetLinks = [...index.matchAll(/<link\\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
+const stylesheetLinks = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
 const finalStylesheetTag = stylesheetLinks.length ? stylesheetLinks[stylesheetLinks.length - 1][0] : "";
 if (!finalStylesheetTag.includes(navActiveCssPath)) {
   issues.push("Exclusive navigation stylesheet must be the final linked stylesheet in index.html.");
 }
-if ((app.match(/function\\s+setYYCNavActive\\s*\\(/g) || []).length !== 1) {
+if ((app.match(/function\s+setYYCNavActive\s*\(/g) || []).length !== 1) {
   issues.push("Navigation should have exactly one setYYCNavActive controller.");
 }
-if (!/a\\.classList\\.toggle\\(['"]active['"],\\s*selected\\)/.test(app) ||
+if (!/a\.classList\.toggle\(['"]active['"],\s*selected\)/.test(app) ||
     !app.includes("a.removeAttribute('aria-current')")) {
   issues.push("Navigation controller must synchronize the single active class and aria-current state.");
 }
-if (/function\\s+syncYYCNavHighlight\\s*\\(/.test(app) ||
+if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
