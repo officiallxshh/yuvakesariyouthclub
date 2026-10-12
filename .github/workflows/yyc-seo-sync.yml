@@ -6,6 +6,10 @@ on:
     paths:
       - 'app.js'
       - 'scripts/generate-public-pages.mjs'
+      - '.github/workflows/yyc-seo-sync.yml'
+      - 'video-sitemap.xml'
+      - 'robots.txt'
+      - 'reels/**'
       - 'events/**'
       - 'updates/**'
       - 'gallery/**'
@@ -61,9 +65,28 @@ jobs:
             'https://www.yuvakesariyouthclub.in/instagram.html',
             'https://www.yuvakesariyouthclub.in/leaders.html',
             'https://www.yuvakesariyouthclub.in/events/',
-            'https://www.yuvakesariyouthclub.in/gallery/'
+            'https://www.yuvakesariyouthclub.in/gallery/',
+            'https://www.yuvakesariyouthclub.in/reels/'
           ]) {
             if (!urls.includes(required)) throw new Error('Required URL missing from sitemap: ' + required);
+          }
+          const videoXml = fs.readFileSync('video-sitemap.xml', 'utf8');
+          if (!videoXml.startsWith('<?xml')) throw new Error('Video sitemap XML declaration is missing');
+          if (!videoXml.includes('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')) throw new Error('Video sitemap namespace is missing');
+          const videoUrls = [...videoXml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
+          const videoBlocks = [...videoXml.matchAll(/<video:video>([\s\S]*?)<\/video:video>/g)].map(m => m[1]);
+          if (videoUrls.length !== videoBlocks.length) throw new Error('Each video sitemap URL must contain exactly one video entry');
+          if (new Set(videoUrls).size !== videoUrls.length) throw new Error('Video sitemap contains duplicate URLs');
+          for (let i = 0; i < videoUrls.length; i++) {
+            const url = videoUrls[i];
+            if (!urls.includes(url)) throw new Error('Video watch page missing from main sitemap: ' + url);
+            const pathname = new URL(url).pathname.replace(/^\/+/, '');
+            if (!fs.existsSync(pathname)) throw new Error('Video watch page file missing: ' + pathname);
+            const html = fs.readFileSync(pathname, 'utf8');
+            if (!html.includes('"@type":"VideoObject"') || !html.includes('<video')) throw new Error('Video watch page is missing VideoObject schema or a crawlable HTML video: ' + url);
+            for (const tag of ['<video:thumbnail_loc>', '<video:title>', '<video:description>', '<video:content_loc>']) {
+              if (!videoBlocks[i].includes(tag)) throw new Error('Video sitemap entry missing ' + tag + ' for ' + url);
+            }
           }
           const leadersHtml = fs.readFileSync('leaders.html', 'utf8');
           const schemaRaw = leadersHtml.split('<script type="application/ld+json">')[1]?.split('</script>')[0];
@@ -85,7 +108,7 @@ jobs:
         run: |
           git config user.name "YYC Website Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A sitemap.xml events updates gallery leaders achievements leaders.html
+          git add -A sitemap.xml video-sitemap.xml robots.txt events updates gallery reels leaders achievements leaders.html
           if git diff --cached --quiet; then
             echo "No public SEO changes to commit."
             exit 0

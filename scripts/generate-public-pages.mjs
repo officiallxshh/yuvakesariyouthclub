@@ -43,20 +43,24 @@ function sitemapDate(v) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 function typeRoute(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', leader: 'leaders', achievement: 'achievements' })[type] || type;
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', leader: 'leaders', achievement: 'achievements' })[type] || type;
 }
 function sectionAnchor(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
 }
 function itemTitle(type, item) {
   return String((type === 'leader' ? item.name : item.title) || item.name || item.title || '').trim();
 }
 function itemImage(item) {
-  const raw = item.image_url || item.photo_url || item.src || '';
+  const raw = item.thumbnail_url || item.image_url || item.photo_url || item.src || '';
   return /^https?:\/\//i.test(String(raw)) ? String(raw) : '';
 }
+function itemVideo(item) {
+  const raw = String(item?.video_url || '');
+  return /^https:\/\/vrllozfzheikjbhxvpkx\.supabase\.co\/storage\/v1\/object\/public\/yyc-reels\/reels\/video\//i.test(raw) ? raw : '';
+}
 function itemDescription(type, item) {
-  return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
+  return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
 }
 function structuredData(type, item, image, canonical, title, route) {
   const org = { '@type': 'Organization', name: 'Yuvakesari Youth Club', url: BASE + '/' };
@@ -98,6 +102,16 @@ function structuredData(type, item, image, canonical, title, route) {
     image: image || undefined,
     worksFor: org
   });
+  if (type === 'reel') graph.push({
+    '@type': 'VideoObject',
+    name: title,
+    description: itemDescription(type, item).slice(0, 2048),
+    thumbnailUrl: image ? [image] : undefined,
+    uploadDate: item.created_at || item.updated_at || undefined,
+    contentUrl: itemVideo(item) || undefined,
+    publisher: org,
+    inLanguage: 'en-IN'
+  });
   if (type === 'achievement') graph.push({
     '@type': 'Article',
     headline: title,
@@ -113,9 +127,13 @@ function detailPage(type, item, fileSlug) {
   const title = itemTitle(type, item) || 'YYC ' + type;
   const desc = itemDescription(type, item);
   const image = itemImage(item);
+  const video = itemVideo(item);
   const canonical = BASE + '/' + route + '/auto/' + fileSlug + '.html';
   const assets = '../../';
   const structured = structuredData(type, item, image, canonical, title, route);
+  const mediaMarkup = type === 'reel' && video
+    ? '<div class="media yyc-video-watch"><video controls playsinline preload="metadata"' + (image ? ' poster="' + esc(image) + '"' : '') + ' style="display:block;width:100%;max-height:78vh;background:#000;border-radius:12px"><source src="' + esc(video) + '">Your browser does not support HTML video.</video></div>'
+    : (image ? '<div class="media"><img src="' + esc(image) + '" alt="' + esc(title) + '"></div>' : '');
   const metaImage = image ? '<meta property="og:image" content="' + esc(image) + '">' : '';
   return '<!doctype html><html lang="en"><head>' +
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
@@ -123,7 +141,9 @@ function detailPage(type, item, fileSlug) {
     '<link rel="canonical" href="' + canonical + '">' +
     '<link rel="icon" href="' + assets + 'assets/yyc-lion-favicon-redesigned.svg">' +
     '<meta name="description" content="' + esc(desc).slice(0, 320) + '">' + metaImage +
-    '<meta property="og:type" content="' + (type === 'event' ? 'article' : 'website') + '">' +
+    '<meta property="og:type" content="' + (type === 'reel' ? 'video.other' : type === 'event' ? 'article' : 'website') + '">' +
+    (type === 'reel' && video ? '<meta property="og:video" content="' + esc(video) + '">' : '') +
+    (type === 'reel' && image ? '<meta property="og:video:image" content="' + esc(image) + '">' : '') +
     '<meta property="og:title" content="' + esc(title) + ' | Yuvakesari Youth Club">' +
     '<meta property="og:description" content="' + esc(desc).slice(0, 320) + '">' +
     '<meta property="og:url" content="' + canonical + '">' +
@@ -138,7 +158,7 @@ function detailPage(type, item, fileSlug) {
     '<div class="k">YUVAKESARI YOUTH CLUB · ' + esc(type.toUpperCase()) + '</div>' +
     '<h1 class="title">' + esc(title) + '</h1>' +
     '<div class="date">' + esc(displayDate(item.event_date || item.achieved_on || item.published_at || item.created_at)) + '</div>' +
-    (image ? '<div class="media"><img src="' + esc(image) + '" alt="' + esc(title) + '"></div>' : '') +
+    mediaMarkup +
     '<div class="meta">' +
       (item.category ? '<span class="tag">' + esc(item.category) + '</span>' : '') +
       (item.location ? '<span class="tag">' + esc(item.location) + '</span>' : '') +
@@ -192,10 +212,13 @@ async function walkHtml(dir) {
 
 const site = await rpc('public_site_data');
 const feature = await rpc('public_feature_data');
+const reelPayload = await rpc('yyc_reels_public_list');
+const publicReels = Array.isArray(reelPayload?.reels) ? reelPayload.reels : [];
 const routeDefs = [
   ['event', 'events', 'Events', 'Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.'],
   ['update', 'updates', 'Updates', 'Latest approved news and announcements from Yuvakesari Youth Club.'],
   ['gallery', 'gallery', 'Gallery', 'Published community photos, programmes and youth activities by Yuvakesari Youth Club.'],
+  ['reel', 'reels', 'Reels', 'Published community videos and event Reels from Yuvakesari Youth Club.'],
   ['leader', 'leaders', 'Leaders', 'Public leadership profiles of Yuvakesari Youth Club.'],
   ['achievement', 'achievements', 'Achievements', 'Published milestones and achievements of Yuvakesari Youth Club.']
 ];
@@ -210,10 +233,12 @@ for (const [type, route] of routeDefs) {
   contentByRoute.set(route, []);
 }
 
+const videoSitemapEntries = [];
 const allCollections = [
   ['event', site.events || []],
   ['update', site.updates || []],
   ['gallery', site.gallery || []],
+  ['reel', publicReels.filter(item => item && String(item.status || '').toLowerCase() === 'published')],
   ['leader', site.leaders || []],
   ['achievement', feature.achievements || []]
 ];
@@ -225,6 +250,7 @@ for (const [type, list] of allCollections) {
   for (const item of list) {
     if (!item || !itemTitle(type, item)) continue;
     if (type === 'gallery' && !item.src && !item.image_url && !item.photo_url) continue;
+    if (type === 'reel' && !itemVideo(item)) continue;
     const baseSlug = slug(item.slug || itemTitle(type, item) || item.id);
     let fileSlug = baseSlug;
     if (usedSlugs.has(fileSlug)) {
@@ -246,6 +272,16 @@ for (const [type, list] of allCollections) {
       lastmod: sitemapDate(item.updated_at || item.modified_at || item.published_at || item.created_at)
     };
     output.push(entry);
+    if (type === 'reel' && entry.image && /^https:\/\//i.test(entry.image)) {
+      videoSitemapEntries.push({
+        page: BASE + '/' + route + '/auto/' + fileSlug + '.html',
+        video: itemVideo(item),
+        thumbnail: entry.image,
+        title: entry.title,
+        description: entry.summary,
+        published: String(item.created_at || item.updated_at || '')
+      });
+    }
     if (entry.lastmod) sitemapLastmod.set(BASE + '/' + route + '/auto/' + fileSlug + '.html', entry.lastmod);
     written++;
   }
@@ -364,4 +400,22 @@ const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '\n</urlset>\n';
 await fs.writeFile(path.join(ROOT, 'sitemap.xml'), xml, 'utf8');
 
-console.log('YYC public SEO sync complete:', JSON.stringify({ pagesInSitemap: unique.length, publishedPages: counts, sitemap: 'sitemap.xml' }));
+const uniqueVideos = [...new Map(videoSitemapEntries.map(item => [item.page, item]).map(([key, value]) => [key, value])).values()]
+  .sort((a, b) => a.page.localeCompare(b.page));
+const videoXml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n' +
+  uniqueVideos.map(item => {
+    const parsedDate = item.published ? new Date(item.published) : null;
+    const publishedTag = parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? '<video:publication_date>' + parsedDate.toISOString() + '</video:publication_date>'
+      : '';
+    return '  <url><loc>' + xmlEsc(item.page) + '</loc><video:video>' +
+      '<video:thumbnail_loc>' + xmlEsc(item.thumbnail) + '</video:thumbnail_loc>' +
+      '<video:title>' + xmlEsc(item.title.slice(0, 100)) + '</video:title>' +
+      '<video:description>' + xmlEsc(item.description.slice(0, 2048)) + '</video:description>' +
+      '<video:content_loc>' + xmlEsc(item.video) + '</video:content_loc>' + publishedTag +
+      '</video:video></url>';
+  }).join('\n') + '\n</urlset>\n';
+await fs.writeFile(path.join(ROOT, 'video-sitemap.xml'), videoXml, 'utf8');
+
+console.log('YYC public SEO sync complete:', JSON.stringify({ pagesInSitemap: unique.length, publishedPages: counts, videoPagesInSitemap: uniqueVideos.length, sitemap: 'sitemap.xml', videoSitemap: 'video-sitemap.xml' }));

@@ -375,6 +375,27 @@ if (!index.includes("assets/yyc-reels.css?v=20261012-10-admin-media-cubes") ||
   issues.push("Build 16 admin media assets must use refreshed cache identifiers.");
 }
 
+/* Build 17: published Reels must receive crawlable watch pages and an automatic video sitemap. */
+const publicSeoGenerator = read("scripts/generate-public-pages.mjs");
+const seoSyncWorkflow = read(".github/workflows/yyc-seo-sync.yml");
+const robotsTxt = read("robots.txt");
+if (!publicSeoGenerator.includes("rpc('yyc_reels_public_list')") ||
+    !publicSeoGenerator.includes("['reel', 'reels'") ||
+    !publicSeoGenerator.includes("'@type': 'VideoObject'") ||
+    !publicSeoGenerator.includes("video-sitemap.xml") ||
+    !publicSeoGenerator.includes("const mediaMarkup")) {
+  issues.push("Public SEO sync must generate crawlable published-Reel watch pages with VideoObject metadata and a video sitemap.");
+}
+if (!seoSyncWorkflow.includes("https://www.yuvakesariyouthclub.in/reels/") ||
+    !seoSyncWorkflow.includes("video-sitemap.xml robots.txt events updates gallery reels") ||
+    !seoSyncWorkflow.includes("Video watch page is missing")) {
+  issues.push("Automatic SEO workflow must validate and publish Reel watch pages and their video sitemap.");
+}
+if (!robotsTxt.includes("Sitemap: https://www.yuvakesariyouthclub.in/sitemap.xml") ||
+    !robotsTxt.includes("Sitemap: https://www.yuvakesariyouthclub.in/video-sitemap.xml")) {
+  issues.push("robots.txt must advertise both the main sitemap and the automatic video sitemap.");
+}
+
 console.log("YYC FULL SITE AUDIT");
 console.log("Files scanned:", files.length);
 console.log("JavaScript files checked:", jsFiles.length);

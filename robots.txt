@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://www.yuvakesariyouthclub.in/sitemap.xml
+Sitemap: https://www.yuvakesariyouthclub.in/video-sitemap.xml
