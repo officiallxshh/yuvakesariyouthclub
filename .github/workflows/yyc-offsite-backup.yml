@@ -27,7 +27,14 @@ jobs:
             echo "Backup configuration is available."
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Backup skipped: required GitHub Actions secrets are not configured."
+            echo "::error::Backup was NOT created. Configure YYC_ADMIN_TOKEN and YYC_BACKUP_PASSWORD in repository Actions secrets."
+            {
+              echo "## YYC backup status: FAILED"
+              echo
+              echo "No backup artifact was created because required repository Actions secrets are missing."
+              echo "Configure YYC_ADMIN_TOKEN and YYC_BACKUP_PASSWORD, then run this workflow again."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - name: Generate backup
@@ -38,6 +45,10 @@ jobs:
           YYC_ADMIN_TOKEN: ${{ secrets.YYC_ADMIN_TOKEN }}
         run: node scripts/backup-supabase.mjs
 
+      - name: Validate backup snapshot
+        if: steps.backup_config.outputs.enabled == 'true'
+        run: node scripts/validate-backup.mjs yyc-backup.json
+
       - name: Encrypt backup
         if: steps.backup_config.outputs.enabled == 'true'
         env:
@@ -46,10 +57,51 @@ jobs:
           test -n "$YYC_BACKUP_PASSWORD"
           openssl enc -aes-256-cbc -pbkdf2 -salt -in yyc-backup.json -out yyc-backup.json.enc -pass env:YYC_BACKUP_PASSWORD
 
+      - name: Verify encrypted backup round-trip and create manifest
+        if: steps.backup_config.outputs.enabled == 'true'
+        env:
+          YYC_BACKUP_PASSWORD: ${{ secrets.YYC_BACKUP_PASSWORD }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -in yyc-backup.json.enc -out yyc-backup-verify.json -pass env:YYC_BACKUP_PASSWORD
+          cmp -s yyc-backup.json yyc-backup-verify.json || { echo "::error::Encrypted backup round-trip verification failed."; exit 1; }
+          rm -f yyc-backup-verify.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import { createHash } from 'node:crypto';
+          const encrypted = await fs.readFile('yyc-backup.json.enc');
+          const manifest = {
+            formatVersion: 1,
+            generatedAt: new Date().toISOString(),
+            repository: process.env.GITHUB_REPOSITORY,
+            commit: process.env.GITHUB_SHA,
+            runId: process.env.GITHUB_RUN_ID,
+            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            encryptedFile: 'yyc-backup.json.enc',
+            encryptedBytes: encrypted.length,
+            sha256: createHash('sha256').update(encrypted).digest('hex'),
+            snapshotValidation: 'passed',
+            encryptionRoundTrip: 'passed'
+          };
+          await fs.writeFile('yyc-backup.manifest.json', JSON.stringify(manifest, null, 2) + '\\n');
+          await fs.writeFile('yyc-backup.json.enc.sha256', manifest.sha256 + '  yyc-backup.json.enc\\n');
+          await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
+            '## YYC backup status: VERIFIED\\n\\n' +
+            '- Snapshot JSON validation: passed\\n' +
+            '- Encrypt/decrypt byte-for-byte check: passed\\n' +
+            '- Encrypted bytes: ' + manifest.encryptedBytes + '\\n' +
+            '- SHA-256: `' + manifest.sha256 + '`\\n' +
+            '- Artifact retention: 90 days\\n');
+          console.log('YYC encrypted backup verified; SHA-256:', manifest.sha256);
+          NODE
+
       - name: Upload encrypted backup artifact
         if: steps.backup_config.outputs.enabled == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: yyc-encrypted-backup-${{ github.run_number }}
-          path: yyc-backup.json.enc
+          path: |
+            yyc-backup.json.enc
+            yyc-backup.manifest.json
+            yyc-backup.json.enc.sha256
+          if-no-files-found: error
           retention-days: 90
