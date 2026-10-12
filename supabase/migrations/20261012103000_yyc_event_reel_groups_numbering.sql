@@ -208,5 +208,4 @@ AS $function$
   )
   FROM public.yyc_reels r
   WHERE r.status = 'published';
-END;
 $function$;
