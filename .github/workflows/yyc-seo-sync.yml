@@ -8,6 +8,7 @@ on:
       - 'scripts/generate-public-pages.mjs'
       - '.github/workflows/yyc-seo-sync.yml'
       - 'video-sitemap.xml'
+      - 'sitemap.xml'
       - 'robots.txt'
       - 'reels/**'
       - 'swags/**'
@@ -137,3 +138,50 @@ jobs:
           git commit -m "Sync published YYC content for search engines"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Notify IndexNow about published public pages
+        if: github.event_name != 'schedule'
+        env:
+          INDEXNOW_KEY_FILE: ./-FdPdZJdAckjereRXB545JduOyMJlfP3bQfVpj3m.txt
+        run: |
+          set -euo pipefail
+          if [ ! -f "$INDEXNOW_KEY_FILE" ]; then
+            echo "::error::IndexNow key file is missing from the repository root."
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const key = fs.readFileSync(process.env.INDEXNOW_KEY_FILE, 'utf8').trim();
+          if (!/^[A-Za-z0-9-]{8,128}$/.test(key)) throw new Error('IndexNow key file content is invalid.');
+          const xml = fs.readFileSync('sitemap.xml', 'utf8');
+          const urlList = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1].trim());
+          const urls = [...new Set(urlList)].filter(url => {
+            try {
+              const parsed = new URL(url);
+              return parsed.protocol === 'https:' && parsed.hostname === 'www.yuvakesariyouthclub.in';
+            } catch { return false; }
+          });
+          if (!urls.length) throw new Error('No valid public URLs found in sitemap.xml.');
+          const payload = {
+            host: 'www.yuvakesariyouthclub.in',
+            key,
+            keyLocation: 'https://www.yuvakesariyouthclub.in/' + process.env.INDEXNOW_KEY_FILE.replace(/^\.\//, ''),
+            urlList: urls
+          };
+          fs.writeFileSync('indexnow-payload.json', JSON.stringify(payload));
+          console.log('Prepared IndexNow notification for', urls.length, 'public URLs.');
+          NODE
+          status="$(curl --silent --show-error --output indexnow-response.txt --write-out '%{http_code}' \
+            --request POST 'https://api.indexnow.org/indexnow' \
+            --header 'Content-Type: application/json; charset=utf-8' \
+            --data-binary @indexnow-payload.json)"
+          echo "IndexNow HTTP status: $status"
+          if [ -f indexnow-response.txt ] && [ -s indexnow-response.txt ]; then
+            cat indexnow-response.txt
+          fi
+          case "$status" in
+            200) echo "IndexNow accepted the URL batch." ;;
+            202) echo "::warning::IndexNow accepted the batch, but key validation is still pending." ;;
+            *) echo "::error::IndexNow submission failed with HTTP $status."; exit 1 ;;
+          esac
+          rm -f indexnow-payload.json indexnow-response.txt
