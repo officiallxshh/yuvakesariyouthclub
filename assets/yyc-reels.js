@@ -2,8 +2,6 @@
 (function(){
   'use strict';
   var BUCKET='yyc-reels';
-  var MAX_VIDEO=50*1024*1024;
-  var MAX_THUMB=5*1024*1024;
   var publicLoaded=false;
   var publicLoading=false;
   var publicReels=[];
@@ -26,7 +24,7 @@
   }
   function notify(message){
     if(typeof window.toast==='function')window.toast(message);
-    else if(window.console&&console.info)console.info('[YYC REEL]',message);
+    else if(window.console&&console.info)console.info('[YYC Reel]',message);
   }
   async function callRPC(name,args){
     var c=config();
@@ -50,7 +48,7 @@
     });
     var raw=await response.text(), data={};
     try{data=raw?JSON.parse(raw):{};}catch(e){data={error:raw};}
-    if(!response.ok||data.ok===false)throw new Error(data.error||('REEL storage request failed ('+response.status+').'));
+    if(!response.ok||data.ok===false)throw new Error(data.error||('Reel storage request failed ('+response.status+').'));
     return data;
   }
   function inferMime(file,kind){
@@ -69,9 +67,7 @@
   }
   async function uploadFile(file,kind){
     var mime=inferMime(file,kind);
-    var limit=kind==='video'?MAX_VIDEO:MAX_THUMB;
     if(!file||!file.size)throw new Error('Choose a file to upload.');
-    if(file.size>limit)throw new Error(kind==='video'?'Video is over 50 MB. Compress it first for smoother playback.':'Thumbnail is over 5 MB.');
     if(kind==='thumbnail'&&!/^image\/(jpeg|png|webp)$/.test(mime))throw new Error('Thumbnail must be JPG, PNG or WebP.');
     if(kind==='video'&&!/^video\//.test(mime))throw new Error('Choose a video file.');
     var signed=await callUploadService({action:'sign-upload',kind:kind,fileName:file.name,contentType:mime,size:file.size});
@@ -100,9 +96,9 @@
   }
   function publicState(message,withRetry){
     var grid=byId('yycReelGrid');if(!grid)return;
-    grid.innerHTML='<div class="yyc-reel-state">'+(withRetry?'<strong>Could not load REEL right now.</strong>':'<strong>'+escapeHTML(message||'YYC Reels are coming soon.')+'</strong>')+
+    grid.innerHTML='<div class="yyc-reel-state">'+(withRetry?'<strong>Could not load Reel right now.</strong>':'<strong>'+escapeHTML(message||'YYC Reels are coming soon.')+'</strong>')+
       (withRetry?'<span>'+escapeHTML(message||'Check your connection and try again.')+'</span><button type="button" id="yycReelRetry">TRY AGAIN ↻</button>':'<span>Official YYC moments will appear here after the admin publishes a reel.</span>')+'</div>';
-    var count=byId('yycReelCount');if(count)count.textContent='REEL';
+    var count=byId('yycReelCount');if(count)count.textContent='Reel';
   }
   function attachVideoSource(video){
     if(!video||video.dataset.yycLoaded==='1')return;
@@ -133,7 +129,7 @@
     var grid=byId('yycReelGrid');if(!grid)return;
     var published=(reels||[]).filter(function(r){return String(r.status||'published').toLowerCase()==='published'&&r.video_url;});
     publicReels=published.slice();
-    var count=byId('yycReelCount');if(count)count.textContent=published.length+' '+(published.length===1?'REEL':'REELS');
+    var count=byId('yycReelCount');if(count)count.textContent=published.length+' '+(published.length===1?'Reel':'Reels');
     if(!published.length){publicState('No reels published yet.');return;}
     grid.innerHTML=published.map(function(r){
       var poster=String(r.thumbnail_url||'');
@@ -143,7 +139,7 @@
           '<video class="yyc-reel-video" data-video-url="'+escapeHTML(r.video_url)+'" '+(poster?'poster="'+escapeHTML(poster)+'"':'')+' preload="none" loading="lazy" playsinline disablepictureinpicture aria-label="'+escapeHTML(r.title)+'"></video>'+
           '<span class="yyc-reel-chip">'+escapeHTML(category)+'</span>'+
           '<button type="button" class="yyc-reel-expand" data-reel-fullscreen aria-label="View reel fullscreen" title="Fullscreen">⛶</button>'+
-          '<button type="button" class="yyc-reel-play" data-reel-play aria-label="Play '+escapeHTML(r.title)+'"><span class="yyc-reel-play-icon">▶</span><span class="yyc-reel-play-label">PLAY REEL</span></button>'+
+          '<button type="button" class="yyc-reel-play" data-reel-play aria-label="Play '+escapeHTML(r.title)+'"><span class="yyc-reel-play-icon">▶</span><span class="yyc-reel-play-label">PLAY Reel</span></button>'+
           '<div class="yyc-reel-player-error" role="status" hidden></div>'+
         '</div>'+
         '<div class="yyc-reel-meta"><h3>'+escapeHTML(r.title)+'</h3>'+
@@ -158,7 +154,7 @@
     if(publicLoaded&&!force)return;
     publicLoading=true;
     var grid=byId('yycReelGrid');
-    if(grid)grid.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Loading YYC REEL…</strong><span>Video files load only when they are near the screen or playback is requested.</span></div>';
+    if(grid)grid.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Loading YYC Reel…</strong><span>Video files load only when they are near the screen or playback is requested.</span></div>';
     try{
       var data=await callRPC('yyc_reels_public_list',{});
       if(!data||data.ok!==true)throw new Error(data&&data.error||'Could not load published reels.');
@@ -231,24 +227,24 @@
     var token=getAdminToken();
     if(!token)throw new Error('Admin session is missing. Please close this panel and log in again.');
     var data=await callRPC('yyc_reels_admin_list',{p_token:token});
-    if(!data||data.ok!==true)throw new Error(data&&data.error||'Could not load REEL records.');
+    if(!data||data.ok!==true)throw new Error(data&&data.error||'Could not load Reel records.');
     adminReels=Array.isArray(data.reels)?data.reels:[];
     return adminReels;
   }
   function backToReelList(){renderAdminList(adminReels);}
   function renderAdminPanel(){
     var workspace=byId('adminWorkspace');if(!workspace)return;
-    workspace.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Opening REEL Studio…</strong><span>Checking your admin session.</span></div>';
+    workspace.innerHTML='<div class="yyc-reel-state"><span class="yyc-reel-loading-dot" aria-hidden="true"></span><strong>Opening Reel Studio…</strong><span>Checking your admin session.</span></div>';
     loadAdminReels().then(renderAdminList).catch(function(e){
-      workspace.innerHTML='<div class="yyc-reel-state"><strong>REEL Studio could not open.</strong><span>'+escapeHTML(e.message||'Check the admin session and try again.')+'</span><button type="button" data-reel-admin-retry>TRY AGAIN ↻</button></div>';
+      workspace.innerHTML='<div class="yyc-reel-state"><strong>Reel Studio could not open.</strong><span>'+escapeHTML(e.message||'Check the admin session and try again.')+'</span><button type="button" data-reel-admin-retry>TRY AGAIN ↻</button></div>';
       workspace.querySelector('[data-reel-admin-retry]').addEventListener('click',renderAdminPanel);
     });
   }
   function renderAdminList(reels){
     var workspace=byId('adminWorkspace');if(!workspace)return;
     adminReels=(reels||[]).slice();
-    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>REEL Studio</h3><p>Upload, draft, publish, edit or remove official YYC videos.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button><button type="button" class="mini-btn gold" data-reel-admin-add>＋ Add Reel</button></div></div>'+
-      '<div class="yyc-reel-admin-note">For the smoothest playback, use a compressed MP4 (H.264 video + AAC audio), ideally 720p or 1080p and 50 MB or less. Other video formats can be uploaded, but playback support varies by browser. Video files are stored separately from GitHub.</div>'+
+    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>Reel Studio</h3><p>Upload, draft, publish, edit or remove official YYC videos.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-admin-back>← Back to Admin</button><button type="button" class="mini-btn gold" data-reel-admin-add>＋ Add Reel</button></div></div>'+
+      '<div class="yyc-reel-admin-note">For smooth playback, MP4 (H.264 video + AAC audio) is recommended. The Reel Studio does not impose a separate size cap; Supabase project-wide upload limits may still apply. Other formats may play differently across browsers. Videos are stored separately from GitHub.</div>'+
       '<input type="search" class="yyc-reel-admin-search" id="yycReelAdminSearch" placeholder="Search title, caption, category or status…" autocomplete="off" aria-label="Search reels">'+
       '<div class="yyc-reel-admin-grid" id="yycReelAdminGrid">'+
       (adminReels.length?adminReels.map(function(r){
@@ -293,7 +289,7 @@
   function renderAdminForm(reel){
     var workspace=byId('adminWorkspace');if(!workspace)return;
     var isEdit=!!reel;
-    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>'+(isEdit?'Edit REEL':'Add a REEL')+'</h3><p>Fill in a title and choose the video. Publishing makes it visible in the public REEL tab.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-form-cancel>← Back to Reels</button></div></div>'+
+    workspace.innerHTML='<div class="admin-top yyc-reel-admin-head"><div><div class="modal-kicker">YYC MEDIA STUDIO</div><h3>'+(isEdit?'Edit Reel':'Add a Reel')+'</h3><p>Fill in a title and choose the video. Publishing makes it visible in the public Reel tab.</p></div><div class="admin-top-actions"><button type="button" class="mini-btn" data-reel-form-cancel>← Back to Reels</button></div></div>'+
       '<form class="yyc-reel-admin-form" id="yycReelAdminForm">'+
       '<div class="yyc-reel-admin-fields">'+
       '<div class="yyc-reel-admin-field"><label for="yycReelTitle">Title *</label><input id="yycReelTitle" name="title" maxlength="140" required value="'+escapeHTML(reel&&reel.title||'')+'" placeholder="YYC Cleanliness Drive 2026"></div>'+
@@ -301,8 +297,8 @@
       ['Community','Events','Cleanliness Drive','Culture','Sports','Celebrations','Club Edits','Other'].map(function(c){return '<option value="'+escapeHTML(c)+'"'+((reel&&reel.category||'Community')===c?' selected':'')+'>'+escapeHTML(c)+'</option>';}).join('')+
       '</select></div>'+
       '<div class="yyc-reel-admin-field is-full"><label for="yycReelCaption">Caption</label><textarea id="yycReelCaption" name="caption" maxlength="2400" placeholder="Add a short description…">'+escapeHTML(reel&&reel.caption||'')+'</textarea><small>Maximum 2,400 characters.</small></div>'+
-      '<div class="yyc-reel-admin-field is-full"><label for="yycReelVideo">Video '+(isEdit?'(optional — choose only to replace)':'*')+'</label><input id="yycReelVideo" name="video" type="file" accept="video/*" '+(isEdit?'':'required')+'><small>Common video formats are accepted, maximum 50 MB. MP4 is recommended for the smoothest playback.</small>'+(isEdit?'<span class="yyc-reel-admin-current">Current video is saved. Leave this blank to keep it.</span>':'')+'</div>'+
-      '<div class="yyc-reel-admin-field is-full"><label for="yycReelThumbnail">Thumbnail (optional)</label><input id="yycReelThumbnail" name="thumbnail" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WebP; maximum 5 MB. A clear 9:16 image looks best.</small>'+(isEdit&&reel.thumbnail_url?'<span class="yyc-reel-admin-current">Current thumbnail is saved. Choose a new file to replace it.</span>':'')+'</div>'+
+      '<div class="yyc-reel-admin-field is-full"><label for="yycReelVideo">Video '+(isEdit?'(optional — choose only to replace)':'*')+'</label><input id="yycReelVideo" name="video" type="file" accept="video/*" '+(isEdit?'':'required')+'><small>Common video formats are accepted. MP4 is recommended for the smoothest playback; larger uploads may take longer.</small>'+(isEdit?'<span class="yyc-reel-admin-current">Current video is saved. Leave this blank to keep it.</span>':'')+'</div>'+
+      '<div class="yyc-reel-admin-field is-full"><label for="yycReelThumbnail">Thumbnail (optional)</label><input id="yycReelThumbnail" name="thumbnail" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WebP. A clear 9:16 image looks best.</small>'+(isEdit&&reel.thumbnail_url?'<span class="yyc-reel-admin-current">Current thumbnail is saved. Choose a new file to replace it.</span>':'')+'</div>'+
       '<div class="yyc-reel-admin-field"><label for="yycReelStatus">Visibility</label><select id="yycReelStatus" name="status"><option value="draft"'+((reel&&reel.status)==='draft'?' selected':'')+'>Draft — only in admin</option><option value="published"'+((reel&&reel.status==='published')?' selected':'')+'>Published — public</option><option value="hidden"'+((reel&&reel.status==='hidden')?' selected':'')+'>Hidden — not public</option></select></div>'+
       '<div class="yyc-reel-admin-field"><label for="yycReelOrder">Display order</label><input id="yycReelOrder" name="sort_order" type="number" min="0" step="1" value="'+escapeHTML(reel&&Number.isFinite(Number(reel.sort_order))?reel.sort_order:0)+'"><small>Lower numbers appear first.</small></div>'+
       '</div><div class="yyc-reel-admin-form-actions"><button class="is-primary" id="yycReelSaveBtn" type="submit">'+(isEdit?'Save changes':'Upload & Save Reel')+'</button><button type="button" data-reel-form-cancel>Cancel</button></div><div class="yyc-reel-admin-status" id="yycReelFormStatus" role="status" aria-live="polite"></div></form>';
@@ -316,8 +312,6 @@
       var thumbFile=byId('yycReelThumbnail').files[0]||null;
       var newPaths=[];
       if(!isEdit&&!videoFile){if(status)status.textContent='Choose a video first.';return;}
-      if(videoFile&&videoFile.size>MAX_VIDEO){if(status)status.textContent='Videos must be 50 MB or smaller. Compress this video and try again.';return;}
-      if(thumbFile&&thumbFile.size>MAX_THUMB){if(status)status.textContent='Thumbnails must be 5 MB or smaller.';return;}
       adminBusy=true;if(save){save.disabled=true;save.textContent='Uploading…';}
       if(status)status.textContent='Uploading and saving… Larger videos may take a little longer.';
       var videoUrl=reel&&reel.video_url||'', videoPath=reel&&reel.video_path||'';
@@ -340,20 +334,20 @@
           p_sort_order:Math.max(0,parseInt(byId('yycReelOrder').value,10)||0)
         };
         var saved=await callRPC('yyc_reels_admin_save',payload);
-        if(!saved||saved.ok!==true)throw new Error(saved&&saved.error||'Could not save this REEL.');
+        if(!saved||saved.ok!==true)throw new Error(saved&&saved.error||'Could not save this Reel.');
         var oldPaths=[];
         if(reel&&videoFile&&reel.video_path&&reel.video_path!==videoPath)oldPaths.push(reel.video_path);
         if(reel&&thumbFile&&reel.thumbnail_path&&reel.thumbnail_path!==thumbPath)oldPaths.push(reel.thumbnail_path);
         if(oldPaths.length)await cleanupPaths(oldPaths);
         adminBusy=false;
-        notify(payload.p_status==='published'?'REEL published successfully.':'REEL saved successfully.');
+        notify(payload.p_status==='published'?'Reel published successfully.':'Reel saved successfully.');
         await loadAdminReels();
         renderAdminList(adminReels);
         loadPublic(true);
       }catch(error){
         await cleanupPaths(newPaths);
         if(status)status.textContent=error.message||'Upload failed. Please try again.';
-        notify(error.message||'Could not save the REEL.');
+        notify(error.message||'Could not save the Reel.');
         if(save){save.disabled=false;save.textContent=isEdit?'Save changes':'Upload & Save Reel';}
         adminBusy=false;
       }
@@ -371,25 +365,25 @@
         p_thumbnail_url:reel.thumbnail_url||'',p_thumbnail_path:reel.thumbnail_path||'',
         p_status:next,p_sort_order:Number(reel.sort_order)||0
       });
-      if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not change REEL visibility.');
-      notify(next==='published'?'REEL published.':'REEL unpublished.');
+      if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not change Reel visibility.');
+      notify(next==='published'?'Reel published.':'Reel unpublished.');
       await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
-    }catch(e){notify(e.message||'Could not update REEL.');}
+    }catch(e){notify(e.message||'Could not update Reel.');}
     finally{adminBusy=false;}
   }
   async function deleteReel(reel){
     if(adminBusy)return;
-    if(!window.confirm('Delete “'+String(reel.title||'this REEL')+'”? This removes the published card and its uploaded files.'))return;
+    if(!window.confirm('Delete “'+String(reel.title||'this Reel')+'”? This removes the published card and its uploaded files.'))return;
     adminBusy=true;
     try{
       var result=await callRPC('yyc_reels_admin_delete',{p_token:getAdminToken(),p_id:reel.id});
-      if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not delete REEL.');
+      if(!result||result.ok!==true)throw new Error(result&&result.error||'Could not delete Reel.');
       var paths=[result.video_path,result.thumbnail_path].filter(Boolean);
       var cleanupError='';
       if(paths.length){try{await callUploadService({action:'delete-files',paths:paths});}catch(e){cleanupError=e.message||'Media cleanup failed.';}}
-      notify(cleanupError?'REEL deleted from the site, but a media file may remain in storage.':'REEL and its uploaded media deleted.');
+      notify(cleanupError?'Reel deleted from the site, but a media file may remain in storage.':'Reel and its uploaded media deleted.');
       await loadAdminReels();renderAdminList(adminReels);loadPublic(true);
-    }catch(e){notify(e.message||'Could not delete REEL.');}
+    }catch(e){notify(e.message||'Could not delete Reel.');}
     finally{adminBusy=false;}
   }
 
