@@ -320,6 +320,8 @@ if (!backupValidator.includes("snapshot.ok !== true") ||
 }
 if (!browserRegression.includes("playwright") ||
     !browserRegression.includes("DESKTOP NAV PASS") ||
+    !browserRegression.includes("DEEP LINK PASS") ||
+    !browserRegression.includes("LOGIN PANEL CLOSE PASS") ||
     !browserRegression.includes("MOBILE NAV PASS") ||
     !browserWorkflow.includes("node scripts/yyc-browser-regression.mjs")) {
   issues.push("Real Chromium desktop/mobile navigation regression coverage is missing from CI.");
