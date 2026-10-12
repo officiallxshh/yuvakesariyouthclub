@@ -122,20 +122,10 @@
     try{video.load();}catch(e){}
   }
   function startWarmingVideos(root){
-    var videos=root.querySelectorAll('.yyc-reel-video');
-    if(!('IntersectionObserver' in window)){
-      Array.prototype.forEach.call(videos,function(video,i){if(i<2)attachVideoSource(video);});
-      return;
-    }
-    var observer=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          attachVideoSource(entry.target);
-          observer.unobserve(entry.target);
-        }
-      });
-    },{root:null,rootMargin:'420px 0px',threshold:0.01});
-    Array.prototype.forEach.call(videos,function(video){observer.observe(video);});
+    /* Keep video sources detached until explicit play/fullscreen interaction.
+       Preloading metadata for several nearby vertical videos can download megabytes
+       on mobile before the visitor chooses a Reel. Poster images remain available. */
+    if(!root)return;
   }
   function reelCardHTML(r){
     var poster=String(r.thumbnail_url||'');
@@ -212,7 +202,12 @@
   }
   function closeEventModal(restoreFocus){
     var modal=byId('yycReelEventModal');
-    if(modal)modal.remove();
+    if(modal){
+      modal.querySelectorAll('.yyc-reel-video').forEach(function(video){
+        try{video.pause();}catch(e){}
+      });
+      modal.remove();
+    }
     document.body.classList.remove('yyc-reel-modal-open');
     var opener=eventModalOpener;
     eventModalOpener=null;
@@ -294,12 +289,30 @@
       if(full){
         var parent=full.closest('.yyc-reel-player'), target=parent&&parent.querySelector('.yyc-reel-video');
         if(!target)return;
+        var card=full.closest('.yyc-reel-card');
+        var play=card&&card.querySelector('[data-reel-play]');
+        var err=card&&card.querySelector('.yyc-reel-player-error');
         attachVideoSource(target);
+        target.controls=true;
+        if(err)err.hidden=true;
+        /* Request fullscreen synchronously from the click; don't wait for media loading. */
         try{
-          if(target.requestFullscreen)target.requestFullscreen();
+          var fullscreenResult;
+          if(target.requestFullscreen)fullscreenResult=target.requestFullscreen();
           else if(target.webkitEnterFullscreen)target.webkitEnterFullscreen();
-          else if(parent&&parent.requestFullscreen)parent.requestFullscreen();
+          else if(parent&&parent.requestFullscreen)fullscreenResult=parent.requestFullscreen();
+          if(fullscreenResult&&typeof fullscreenResult.catch==='function')fullscreenResult.catch(function(){});
         }catch(e){}
+        var playback;
+        try{playback=target.play();}catch(e){playback=Promise.reject(e);}
+        if(playback&&typeof playback.then==='function'){
+          playback.then(function(){if(play)play.hidden=true;}).catch(function(){
+            if(err){err.textContent='Playback could not start. Tap Play Reel to try again.';err.hidden=false;}
+            if(play)play.hidden=false;
+            target.controls=false;
+          });
+        }else if(play){play.hidden=true;}
+        return;
       }
     });
     document.addEventListener('keydown',function(event){if(event.key==='Escape')closeEventModal();});
