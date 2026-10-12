@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-38-build15-hash-navigation';
+var YYC_APP_BUILD='20261012-39-build15-hash-reload-fix';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1572,6 +1572,8 @@ function activeNav(){
         updateYYCScrollProgress();
       }
       window.requestAnimationFrame(alignHashTarget);
+      window.setTimeout(alignHashTarget,850);
+      window.setTimeout(alignHashTarget,1450);
       window.setTimeout(function(){
         if(Number(window.__yycHashNavSequence)!==sequence ||
            location.hash.slice(1)!==target) return;
