@@ -367,8 +367,8 @@ const routeDefs = [
   ['gallery', 'gallery', 'YYC Community Gallery', 'Browse published photos from Yuvakesari Youth Club (YYC), including community service, events and youth activities in Subrahmanya, Karnataka.'],
   ['reel', 'reels', 'YYC Reels & Videos', 'Watch published videos and event Reels from Yuvakesari Youth Club (YYC), documenting community programmes and youth activities in Subrahmanya, Karnataka.'],
   ['swag', 'swags', 'YYC Merchandise & Jerseys', 'View official Yuvakesari Youth Club (YYC) merchandise, jerseys and published club items from Subrahmanya, Karnataka.'],
-  ['leader', 'leaders', 'YYC Leadership Team', 'Meet the public leadership team of Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka, and explore the roles behind the club community activities.'],
-  ['achievement', 'achievements', 'YYC Achievements & Milestones', 'Explore published milestones and achievements from Yuvakesari Youth Club (YYC), highlighting community initiatives and youth activities in Subrahmanya, Karnataka.']
+  ['leader', 'leaders', 'YYC Leader Profiles & Roles', 'Meet the public leadership team of Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka, and explore the roles behind the club community activities.'],
+  ['achievement', 'achievements', 'YYC Achievements & Milestones', 'Explore YYC milestones from Yuvakesari Youth Club in Subrahmanya, Karnataka, highlighting community service, youth programmes and local initiatives.']
 ];
 const sitemapLastmod = new Map();
 const counts = {};
