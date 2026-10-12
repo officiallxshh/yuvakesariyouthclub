@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-29-nav-target-sync';
+var YYC_APP_BUILD='20261012-30-nav-scroll-race-fix';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -1571,33 +1571,87 @@ function activeNav(){
   updateYYCScrollProgress();
 }
 function bindNavigation(){
+  /* One navigation controller owns section scrolling and the active tab.
+     A newer click cancels any in-flight scroll so rapid tab changes cannot
+     finish at an older section while the URL/highlight shows the latest one. */
+  var navigationSequence=0;
+  var lastUserScrollIntent=0;
+  function noteUserScrollIntent(){lastUserScrollIntent=Date.now();}
+  window.addEventListener('wheel',noteUserScrollIntent,{passive:true});
+  window.addEventListener('touchstart',noteUserScrollIntent,{passive:true});
+  window.addEventListener('keydown',function(e){
+    var key=e.key;
+    if(!['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(key))return;
+    var node=e.target;
+    if(node&&(/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(node.tagName)||node.isContentEditable))return;
+    noteUserScrollIntent();
+  },true);
+
+  function fixedHeaderOffset(){
+    var header=document.querySelector('.topbar');
+    var offset=header?Math.max(0,header.getBoundingClientRect().bottom):0;
+    var notice=document.querySelector('.yyc90-announcement:not(.dismissed)');
+    if(notice){
+      var style=window.getComputedStyle(notice);
+      if(style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity||1)>0){
+        offset=Math.max(offset,notice.getBoundingClientRect().bottom);
+      }
+    }
+    return offset+12;
+  }
+  function alignTarget(sequence,target,startedAt,finalPass){
+    if(sequence!==navigationSequence||!target||!document.contains(target))return;
+    /* Never pull the page back after the visitor starts scrolling manually. */
+    if(lastUserScrollIntent>startedAt)return;
+    var difference=target.getBoundingClientRect().top-fixedHeaderOffset();
+    if(Math.abs(difference)>28){
+      window.scrollTo({top:Math.max(0,window.scrollY+difference),behavior:finalPass?'auto':'smooth'});
+    }
+  }
+
   $$('a[href^="#"]').forEach(function(link){
     link.addEventListener('click',function(e){
       var href=link.getAttribute('href');
-      if(!href || href==='#') return;
-      var target=document.querySelector(href);
-      if(!target) return;
+      if(!href||href==='#')return;
+      var rawId=href.slice(1),targetId=rawId;
+      try{targetId=decodeURIComponent(rawId);}catch(_){}
+      var target=document.getElementById(targetId);
+      if(!target)return;
       e.preventDefault();
-      if(typeof closeMobile==='function') closeMobile();
-      var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      /* Resolve the exact fragment target, rather than a neighboring section.
-         CSS scroll-padding/scroll-margin already reserve space for the fixed header. */
-      window.__yycNavTargetId=target.id || href.slice(1);
-      window.__yycNavLockUntil=Date.now()+3000;
-      setYYCNavActive(link);
+      if(typeof closeMobile==='function')closeMobile();
+
+      var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var sequence=++navigationSequence,startedAt=Date.now();
+      window.__yycNavTargetId=target.id||targetId;
+      window.__yycNavLockUntil=startedAt+2500;
+      lastUserScrollIntent=Math.min(lastUserScrollIntent,startedAt);
+      var desktopLink=$$('.desktop-nav .nav-link').find(function(a){
+        return (a.getAttribute('href')||'').slice(1)===targetId;
+      });
+      if(desktopLink)setYYCNavActive(desktopLink);
+
+      if(history.pushState&&location.hash!==href)history.pushState(null,'',href);
       yycAnimateNavigation(target);
-      if(typeof target.scrollIntoView==='function'){
-        target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
-      }else{
-        var header=document.querySelector('.topbar');
-        var offset=header ? header.offsetHeight + 10 : 0;
-        var top=Math.max(0,target.getBoundingClientRect().top + window.pageYOffset - offset);
-        window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});
-      }
-      if(history.pushState) history.pushState(null,'',href);
-      setTimeout(activeNav,40);
+
+      /* Stop a prior smooth-scroll before issuing the newest exact destination. */
+      window.scrollTo({top:window.scrollY,behavior:'auto'});
+      var destination=Math.max(0,window.scrollY+target.getBoundingClientRect().top-fixedHeaderOffset());
+      window.scrollTo({top:destination,behavior:reduce?'auto':'smooth'});
+
+      /* Images/fonts and smooth-scroll timing can shift the target after the click.
+         Re-check once motion settles; sequence and user-input guards prevent races. */
+      window.setTimeout(function(){alignTarget(sequence,target,startedAt,false);},850);
+      window.setTimeout(function(){alignTarget(sequence,target,startedAt,false);},1550);
+      window.setTimeout(function(){
+        alignTarget(sequence,target,startedAt,true);
+        if(sequence!==navigationSequence)return;
+        window.__yycNavLockUntil=0;
+        updateYYCActiveSection();
+        updateYYCScrollProgress();
+      },2450);
     });
   });
+
   if('IntersectionObserver' in window){
     var sectionObserver=new IntersectionObserver(function(){updateYYCActiveSection();},{root:null,rootMargin:'-22% 0px -62% 0px',threshold:[0,.01,.1,.3]});
     Array.prototype.slice.call(document.querySelectorAll('.section[id]')).forEach(function(section){sectionObserver.observe(section);});
@@ -1609,16 +1663,12 @@ function bindNavigation(){
     navScrollTicking=true;
     requestAnimationFrame(function(){
       navScrollTicking=false;
-      /* Progress is a cheap compositor-only scale update. Active-section
-         detection is handled by IntersectionObserver to avoid repeated
-         getBoundingClientRect() reads during scrolling. */
       updateYYCScrollProgress();
     });
   },{passive:true});
-  window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();},{passive:true});
+  window.addEventListener('resize',function(){updateYYCScrollProgress();updateYYCActiveSection();syncYYCNavHighlight();},{passive:true});
   activeNav();
   syncYYCNavHighlight();
-  window.addEventListener('resize',function(){syncYYCNavHighlight();},{passive:true});
   updateYYCScrollProgress();
 }
 function submitUpdate(){
