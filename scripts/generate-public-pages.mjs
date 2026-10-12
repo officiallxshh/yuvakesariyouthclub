@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const BASE = 'https://www.yuvakesariyouthclub.in';
@@ -43,16 +44,16 @@ function sitemapDate(v) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 function typeRoute(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', leader: 'leaders', achievement: 'achievements' })[type] || type;
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', leader: 'leaders', achievement: 'achievements', swag: 'swags', history: 'history' })[type] || type;
 }
 function sectionAnchor(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', leader: 'leaders', achievement: 'impact', swag: 'swags', history: 'impact' })[type] || 'glimpse';
 }
 function itemTitle(type, item) {
   return String((type === 'leader' ? item.name : item.title) || item.name || item.title || '').trim();
 }
 function itemImage(item) {
-  const raw = item.thumbnail_url || item.image_url || item.photo_url || item.src || '';
+  const raw = item.thumbnail_url || item.__yyc_generated_thumbnail_url || item.image_url || item.photo_url || item.src || '';
   return /^https?:\/\//i.test(String(raw)) ? String(raw) : '';
 }
 function itemVideo(item) {
@@ -60,7 +61,33 @@ function itemVideo(item) {
   return /^https:\/\/vrllozfzheikjbhxvpkx\.supabase\.co\/storage\/v1\/object\/public\/yyc-reels\/reels\/video\//i.test(raw) ? raw : '';
 }
 function itemDescription(type, item) {
-  return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
+  const base = String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : type === 'swag' ? 'Official YYC swag: ' : type === 'history' ? 'Yuvakesari Youth Club history: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
+  if (type !== 'swag') return base;
+  return [base, item.price ? 'Price: ' + item.price : '', item.sizes ? 'Sizes: ' + item.sizes : '', item.status ? 'Availability: ' + String(item.status).replace(/-/g, ' ') : ''].filter(Boolean).join(' · ');
+}
+async function ensureReelThumbnail(item, fileSlug) {
+  const existing = itemImage(item);
+  if (existing) return existing;
+  const video = itemVideo(item);
+  if (!video) return '';
+  const relative = path.join('reels', 'thumbnails', fileSlug + '.jpg');
+  const absolute = path.join(ROOT, relative);
+  try {
+    const stat = await fs.stat(absolute);
+    if (stat.isFile() && stat.size > 1024) return BASE + '/' + relative.split(path.sep).join('/');
+  } catch {}
+  await fs.mkdir(path.dirname(absolute), { recursive: true });
+  const result = spawnSync('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-nostdin', '-y', '-ss', '0.2', '-i', video,
+    '-frames:v', '1', '-vf', 'scale=640:640:force_original_aspect_ratio=decrease', '-q:v', '3', absolute
+  ], { encoding: 'utf8', timeout: 35000, maxBuffer: 1024 * 1024 });
+  try {
+    const stat = await fs.stat(absolute);
+    if (result.status === 0 && stat.isFile() && stat.size > 1024) return BASE + '/' + relative.split(path.sep).join('/');
+    await fs.rm(absolute, { force: true });
+  } catch {}
+  console.warn('Could not auto-generate Reel thumbnail for ' + fileSlug + (result.error ? ': ' + result.error.message : result.stderr ? ': ' + result.stderr.trim().slice(0, 180) : ''));
+  return '';
 }
 function structuredData(type, item, image, canonical, title, route) {
   const org = { '@type': 'Organization', name: 'Yuvakesari Youth Club', url: BASE + '/' };
@@ -120,6 +147,21 @@ function structuredData(type, item, image, canonical, title, route) {
     image: image || undefined,
     publisher: org
   });
+  if (type === 'history') graph.push({
+    '@type': 'Article',
+    headline: title,
+    description: itemDescription(type, item),
+    image: image || undefined,
+    publisher: org
+  });
+  if (type === 'swag') graph.push({
+    '@type': 'Product',
+    name: title,
+    description: itemDescription(type, item),
+    image: image || undefined,
+    category: item.category || undefined,
+    brand: { '@type': 'Brand', name: 'Yuvakesari Youth Club' }
+  });
   return '<script type="application/ld+json">' + JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }) + '</script>';
 }
 function detailPage(type, item, fileSlug) {
@@ -157,14 +199,18 @@ function detailPage(type, item, fileSlug) {
     '<article class="card"><img class="logo" src="' + assets + 'assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo">' +
     '<div class="k">YUVAKESARI YOUTH CLUB · ' + esc(type.toUpperCase()) + '</div>' +
     '<h1 class="title">' + esc(title) + '</h1>' +
-    '<div class="date">' + esc(displayDate(item.event_date || item.achieved_on || item.published_at || item.created_at)) + '</div>' +
+    '<div class="date">' + esc(type === 'history' ? String(item.year_label || '') : displayDate(item.event_date || item.achieved_on || item.published_at || item.created_at)) + '</div>' +
     mediaMarkup +
     '<div class="meta">' +
       (item.category ? '<span class="tag">' + esc(item.category) + '</span>' : '') +
       (item.location ? '<span class="tag">' + esc(item.location) + '</span>' : '') +
       (item.album ? '<span class="tag">' + esc(item.album) + '</span>' : '') +
       (item.role ? '<span class="tag">' + esc(item.role) + '</span>' : '') +
+      (type === 'swag' && item.price ? '<span class="tag">Price: ' + esc(item.price) + '</span>' : '') +
+      (type === 'swag' && item.sizes ? '<span class="tag">Sizes: ' + esc(item.sizes) + '</span>' : '') +
+      (type === 'swag' && item.status ? '<span class="tag">' + esc(String(item.status).replace(/-/g, ' ').toUpperCase()) + '</span>' : '') +
     '</div><div class="body">' + esc(desc) + '</div>' +
+    (type === 'swag' && /^https?:\/\//i.test(String(item.order_url || '')) ? '<p><a class="tag" href="' + esc(item.order_url) + '" rel="noopener noreferrer">Enquire / order ↗</a></p>' : '') +
     '<div class="footer"><a href="' + assets + 'index.html#' + sectionAnchor(type) + '">Open on the YYC website →</a> · <a href="../index.html">Browse all ' + esc(route) + ' →</a></div></article></main></body></html>';
 }
 function categoryIndexPage(title, description, route, entries) {
@@ -220,7 +266,9 @@ const routeDefs = [
   ['gallery', 'gallery', 'Gallery', 'Published community photos, programmes and youth activities by Yuvakesari Youth Club.'],
   ['reel', 'reels', 'Reels', 'Published community videos and event Reels from Yuvakesari Youth Club.'],
   ['leader', 'leaders', 'Leaders', 'Public leadership profiles of Yuvakesari Youth Club.'],
-  ['achievement', 'achievements', 'Achievements', 'Published milestones and achievements of Yuvakesari Youth Club.']
+  ['achievement', 'achievements', 'Achievements', 'Published milestones and achievements of Yuvakesari Youth Club.'],
+  ['swag', 'swags', 'Official Swags', 'Official Yuvakesari Youth Club merchandise, descriptions, sizes and availability.'],
+  ['history', 'history', 'YYC History', 'The history, journey and published milestones of Yuvakesari Youth Club.']
 ];
 const sitemapLastmod = new Map();
 const counts = {};
@@ -240,7 +288,9 @@ const allCollections = [
   ['gallery', site.gallery || []],
   ['reel', publicReels.filter(item => item && String(item.status || '').toLowerCase() === 'published')],
   ['leader', site.leaders || []],
-  ['achievement', feature.achievements || []]
+  ['achievement', feature.achievements || []],
+  ['swag', site.swags || []],
+  ['history', feature.history || []]
 ];
 for (const [type, list] of allCollections) {
   const route = typeRoute(type);
@@ -260,9 +310,13 @@ for (const [type, list] of allCollections) {
       while (usedSlugs.has(fileSlug)) fileSlug = baseSlug.slice(0, 76) + '-' + n++;
     }
     usedSlugs.add(fileSlug);
+    if (type === 'reel' && !itemImage(item)) {
+      const generatedThumbnail = await ensureReelThumbnail(item, fileSlug);
+      if (generatedThumbnail) item.__yyc_generated_thumbnail_url = generatedThumbnail;
+    }
     const filePath = path.join(ROOT, route, 'auto', fileSlug + '.html');
     await fs.writeFile(filePath, detailPage(type, item, fileSlug), 'utf8');
-    const dateValue = item.event_date || item.achieved_on || item.published_at || item.updated_at || item.created_at || '';
+    const dateValue = item.event_date || item.achieved_on || item.published_at || item.updated_at || item.created_at || (type === 'history' ? item.year_label : '') || '';
     const entry = {
       href: './auto/' + fileSlug + '.html',
       title: itemTitle(type, item),
