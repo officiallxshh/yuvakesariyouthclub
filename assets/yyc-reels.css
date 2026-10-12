@@ -152,6 +152,19 @@ body.yyc-reel-modal-open{overflow:hidden}
   background:#000;
   z-index:2147483647;
 }
+.yyc-reel-player:fullscreen .yyc-reel-expand,
+.yyc-reel-player:-webkit-full-screen .yyc-reel-expand{
+  display:grid !important;
+  z-index:2147483647;
+  place-items:center;
+  width:42px;
+  height:42px;
+  top:max(12px,env(safe-area-inset-top));
+  right:max(12px,env(safe-area-inset-right));
+  border-color:rgba(255,255,255,.35);
+  background:rgba(5,8,10,.78);
+  font-size:24px;
+}
 .yyc-reel-player:fullscreen .yyc-reel-video,
 .yyc-reel-player:-webkit-full-screen .yyc-reel-video{
   display:block;
@@ -174,7 +187,6 @@ body.yyc-reel-modal-open{overflow:hidden}
   object-position:center center;
   background:#000;
 }
-.yyc-reel-player:fullscreen .yyc-reel-expand,
 .yyc-reel-player:fullscreen .yyc-reel-chip,
 .yyc-reel-player:fullscreen .yyc-reel-number-badge,
 .yyc-reel-player:fullscreen .yyc-reel-play,
