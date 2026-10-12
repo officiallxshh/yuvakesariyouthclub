@@ -5,6 +5,8 @@
   var publicLoaded=false;
   var publicLoading=false;
   var publicReels=[];
+  var publicEventGroups=[];
+  var eventModalOpener=null;
   var adminReels=[];
   var adminBusy=false;
 
@@ -145,12 +147,35 @@
         '<div class="yyc-reel-meta-foot"><span>'+escapeHTML(category)+'</span><span>'+escapeHTML(formatDate(r.created_at))+'</span></div></div>'+
     '</article>';
   }
+  function eventCubeHTML(group,index){
+    var covers=group.reels.slice(0,4);
+    var coverMarkup=covers.map(function(r,slot){
+      var thumb=String(r.thumbnail_url||'');
+      var number=Math.max(1,parseInt(r.reel_number,10)||slot+1);
+      return '<div class="yyc-reel-event-cover-tile">'+
+        (thumb?'<img src="'+escapeHTML(thumb)+'" alt="" loading="lazy">':'<div class="yyc-reel-event-cover-placeholder"><span>REEL '+number+'</span></div>')+
+        (slot===3&&group.reels.length>4?'<span class="yyc-reel-event-more">+'+(group.reels.length-4)+'</span>':'')+
+      '</div>';
+    }).join('');
+    return '<article class="yyc-reel-event-cube" data-event-cube="'+index+'">'+
+      '<button type="button" class="yyc-reel-event-cube-button" data-reel-event-open="'+index+'" aria-haspopup="dialog" aria-label="Open '+escapeHTML(group.name)+' collection, '+group.reels.length+' Reels">'+
+        '<div class="yyc-reel-event-cube-cover '+(covers.length===1?'is-single':covers.length===2?'is-double':'is-mosaic')+'">'+coverMarkup+
+          '<span class="yyc-reel-event-cube-badge">'+group.reels.length+' '+(group.reels.length===1?'REEL':'REELS')+'</span>'+
+          '<span class="yyc-reel-event-cube-open"><span aria-hidden="true">▶</span> VIEW COLLECTION</span>'+
+        '</div>'+
+        '<div class="yyc-reel-event-cube-meta"><span class="yyc-reel-event-kicker">EVENT COLLECTION</span>'+
+          '<h3>'+escapeHTML(group.name)+'</h3>'+
+          '<div class="yyc-reel-event-cube-foot"><span>'+group.reels.length+' '+(group.reels.length===1?'Reel':'Reels')+' in this event</span><span class="yyc-reel-event-arrow" aria-hidden="true">↗</span></div>'+
+        '</div>'+
+      '</button>'+
+    '</article>';
+  }
   function renderPublic(reels){
     var grid=byId('yycReelGrid');if(!grid)return;
     var published=(reels||[]).filter(function(r){return String(r.status||'published').toLowerCase()==='published'&&r.video_url;});
     publicReels=published.slice();
     var count=byId('yycReelCount');if(count)count.textContent=published.length+' '+(published.length===1?'Reel':'Reels');
-    if(!published.length){publicState('No reels published yet.');return;}
+    if(!published.length){publicEventGroups=[];publicState('No reels published yet.');return;}
     var standalone=[],groupMap={},groups=[];
     published.forEach(function(r){
       var name=String(r.event_name||'').trim();
@@ -169,15 +194,38 @@
       g.reels.sort(function(a,b){return (Number(a.reel_number)||1)-(Number(b.reel_number)||1)||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||String(a.created_at||'').localeCompare(String(b.created_at||''));});
     });
     groups.sort(function(a,b){return a.sortOrder-b.sortOrder||b.latest.localeCompare(a.latest)||a.name.localeCompare(b.name);});
+    publicEventGroups=groups;
     var markup=standalone.map(reelCardHTML).join('');
-    groups.forEach(function(g){
-      markup+='<section class="yyc-reel-event-group" aria-label="Reels from '+escapeHTML(g.name)+'">'+
-        '<div class="yyc-reel-event-heading"><div><span class="yyc-reel-event-kicker">EVENT COLLECTION</span><h3>'+escapeHTML(g.name)+'</h3></div><span class="yyc-reel-event-count">'+g.reels.length+' '+(g.reels.length===1?'REEL':'REELS')+'</span></div>'+
-        '<div class="yyc-reel-grid yyc-reel-event-grid">'+g.reels.map(reelCardHTML).join('')+'</div>'+
-      '</section>';
-    });
+    groups.forEach(function(g,index){markup+=eventCubeHTML(g,index);});
     grid.innerHTML=markup;
     startWarmingVideos(grid);
+  }
+  function closeEventModal(restoreFocus){
+    var modal=byId('yycReelEventModal');
+    if(modal)modal.remove();
+    document.body.classList.remove('yyc-reel-modal-open');
+    var opener=eventModalOpener;
+    eventModalOpener=null;
+    if(restoreFocus!==false&&opener&&document.contains(opener)&&typeof opener.focus==='function')opener.focus();
+  }
+  function openEventModal(index){
+    var group=publicEventGroups[Number(index)];
+    if(!group)return;
+    var trigger=document.querySelector('[data-reel-event-open="'+Number(index)+'"]');
+    closeEventModal(false);
+    eventModalOpener=trigger||null;
+    var markup='<div class="yyc-reel-event-modal" id="yycReelEventModal">'+
+      '<section class="yyc-reel-event-dialog" role="dialog" aria-modal="true" aria-labelledby="yycReelEventDialogTitle">'+
+        '<header class="yyc-reel-event-dialog-head"><div><span class="yyc-reel-event-kicker">YYC EVENT COLLECTION</span><h2 id="yycReelEventDialogTitle">'+escapeHTML(group.name)+'</h2><p>'+group.reels.length+' '+(group.reels.length===1?'Reel':'Reels')+' · shown in numbered order</p></div>'+
+        '<button type="button" class="yyc-reel-event-close" data-reel-event-close aria-label="Close event collection" title="Close">×</button></header>'+
+        '<div class="yyc-reel-event-dialog-grid yyc-reel-grid">'+group.reels.map(reelCardHTML).join('')+'</div>'+
+      '</section></div>';
+    document.body.insertAdjacentHTML('beforeend',markup);
+    document.body.classList.add('yyc-reel-modal-open');
+    var modal=byId('yycReelEventModal');
+    if(modal)startWarmingVideos(modal);
+    var close=modal&&modal.querySelector('[data-reel-event-close]');
+    if(close)close.focus();
   }
   async function loadPublic(force){
     if(publicLoading)return;
@@ -206,6 +254,11 @@
     document.addEventListener('click',function(event){
       var link=event.target.closest&&event.target.closest('a[href="#reel"]');
       if(link)window.setTimeout(function(){loadPublic(false);},80);
+      var eventOpen=event.target.closest&&event.target.closest('[data-reel-event-open]');
+      if(eventOpen){openEventModal(eventOpen.getAttribute('data-reel-event-open'));return;}
+      var eventClose=event.target.closest&&event.target.closest('[data-reel-event-close]');
+      if(eventClose){closeEventModal();return;}
+      if(event.target&&event.target.id==='yycReelEventModal'){closeEventModal();return;}
       var retry=event.target.closest&&event.target.closest('#yycReelRetry');
       if(retry){loadPublic(true);return;}
       var play=event.target.closest&&event.target.closest('[data-reel-play]');
@@ -239,6 +292,7 @@
         }catch(e){}
       }
     });
+    document.addEventListener('keydown',function(event){if(event.key==='Escape')closeEventModal();});
     document.addEventListener('ended',function(event){
       var video=event.target;
       if(!video||!video.classList||!video.classList.contains('yyc-reel-video'))return;
