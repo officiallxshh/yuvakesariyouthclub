@@ -69,6 +69,12 @@ jobs:
           if (!xml.startsWith('<?xml')) throw new Error('Sitemap XML declaration is missing');
           if (!urls.length) throw new Error('Sitemap contains no URLs');
           if (new Set(urls).size !== urls.length) throw new Error('Sitemap contains duplicate URLs');
+          for (const url of urls) {
+            const pathname = new URL(url).pathname;
+            if (/^\/(events|updates|gallery|reels|swags|leaders|achievements)\/[^/]+\.html$/i.test(pathname)) {
+              throw new Error('Legacy root-level detail URL must not be listed in the sitemap: ' + url);
+            }
+          }
           for (const required of [
             'https://www.yuvakesariyouthclub.in/',
             'https://www.yuvakesariyouthclub.in/media.html',
