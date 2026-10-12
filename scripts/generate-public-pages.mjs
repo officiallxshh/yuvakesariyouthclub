@@ -134,8 +134,31 @@ async function ensurePublishedReelThumbnails(reels) {
 function itemDescription(type, item) {
   return String(item.description || item.body || item.bio || item.caption || (type === 'event' ? 'YYC event: ' : type === 'update' ? 'YYC update: ' : type === 'gallery' ? 'YYC gallery: ' : type === 'reel' ? 'YYC Reel: ' : type === 'leader' ? 'YYC leader profile: ' : 'YYC achievement: ') + itemTitle(type, item)).trim();
 }
+function metaDescription(type, item) {
+  const name = itemTitle(type, item) || 'Yuvakesari Youth Club';
+  const role = String(item.role || item.position || 'YYC leader').trim();
+  const raw = String(item.meta_description || item.description || item.body || item.bio || item.caption || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[\x60*_#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const templates = {
+    event: name + ' — a public programme by Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka. View the published event details and related community activities.',
+    update: name + ' — official news and updates from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. Read the latest published community announcements.',
+    gallery: name + ' — a published community photo from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. Explore the gallery and related public activities.',
+    reel: 'Watch ' + name + ', a published community video from Yuvakesari Youth Club (YYC) in Subrahmanya, Karnataka. Explore more public events and youth activities.',
+    swag: name + ' from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. View the published item details and official club merchandise information.',
+    leader: 'Meet ' + name + ', ' + role + ' at Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. View the official leadership profile and public club activities.',
+    achievement: name + ' — a published milestone from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. Explore the club achievements and community initiatives.'
+  };
+  const candidate = raw.length >= 85 ? raw : (templates[type] || ('Official ' + type + ' details from Yuvakesari Youth Club (YYC), Subrahmanya, Karnataka. ' + name + '.'));
+  if (candidate.length <= 158) return candidate;
+  const shortened = candidate.slice(0, 155);
+  const lastSpace = shortened.lastIndexOf(' ');
+  return (lastSpace > 110 ? shortened.slice(0, lastSpace) : shortened).replace(/[ ,;:—-]+$/, '') + '…';
+}
 function structuredData(type, item, image, canonical, title, route) {
-  const org = { '@type': 'Organization', name: 'Yuvakesari Youth Club', url: BASE + '/' };
+  const org = { '@type': 'Organization', name: 'Yuvakesari Youth Club', url: BASE + '/', logo: BASE + '/assets/yyc-logo-clean.webp' };
   const graph = [{
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -206,6 +229,7 @@ function detailPage(type, item, fileSlug) {
   const route = typeRoute(type);
   const title = itemTitle(type, item) || 'YYC ' + type;
   const desc = itemDescription(type, item);
+  const metaDesc = metaDescription(type, item);
   const image = itemImage(item);
   const video = itemVideo(item);
   const canonical = BASE + '/' + route + '/auto/' + fileSlug + '.html';
@@ -220,16 +244,16 @@ function detailPage(type, item, fileSlug) {
     '<meta name="theme-color" content="#05080b"><meta name="robots" content="index,follow,max-image-preview:large">' +
     '<link rel="canonical" href="' + canonical + '">' +
     '<link rel="icon" href="' + assets + 'assets/yyc-lion-favicon-redesigned.svg">' +
-    '<meta name="description" content="' + esc(desc).slice(0, 320) + '">' + metaImage +
+    '<meta name="description" content="' + esc(metaDesc) + '">' + metaImage +
     '<meta property="og:type" content="' + (type === 'reel' ? 'video.other' : type === 'event' ? 'article' : 'website') + '">' +
     (type === 'reel' && video ? '<meta property="og:video" content="' + esc(video) + '">' : '') +
     (type === 'reel' && image ? '<meta property="og:video:image" content="' + esc(image) + '">' : '') +
     '<meta property="og:title" content="' + esc(title) + ' | Yuvakesari Youth Club">' +
-    '<meta property="og:description" content="' + esc(desc).slice(0, 320) + '">' +
+    '<meta property="og:description" content="' + esc(metaDesc) + '">' +
     '<meta property="og:url" content="' + canonical + '">' +
     '<meta name="twitter:card" content="' + (image ? 'summary_large_image' : 'summary') + '">' +
     '<meta name="twitter:title" content="' + esc(title) + ' | Yuvakesari Youth Club">' +
-    '<meta name="twitter:description" content="' + esc(desc).slice(0, 320) + '">' +
+    '<meta name="twitter:description" content="' + esc(metaDesc) + '">' +
     structured +
     '<title>' + esc(title) + ' | Yuvakesari Youth Club</title>' +
     '<link rel="stylesheet" href="' + assets + 'yyc-seo.css"><script src="' + assets + 'yyc-production.js?v=20261008-02" defer></script></head><body><main class="wrap">' +
