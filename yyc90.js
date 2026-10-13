@@ -1302,12 +1302,12 @@
     if(tab==='achievements'){
       q('#a90Add').onclick=function(){achievementForm90(null);};
       qa('[data-a90-edit]').forEach(function(b){b.onclick=function(){achievementForm90(b.getAttribute('data-a90-edit'));};});
-      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);toast90('Achievement deleted');}).catch(function(e){toast90(e.message);});};});
+      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);toast90('Achievement moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
     }
     if(tab==='history'){
       q('#h90Add').onclick=function(){historyForm90(null);};
       qa('[data-h90-edit]').forEach(function(b){b.onclick=function(){historyForm90(b.getAttribute('data-h90-edit'));};});
-      qa('[data-h90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete history item?'))return;rpc90('admin_delete_history',{p_token:window.adminToken,p_id:b.getAttribute('data-h90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('history',true);toast90('History item deleted');}).catch(function(e){toast90(e.message);});};});
+      qa('[data-h90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete history item?'))return;rpc90('admin_delete_history',{p_token:window.adminToken,p_id:b.getAttribute('data-h90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('history',true);toast90('History item moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
     }
   }
 
