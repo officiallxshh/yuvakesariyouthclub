@@ -585,10 +585,40 @@ Deno.serve(async (req: Request) => {
         .eq("recipient_kind", kind).eq("recipient_id", recipient.id).is("revoked_at", null)
         .order("issued_at", { ascending: false }).limit(100);
       if (error) return json(req, { ok: false, error: "Your certificate list is temporarily unavailable" }, 500);
-      return json(req, {
-        ok: true,
-        certificates: (data || []).map((item: any) => ({ ...item, verify_url: verifyUrl(item) }))
-      });
+      const { data: manualItems, error: manualError } = await db.from("yyc_manual_certificates")
+        .select("id,title,event_title,original_file_name,created_at,email_status,email_sent_at,email_error,viewed_at,revoked_at")
+        .eq("recipient_kind", kind).eq("recipient_id", recipient.id).is("revoked_at", null)
+        .order("created_at", { ascending: false }).limit(100);
+      if (manualError) return json(req, { ok: false, error: "Your uploaded certificate list is temporarily unavailable" }, 500);
+      const unseenIds = (manualItems || []).filter((item: any) => !item.viewed_at).map((item: any) => item.id);
+      if (unseenIds.length) {
+        const { error: viewedError } = await db.from("yyc_manual_certificates")
+          .update({ viewed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).in("id", unseenIds);
+        if (viewedError) console.error("Could not mark manual certificates as viewed", viewedError.message);
+      }
+      const issued = (data || []).map((item: any) => ({ ...item, source: "issued", is_new: false, verify_url: verifyUrl(item) }));
+      const uploaded = (manualItems || []).map((item: any) => ({
+        id: item.id,
+        certificate_number: "",
+        certificate_type: "manual_upload",
+        event_title: item.event_title || item.title,
+        event_date: null,
+        event_location: "",
+        issued_at: item.created_at,
+        email_status: item.email_status,
+        email_sent_at: item.email_sent_at,
+        email_error: item.email_error,
+        revoked_at: item.revoked_at,
+        verify_url: "",
+        source: "manual_upload",
+        manual_certificate_title: item.title,
+        file_name: item.original_file_name,
+        is_new: !item.viewed_at
+      }));
+      const certificates = issued.concat(uploaded).sort((a: any, b: any) =>
+        new Date(b.issued_at || 0).getTime() - new Date(a.issued_at || 0).getTime()
+      ).slice(0, 150);
+      return json(req, { ok: true, certificates });
     }
 
     if (action === "download") {
@@ -596,6 +626,37 @@ Deno.serve(async (req: Request) => {
       const token = clean(kind === "leader" ? body.leader_token : body.member_token, 500);
       const recipient = await resolveRecipient(kind, token);
       if (!recipient) return json(req, { ok: false, error: "Please sign in again before downloading" }, 401);
+      if (clean(body.certificate_source, 40) === "manual_upload") {
+        const { data: manualIssue, error: manualIssueError } = await db.from("yyc_manual_certificates")
+          .select("id,original_file_name,storage_path,content_type")
+          .eq("id", clean(body.certificate_id, 80))
+          .eq("recipient_kind", kind).eq("recipient_id", recipient.id)
+          .is("revoked_at", null).maybeSingle();
+        if (manualIssueError || !manualIssue) {
+          return json(req, { ok: false, error: "Uploaded certificate was not found for this account" }, 404);
+        }
+        const { data: privatePdf, error: downloadError } = await db.storage
+          .from(MANUAL_CERTIFICATE_BUCKET).download(manualIssue.storage_path);
+        if (downloadError || !privatePdf) {
+          return json(req, { ok: false, error: "The private certificate file is temporarily unavailable" }, 503);
+        }
+        const bytes = new Uint8Array(await privatePdf.arrayBuffer());
+        const pdfBuffer = new ArrayBuffer(bytes.byteLength);
+        new Uint8Array(pdfBuffer).set(bytes);
+        await db.from("yyc_manual_certificates")
+          .update({ viewed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq("id", manualIssue.id);
+        const filename = clean(manualIssue.original_file_name, 180).replace(/[\\/\r\n"]/g, "_") || "YYC-certificate.pdf";
+        return new Response(pdfBuffer, {
+          status: 200,
+          headers: {
+            ...cors(req),
+            "content-type": "application/pdf",
+            "content-disposition": "attachment; filename=\"" + filename + "\"",
+            "cache-control": "private, no-store"
+          }
+        });
+      }
       const { data: issue, error } = await db.from("yyc_certificates")
         .select("*")
         .eq("id", clean(body.certificate_id, 80))
