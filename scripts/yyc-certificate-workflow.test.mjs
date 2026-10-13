@@ -112,6 +112,15 @@ test('manual PDF uploads are private, admin-authorized, size-limited and auditab
   assert.ok(edge.includes('yyc_manual_certificates'));
 });
 
+test('manual PDF upload authenticates before parsing and accepts only active leaders', () => {
+  const headerAuth = edge.indexOf('if (!headerSessionToken || !(await adminOK(headerSessionToken)))');
+  const multipartParse = edge.indexOf('const form = await req.formData();');
+  assert.ok(headerAuth >= 0 && multipartParse > headerAuth, 'multipart body is not parsed before admin authorization');
+  assert.ok(edge.includes('requestLength > MAX_MANUAL_CERTIFICATE_BYTES + 1024 * 1024'), 'oversized upload requests are rejected before body parsing');
+  assert.ok(edge.includes('String(data.status || "active").trim().toLowerCase() !== "active"'), 'manual uploads require an active leader record');
+  assert.ok(app.includes("'X-YYC-Session':adminToken"), 'admin session is sent in a header so the upload can be authenticated before parsing');
+});
+
 test('manual upload creates a prompt, emails the PDF and keeps recipient downloads private', () => {
   assert.ok(edge.includes('subject = "New YYC certificate available · " + title'));
   assert.ok(edge.includes('attachments: [{'));
