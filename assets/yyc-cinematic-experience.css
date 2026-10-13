@@ -55,6 +55,16 @@
     animation:yycCinematicAdminIn .38s var(--yyc-cinema-ease) both !important;
   }
 
+  /* Reels and event collection cubes get a clean entrance as dynamic media appears. */
+  .yyc-reel-card,.yyc-reel-event-cube{
+    animation:yycCinematicCardIn .58s var(--yyc-cinema-ease) backwards;
+    opacity:1;
+    transform:none;
+  }
+  .yyc-reel-card:nth-child(2),.yyc-reel-event-cube:nth-child(2){animation-delay:45ms}
+  .yyc-reel-card:nth-child(3),.yyc-reel-event-cube:nth-child(3){animation-delay:90ms}
+  .yyc-reel-card:nth-child(4),.yyc-reel-event-cube:nth-child(4){animation-delay:135ms}
+
   /* Certificate panels get a little motion feedback without shifting surrounding layout. */
   .yyc-certificate-card,
   .yyc90-cert-row,
@@ -186,6 +196,8 @@ body.yyc-low-data .admin-workspace.yyc-admin-tab-enter{
   filter:none!important;
   animation-duration:.22s!important;
 }
+body.yyc-low-data .yyc-reel-card,
+body.yyc-low-data .yyc-reel-event-cube,
 body.yyc-low-data .yyc-certificate-card,
 body.yyc-low-data .yyc90-cert-row,
 body.yyc-low-data .yyc90-cert-stat{
@@ -209,7 +221,7 @@ html.yyc-smooth-data body.yyc-low-data .swag-card.yyc-data-ready{
   html.yyc-smooth-data .event-card.yyc-data-ready,
   html.yyc-smooth-data .gallery-card.yyc-data-ready,
   html.yyc-smooth-data .swag-card.yyc-data-ready{animation-duration:.42s}
-  .yyc-certificate-card:hover{transform:none}
+  .yyc-reel-card,.yyc-reel-event-cube{animation-duration:.38s}\n  .yyc-certificate-card:hover{transform:none}
   #modalContent.yyc-panel-swap-in{animation-duration:.32s}
 }
 
