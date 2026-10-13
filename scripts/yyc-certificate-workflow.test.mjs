@@ -41,8 +41,11 @@ test('latest attendance status is selected before filtering for Present', () => 
     assert.match(query, /where event_id=p_event_id/);
     assert.doesNotMatch(query, /where event_id=p_event_id and present=true/);
   }
-  assert.match(migration, /where a\.event_id=p_event_id and a\.present=true/);
-  assert.match(migration, /where a\.event_id=p_event_id and a\.present=true/);
+  assert.equal(
+    (migration.match(/where a\.event_id=p_event_id and a\.present=true/g) || []).length,
+    6,
+    'latest attendance rows are filtered to Present only after selecting their latest status'
+  );
 });
 
 test('email jobs are claimed safely, tracked and retryable', () => {
