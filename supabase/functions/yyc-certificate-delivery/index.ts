@@ -289,7 +289,12 @@ async function processQueued(eventId: string | null): Promise<void> {
 }
 function startWorker(eventId: string | null): boolean {
   try {
-    EdgeRuntime.waitUntil(processQueued(eventId).catch((error) => {
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (!runtime || typeof runtime.waitUntil !== "function") {
+      console.error("EdgeRuntime.waitUntil is unavailable; queued email remains available for manual resume.");
+      return false;
+    }
+    runtime.waitUntil(processQueued(eventId).catch((error) => {
       console.error("Certificate background worker failed", error);
     }));
     return true;
@@ -411,7 +416,9 @@ Deno.serve(async (req: Request) => {
         .is("revoked_at", null).maybeSingle();
       if (error || !issue) return json(req, { ok: false, error: "Certificate was not found for this account" }, 404);
       const pdf = await generateCertificatePdf(issue);
-      return new Response(pdf, {
+      const pdfBuffer = new ArrayBuffer(pdf.byteLength);
+      new Uint8Array(pdfBuffer).set(pdf);
+      return new Response(pdfBuffer, {
         status: 200,
         headers: {
           ...cors(req),
