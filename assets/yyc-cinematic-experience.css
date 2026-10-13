@@ -28,7 +28,9 @@
   html.yyc-smooth-data .event-card.yyc-data-ready,
   html.yyc-smooth-data .gallery-card.yyc-data-ready,
   html.yyc-smooth-data .swag-card.yyc-data-ready{
-    animation:yycCinematicCardIn .62s var(--yyc-cinema-ease) var(--yyc-data-delay,0ms) both;
+    animation:yycCinematicCardIn .62s var(--yyc-cinema-ease) var(--yyc-data-delay,0ms) backwards;
+    opacity:1;
+    transform:none;
     backface-visibility:hidden;
   }
 
@@ -60,7 +62,9 @@
     transition:border-color .26s ease,background-color .26s ease,box-shadow .3s ease,transform .3s var(--yyc-cinema-ease);
   }
   .yyc-certificate-card{
-    animation:yycCinematicCardIn .54s var(--yyc-cinema-ease) both;
+    animation:yycCinematicCardIn .54s var(--yyc-cinema-ease) backwards;
+    opacity:1;
+    transform:none;
   }
   .yyc-certificate-card:nth-child(2){animation-delay:35ms}
   .yyc-certificate-card:nth-child(3){animation-delay:70ms}
@@ -107,7 +111,9 @@
   .wrap>.grid>.person,
   .wrap>.coverage,
   .wrap>.official-links{
-    animation:yycCinematicCardIn .56s var(--yyc-cinema-ease) both;
+    animation:yycCinematicCardIn .56s var(--yyc-cinema-ease) backwards;
+    opacity:1;
+    transform:none;
     transition:transform .28s var(--yyc-cinema-ease),border-color .26s ease,box-shadow .28s ease;
   }
   .wrap>.grid>.person:nth-child(2),
