@@ -1015,6 +1015,7 @@
         box.disabled=true;
         var rowEl=box.closest('.yyc90-attendance-row');
 
+        var attendanceSaved=false;
         rpc90(rpcName,args).then(function(result){
           if(!result || result.ok===false) throw new Error(result && result.error || 'Unable to save attendance');
 
@@ -1027,11 +1028,14 @@
             if(kind==='leader') row.leader_id=id; else row.member_id=id;
             att.push(row);
           }
+          attendanceSaved=true;
+          toast90(status==='present'?'PRESENT saved ✓':'ABSENT saved ✓');
 
+          /* Email delivery is best-effort and never undoes a persisted attendance record. */
           if(typeof window.yycSendExternalAlert!=='function'){
-            throw new Error('Attendance email service is not ready.');
+            toast90('Attendance saved ✓ · email service unavailable');
+            return;
           }
-
           return window.yycSendExternalAlert({
             event:'attendance',
             admin_token:window.adminToken,
@@ -1040,27 +1044,34 @@
             event_id:eId,
             attendance_status:status,
             channels:['email']
-          }).then(function(result){
-            if(!result || !result.ok) throw new Error(result && result.error || 'Attendance email could not be sent');
-            var delivery=result.delivery && result.delivery.attendance;
+          }).then(function(notice){
+            if(!notice || !notice.ok){
+              toast90('Attendance saved ✓ · attendance email failed; certificate remains available after event finalization');
+              return;
+            }
+            var delivery=notice.delivery && notice.delivery.attendance;
             var email=delivery && delivery.email;
-            if(!email || email.status!=='sent') throw new Error((email && email.reason) || 'Attendance email could not be sent');
-            return status;
+            if(!email || email.status!=='sent'){
+              toast90('Attendance saved ✓ · email delivery failed; certificate remains available after event finalization');
+              return;
+            }
+            toast90(status==='present'?'PRESENT saved · email sent ✓':'ABSENT saved · email sent ✓');
+          }).catch(function(){
+            toast90('Attendance saved ✓ · email delivery failed; certificate remains available after event finalization');
           });
-        }).then(function(savedStatus){
-          if(savedStatus==='present') toast90('PRESENT saved · email sent ✓');
-          else toast90('ABSENT saved · email sent ✓');
         }).catch(function(err){
-          if(rowEl){
-            rowEl.querySelectorAll('input[data-at90-status]').forEach(function(radio){
-              radio.checked=(radio.value===wasStatus);
-            });
-          }
-          var found=att.find(function(x){return targetMatch(x,id);});
-          if(found) found.present=wasStatus==='present';
-          else if(!wasStatus){
-            for(var ai=att.length-1;ai>=0;ai--){
-              if(targetMatch(att[ai],id)){att.splice(ai,1);break;}
+          if(!attendanceSaved){
+            if(rowEl){
+              rowEl.querySelectorAll('input[data-at90-status]').forEach(function(radio){
+                radio.checked=(radio.value===wasStatus);
+              });
+            }
+            var found=att.find(function(x){return targetMatch(x,id);});
+            if(found) found.present=wasStatus==='present';
+            else if(!wasStatus){
+              for(var ai=att.length-1;ai>=0;ai--){
+                if(targetMatch(att[ai],id)){att.splice(ai,1);break;}
+              }
             }
           }
           toast90(err.message||'Attendance update failed');
@@ -1389,7 +1400,13 @@
       if(tab==='attendance'){
         workspace.innerHTML=renderAttendance90(d);
         renderAttendanceRows90(d);
-        q('#at90Event').addEventListener('change',function(){renderAttendanceRows90(d);});
+        bindCertificateWorkflow90();
+        q('#at90Event').addEventListener('change',function(){
+          renderAttendanceRows90(d);
+          var preview=q('#yyc90CertificatePreviewHost');
+          if(preview)preview.innerHTML='<div class="notice">Preview the selected event to see eligible certificate recipients.</div>';
+          loadYYCCertificateStatus90(yycCertificateSelectedEvent90());
+        });
         q('#at90MemberSearch').addEventListener('input',function(){renderAttendanceRows90(d);});
         qa('[data-at90-kind]').forEach(function(btn){
           btn.addEventListener('click',function(){
