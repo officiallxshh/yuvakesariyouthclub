@@ -3784,7 +3784,7 @@ function renderAdminTab(tab,d){
         payload.append('file',file,file.name);
         var response=await fetch(yycCertificateEndpoint(),{
           method:'POST',cache:'no-store',credentials:'omit',
-          headers:{'apikey':YYC_CONFIG.supabaseKey,'Accept':'application/json','Cache-Control':'no-cache'},
+          headers:{'apikey':YYC_CONFIG.supabaseKey,'Accept':'application/json','Cache-Control':'no-cache','X-YYC-Session':adminToken},
           body:payload
         });
         var raw=await response.text(),data=null;
