@@ -454,7 +454,7 @@
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
       ['attendance','Attendance'],['attendance_pct','Attendance %'],['attendance_reports','Attendance Reports'],['finance','Finance'],['messages','Messages'],
-      ['analytics','Analytics'],['backup','Backup'],['sitepro','Site Pro']
+      ['analytics','Analytics'],['backup','Backup'],['tasks','Tasks'],['recycle','Recycle Bin'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
     });
@@ -994,8 +994,199 @@
     return rpc90('admin_feature_data',{p_token:window.adminToken}).then(function(r){if(!r||!r.ok)throw new Error(r&&r.error||'Unauthorized');featureData=r;window.YYC90_FEATURE_DATA=r;return r;});
   }
 
+
+  function taskBoardMarkup90(tasks){
+    tasks=tasks||[];
+    var base=window.__yycAdminLastData||{};
+    var leaders=(base.leaders||[]).filter(function(x){return !x.status||String(x.status).toLowerCase()==='active';});
+    var events=(base.events||[]);
+    function optionRows(rows,current,kind){
+      return '<option value="">'+(kind==='leader'?'Unassigned':'No linked event')+'</option>'+rows.map(function(x){
+        return '<option value="'+esc90(x.id)+'">'+esc90(kind==='leader'?x.name:(x.title||x.name||'Event'))+'</option>';
+      }).join('');
+    }
+    var cards=tasks.length?tasks.map(function(t){
+      var archived=!!t.is_archived;
+      var latest=(t.updates||[])[0];
+      return '<article class="yyc90-task-card" data-task-card data-status="'+esc90(t.status)+'" data-archived="'+(archived?'true':'false')+'">'+
+        '<div class="yyc90-task-card-head"><div><span class="yyc90-task-priority p-'+esc90(t.priority)+'">'+esc90(String(t.priority||'normal').toUpperCase())+'</span><h3>'+esc90(t.title)+'</h3></div><span class="yyc90-task-state s-'+esc90(t.status)+'">'+esc90(String(t.status||'todo').replace('_',' ').toUpperCase())+'</span></div>'+
+        (t.description?'<p>'+esc90(t.description)+'</p>':'')+
+        '<div class="yyc90-task-meta"><span>♟ '+esc90(t.assigned_leader_name||'Unassigned')+'</span><span>▣ '+esc90(t.event_title||'No linked event')+'</span><span>◷ '+esc90(t.due_date||'No due date')+'</span></div>'+
+        (latest?'<small class="yyc90-task-last">Latest update · '+esc90(latest.actor_label||latest.actor_kind||'')+(latest.note?' — '+esc90(latest.note):'')+'</small>':'')+
+        '<div class="yyc90-task-actions"><button type="button" class="mini-btn gold" data-task-edit="'+esc90(t.id)+'">Edit</button><button type="button" class="mini-btn" data-task-archive="'+esc90(t.id)+'" data-task-archived="'+(archived?'true':'false')+'">'+(archived?'Restore':'Archive')+'</button></div></article>';
+    }).join(''):'<div class="empty">No tasks yet. Assign the first task to a leader.</div>';
+    return adminHeader90('Volunteer task manager')+
+      '<style id="yyc90TaskStyle">'+
+      '.yyc90-task-layout{display:grid;grid-template-columns:minmax(260px,.78fr) minmax(0,1.22fr);gap:14px;margin-top:12px}'+
+      '.yyc90-task-form,.yyc90-task-board{min-width:0;padding:16px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.025)}'+
+      '.yyc90-task-form h3,.yyc90-task-board h3{margin:0 0 12px;color:#e8d5a4;font-size:12px;letter-spacing:.09em;text-transform:uppercase}'+
+      '.yyc90-task-form .field{margin-bottom:10px}.yyc90-task-form input,.yyc90-task-form textarea,.yyc90-task-form select{width:100%;box-sizing:border-box}'+
+      '.yyc90-task-form textarea{min-height:78px;resize:vertical}.yyc90-task-form .form-grid{gap:10px}'+
+      '.yyc90-task-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.yyc90-task-filter input{flex:1;min-width:160px}'+
+      '.yyc90-task-list{display:grid;gap:10px}.yyc90-task-card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(0,0,0,.12)}'+
+      '.yyc90-task-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.yyc90-task-card h3{font-size:13px;letter-spacing:0;text-transform:none;color:#f1eee5;margin:7px 0}.yyc90-task-card p{white-space:pre-wrap;color:#aeb6b2;font-size:12px;line-height:1.55;margin:5px 0 10px;overflow-wrap:anywhere}'+
+      '.yyc90-task-priority,.yyc90-task-state{display:inline-flex;align-items:center;border-radius:999px;padding:4px 7px;font-size:8px;letter-spacing:.08em;font-weight:900;background:rgba(255,255,255,.06);color:#c7cfca}.yyc90-task-priority.p-urgent{color:#ffc1b7;background:rgba(181,64,48,.16)}.yyc90-task-priority.p-high{color:#f0cc8c}.yyc90-task-state.s-completed{color:#b4e5c4}.yyc90-task-state.s-blocked{color:#f0b7b7}'+
+      '.yyc90-task-meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:#8f9994;font-size:10px;margin:9px 0}.yyc90-task-last{display:block;color:#a0aaa5;font-size:10px;line-height:1.4;margin:8px 0}.yyc90-task-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}'+
+      '@media(max-width:900px){.yyc90-task-layout{grid-template-columns:1fr}}'+
+      '</style>'+
+      '<div class="yyc90-task-layout">'+
+      '<form id="yyc90TaskForm" class="yyc90-task-form"><h3 id="yyc90TaskFormTitle">Create a task</h3><input id="yyc90TaskId" type="hidden">'+
+      '<div class="field"><label for="yyc90TaskTitle">Task title</label><input id="yyc90TaskTitle" maxlength="140" minlength="3" placeholder="e.g. Coordinate cleanliness drive" required></div>'+
+      '<div class="field"><label for="yyc90TaskDescription">Details and instructions</label><textarea id="yyc90TaskDescription" maxlength="3000" placeholder="What needs to be done? Keep private member information out of task notes."></textarea></div>'+
+      '<div class="field"><label for="yyc90TaskLeader">Assign to leader</label><select id="yyc90TaskLeader">'+optionRows(leaders,'','leader')+'</select></div>'+
+      '<div class="field"><label for="yyc90TaskEvent">Related event</label><select id="yyc90TaskEvent">'+optionRows(events,'','event')+'</select></div>'+
+      '<div class="form-grid"><div class="field"><label for="yyc90TaskDue">Due date</label><input id="yyc90TaskDue" type="date"></div><div class="field"><label for="yyc90TaskPriority">Priority</label><select id="yyc90TaskPriority"><option value="low">Low</option><option value="normal" selected>Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></div></div>'+
+      '<div class="field"><label for="yyc90TaskStatus">Status</label><select id="yyc90TaskStatus"><option value="todo">To do</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div>'+
+      '<div class="form-actions"><button type="submit" class="btn gold" id="yyc90TaskSave">CREATE TASK</button><button type="button" class="btn outline" id="yyc90TaskReset">CLEAR</button></div>'+
+      '<p class="yyc90-task-last">Leaders can only see tasks assigned to their account. They can update progress, not change assignments or task instructions.</p></form>'+
+      '<section class="yyc90-task-board"><h3>Task board · '+tasks.filter(function(t){return !t.is_archived;}).length+' active · '+tasks.filter(function(t){return t.is_archived;}).length+' archived</h3>'+
+      '<div class="yyc90-task-filter"><input id="yyc90TaskSearch" class="admin-search" placeholder="Search title, leader or event"><select id="yyc90TaskView"><option value="active">Active tasks</option><option value="all">All tasks</option><option value="archived">Archived tasks</option></select></div>'+
+      '<div class="yyc90-task-list" id="yyc90TaskList">'+cards+'</div></section></div>';
+  }
+
+  function renderTaskWorkspace90(){
+    var workspace=q('#adminWorkspace');
+    if(!workspace)return;
+    workspace.innerHTML=adminHeader90('Volunteer task manager')+'<div class="storage-loading"><strong>Loading task board…</strong></div>';
+    rpc90('admin_tasks_list',{p_token:window.adminToken}).then(function(r){
+      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load tasks');
+      var tasks=r.tasks||[];
+      if(!q('#adminWorkspace'))return;
+      workspace.innerHTML=taskBoardMarkup90(tasks);
+      function showMessage(err){toast90(err&&err.message||'Task action failed');}
+      function resetForm(){
+        var form=q('#yyc90TaskForm');if(!form)return;
+        form.reset();q('#yyc90TaskId').value='';q('#yyc90TaskStatus').value='todo';
+        q('#yyc90TaskPriority').value='normal';q('#yyc90TaskFormTitle').textContent='Create a task';
+        q('#yyc90TaskSave').textContent='CREATE TASK';
+      }
+      q('#yyc90TaskReset').onclick=resetForm;
+      q('#yyc90TaskForm').addEventListener('submit',async function(e){
+        e.preventDefault();
+        var btn=q('#yyc90TaskSave');if(btn.disabled)return;
+        btn.disabled=true;var original=btn.textContent;btn.textContent='SAVING…';
+        try{
+          var id=q('#yyc90TaskId').value||null;
+          var payload={
+            title:q('#yyc90TaskTitle').value.trim(),
+            description:q('#yyc90TaskDescription').value.trim(),
+            assigned_leader_id:q('#yyc90TaskLeader').value||null,
+            related_event_id:q('#yyc90TaskEvent').value||null,
+            due_date:q('#yyc90TaskDue').value||null,
+            priority:q('#yyc90TaskPriority').value,
+            status:q('#yyc90TaskStatus').value
+          };
+          var saved=await rpc90('admin_task_upsert',{p_token:window.adminToken,p_id:id,p_payload:payload});
+          if(!saved||!saved.ok)throw new Error(saved&&saved.error||'Could not save task');
+          toast90(id?'Task updated':'Task created');
+          renderTaskWorkspace90();
+        }catch(err){showMessage(err);}
+        finally{btn.disabled=false;btn.textContent=original;}
+      });
+      function filterTasks(){
+        var term=(q('#yyc90TaskSearch').value||'').toLowerCase();
+        var view=q('#yyc90TaskView').value;
+        qa('[data-task-card]').forEach(function(card){
+          var archived=card.getAttribute('data-archived')==='true';
+          var viewOk=view==='all'||(view==='archived'?archived:!archived);
+          card.style.display=viewOk&&(!term||card.textContent.toLowerCase().indexOf(term)>=0)?'':'none';
+        });
+      }
+      q('#yyc90TaskSearch').addEventListener('input',filterTasks);
+      q('#yyc90TaskView').addEventListener('change',filterTasks);filterTasks();
+      qa('[data-task-edit]').forEach(function(b){
+        b.onclick=function(){
+          var t=tasks.find(function(x){return String(x.id)===String(b.getAttribute('data-task-edit'));});
+          if(!t)return;
+          q('#yyc90TaskId').value=t.id;q('#yyc90TaskTitle').value=t.title||'';
+          q('#yyc90TaskDescription').value=t.description||'';
+          q('#yyc90TaskLeader').value=t.assigned_leader_id||'';
+          q('#yyc90TaskEvent').value=t.related_event_id||'';
+          q('#yyc90TaskDue').value=t.due_date||'';
+          q('#yyc90TaskPriority').value=t.priority||'normal';
+          q('#yyc90TaskStatus').value=t.status||'todo';
+          q('#yyc90TaskFormTitle').textContent='Edit task';
+          q('#yyc90TaskSave').textContent='SAVE CHANGES';
+          q('#yyc90TaskTitle').focus();
+          var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          q('#yyc90TaskForm').scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
+        };
+      });
+      qa('[data-task-archive]').forEach(function(b){
+        b.onclick=async function(){
+          var isArchived=b.getAttribute('data-task-archived')==='true';
+          if(!isArchived&&!window.confirm('Archive this task? You can restore it later.'))return;
+          b.disabled=true;
+          try{
+            var archived=await rpc90('admin_task_archive',{p_token:window.adminToken,p_id:b.getAttribute('data-task-archive'),p_archived:!isArchived});
+            if(!archived||!archived.ok)throw new Error(archived&&archived.error||'Could not update task');
+            toast90(isArchived?'Task restored':'Task archived');renderTaskWorkspace90();
+          }catch(err){showMessage(err);b.disabled=false;}
+        };
+      });
+    }).catch(function(err){
+      if(workspace)workspace.innerHTML=adminHeader90('Volunteer task manager')+'<div class="notice">'+esc90(err.message||'Task board unavailable')+'</div>';
+    });
+  }
+
+
+  function renderRecycleBinWorkspace90(){
+    var workspace=q('#adminWorkspace');
+    if(!workspace)return;
+    workspace.innerHTML=adminHeader90('Recycle Bin')+
+      '<div id="yyc90RecycleList"><div class="storage-loading"><strong>Loading recoverable content…</strong></div></div>';
+    rpc90('admin_recycle_bin_list',{p_token:window.adminToken}).then(function(r){
+      var host=q('#yyc90RecycleList');
+      if(!host)return;
+      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load Recycle Bin');
+      var items=r.items||[];
+      if(!items.length){
+        host.innerHTML='<div class="empty">Recycle Bin is empty. Deleted updates, gallery items, events, swags, achievements and history items will appear here when recoverable.</div>';
+        return;
+      }
+      host.innerHTML=
+        '<div class="notice" style="margin-bottom:12px">Restore returns a supported record to its original collection. Permanent delete removes the saved recovery payload and cannot be undone.</div>'+
+        '<div class="admin-card-list">'+items.map(function(item){
+          return '<article class="approval-card"><div class="meta"><strong>'+esc90(item.entity_title||'Deleted content')+'</strong>'+
+            '<small>'+esc90(String(item.entity_type||'content').replace('_',' ').toUpperCase())+
+            ' · Deleted '+esc90(format90Date(item.deleted_at))+' · By '+esc90(item.deleted_by||'Admin')+'</small></div>'+
+            '<div class="admin-actions"><button type="button" class="mini-btn gold" data-recycle-restore="'+esc90(item.id)+'">Restore</button>'+
+            '<button type="button" class="mini-btn" data-recycle-purge="'+esc90(item.id)+'">Delete permanently</button></div></article>';
+        }).join('')+'</div>';
+
+      qa('[data-recycle-restore]').forEach(function(btn){
+        btn.addEventListener('click',async function(){
+          btn.disabled=true;
+          try{
+            var restored=await rpc90('admin_recycle_restore',{p_token:window.adminToken,p_id:btn.getAttribute('data-recycle-restore')});
+            if(!restored||!restored.ok)throw new Error(restored&&restored.error||'Unable to restore item');
+            toast90('Content restored to '+String(restored.entity_type||'its original collection'));
+            if(typeof window.loadPublic==='function')window.loadPublic();
+            renderRecycleBinWorkspace90();
+          }catch(err){toast90(err.message||'Restore failed');btn.disabled=false;}
+        });
+      });
+      qa('[data-recycle-purge]').forEach(function(btn){
+        btn.addEventListener('click',async function(){
+          if(!window.confirm('Permanently delete this recovery copy? This cannot be undone.'))return;
+          btn.disabled=true;
+          try{
+            var purged=await rpc90('admin_recycle_purge',{p_token:window.adminToken,p_id:btn.getAttribute('data-recycle-purge')});
+            if(!purged||!purged.ok)throw new Error(purged&&purged.error||'Unable to permanently delete recovery copy');
+            toast90('Recovery copy permanently deleted');renderRecycleBinWorkspace90();
+          }catch(err){toast90(err.message||'Permanent delete failed');btn.disabled=false;}
+        });
+      });
+    }).catch(function(err){
+      var host=q('#yyc90RecycleList');
+      if(host)host.innerHTML='<div class="notice">'+esc90(err.message||'Recycle Bin is temporarily unavailable')+'</div>';
+    });
+  }
+
   function renderCustomAdminTab90(tab){
     if(tab==='mediaaudit'){renderMediaAudit90f();return;}
+    if(tab==='tasks'){renderTaskWorkspace90();return;}
+    if(tab==='recycle'){renderRecycleBinWorkspace90();return;}
     if(tab==='sitepro'){
       var s=(window.__yycAdminLastData||{}).settings||{};
       q('#adminWorkspace').innerHTML=renderSitePro90(s);q('#spAnn').value=String(!!s.announcement_enabled);q('#spMaint').value=String(!!s.maintenance_mode);
@@ -1111,12 +1302,12 @@
     if(tab==='achievements'){
       q('#a90Add').onclick=function(){achievementForm90(null);};
       qa('[data-a90-edit]').forEach(function(b){b.onclick=function(){achievementForm90(b.getAttribute('data-a90-edit'));};});
-      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);toast90('Achievement deleted');}).catch(function(e){toast90(e.message);});};});
+      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);toast90('Achievement moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
     }
     if(tab==='history'){
       q('#h90Add').onclick=function(){historyForm90(null);};
       qa('[data-h90-edit]').forEach(function(b){b.onclick=function(){historyForm90(b.getAttribute('data-h90-edit'));};});
-      qa('[data-h90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete history item?'))return;rpc90('admin_delete_history',{p_token:window.adminToken,p_id:b.getAttribute('data-h90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('history',true);toast90('History item deleted');}).catch(function(e){toast90(e.message);});};});
+      qa('[data-h90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete history item?'))return;rpc90('admin_delete_history',{p_token:window.adminToken,p_id:b.getAttribute('data-h90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('history',true);toast90('History item moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
     }
   }
 

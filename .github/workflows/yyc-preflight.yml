@@ -44,7 +44,11 @@ jobs:
           node --check scripts/backup-supabase.mjs
           node --check scripts/validate-backup.mjs
           node --check scripts/yyc-browser-regression.mjs
+          node --check scripts/yyc-task-workflow.test.mjs
           node --check scripts/production-monitor.mjs
+
+      - name: Volunteer task workflow checks
+        run: npm run test:task-workflow
 
       - name: Full repository audit
         run: node scripts/yyc-full-audit.mjs
