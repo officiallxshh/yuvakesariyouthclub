@@ -54,6 +54,7 @@ jobs:
           node --check scripts/yyc-browser-regression.mjs
           node --check scripts/yyc-task-workflow.test.mjs
           node --check scripts/yyc-certificate-workflow.test.mjs
+          node --check scripts/yyc-cinematic-motion.test.mjs
           node --check scripts/production-monitor.mjs
 
       - name: Volunteer task workflow checks
@@ -61,6 +62,9 @@ jobs:
 
       - name: Certificate issuance and delivery checks
         run: npm run test:certificate-workflow
+
+      - name: Cinematic motion and accessibility checks
+        run: npm run test:cinematic-motion
 
       - name: Full repository audit
         run: node scripts/yyc-full-audit.mjs
