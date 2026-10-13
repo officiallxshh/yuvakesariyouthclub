@@ -120,7 +120,7 @@ begin
     ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
-      and lower(coalesce(l.status,'active')) <> 'inactive'
+      and lower(coalesce(l.status,'active')) = 'active'
   ) x;
 
   select
@@ -234,7 +234,7 @@ begin
     ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
-      and lower(coalesce(l.status,'active')) <> 'inactive'
+      and lower(coalesce(l.status,'active')) = 'active'
   ) eligible;
 
   if eligible_count=0 then
@@ -274,7 +274,7 @@ begin
     ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
-      and lower(coalesce(l.status,'active')) <> 'inactive'
+      and lower(coalesce(l.status,'active')) = 'active'
   ) x
   on conflict (event_id,recipient_kind,recipient_id) do nothing;
 
