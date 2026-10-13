@@ -385,7 +385,7 @@ try {
   page.once('dialog', (dialog) => dialog.accept());
   await page.locator('#yyc90CertificateFinalize').click();
   await page.getByText('Certificates issued ✓', { exact: false }).waitFor({ state: 'visible', timeout: 6000 });
-  await page.getByText('YYC-CERT-2026-000001', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#yyc90CertificateStatusHost').getByText('YYC-CERT-2026-000001', { exact: false }).waitFor({ state: 'visible', timeout: 6000 });
   if (!(await page.locator('#yyc90CertificateStatusHost').innerText()).includes('1 / 2 SENT')) {
     throw new Error('Certificate queue status should show its delivery counts after finalization.');
   }
