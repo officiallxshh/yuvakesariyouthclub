@@ -414,8 +414,9 @@ try {
   await motionPage.waitForFunction(() =>
     document.documentElement.classList.contains('yyc-smooth-data') &&
     Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
-  , { timeout: 12000 });
+  , null, { timeout: 12000 });
   const motionResult = await motionPage.evaluate(() => {
+    document.body.classList.add('yyc-scroll-ready');
     const section = document.createElement('section');
     section.className = 'section';
     const reveal = document.createElement('div');
@@ -430,21 +431,29 @@ try {
 
     const modal = document.querySelector('#modalContent');
     if (modal) modal.classList.add('yyc-panel-swap-in');
-    const workspace = document.querySelector('#adminWorkspace');
-    if (workspace) workspace.classList.add('yyc-admin-tab-enter');
+    let workspace = document.querySelector('#adminWorkspace');
+    const madeWorkspace = !workspace;
+    if (!workspace) {
+      workspace = document.createElement('div');
+      workspace.className = 'admin-workspace';
+      workspace.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+      document.body.appendChild(workspace);
+    }
+    workspace.classList.add('yyc-admin-tab-enter');
 
     const result = {
       reveal: getComputedStyle(reveal).animationName,
       card: getComputedStyle(card).animationName,
       modal: modal ? getComputedStyle(modal).animationName : 'missing',
-      admin: workspace ? getComputedStyle(workspace).animationName : 'missing',
+      admin: getComputedStyle(workspace).animationName,
       noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
       reduced: matchMedia('(prefers-reduced-motion: reduce)').matches
     };
     reveal.parentNode.remove();
     card.remove();
     if (modal) modal.classList.remove('yyc-panel-swap-in');
-    if (workspace) workspace.classList.remove('yyc-admin-tab-enter');
+    workspace.classList.remove('yyc-admin-tab-enter');
+    if (madeWorkspace) workspace.remove();
     return result;
   });
   if (motionResult.reduced) throw new Error('No-preference browser context unexpectedly requests reduced motion.');
