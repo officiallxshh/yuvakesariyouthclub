@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const migration = read('supabase/migrations/20261013150000_yyc_certificate_delivery_workflow.sql');
+const manualMigration = read('supabase/migrations/20261013180000_yyc_manual_certificate_uploads.sql');
 const edge = read('supabase/functions/yyc-certificate-delivery/index.ts');
 const app = read('app.js');
 const attendance = read('yyc90.js');
@@ -91,4 +92,37 @@ test('certificate workflow has browser regression coverage and a non-indexed ver
   assert.match(verifier, /name="robots" content="noindex,follow"/);
   assert.match(verifier, /action=verify&code=/);
   assert.match(verifier, /Verify authenticity using the QR code|CERTIFICATE/);
+});
+
+
+test('manual PDF uploads are private, admin-authorized, size-limited and auditable', () => {
+  assert.match(manualMigration, /create table if not exists public\\.yyc_manual_certificates/);
+  assert.match(manualMigration, /alter table public\\.yyc_manual_certificates enable row level security/);
+  assert.match(manualMigration, /revoke all on table public\\.yyc_manual_certificates from public, anon, authenticated/);
+  assert.match(manualMigration, /grant all on table public\\.yyc_manual_certificates to service_role/);
+  assert.match(manualMigration, /values \\('yyc-certificates', 'yyc-certificates', false, 10485760, array\\['application/pdf'\\]\\)/);
+  assert.match(manualMigration, /storage_path text not null unique/);
+  assert.match(manualMigration, /content_type text not null default 'application/pdf'/);
+  assert.match(edge, /action === "upload_manual"/);
+  assert.match(edge, /if \\(!(await adminOK\\(adminToken\\)\\)\\)/);
+  assert.match(edge, /MAX_MANUAL_CERTIFICATE_BYTES/);
+  assert.match(edge, /"%PDF-"/);
+  assert.match(edge, /resolveAdminRecipient\\(kind, targetId\\)/);
+  assert.match(edge, /db\\.storage\\.from\\(MANUAL_CERTIFICATE_BUCKET\\)\\.upload/);
+  assert.match(edge, /yyc_manual_certificates/);
+});
+
+test('manual upload creates a prompt, emails the PDF and keeps recipient downloads private', () => {
+  assert.match(edge, /subject = "New YYC certificate available · " \+ title/);
+  assert.match(edge, /attachments:\\s*\\[\\s*\\{[\\s\\S]*?content:\\s*bytesToBase64\\(pdfBytes\\)/);
+  assert.match(edge, /member_notifications/);
+  assert.match(edge, /portal_prompt: true/);
+  assert.match(edge, /source: "manual_upload"/);
+  assert.match(edge, /certificate_source, 40\\) === "manual_upload"/);
+  assert.match(edge, /\\.eq\\("recipient_kind", kind\\)\\.eq\\("recipient_id", recipient\\.id\\)/);
+  assert.match(app, /id="yycManualCertificateForm"/);
+  assert.match(app, /action','upload_manual'/);
+  assert.match(app, /NEW CERTIFICATE/);
+  assert.match(app, /data-yyc-cert-source/);
+  assert.match(app, /certificate_source:download\\.getAttribute\\('data-yyc-cert-source'\\)/);
 });
