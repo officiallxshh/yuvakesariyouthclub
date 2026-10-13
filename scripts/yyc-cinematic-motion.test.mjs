@@ -12,15 +12,16 @@ const leadersPage = read('leaders.html');
 const mediaPage = read('media.html');
 
 test('cinematic stylesheet loads before the exclusive active-nav stylesheet', () => {
-  const cinematic = index.indexOf('assets/yyc-cinematic-experience.css?v=20261013-45-cinematic-experience');
-  const nav = index.indexOf('assets/yyc-nav-active-state.css?v=20261013-45-cinematic-experience');
+  const currentBuild = '20261013-46-manual-certificate-upload';
+  const cinematic = index.indexOf('assets/yyc-cinematic-experience.css?v=' + currentBuild);
+  const nav = index.indexOf('assets/yyc-nav-active-state.css?v=' + currentBuild);
   assert.ok(cinematic >= 0, 'cinematic stylesheet is linked');
   assert.ok(nav > cinematic, 'exclusive nav active-state stylesheet remains after cinematic layer');
   const links = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
   assert.ok(links.at(-1)?.[0].includes('yyc-nav-active-state.css'), 'nav active-state stylesheet is still the final linked stylesheet');
-  assert.match(index, /name="yyc-build" content="20261013-45-cinematic-experience"/);
-  assert.match(app, /var YYC_APP_BUILD='20261013-45-cinematic-experience'/);
-  assert.match(audit, /const currentBuild = "20261013-45-cinematic-experience";/);
+  assert.ok(index.includes('name="yyc-build" content="' + currentBuild + '"'));
+  assert.ok(app.includes("var YYC_APP_BUILD='" + currentBuild + "'"));
+  assert.ok(audit.includes('const currentBuild = "' + currentBuild + '";'));
 });
 
 test('section reveal, dynamic cards, modal and admin tab animations reuse existing lifecycle classes', () => {

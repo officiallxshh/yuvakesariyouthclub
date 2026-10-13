@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const migration = read('supabase/migrations/20261013150000_yyc_certificate_delivery_workflow.sql');
+const manualMigration = read('supabase/migrations/20261013180000_yyc_manual_certificate_uploads.sql');
 const edge = read('supabase/functions/yyc-certificate-delivery/index.ts');
 const app = read('app.js');
 const attendance = read('yyc90.js');
@@ -107,4 +108,47 @@ test('certificate workflow has browser regression coverage and a non-indexed ver
   assert.match(verifier, /name="robots" content="noindex,follow"/);
   assert.match(verifier, /action=verify&code=/);
   assert.match(verifier, /Verify authenticity using the QR code|CERTIFICATE/);
+});
+
+
+test('manual PDF uploads are private, admin-authorized, size-limited and auditable', () => {
+  assert.ok(manualMigration.includes('create table if not exists public.yyc_manual_certificates'));
+  assert.ok(manualMigration.includes('alter table public.yyc_manual_certificates enable row level security'));
+  assert.ok(manualMigration.includes('revoke all on table public.yyc_manual_certificates from public, anon, authenticated'));
+  assert.ok(manualMigration.includes('grant all on table public.yyc_manual_certificates to service_role'));
+  assert.ok(manualMigration.includes("values ('yyc-certificates', 'yyc-certificates', false, 10485760, array['application/pdf'])"));
+  assert.ok(manualMigration.includes('storage_path text not null unique'));
+  assert.ok(manualMigration.includes("content_type text not null default 'application/pdf'"));
+  assert.ok(edge.includes('action === "upload_manual"'));
+  assert.ok(edge.includes('if (!(await adminOK(adminToken)))'));
+  assert.ok(edge.includes('MAX_MANUAL_CERTIFICATE_BYTES'));
+  assert.ok(edge.includes('"%PDF-"'));
+  assert.ok(edge.includes('resolveAdminRecipient(kind, targetId)'));
+  assert.ok(edge.includes('db.storage.from(MANUAL_CERTIFICATE_BUCKET).upload'));
+  assert.ok(edge.includes('yyc_manual_certificates'));
+});
+
+test('manual PDF upload authenticates before parsing and accepts only active leaders', () => {
+  const headerAuth = edge.indexOf('if (!headerSessionToken || !(await adminOK(headerSessionToken)))');
+  const multipartParse = edge.indexOf('const form = await req.formData();');
+  assert.ok(headerAuth >= 0 && multipartParse > headerAuth, 'multipart body is not parsed before admin authorization');
+  assert.ok(edge.includes('requestLength > MAX_MANUAL_CERTIFICATE_BYTES + 1024 * 1024'), 'oversized upload requests are rejected before body parsing');
+  assert.ok(edge.includes('String(data.status || "active").trim().toLowerCase() !== "active"'), 'manual uploads require an active leader record');
+  assert.ok(app.includes("'X-YYC-Session':adminToken"), 'admin session is sent in a header so the upload can be authenticated before parsing');
+});
+
+test('manual upload creates a prompt, emails the PDF and keeps recipient downloads private', () => {
+  assert.ok(edge.includes('subject = "New YYC certificate available · " + title'));
+  assert.ok(edge.includes('attachments: [{'));
+  assert.ok(edge.includes('content: bytesToBase64(pdfBytes)'));
+  assert.ok(edge.includes('member_notifications'));
+  assert.ok(edge.includes('portal_prompt: true'));
+  assert.ok(edge.includes('source: "manual_upload"'));
+  assert.ok(edge.includes('certificate_source, 40) === "manual_upload"'));
+  assert.ok(edge.includes('.eq("recipient_kind", kind).eq("recipient_id", recipient.id)'));
+  assert.ok(app.includes('id="yycManualCertificateForm"'));
+  assert.ok(app.includes("action','upload_manual'"));
+  assert.ok(app.includes('NEW CERTIFICATE'));
+  assert.ok(app.includes('data-yyc-cert-source'));
+  assert.ok(app.includes("certificate_source:download.getAttribute('data-yyc-cert-source')"));
 });
