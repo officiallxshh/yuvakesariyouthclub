@@ -3708,7 +3708,19 @@ function renderAdminTab(tab,d){
       });
     }
 
-    a.innerHTML='<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send individual messages or email important notices to all approved members or active leaders. Broadcast emails are sent privately and recorded per recipient.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
+    a.innerHTML='<section id="yycManualCertificateUpload" style="margin-bottom:22px;padding:18px;border:1px solid rgba(218,184,112,.24);border-radius:18px;background:linear-gradient(135deg,rgba(218,184,112,.055),rgba(8,13,17,.4))">'+
+      '<style id="yycManualCertificateUploadStyle">#yycManualCertificateUpload .yyc-manual-cert-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}#yycManualCertificateUpload h3{margin:5px 0;color:#f0d18a;font:600 23px Georgia,serif}#yycManualCertificateUpload .yyc-manual-cert-intro{max-width:600px;color:#9ba69f;font-size:11px;line-height:1.7;margin:7px 0 14px}#yycManualCertificateUpload .yyc-manual-cert-note{padding:12px 14px;border:1px solid rgba(218,184,112,.16);border-radius:12px;background:rgba(218,184,112,.035);color:#aab2ac;font-size:10px;line-height:1.7;margin-top:12px}#yycManualCertificateUpload input[type=file]{width:100%;font-size:11px;color:#b8c0ba}#yycManualCertificateUpload input[type=file]::file-selector-button{border:1px solid rgba(218,184,112,.3);border-radius:9px;background:rgba(218,184,112,.09);color:#e6ca87;padding:9px 12px;margin-right:10px;cursor:pointer}#yycManualCertificateUpload .yyc-manual-cert-result{margin-top:12px;padding:12px;border-radius:11px;border:1px solid rgba(110,205,137,.22);color:#a8d9b4;font-size:11px;line-height:1.7}#yycManualCertificateUpload .yyc-manual-cert-result.error{border-color:rgba(230,130,130,.28);color:#e8b0a8}@media(max-width:700px){#yycManualCertificateUpload{padding:14px!important}#yycManualCertificateUpload h3{font-size:20px}}</style>'+
+      '<div class="yyc-manual-cert-head"><div><span class="modal-kicker">PERSONAL CERTIFICATE DESK</span><h3>Upload a certificate for a member or leader.</h3><p class="yyc-manual-cert-intro">Upload an existing PDF certificate for one approved member or active leader. The PDF is stored privately, appears with a NEW CERTIFICATE prompt in their My certificates panel, and an email notification with the PDF attached is sent when a valid email is on file.</p></div><span class="yyc-certificate-state sent">PRIVATE PDF · RECIPIENT ONLY</span></div>'+
+      '<form id="yycManualCertificateForm" class="admin-form"><div class="form-grid">'+
+        '<div class="field"><label>Recipient type</label><select id="yycManualCertificateKind" required><option value="member">Member</option><option value="leader">Leader</option></select></div>'+
+        '<div class="field"><label>Recipient</label><select id="yycManualCertificateRecipient" required><option value="">Select recipient</option></select></div>'+
+        '<div class="field"><label>Certificate title</label><input id="yycManualCertificateTitle" maxlength="160" required placeholder="e.g. Certificate of Appreciation"></div>'+
+        '<div class="field"><label>Event / occasion (optional)</label><input id="yycManualCertificateEvent" maxlength="180" placeholder="e.g. Cleanliness Drive · 10 Oct 2026"></div>'+
+        '<div class="field full"><label>Certificate PDF</label><input id="yycManualCertificateFile" type="file" accept="application/pdf,.pdf" required><small class="field-note">PDF only · maximum 10 MB · private storage · no public file link.</small></div>'+
+      '</div><div class="yyc-manual-cert-note">Upload is recorded before email delivery is attempted. If email delivery fails or the recipient has no valid email, the private portal copy remains available and the result below reports the delivery status.</div>'+
+      '<div class="form-actions"><button type="submit" class="btn gold" id="yycManualCertificateSubmit">UPLOAD &amp; NOTIFY RECIPIENT →</button></div>'+
+      '<div id="yycManualCertificateResult" class="yyc-manual-cert-result" hidden aria-live="polite"></div></form></section>'+
+      '<div class="admin-top"><div><div class="modal-kicker">YYC COMMUNICATION CENTER</div><h2 class="modal-title">Messages</h2><p class="admin-subline">Send individual messages or email important notices to all approved members or active leaders. Broadcast emails are sent privately and recorded per recipient.</p></div><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn" id="yycMessageRefresh">↻ Refresh</button></div></div>'+
       '<div class="yyc-provider-strip">'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">✉</span><div><b>Email</b><small id="yycEmailProviderStatus">Checking…</small></div></div>'+
         '<div class="yyc-provider-card"><span class="yyc-provider-icon">◉</span><div><b>WhatsApp</b><small id="yycWhatsappProviderStatus">Checking…</small></div></div>'+
@@ -3728,6 +3740,78 @@ function renderAdminTab(tab,d){
       '</form>'+
       '<div class="yyc-message-history-head"><div><div class="modal-kicker">DELIVERY LOG</div><h3>Recent messages</h3></div><span>Latest 60 attempts</span></div>'+
       '<div class="yyc-message-history" id="yycMessageHistory"><div class="yyc-message-history-loading">Loading delivery history…</div></div>';
+
+    var manualCertificateKind=$('#yycManualCertificateKind');
+    var manualCertificateRecipient=$('#yycManualCertificateRecipient');
+    var manualCertificateForm=$('#yycManualCertificateForm');
+    var manualCertificateResult=$('#yycManualCertificateResult');
+    function syncManualCertificateRecipients(){
+      if(!manualCertificateKind||!manualCertificateRecipient)return;
+      var kind=manualCertificateKind.value==='leader'?'leader':'member';
+      var list=kind==='leader'?activeLeaders:approvedMembers.filter(function(m){return m.approved!==false&&!m.duplicate_of;});
+      manualCertificateRecipient.innerHTML='<option value="">Select '+(kind==='leader'?'leader':'member')+'</option>'+list.map(function(x){
+        return '<option value="'+esc(x.id)+'">'+esc(x.name||'YYC '+kind)+' · '+esc(x.role_number||x.role||kind.toUpperCase())+'</option>';
+      }).join('');
+      manualCertificateRecipient.disabled=!list.length;
+      if(!list.length)manualCertificateRecipient.innerHTML='<option value="">No eligible '+(kind==='leader'?'leaders':'members')+' found</option>';
+    }
+    if(manualCertificateKind)manualCertificateKind.addEventListener('change',syncManualCertificateRecipients);
+    syncManualCertificateRecipients();
+    if(manualCertificateForm)manualCertificateForm.addEventListener('submit',async function(e){
+      e.preventDefault();
+      var btn=$('#yycManualCertificateSubmit');
+      var file=$('#yycManualCertificateFile')&&$('#yycManualCertificateFile').files[0];
+      var targetId=manualCertificateRecipient&&manualCertificateRecipient.value;
+      var kind=manualCertificateKind&&manualCertificateKind.value==='leader'?'leader':'member';
+      var title=$('#yycManualCertificateTitle')?$('#yycManualCertificateTitle').value.trim():'';
+      var eventTitle=$('#yycManualCertificateEvent')?$('#yycManualCertificateEvent').value.trim():'';
+      if(!targetId){toast('Choose an approved member or active leader.');return;}
+      if(title.length<2){toast('Enter a certificate title.');return;}
+      if(!file){toast('Choose a PDF certificate to upload.');return;}
+      if(file.size<1||file.size>10*1024*1024){toast('Choose a PDF smaller than 10 MB.');return;}
+      if(!/\.pdf$/i.test(file.name)||(file.type&&file.type!=='application/pdf')){toast('Only PDF certificates are supported.');return;}
+      if(await file.slice(0,5).text()!=='%PDF-'){toast('The selected file does not appear to be a valid PDF.');return;}
+      if(btn){btn.disabled=true;btn.textContent='UPLOADING & SENDING PROMPT…';}
+      if(manualCertificateResult){manualCertificateResult.hidden=true;manualCertificateResult.classList.remove('error');manualCertificateResult.textContent='';}
+      try{
+        var payload=new FormData();
+        payload.append('action','upload_manual');
+        payload.append('admin_token',adminToken);
+        payload.append('target_kind',kind);
+        payload.append('target_id',targetId);
+        payload.append('title',title);
+        payload.append('event_title',eventTitle);
+        payload.append('file',file,file.name);
+        var response=await fetch(yycCertificateEndpoint(),{
+          method:'POST',cache:'no-store',credentials:'omit',
+          headers:{'apikey':YYC_CONFIG.supabaseKey,'Accept':'application/json','Cache-Control':'no-cache'},
+          body:payload
+        });
+        var raw=await response.text(),data=null;
+        try{data=raw?JSON.parse(raw):null;}catch(_){}
+        if(!response.ok||!data||data.ok!==true)throw new Error(data&&data.error||'Certificate upload service is unavailable.');
+        var emailStatus=String(data.email_status||'skipped').toLowerCase();
+        var emailMessage=emailStatus==='sent'
+          ?'Email prompt sent with the PDF attached.'
+          :emailStatus==='skipped'
+            ?'No valid email is on file; the certificate is still available in the recipient portal.'
+            :'Upload succeeded, but the email prompt failed: '+String(data.email_reason||'please check the email configuration.');
+        var recipientName=data.certificate&&data.certificate.recipient_name||'Selected recipient';
+        if(manualCertificateResult){
+          manualCertificateResult.hidden=false;
+          manualCertificateResult.classList.toggle('error',emailStatus==='failed');
+          manualCertificateResult.innerHTML='<strong>Certificate uploaded ✓</strong><br>'+esc(recipientName)+' · '+esc(title)+'<br>Portal prompt: ready · '+esc(emailMessage);
+        }
+        toast(emailStatus==='sent'?'Certificate uploaded · email prompt sent ✓':emailStatus==='skipped'?'Certificate uploaded · portal prompt ready':'Certificate uploaded · email delivery needs attention');
+        manualCertificateForm.reset();
+        syncManualCertificateRecipients();
+      }catch(err){
+        if(manualCertificateResult){manualCertificateResult.hidden=false;manualCertificateResult.classList.add('error');manualCertificateResult.textContent=err.message||'Certificate upload failed.';}
+        toast(err.message||'Certificate upload failed.');
+      }finally{
+        if(btn){btn.disabled=false;btn.textContent='UPLOAD & NOTIFY RECIPIENT →';}
+      }
+    });
 
     var nf=$('#adminNotificationForm');
     var targetKind=$('#anTargetKind'),targetId=$('#anTargetId');
