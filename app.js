@@ -2427,6 +2427,8 @@ function memberDashboard(data){
   var acEvents=$('#yycActionEvents');
   if(acEvents) acEvents.addEventListener('click',function(){closeModal();setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},180);});
 
+  var taskRefresh=$('#yycLeaderTaskRefresh');if(taskRefresh)taskRefresh.addEventListener('click',yycLoadLeaderTasks);
+  if(!data.__adminView)yycLoadLeaderTasks();
   var dashboardRefresh=$('#yycDashboardRefresh');
   if(dashboardRefresh)dashboardRefresh.addEventListener('click',function(){yycLoadMemberDashboard();});
   var dashboardEvents=$('#yycDashboardViewEvents');
@@ -2618,6 +2620,54 @@ async function yycLoadAdminMemberOrder(){
   }
 }
 
+
+function yycLoadLeaderTasks(){
+  var host=$('#yycLeaderTaskList');
+  if(!host||!leaderToken)return;
+  host.innerHTML='<div class="storage-loading"><strong>Loading assigned tasks…</strong></div>';
+  rpc('leader_tasks_list',{p_token:leaderToken}).then(function(r){
+    if(!r||!r.ok)throw new Error(r&&r.error||'Could not load assigned tasks');
+    var tasks=r.tasks||[];
+    if(!tasks.length){
+      host.innerHTML='<div class="empty">No active tasks assigned to you yet. New assignments from YYC Admin will appear here.</div>';
+      return;
+    }
+    host.innerHTML=tasks.map(function(t){
+      var states=[['todo','To do'],['in_progress','In progress'],['blocked','Blocked'],['completed','Completed']];
+      return '<article class="yyc-leader-task" style="padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025);margin-top:10px">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span style="font-size:9px;letter-spacing:.1em;color:#d9bb75;font-weight:800">'+esc(String(t.priority||'normal').toUpperCase())+' PRIORITY</span><h3 style="margin:5px 0;font-size:14px;color:#f0eee7">'+esc(t.title||'Assigned task')+'</h3></div><span style="font-size:10px;color:#aeb8b3">'+esc(String(t.status||'todo').replace('_',' ').toUpperCase())+'</span></div>'+
+        (t.description?'<p style="font-size:12px;line-height:1.55;color:#adb6b1;white-space:pre-wrap;overflow-wrap:anywhere">'+esc(t.description)+'</p>':'')+
+        '<div style="display:flex;flex-wrap:wrap;gap:8px 14px;color:#87918c;font-size:10px;margin:9px 0"><span>EVENT · '+esc(t.event_title||'Not linked')+'</span><span>DUE · '+esc(t.due_date||'No due date')+'</span></div>'+
+        '<form data-yyc-leader-task="'+esc(t.id)+'" style="display:grid;grid-template-columns:minmax(140px,.65fr) minmax(180px,1fr) auto;gap:8px;align-items:end;margin-top:12px">'+
+        '<div class="field" style="margin:0"><label>Status</label><select name="status">'+states.map(function(st){return '<option value="'+st[0]+'"'+(String(t.status)===st[0]?' selected':'')+'>'+st[1]+'</option>';}).join('')+'</select></div>'+
+        '<div class="field" style="margin:0"><label>Progress note (optional)</label><input name="note" maxlength="1000" placeholder="Short progress update"></div>'+
+        '<button type="submit" class="btn outline">UPDATE</button></form></article>';
+    }).join('');
+    Array.prototype.slice.call(host.querySelectorAll('form[data-yyc-leader-task]')).forEach(function(form){
+      form.addEventListener('submit',async function(e){
+        e.preventDefault();
+        var button=form.querySelector('button[type="submit"]');
+        if(button.disabled)return;
+        button.disabled=true;var label=button.textContent;button.textContent='SAVING…';
+        try{
+          var result=await rpc('leader_task_update',{
+            p_token:leaderToken,
+            p_id:form.getAttribute('data-yyc-leader-task'),
+            p_status:form.elements.status.value,
+            p_note:form.elements.note.value.trim()
+          });
+          if(!result||!result.ok)throw new Error(result&&result.error||'Could not update task');
+          toast('Task progress updated');
+          yycLoadLeaderTasks();
+        }catch(err){toast(err.message||'Could not update task');}
+        finally{button.disabled=false;button.textContent=label;}
+      });
+    });
+  }).catch(function(err){
+    host.innerHTML='<div class="notice">'+esc(err.message||'Assigned tasks are temporarily unavailable')+'</div>';
+  });
+}
+
 function leaderDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
@@ -2625,6 +2675,7 @@ function leaderDashboard(data){
     yycDigitalCard(data,'leader')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
     
+    (data.__adminView?'':'<section class="yyc-leader-task-section" style="margin-top:18px;padding:16px;border:1px solid rgba(218,184,112,.18);border-radius:17px;background:rgba(218,184,112,.025)"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div class="modal-kicker">ASSIGNED WORK</div><h2 style="margin:4px 0 0;font-size:18px">Your task board.</h2><p class="modal-sub" style="margin:6px 0 0">Update progress on tasks assigned by YYC Admin.</p></div><button type="button" class="mini-btn" id="yycLeaderTaskRefresh">REFRESH ↻</button></div><div id="yycLeaderTaskList"><div class="storage-loading"><strong>Loading assigned tasks…</strong></div></div></section>')+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="leaderEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
     '<div class="notice leader-portal-note" style="margin-top:12px">Leadership profile access is available here. Administrative editing remains restricted to the YYC admin panel.</div>'+
     yycSessionSection('leader',[])+
