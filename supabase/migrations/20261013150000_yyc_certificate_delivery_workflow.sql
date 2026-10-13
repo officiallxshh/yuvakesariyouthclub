@@ -99,7 +99,12 @@ begin
   from (
     select 'member'::text as kind,m.id,m.name,m.role_number,
       (coalesce(m.email,'') ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+[.]([A-Z]{2,})$') as email_valid
-    from public.attendance a
+    from (
+      select distinct on (member_id,event_id) member_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by member_id,event_id,marked_at desc
+    ) a
     join public.members m on m.id=a.member_id
     where a.event_id=p_event_id and a.present=true
       and m.approved=true and lower(coalesce(m.status,'pending'))='approved'
@@ -107,7 +112,12 @@ begin
     union all
     select 'leader'::text as kind,l.id,l.name,coalesce(l.role_number,l.role),
       (coalesce(l.email,'') ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+[.]([A-Z]{2,})$') as email_valid
-    from public.attendance a
+    from (
+      select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by leader_id,event_id,marked_at desc
+    ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
       and lower(coalesce(l.status,'active')) <> 'inactive'
@@ -204,14 +214,24 @@ begin
   select count(*)::int into eligible_count
   from (
     select m.id
-    from public.attendance a
+    from (
+      select distinct on (member_id,event_id) member_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by member_id,event_id,marked_at desc
+    ) a
     join public.members m on m.id=a.member_id
     where a.event_id=p_event_id and a.present=true
       and m.approved=true and lower(coalesce(m.status,'pending'))='approved'
       and m.duplicate_of is null
     union all
     select l.id
-    from public.attendance a
+    from (
+      select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by leader_id,event_id,marked_at desc
+    ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
       and lower(coalesce(l.status,'active')) <> 'inactive'
@@ -233,7 +253,12 @@ begin
   from (
     select 'member'::text as kind,m.id,m.name,m.role_number,m.email,
       (coalesce(m.email,'') ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+[.]([A-Z]{2,})$') as email_valid
-    from public.attendance a
+    from (
+      select distinct on (member_id,event_id) member_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by member_id,event_id,marked_at desc
+    ) a
     join public.members m on m.id=a.member_id
     where a.event_id=p_event_id and a.present=true
       and m.approved=true and lower(coalesce(m.status,'pending'))='approved'
@@ -241,7 +266,12 @@ begin
     union all
     select 'leader'::text as kind,l.id,l.name,coalesce(l.role_number,l.role),l.email,
       (coalesce(l.email,'') ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+[.]([A-Z]{2,})$') as email_valid
-    from public.attendance a
+    from (
+      select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
+      from public.attendance
+      where event_id=p_event_id and present=true
+      order by leader_id,event_id,marked_at desc
+    ) a
     join public.leaders l on l.id=a.leader_id
     where a.event_id=p_event_id and a.present=true
       and lower(coalesce(l.status,'active')) <> 'inactive'
