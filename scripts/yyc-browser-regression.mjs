@@ -361,9 +361,9 @@ try {
         body: JSON.stringify({
           ok: true,
           event: { id: certificateEventId, title: certificateEvent.title, event_date: certificateEvent.event_date, certificates_finalized_at: '2026-10-13T08:00:00.000Z' },
-          counts: { total: 2, queued: 1, sending: 0, sent: 0, failed: 0, skipped: 1 },
+          counts: { total: 2, queued: 0, sending: 0, sent: 1, failed: 0, skipped: 1 },
           items: [
-            { id: '44444444-4444-4444-8444-444444444441', certificate_number: 'YYC-CERT-2026-000001', recipient_kind: 'member', recipient_name: 'Test Member One', recipient_role_number: 'YYC-M-001', email_status: 'queued', attempt_count: 0 },
+            { id: '44444444-4444-4444-8444-444444444441', certificate_number: 'YYC-CERT-2026-000001', recipient_kind: 'member', recipient_name: 'Test Member One', recipient_role_number: 'YYC-M-001', email_status: 'sent', attempt_count: 1, email_sent_at: '2026-10-13T08:00:00.000Z' },
             { id: '44444444-4444-4444-8444-444444444442', certificate_number: 'YYC-CERT-2026-000002', recipient_kind: 'member', recipient_name: 'Test Member Two', recipient_role_number: 'YYC-M-002', email_status: 'skipped', email_error: 'No valid email address', attempt_count: 0 }
           ]
         })
@@ -373,11 +373,12 @@ try {
     await route.fulfill({ status: 400, headers: corsHeaders, body: JSON.stringify({ ok: false, error: 'Unexpected certificate action' }) });
   });
 
+  await page.locator('[data-yyc90-tab="attendance"]').waitFor({ state: 'visible', timeout: 8000 });
   await page.locator('[data-yyc90-tab="attendance"]').click();
   await page.locator('#at90Event').selectOption(certificateEventId);
   await page.locator('#yyc90CertificatePreview').click();
-  await page.getByText('Test Member One', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
-  await page.getByText('Test Member Two', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#yyc90CertificatePreviewHost').getByText('Test Member One', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#yyc90CertificatePreviewHost').getByText('Test Member Two', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
   if (!(await page.locator('#yyc90CertificatePreviewHost').innerText()).includes('2')) {
     throw new Error('Certificate preview should show both eligible Present recipients before issuing.');
   }
