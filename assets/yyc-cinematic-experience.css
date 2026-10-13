@@ -147,6 +147,15 @@ body.yyc-low-data .yyc90-cert-stat{
   animation:none!important;
   transition-duration:.12s!important;
 }
+html.yyc-smooth-data body.yyc-low-data .leader-card.yyc-data-ready,
+html.yyc-smooth-data body.yyc-low-data .update-card.yyc-data-ready,
+html.yyc-smooth-data body.yyc-low-data .event-card.yyc-data-ready,
+html.yyc-smooth-data body.yyc-low-data .gallery-card.yyc-data-ready,
+html.yyc-smooth-data body.yyc-low-data .swag-card.yyc-data-ready{
+  animation-duration:.22s!important;
+  animation-delay:0ms!important;
+  filter:none!important;
+}
 @media(max-width:700px){
   .section.yyc-section-navigate .section-head{animation-duration:.32s}
   body.yyc-scroll-ready .section .reveal.yyc-scroll-in{animation-duration:.48s}
