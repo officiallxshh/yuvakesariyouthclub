@@ -149,6 +149,23 @@ try {
   }, null, { timeout: 3000 });
   console.log('MOBILE NAV PASS: Reel anchor closes the menu and activates the matching desktop state');
 
+  const mobileLayout = await page.evaluate(() => ({
+    viewportWidth: document.documentElement.clientWidth,
+    documentWidth: document.documentElement.scrollWidth,
+    activeLinks: Array.from(document.querySelectorAll('.desktop-nav > a.nav-link.active')).map(link => link.getAttribute('href')),
+    visibleHighlights: Array.from(document.querySelectorAll('.desktop-nav > a.nav-link')).filter(link => Number.parseFloat(getComputedStyle(link, '::before').opacity) > 0.5).map(link => link.getAttribute('href'))
+  }));
+  if (mobileLayout.documentWidth > mobileLayout.viewportWidth + 1) {
+    throw new Error('Mobile layout has horizontal overflow: document ' + mobileLayout.documentWidth + 'px, viewport ' + mobileLayout.viewportWidth + 'px.');
+  }
+  if (mobileLayout.activeLinks.length !== 1 || mobileLayout.activeLinks[0] !== '#reel') {
+    throw new Error('Mobile Reel navigation must leave exactly one active section: ' + mobileLayout.activeLinks.join(', '));
+  }
+  if (mobileLayout.visibleHighlights.length > 1) {
+    throw new Error('Mobile layout shows multiple desktop navigation highlights: ' + mobileLayout.visibleHighlights.join(', '));
+  }
+  console.log('MOBILE LAYOUT PASS: no horizontal overflow and one active Reel section');
+
   await page.setViewportSize({ width: 1365, height: 900 });
 
   /* Use a fake administrator session/data so the media admin UI can be tested
