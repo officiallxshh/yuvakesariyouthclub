@@ -391,11 +391,76 @@ try {
   }
   console.log('CERTIFICATE WORKFLOW PASS: preview → one-time issue → background queue status with skipped-email visibility');
 
+  /* Reduced-motion browser profile: all new decorative entrances must resolve to no animation. */
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.className = 'leader-card yyc-data-ready';
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(host);
+    const motion = getComputedStyle(host).animationName;
+    host.remove();
+    if (motion !== 'none') throw new Error('Reduced-motion mode must disable the cinematic card entrance. Got: ' + motion);
+  });
+  console.log('REDUCED MOTION PASS: cinematic card entrance is disabled');
+
+  /* Separate no-preference context: verify that the cinematic layer really animates
+     observer-driven content and does not create horizontal page overflow on a phone. */
+  const motionPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    reducedMotion: 'no-preference'
+  });
+  motionPage.on('pageerror', (error) => failures.push('motion page: ' + error.message));
+  await motionPage.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    document.documentElement.classList.contains('yyc-smooth-data') &&
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , { timeout: 12000 });
+  const motionResult = await motionPage.evaluate(() => {
+    const section = document.createElement('section');
+    section.className = 'section';
+    const reveal = document.createElement('div');
+    reveal.className = 'reveal yyc-scroll-in';
+    section.appendChild(reveal);
+    document.body.appendChild(section);
+
+    const card = document.createElement('div');
+    card.className = 'leader-card yyc-data-ready';
+    card.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(card);
+
+    const modal = document.querySelector('#modalContent');
+    if (modal) modal.classList.add('yyc-panel-swap-in');
+    const workspace = document.querySelector('#adminWorkspace');
+    if (workspace) workspace.classList.add('yyc-admin-tab-enter');
+
+    const result = {
+      reveal: getComputedStyle(reveal).animationName,
+      card: getComputedStyle(card).animationName,
+      modal: modal ? getComputedStyle(modal).animationName : 'missing',
+      admin: workspace ? getComputedStyle(workspace).animationName : 'missing',
+      noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      reduced: matchMedia('(prefers-reduced-motion: reduce)').matches
+    };
+    reveal.parentNode.remove();
+    card.remove();
+    if (modal) modal.classList.remove('yyc-panel-swap-in');
+    if (workspace) workspace.classList.remove('yyc-admin-tab-enter');
+    return result;
+  });
+  if (motionResult.reduced) throw new Error('No-preference browser context unexpectedly requests reduced motion.');
+  if (motionResult.reveal !== 'yycCinematicReveal') throw new Error('Cinematic section reveal is not active: ' + motionResult.reveal);
+  if (motionResult.card !== 'yycCinematicCardIn') throw new Error('Cinematic dynamic-card entrance is not active: ' + motionResult.card);
+  if (motionResult.modal !== 'yycCinematicPanelIn') throw new Error('Cinematic panel transition is not active: ' + motionResult.modal);
+  if (motionResult.admin !== 'yycCinematicAdminIn') throw new Error('Cinematic admin tab transition is not active: ' + motionResult.admin);
+  if (!motionResult.noOverflow) throw new Error('Cinematic motion caused horizontal overflow on a 390px viewport.');
+  console.log('CINEMATIC MOTION PASS: section, dynamic card, modal panel and admin-tab transitions animate without mobile overflow');
+  await motionPage.close();
+
   if (failures.length) {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow + cinematic and reduced-motion checks)');
 } finally {
   await browser.close();
 }
