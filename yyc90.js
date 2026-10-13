@@ -1161,7 +1161,7 @@
             var restored=await rpc90('admin_recycle_restore',{p_token:window.adminToken,p_id:btn.getAttribute('data-recycle-restore')});
             if(!restored||!restored.ok)throw new Error(restored&&restored.error||'Unable to restore item');
             toast90('Content restored to '+String(restored.entity_type||'its original collection'));
-            if(typeof window.adminPanel==='function')window.adminPanel('overview',true);
+            if(typeof window.loadPublic==='function')window.loadPublic();
             renderRecycleBinWorkspace90();
           }catch(err){toast90(err.message||'Restore failed');btn.disabled=false;}
         });
