@@ -16,7 +16,7 @@ test('task schema is protected from direct browser table access', () => {
 
 test('admin task RPCs enforce the existing admin session check', () => {
   for (const name of ['admin_tasks_list', 'admin_task_upsert', 'admin_task_archive']) {
-    assert.match(migration, new RegExp('function public\\\\.' + name + '\\\\(', 'i'));
+    assert.ok(migration.includes('function public.' + name + '('), 'Missing admin RPC: ' + name);
   }
   assert.ok((migration.match(/if not public\._admin_ok\(p_token\)/gi) || []).length >= 3);
   assert.match(migration, /grant execute on function public\.admin_task_upsert\(text,uuid,jsonb\) to anon, authenticated/i);
@@ -52,4 +52,24 @@ test('leader UI only exposes assigned-task progress updates', () => {
   assert.match(app, /rpc\('leader_task_update'/);
   assert.match(app, /Assigned work/);
   assert.match(app, /p_note:form\.elements\.note\.value\.trim\(\)/);
+});
+
+test('recycle-bin migration keeps deletes recoverable and guarded', () => {
+  const recycle = read('supabase/migrations/20261013140000_yyc_content_recycle_bin.sql');
+  for (const name of ['admin_recycle_bin_list', 'admin_recycle_restore', 'admin_recycle_purge']) {
+    assert.ok(recycle.includes('function public.' + name + '('), 'Missing recycle-bin RPC: ' + name);
+  }
+  assert.match(recycle, /enable row level security/i);
+  assert.match(recycle, /private\.yyc_recycle_store/);
+  for (const kind of ['announcements', 'gallery', 'events', 'swags', 'achievements', 'club_history']) {
+    assert.ok(recycle.includes('public.' + kind), 'Missing recoverable content kind: ' + kind);
+  }
+  assert.match(recycle, /'yyc_recycle_bin'/);
+});
+
+test('Recycle Bin is available from the admin custom tabs', () => {
+  assert.ok(adminUi.includes("['recycle','Recycle Bin']"));
+  assert.ok(adminUi.includes("rpc90('admin_recycle_bin_list'"));
+  assert.ok(adminUi.includes("rpc90('admin_recycle_restore'"));
+  assert.ok(adminUi.includes("rpc90('admin_recycle_purge'"));
 });
