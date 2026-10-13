@@ -3306,7 +3306,7 @@ function renderAdminTab(tab,d){
     a.innerHTML='<div class="admin-top"><h2>Updates</h2><div class="admin-top-actions"><button class="mini-btn" data-admin-overview>← Back to Admin</button><button class="mini-btn gold" id="addUpdateBtn"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>Add update</span></button></div></div><div class="admin-toolbar"><input id="adminUpdateSearch" class="admin-search" placeholder="Search updates" autocomplete="off"><select id="adminUpdateStatus"><option value="">All status</option><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select><span class="admin-result-count" id="adminUpdateCount"></span></div><div class="admin-card-list">'+(ups.length?ups.map(function(u){return '<div class="approval-card" data-content-status="'+esc(u.status||'published')+'"><div class="meta"><strong>'+esc(u.title)+'</strong><small>'+esc(fmtDate(u.event_date||u.published_at))+' · '+esc(u.body||'')+'</small><small>Status: '+esc(u.status||'published')+(u.featured?' · FEATURED':'')+(u.image_format?' · Photo: '+esc(yycImageFormatMeta(u.image_format).label):'')+'</small></div><div class="admin-actions"><button class="mini-btn gold" data-edit-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-edit" aria-hidden="true">✎</span><span>Edit</span></button><button class="mini-btn" data-del-update="'+u.id+'"><span class="yyc-admin-action-icon yyc-icon-remove" aria-hidden="true">×</span><span>Remove</span></button></div></div>';}).join(''):'<div class="empty">No updates.</div>')+'</div>';
     $('#addUpdateBtn').addEventListener('click',function(){adminUpdateForm(null);});
     Array.prototype.slice.call(document.querySelectorAll('[data-edit-update]')).forEach(function(b){b.addEventListener('click',function(){adminUpdateForm(b.getAttribute('data-edit-update'));});});
-    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update deleted');});});
+    Array.prototype.slice.call(document.querySelectorAll('[data-del-update]')).forEach(function(b){b.addEventListener('click',async function(){if(confirm('Remove update?')) await adminAction('admin_delete_content',{p_kind:'update',p_id:b.getAttribute('data-del-update')},'Update moved to Recycle Bin');});});
     (function(){function filterUpdates(){var q=$('#adminUpdateSearch').value.trim().toLowerCase(),st=$('#adminUpdateStatus').value,rows=$$('#adminWorkspace .admin-card-list .approval-card');var shown=0;rows.forEach(function(row){var hit=(!q||row.textContent.toLowerCase().indexOf(q)>=0)&&(!st||row.getAttribute('data-content-status')===st);row.style.display=hit?'':'none';if(hit)shown++;});$('#adminUpdateCount').textContent=shown+' of '+rows.length+' shown';}$('#adminUpdateSearch').addEventListener('input',filterUpdates);$('#adminUpdateStatus').addEventListener('change',filterUpdates);filterUpdates();})();
     return;
   }
@@ -3353,7 +3353,7 @@ function renderAdminTab(tab,d){
       a.querySelectorAll('[data-del-gallery]').forEach(function(b){
         b.addEventListener('click',async function(){
           if(confirm('Remove photo?')){
-            await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo deleted');
+            await adminAction('admin_delete_content',{p_kind:'gallery',p_id:b.getAttribute('data-del-gallery')},'Gallery photo moved to Recycle Bin');
           }
         });
       });
@@ -3457,7 +3457,7 @@ function renderAdminTab(tab,d){
       if(!confirm('Remove this swag item?')) return;
       var rr=await rpc('admin_delete_swag',{p_token:adminToken,p_id:b.getAttribute('data-del-swag')});
       if(!rr||!rr.ok) {toast(rr&&rr.error||'Could not delete swag');return;}
-      toast('Swag item deleted'); adminPanel('swags',true);
+      toast('Swag item moved to Recycle Bin'); adminPanel('swags',true);
     });});
     return;
   }
@@ -4038,7 +4038,7 @@ function adminDeleteEvent(id){
   if(!confirm('Remove event "'+esc(((adminData.events||[]).find(function(x){return String(x.id)===String(id);})||{}).title||'this event')+'"?')) return;
   rpc('admin_delete_event',{p_token:adminToken,p_id:id}).then(function(r){
     if(!r.ok) throw new Error(r.error||'Failed');
-    toast('Event deleted');
+    toast('Event moved to Recycle Bin. You can restore it from Admin → Recycle Bin.');
     adminPanel('events',true);
   }).catch(function(e){toast(e.message);});
 }
