@@ -96,33 +96,34 @@ test('certificate workflow has browser regression coverage and a non-indexed ver
 
 
 test('manual PDF uploads are private, admin-authorized, size-limited and auditable', () => {
-  assert.match(manualMigration, /create table if not exists public\\.yyc_manual_certificates/);
-  assert.match(manualMigration, /alter table public\\.yyc_manual_certificates enable row level security/);
-  assert.match(manualMigration, /revoke all on table public\\.yyc_manual_certificates from public, anon, authenticated/);
-  assert.match(manualMigration, /grant all on table public\\.yyc_manual_certificates to service_role/);
-  assert.match(manualMigration, /values \\('yyc-certificates', 'yyc-certificates', false, 10485760, array\\['application/pdf'\\]\\)/);
-  assert.match(manualMigration, /storage_path text not null unique/);
-  assert.match(manualMigration, /content_type text not null default 'application/pdf'/);
-  assert.match(edge, /action === "upload_manual"/);
-  assert.match(edge, /if \\(!(await adminOK\\(adminToken\\)\\)\\)/);
-  assert.match(edge, /MAX_MANUAL_CERTIFICATE_BYTES/);
-  assert.match(edge, /"%PDF-"/);
-  assert.match(edge, /resolveAdminRecipient\\(kind, targetId\\)/);
-  assert.match(edge, /db\\.storage\\.from\\(MANUAL_CERTIFICATE_BUCKET\\)\\.upload/);
-  assert.match(edge, /yyc_manual_certificates/);
+  assert.ok(manualMigration.includes('create table if not exists public.yyc_manual_certificates'));
+  assert.ok(manualMigration.includes('alter table public.yyc_manual_certificates enable row level security'));
+  assert.ok(manualMigration.includes('revoke all on table public.yyc_manual_certificates from public, anon, authenticated'));
+  assert.ok(manualMigration.includes('grant all on table public.yyc_manual_certificates to service_role'));
+  assert.ok(manualMigration.includes("values ('yyc-certificates', 'yyc-certificates', false, 10485760, array['application/pdf'])"));
+  assert.ok(manualMigration.includes('storage_path text not null unique'));
+  assert.ok(manualMigration.includes("content_type text not null default 'application/pdf'"));
+  assert.ok(edge.includes('action === "upload_manual"'));
+  assert.ok(edge.includes('if (!(await adminOK(adminToken)))'));
+  assert.ok(edge.includes('MAX_MANUAL_CERTIFICATE_BYTES'));
+  assert.ok(edge.includes('"%PDF-"'));
+  assert.ok(edge.includes('resolveAdminRecipient(kind, targetId)'));
+  assert.ok(edge.includes('db.storage.from(MANUAL_CERTIFICATE_BUCKET).upload'));
+  assert.ok(edge.includes('yyc_manual_certificates'));
 });
 
 test('manual upload creates a prompt, emails the PDF and keeps recipient downloads private', () => {
-  assert.match(edge, /subject = "New YYC certificate available · " \+ title/);
-  assert.match(edge, /attachments:\\s*\\[\\s*\\{[\\s\\S]*?content:\\s*bytesToBase64\\(pdfBytes\\)/);
-  assert.match(edge, /member_notifications/);
-  assert.match(edge, /portal_prompt: true/);
-  assert.match(edge, /source: "manual_upload"/);
-  assert.match(edge, /certificate_source, 40\\) === "manual_upload"/);
-  assert.match(edge, /\\.eq\\("recipient_kind", kind\\)\\.eq\\("recipient_id", recipient\\.id\\)/);
-  assert.match(app, /id="yycManualCertificateForm"/);
-  assert.match(app, /action','upload_manual'/);
-  assert.match(app, /NEW CERTIFICATE/);
-  assert.match(app, /data-yyc-cert-source/);
-  assert.match(app, /certificate_source:download\\.getAttribute\\('data-yyc-cert-source'\\)/);
+  assert.ok(edge.includes('subject = "New YYC certificate available · " + title'));
+  assert.ok(edge.includes('attachments: [{'));
+  assert.ok(edge.includes('content: bytesToBase64(pdfBytes)'));
+  assert.ok(edge.includes('member_notifications'));
+  assert.ok(edge.includes('portal_prompt: true'));
+  assert.ok(edge.includes('source: "manual_upload"'));
+  assert.ok(edge.includes('certificate_source, 40) === "manual_upload"'));
+  assert.ok(edge.includes('.eq("recipient_kind", kind).eq("recipient_id", recipient.id)'));
+  assert.ok(app.includes('id="yycManualCertificateForm"'));
+  assert.ok(app.includes("action','upload_manual'"));
+  assert.ok(app.includes('NEW CERTIFICATE'));
+  assert.ok(app.includes('data-yyc-cert-source'));
+  assert.ok(app.includes("certificate_source:download.getAttribute('data-yyc-cert-source')"));
 });
