@@ -1,5 +1,7 @@
 /* YYC Smooth Performance Pack
    Lightweight progressive enhancement: no dependencies, no changes to auth/admin flows.
+   Added-subtree work is deduplicated into one animation-frame batch so rapid render
+   bursts do not repeatedly walk the same gallery/admin DOM.
 */
 (function () {
   'use strict';
@@ -48,22 +50,39 @@
 
     if (!('MutationObserver' in window) || !document.body) return;
     var queued = false;
-    var pending = [];
+    var pending = new Set();
 
     var observer = new MutationObserver(function (records) {
       for (var i = 0; i < records.length; i++) {
         var added = records[i].addedNodes;
         for (var j = 0; j < added.length; j++) {
-          if (added[j] && added[j].nodeType === 1) pending.push(added[j]);
+          if (added[j] && added[j].nodeType === 1) pending.add(added[j]);
         }
       }
-      if (queued || !pending.length) return;
+      if (queued || !pending.size) return;
       queued = true;
       window.requestAnimationFrame(function () {
         queued = false;
-        var batch = pending;
-        pending = [];
-        for (var k = 0; k < batch.length; k++) optimizeMedia(batch[k]);
+        var batch = Array.from(pending);
+        pending.clear();
+        var candidates = new Set(batch);
+
+        for (var k = 0; k < batch.length; k++) {
+          var root = batch[k];
+          if (!root || !root.isConnected) continue;
+
+          /* If a newly-added ancestor is in this batch, it will scan this node too. */
+          var parent = root.parentElement;
+          var coveredByAncestor = false;
+          while (parent) {
+            if (candidates.has(parent)) {
+              coveredByAncestor = true;
+              break;
+            }
+            parent = parent.parentElement;
+          }
+          if (!coveredByAncestor) optimizeMedia(root);
+        }
       });
     });
 
