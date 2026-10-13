@@ -221,7 +221,8 @@ html.yyc-smooth-data body.yyc-low-data .swag-card.yyc-data-ready{
   html.yyc-smooth-data .event-card.yyc-data-ready,
   html.yyc-smooth-data .gallery-card.yyc-data-ready,
   html.yyc-smooth-data .swag-card.yyc-data-ready{animation-duration:.42s}
-  .yyc-reel-card,.yyc-reel-event-cube{animation-duration:.38s}\n  .yyc-certificate-card:hover{transform:none}
+  .yyc-reel-card,.yyc-reel-event-cube{animation-duration:.38s}
+  .yyc-certificate-card:hover{transform:none}
   #modalContent.yyc-panel-swap-in{animation-duration:.32s}
 }
 
