@@ -34,15 +34,15 @@ test('preview and issuing are admin-authorized and based on saved Present attend
 
 test('latest attendance status is selected before filtering for Present', () => {
   const latestAttendanceQueries = migration.match(
-    /select distinct on \((?:member_id|leader_id),event_id\)[\\s\\S]*?order by (?:member_id|leader_id),event_id,marked_at desc/g
+    /select distinct on \((?:member_id|leader_id),event_id\)[\s\S]*?order by (?:member_id|leader_id),event_id,marked_at desc/g
   ) || [];
   assert.equal(latestAttendanceQueries.length, 6, 'preview and issuance use all six latest-record queries');
   for (const query of latestAttendanceQueries) {
     assert.match(query, /where event_id=p_event_id/);
     assert.doesNotMatch(query, /where event_id=p_event_id and present=true/);
   }
-  assert.match(migration, /where a\\.event_id=p_event_id and a\\.present=true/);
-  assert.match(migration, /where a\\.event_id=p_event_id and a\\.present=true/);
+  assert.match(migration, /where a\.event_id=p_event_id and a\.present=true/);
+  assert.match(migration, /where a\.event_id=p_event_id and a\.present=true/);
 });
 
 test('email jobs are claimed safely, tracked and retryable', () => {
