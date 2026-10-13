@@ -454,7 +454,7 @@
     [
       ['volunteers','Volunteers'],['achievements','Achievements'],['history','History'],
       ['attendance','Attendance'],['attendance_pct','Attendance %'],['attendance_reports','Attendance Reports'],['finance','Finance'],['messages','Messages'],
-      ['analytics','Analytics'],['backup','Backup'],['tasks','Tasks'],['sitepro','Site Pro']
+      ['analytics','Analytics'],['backup','Backup'],['tasks','Tasks'],['recycle','Recycle Bin'],['sitepro','Site Pro']
     ].forEach(function(t){
       var b=document.createElement('button');b.type='button';b.className='admin-tab yyc90-admin-tab';b.setAttribute('data-yyc90-tab',t[0]);b.textContent=t[1];tabs.appendChild(b);
     });
@@ -1129,9 +1129,64 @@
     });
   }
 
+
+  function renderRecycleBinWorkspace90(){
+    var workspace=q('#adminWorkspace');
+    if(!workspace)return;
+    workspace.innerHTML=adminHeader90('Recycle Bin')+
+      '<div id="yyc90RecycleList"><div class="storage-loading"><strong>Loading recoverable content…</strong></div></div>';
+    rpc90('admin_recycle_bin_list',{p_token:window.adminToken}).then(function(r){
+      var host=q('#yyc90RecycleList');
+      if(!host)return;
+      if(!r||!r.ok)throw new Error(r&&r.error||'Unable to load Recycle Bin');
+      var items=r.items||[];
+      if(!items.length){
+        host.innerHTML='<div class="empty">Recycle Bin is empty. Deleted updates, gallery items, events, swags, achievements and history items will appear here when recoverable.</div>';
+        return;
+      }
+      host.innerHTML=
+        '<div class="notice" style="margin-bottom:12px">Restore returns a supported record to its original collection. Permanent delete removes the saved recovery payload and cannot be undone.</div>'+
+        '<div class="admin-card-list">'+items.map(function(item){
+          return '<article class="approval-card"><div class="meta"><strong>'+esc90(item.entity_title||'Deleted content')+'</strong>'+
+            '<small>'+esc90(String(item.entity_type||'content').replace('_',' ').toUpperCase())+
+            ' · Deleted '+esc90(format90Date(item.deleted_at))+' · By '+esc90(item.deleted_by||'Admin')+'</small></div>'+
+            '<div class="admin-actions"><button type="button" class="mini-btn gold" data-recycle-restore="'+esc90(item.id)+'">Restore</button>'+
+            '<button type="button" class="mini-btn" data-recycle-purge="'+esc90(item.id)+'">Delete permanently</button></div></article>';
+        }).join('')+'</div>';
+
+      qa('[data-recycle-restore]').forEach(function(btn){
+        btn.addEventListener('click',async function(){
+          btn.disabled=true;
+          try{
+            var restored=await rpc90('admin_recycle_restore',{p_token:window.adminToken,p_id:btn.getAttribute('data-recycle-restore')});
+            if(!restored||!restored.ok)throw new Error(restored&&restored.error||'Unable to restore item');
+            toast90('Content restored to '+String(restored.entity_type||'its original collection'));
+            if(typeof window.adminPanel==='function')window.adminPanel('overview',true);
+            renderRecycleBinWorkspace90();
+          }catch(err){toast90(err.message||'Restore failed');btn.disabled=false;}
+        });
+      });
+      qa('[data-recycle-purge]').forEach(function(btn){
+        btn.addEventListener('click',async function(){
+          if(!window.confirm('Permanently delete this recovery copy? This cannot be undone.'))return;
+          btn.disabled=true;
+          try{
+            var purged=await rpc90('admin_recycle_purge',{p_token:window.adminToken,p_id:btn.getAttribute('data-recycle-purge')});
+            if(!purged||!purged.ok)throw new Error(purged&&purged.error||'Unable to permanently delete recovery copy');
+            toast90('Recovery copy permanently deleted');renderRecycleBinWorkspace90();
+          }catch(err){toast90(err.message||'Permanent delete failed');btn.disabled=false;}
+        });
+      });
+    }).catch(function(err){
+      var host=q('#yyc90RecycleList');
+      if(host)host.innerHTML='<div class="notice">'+esc90(err.message||'Recycle Bin is temporarily unavailable')+'</div>';
+    });
+  }
+
   function renderCustomAdminTab90(tab){
     if(tab==='mediaaudit'){renderMediaAudit90f();return;}
     if(tab==='tasks'){renderTaskWorkspace90();return;}
+    if(tab==='recycle'){renderRecycleBinWorkspace90();return;}
     if(tab==='sitepro'){
       var s=(window.__yycAdminLastData||{}).settings||{};
       q('#adminWorkspace').innerHTML=renderSitePro90(s);q('#spAnn').value=String(!!s.announcement_enabled);q('#spMaint').value=String(!!s.maintenance_mode);
