@@ -117,9 +117,9 @@
     transition:transform .28s var(--yyc-cinema-ease),border-color .26s ease,box-shadow .28s ease;
   }
   .wrap>.grid>.person:nth-child(2),
-  .wrap>.coverage:nth-of-type(3){animation-delay:45ms}
+  .wrap>.coverage:nth-of-type(2){animation-delay:45ms}
   .wrap>.grid>.person:nth-child(3),
-  .wrap>.coverage:nth-of-type(4){animation-delay:90ms}
+  .wrap>.coverage:nth-of-type(3){animation-delay:90ms}
   .wrap>.grid>.person:nth-child(4){animation-delay:135ms}
   .wrap>.grid>.person:nth-child(5){animation-delay:180ms}
   .wrap>.grid>.person:nth-child(6){animation-delay:225ms}
