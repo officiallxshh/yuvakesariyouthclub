@@ -285,7 +285,7 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261012-42-build16-admin-media-cubes";
+const currentBuild = "20261013-45-cinematic-experience";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||

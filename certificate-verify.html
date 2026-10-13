@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b0f">
+<meta name="robots" content="noindex,follow">
+<title>Verify YYC Certificate | Yuvakesari Youth Club</title>
+<style>
+:root{color-scheme:dark;--gold:#d8b66e;--muted:#9ca69f;--panel:#0d141a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -12%,rgba(196,158,81,.12),transparent 55%),#070b0f;color:#eae3d7;font-family:Inter,Arial,sans-serif;display:grid;place-items:center;padding:24px}
+main{width:min(680px,100%);padding:clamp(22px,5vw,42px);border:1px solid rgba(216,182,110,.28);border-radius:24px;background:linear-gradient(150deg,rgba(18,27,33,.97),rgba(8,13,17,.98));box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.brand{font-size:10px;font-weight:900;letter-spacing:.19em;color:var(--gold);text-transform:uppercase}
+h1{font-family:Georgia,serif;font-size:clamp(28px,6vw,42px);line-height:1.08;margin:18px 0 10px;color:#f0d18a}
+.lead{color:var(--muted);font-size:13px;line-height:1.7}
+.status{margin:22px 0;padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:var(--panel)}
+.status[data-state="valid"]{border-color:rgba(110,200,137,.45)}
+.status[data-state="invalid"]{border-color:rgba(230,130,130,.45)}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
+.status[data-state="valid"] .badge{color:#9be0ad}
+.status[data-state="invalid"] .badge{color:#f1a8a8}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.field span{display:block;font-size:9px;letter-spacing:.14em;color:#78857e;font-weight:800;margin-bottom:5px}
+.field strong{display:block;overflow-wrap:anywhere;font-size:13px;color:#eee6d5;line-height:1.5}
+#details[hidden]{display:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:12px 16px;margin-top:18px;border:1px solid rgba(216,182,110,.5);border-radius:12px;color:var(--gold);font-size:10px;font-weight:900;letter-spacing:.1em;text-decoration:none}
+.footer{margin-top:24px;padding-top:17px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#6f7d75;font-size:10px}
+.footer a{color:var(--gold);text-decoration:none}
+@media(max-width:480px){.fields{grid-template-columns:1fr}.footer{display:grid}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Yuvakesari Youth Club · Subrahmanya</div>
+  <h1>Certificate verification.</h1>
+  <p class="lead">Check whether a YYC event certificate is an authentic record. Only the certificate details required for verification are displayed here.</p>
+  <section class="status" id="result" data-state="loading" aria-live="polite">
+    <span class="badge" id="statusBadge">◷ CHECKING CERTIFICATE</span>
+    <p id="statusMessage" class="lead" style="margin:10px 0 0">Checking the official YYC certificate register…</p>
+    <div id="details" class="fields" hidden>
+      <div class="field"><span>CERTIFICATE ID</span><strong id="certNumber">—</strong></div>
+      <div class="field"><span>RECIPIENT</span><strong id="recipient">—</strong></div>
+      <div class="field"><span>ACTIVITY / EVENT</span><strong id="eventTitle">—</strong></div>
+      <div class="field"><span>EVENT DATE</span><strong id="eventDate">—</strong></div>
+      <div class="field"><span>CERTIFICATE TYPE</span><strong id="certType">—</strong></div>
+      <div class="field"><span>ISSUED ON</span><strong id="issuedAt">—</strong></div>
+    </div>
+  </section>
+  <a class="btn" href="./">RETURN TO OFFICIAL YYC WEBSITE ↗</a>
+  <div class="footer"><span>Yuvakesari Youth Club · Official certificate register</span><a href="./contact.html">Report a verification issue ↗</a></div>
+</main>
+<script>
+(function(){
+  'use strict';
+  var endpoint='https://vrllozfzheikjbhxvpkx.supabase.co/functions/v1/yyc-certificate-delivery';
+  var publicKey='sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
+  var root=document.getElementById('result');
+  var badge=document.getElementById('statusBadge');
+  var message=document.getElementById('statusMessage');
+  var details=document.getElementById('details');
+  function setState(state,label,text){
+    root.dataset.state=state;
+    badge.textContent=label;
+    message.textContent=text;
+  }
+  function dateLabel(value){
+    if(!value)return '—';
+    var date=new Date(value);
+    return isNaN(date.getTime())?'—':date.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  }
+  async function boot(){
+    var code='';
+    try{code=new URLSearchParams(location.search).get('code')||'';}catch(_){}
+    if(!/^[0-9a-f-]{36}$/i.test(code)){
+      setState('invalid','! CERTIFICATE CODE MISSING','Open the exact verification link or scan the QR code printed on the certificate.');
+      return;
+    }
+    try{
+      var response=await fetch(endpoint+'?action=verify&code='+encodeURIComponent(code),{
+        method:'GET',
+        headers:{'apikey':publicKey,'Accept':'application/json'},
+        credentials:'omit',
+        cache:'no-store'
+      });
+      var data=await response.json();
+      if(!response.ok||!data||!data.ok||!data.certificate){
+        setState('invalid','! NOT VERIFIED',data&&data.error?String(data.error):'This certificate could not be verified in the official register.');
+        return;
+      }
+      var c=data.certificate;
+      setState('valid','✓ CERTIFICATE VERIFIED','This certificate matches an active record in the YYC certificate register.');
+      details.hidden=false;
+      document.getElementById('certNumber').textContent=c.certificate_number||'—';
+      document.getElementById('recipient').textContent=c.recipient_name||'—';
+      document.getElementById('eventTitle').textContent=c.event_title||'—';
+      document.getElementById('eventDate').textContent=dateLabel(c.event_date);
+      document.getElementById('certType').textContent=String(c.certificate_type||'participation').replace(/_/g,' ').replace(/\b\w/g,function(x){return x.toUpperCase();});
+      document.getElementById('issuedAt').textContent=dateLabel(c.issued_at);
+    }catch(_){
+      setState('invalid','! VERIFICATION TEMPORARILY UNAVAILABLE','Please check your connection and try again. The certificate has not been declared invalid.');
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>

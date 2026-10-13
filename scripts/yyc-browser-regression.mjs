@@ -199,13 +199,27 @@ try {
     sort_order: n,
     created_at: '2026-10-01T00:00:00.000Z'
   }));
+  const certificateEventId = '11111111-1111-4111-8111-111111111111';
+  const certificateMemberOne = '22222222-2222-4222-8222-222222222221';
+  const certificateMemberTwo = '22222222-2222-4222-8222-222222222222';
+  const certificateEvent = {
+    id: certificateEventId,
+    title: 'Browser Certificate Test Event',
+    event_date: '2026-10-01',
+    location: 'Subrahmanya',
+    status: 'published'
+  };
+  const certificateMembers = [
+    { id: certificateMemberOne, name: 'Test Member One', role_number: 'YYC-M-001', email: 'one@example.invalid', status: 'approved', approved: true, duplicate_of: null },
+    { id: certificateMemberTwo, name: 'Test Member Two', role_number: 'YYC-M-002', email: '', status: 'approved', approved: true, duplicate_of: null }
+  ];
   const testDashboard = {
     ok: true,
-    members: [],
+    members: certificateMembers,
     leaders: [],
     updates: [],
     gallery: testGallery,
-    events: [],
+    events: [certificateEvent],
     swags: [],
     settings: {},
     pending_updates: [],
@@ -283,11 +297,226 @@ try {
   }
   console.log('ADMIN REEL CUBE PASS: 3 Reels grouped; Edit/Publish/Delete actions and add-to-event flow work');
 
+  /* Certificate workflow is mocked end-to-end; it never writes to production data or sends mail. */
+  await page.route('**/rest/v1/rpc/admin_feature_data', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      ok: true,
+      members: certificateMembers,
+      leaders: [],
+      events: [certificateEvent],
+      attendance: [
+        { id: '33333333-3333-4333-8333-333333333331', event_id: certificateEventId, member_id: certificateMemberOne, present: true, marked_at: '2026-10-01T10:00:00.000Z' },
+        { id: '33333333-3333-4333-8333-333333333332', event_id: certificateEventId, member_id: certificateMemberTwo, present: true, marked_at: '2026-10-01T10:05:00.000Z' }
+      ],
+      volunteers: [],
+      achievements: [],
+      history: [],
+      finance: []
+    })
+  }));
+  await page.route('**/functions/v1/yyc-certificate-delivery*', async (route) => {
+    const request = route.request();
+    const corsHeaders = {
+      'access-control-allow-origin': 'http://127.0.0.1:4173',
+      'access-control-allow-headers': 'apikey,content-type,accept,cache-control',
+      'access-control-allow-methods': 'GET,POST,OPTIONS',
+      'content-type': 'application/json'
+    };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders, body: '' });
+      return;
+    }
+    const body = request.postDataJSON();
+    if (body.action === 'preview') {
+      await route.fulfill({
+        status: 200, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true,
+          event: { id: certificateEventId, title: certificateEvent.title, event_date: certificateEvent.event_date, location: certificateEvent.location, certificates_finalized_at: null },
+          already_finalized: false, eligible_count: 2, member_count: 2, leader_count: 0, missing_email_count: 1, existing_certificate_count: 0,
+          email_status: { queued: 0, sent: 0, failed: 0, skipped: 0 },
+          recipients: [
+            { kind: 'member', id: certificateMemberOne, name: 'Test Member One', role_number: 'YYC-M-001', email_valid: true },
+            { kind: 'member', id: certificateMemberTwo, name: 'Test Member Two', role_number: 'YYC-M-002', email_valid: false }
+          ]
+        })
+      });
+      return;
+    }
+    if (body.action === 'finalize') {
+      await route.fulfill({
+        status: 202, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true, already_finalized: false, event_id: certificateEventId, issued_count: 2, new_count: 2,
+          email_status: { queued: 1, sending: 0, sent: 0, failed: 0, skipped: 1 }, worker_started: true, background: true
+        })
+      });
+      return;
+    }
+    if (body.action === 'status') {
+      await route.fulfill({
+        status: 200, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true,
+          event: { id: certificateEventId, title: certificateEvent.title, event_date: certificateEvent.event_date, certificates_finalized_at: '2026-10-13T08:00:00.000Z' },
+          counts: { total: 2, queued: 0, sending: 0, sent: 1, failed: 0, skipped: 1 },
+          items: [
+            { id: '44444444-4444-4444-8444-444444444441', certificate_number: 'YYC-CERT-2026-000001', recipient_kind: 'member', recipient_name: 'Test Member One', recipient_role_number: 'YYC-M-001', email_status: 'sent', attempt_count: 1, email_sent_at: '2026-10-13T08:00:00.000Z' },
+            { id: '44444444-4444-4444-8444-444444444442', certificate_number: 'YYC-CERT-2026-000002', recipient_kind: 'member', recipient_name: 'Test Member Two', recipient_role_number: 'YYC-M-002', email_status: 'skipped', email_error: 'No valid email address', attempt_count: 0 }
+          ]
+        })
+      });
+      return;
+    }
+    await route.fulfill({ status: 400, headers: corsHeaders, body: JSON.stringify({ ok: false, error: 'Unexpected certificate action' }) });
+  });
+
+  await page.locator('[data-yyc90-tab="attendance"]').waitFor({ state: 'visible', timeout: 8000 });
+  await page.locator('[data-yyc90-tab="attendance"]').click();
+  await page.locator('#at90Event').selectOption(certificateEventId);
+  await page.locator('#yyc90CertificatePreview').click();
+  await page.locator('#yyc90CertificatePreviewHost').getByText('Test Member One', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#yyc90CertificatePreviewHost').getByText('Test Member Two', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  if (!(await page.locator('#yyc90CertificatePreviewHost').innerText()).includes('2')) {
+    throw new Error('Certificate preview should show both eligible Present recipients before issuing.');
+  }
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#yyc90CertificateFinalize').click();
+  await page.getByText('Certificates issued ✓', { exact: false }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.locator('#yyc90CertificateStatusHost').getByText('YYC-CERT-2026-000001', { exact: false }).waitFor({ state: 'visible', timeout: 6000 });
+  if (!(await page.locator('#yyc90CertificateStatusHost').innerText()).includes('1 / 2 SENT')) {
+    throw new Error('Certificate queue status should show its delivery counts after finalization.');
+  }
+  console.log('CERTIFICATE WORKFLOW PASS: preview → one-time issue → background queue status with skipped-email visibility');
+
+  /* Reduced-motion browser profile: all new decorative entrances must resolve to no animation. */
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.className = 'leader-card yyc-data-ready';
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(host);
+    const motion = getComputedStyle(host).animationName;
+    host.remove();
+    if (motion !== 'none') throw new Error('Reduced-motion mode must disable the cinematic card entrance. Got: ' + motion);
+  });
+  console.log('REDUCED MOTION PASS: cinematic card entrance is disabled');
+
+  /* Separate no-preference context: verify that the cinematic layer really animates
+     observer-driven content and does not create horizontal page overflow on a phone. */
+  const motionPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    reducedMotion: 'no-preference'
+  });
+  motionPage.on('pageerror', (error) => failures.push('motion page: ' + error.message));
+  await motionPage.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    document.documentElement.classList.contains('yyc-smooth-data') &&
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , null, { timeout: 12000 });
+  const motionResult = await motionPage.evaluate(() => {
+    document.body.classList.add('yyc-scroll-ready');
+    const section = document.createElement('section');
+    section.className = 'section';
+    const reveal = document.createElement('div');
+    reveal.className = 'reveal yyc-scroll-in';
+    section.appendChild(reveal);
+    document.body.appendChild(section);
+
+    const card = document.createElement('div');
+    card.className = 'leader-card yyc-data-ready';
+    card.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(card);
+    const reelCard = document.createElement('article');
+    reelCard.className = 'yyc-reel-card';
+    reelCard.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(reelCard);
+
+    const modal = document.querySelector('#modalContent');
+    if (modal) modal.classList.add('yyc-panel-swap-in');
+    let workspace = document.querySelector('#adminWorkspace');
+    const madeWorkspace = !workspace;
+    if (!workspace) {
+      workspace = document.createElement('div');
+      workspace.className = 'admin-workspace';
+      workspace.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+      document.body.appendChild(workspace);
+    }
+    workspace.classList.add('yyc-admin-tab-enter');
+
+    const result = {
+      reveal: getComputedStyle(reveal).animationName,
+      card: getComputedStyle(card).animationName,
+      reel: getComputedStyle(reelCard).animationName,
+      modal: modal ? getComputedStyle(modal).animationName : 'missing',
+      admin: getComputedStyle(workspace).animationName,
+      noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      reduced: matchMedia('(prefers-reduced-motion: reduce)').matches
+    };
+    reveal.parentNode.remove();
+    card.remove();
+    reelCard.remove();
+    if (modal) modal.classList.remove('yyc-panel-swap-in');
+    workspace.classList.remove('yyc-admin-tab-enter');
+    if (madeWorkspace) workspace.remove();
+    return result;
+  });
+  if (motionResult.reduced) throw new Error('No-preference browser context unexpectedly requests reduced motion.');
+  if (motionResult.reveal !== 'yycCinematicReveal') throw new Error('Cinematic section reveal is not active: ' + motionResult.reveal);
+  if (motionResult.card !== 'yycCinematicCardIn') throw new Error('Cinematic dynamic-card entrance is not active: ' + motionResult.card);
+  if (motionResult.reel !== 'yycCinematicCardIn') throw new Error('Cinematic Reel entrance is not active: ' + motionResult.reel);
+  if (motionResult.modal !== 'yycCinematicPanelIn') throw new Error('Cinematic panel transition is not active: ' + motionResult.modal);
+  if (motionResult.admin !== 'yycCinematicAdminIn') throw new Error('Cinematic admin tab transition is not active: ' + motionResult.admin);
+  if (!motionResult.noOverflow) throw new Error('Cinematic motion caused horizontal overflow on a 390px viewport.');
+  console.log('CINEMATIC MOTION PASS: section, dynamic card, Reel, modal panel and admin-tab transitions animate without mobile overflow');
+
+  await motionPage.goto(new URL('leaders.html', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , null, { timeout: 12000 });
+  const leadersMotion = await motionPage.evaluate(() => ({
+    hero: getComputedStyle(document.querySelector('.wrap>.hero')).animationName,
+    person: getComputedStyle(document.querySelector('.wrap>.grid>.person')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (leadersMotion.hero !== 'yycCinematicPageIn') throw new Error('Standalone leaders hero entrance is not active: ' + leadersMotion.hero);
+  if (leadersMotion.person !== 'yycCinematicCardIn') throw new Error('Standalone leader-card entrance is not active: ' + leadersMotion.person);
+  if (!leadersMotion.noOverflow) throw new Error('Standalone leader-page motion caused mobile overflow.');
+  console.log('LEADERS PAGE MOTION PASS: premium header/card entrance without mobile overflow');
+
+  await motionPage.goto(new URL('media.html', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , null, { timeout: 12000 });
+  const mediaMotion = await motionPage.evaluate(() => ({
+    hero: getComputedStyle(document.querySelector('.wrap>.hero')).animationName,
+    report: getComputedStyle(document.querySelector('.wrap>.coverage')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (mediaMotion.hero !== 'yycCinematicPageIn') throw new Error('Standalone media hero entrance is not active: ' + mediaMotion.hero);
+  if (mediaMotion.report !== 'yycCinematicCardIn') throw new Error('Standalone media-report entrance is not active: ' + mediaMotion.report);
+  if (!mediaMotion.noOverflow) throw new Error('Standalone media-page motion caused mobile overflow.');
+  console.log('MEDIA PAGE MOTION PASS: press/media content animates without mobile overflow');
+
+  await motionPage.goto(new URL('events/', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() => document.querySelector('link[href*="yyc-seo.css"]'), null, { timeout: 12000 });
+  const directoryMotion = await motionPage.evaluate(() => ({
+    page: getComputedStyle(document.querySelector('.wrap>.card')).animationName,
+    item: getComputedStyle(document.querySelector('.listing>.item')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (directoryMotion.page !== 'yycSeoPageIn') throw new Error('Generated event-page entrance is not active: ' + directoryMotion.page);
+  if (directoryMotion.item !== 'yycSeoItemIn') throw new Error('Generated event-list item entrance is not active: ' + directoryMotion.item);
+  if (!directoryMotion.noOverflow) throw new Error('Generated event-page motion caused mobile overflow.');
+  console.log('GENERATED PAGE MOTION PASS: event listing and event card animate without mobile overflow');
+  await motionPage.close();
+
   if (failures.length) {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel admin cube workflows)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow + cinematic, reduced-motion and dedicated-page checks)');
 } finally {
   await browser.close();
 }

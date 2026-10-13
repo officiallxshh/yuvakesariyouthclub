@@ -33,6 +33,14 @@ jobs:
       - name: Node.js ID-card orchestrator check
         run: npm run node:check-id-card
 
+      - name: Setup Deno for Edge Function type check
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check YYC certificate Edge Function
+        run: deno check --config supabase/functions/yyc-certificate-delivery/deno.json supabase/functions/yyc-certificate-delivery/index.ts
+
       - name: Syntax checks
         run: |
           node --check app.js
@@ -45,10 +53,18 @@ jobs:
           node --check scripts/validate-backup.mjs
           node --check scripts/yyc-browser-regression.mjs
           node --check scripts/yyc-task-workflow.test.mjs
+          node --check scripts/yyc-certificate-workflow.test.mjs
+          node --check scripts/yyc-cinematic-motion.test.mjs
           node --check scripts/production-monitor.mjs
 
       - name: Volunteer task workflow checks
         run: npm run test:task-workflow
+
+      - name: Certificate issuance and delivery checks
+        run: npm run test:certificate-workflow
+
+      - name: Cinematic motion and accessibility checks
+        run: npm run test:cinematic-motion
 
       - name: Full repository audit
         run: node scripts/yyc-full-audit.mjs

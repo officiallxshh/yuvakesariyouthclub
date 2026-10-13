@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261012-42-build16-admin-media-cubes';
+var YYC_APP_BUILD='20261013-45-cinematic-experience';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
@@ -2410,11 +2410,123 @@ async function yycLoadMemberDashboard(kind){
   }
 }
 
+function yycCertificatesCenterHTML(kind){
+  var label=kind==='leader'?'leadership':'membership';
+  return '<section class="yyc-certificates-center" id="yycCertificateCenter" style="margin-top:18px;padding:18px;border:1px solid rgba(218,184,112,.22);border-radius:18px;background:linear-gradient(135deg,rgba(218,184,112,.045),rgba(8,13,17,.32))">'+
+    '<style id="yycCertificatesCenterStyle">'+
+      '.yyc-certificates-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.yyc-certificates-head h3{margin:5px 0 0;color:#f0d18a;font:600 23px Georgia,serif}.yyc-certificates-head p{margin:7px 0 0;color:#9ba69f;font-size:11px;line-height:1.65;max-width:480px}.yyc-certificates-list{display:grid;gap:10px;margin-top:14px}.yyc-certificate-card{padding:14px;border:1px solid rgba(255,255,255,.085);border-radius:14px;background:rgba(255,255,255,.022);min-width:0}.yyc-certificate-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.yyc-certificate-card strong{color:#eee5d4;overflow-wrap:anywhere}.yyc-certificate-id{display:block;margin-top:7px;color:#d8b66e;font-size:10px;letter-spacing:.07em;overflow-wrap:anywhere}.yyc-certificate-meta{display:flex;flex-wrap:wrap;gap:7px 13px;margin-top:9px;color:#8e9992;font-size:10px}.yyc-certificate-state{display:inline-flex;padding:6px 8px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:#a9b3ad;font-size:9px;font-weight:800;letter-spacing:.08em}.yyc-certificate-state.sent{color:#9be0ad;border-color:rgba(110,205,137,.32)}.yyc-certificate-state.failed{color:#f0b0a7;border-color:rgba(230,130,130,.32)}.yyc-certificate-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.yyc-certificate-actions a{display:inline-flex;align-items:center;min-height:34px;padding:8px 11px;border:1px solid rgba(218,184,112,.3);border-radius:10px;color:#e3c782;text-decoration:none;font-size:9px;font-weight:900;letter-spacing:.08em}.yyc-certificate-actions button{min-height:34px;padding:8px 11px;border:1px solid rgba(218,184,112,.45);border-radius:10px;background:rgba(218,184,112,.08);color:#e3c782;font-size:9px;font-weight:900;letter-spacing:.08em;cursor:pointer}.yyc-certificate-actions button:disabled{opacity:.55;cursor:wait}.yyc-certificate-empty{padding:14px;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:#9ba59e;font-size:11px;line-height:1.7}.yyc-certificate-help{margin-top:12px;color:#75827a;font-size:10px;line-height:1.7}@media(max-width:560px){.yyc-certificates-center{padding:14px!important}.yyc-certificate-card-head{display:grid}.yyc-certificate-state{justify-self:start}}'+
+    '</style>'+
+    '<div class="yyc-certificates-head"><div><span class="modal-kicker">OFFICIAL YYC RECORD</span><h3>My certificates.</h3><p>Download certificates for events where your attendance was confirmed. Delivery status is shown separately from attendance.</p></div><button type="button" class="mini-btn" id="yycCertificatesRefresh" data-kind="'+kind+'">REFRESH ↻</button></div>'+
+    '<div id="yycCertificatesList" class="yyc-certificates-list" data-kind="'+kind+'" aria-live="polite"><div class="yyc-certificate-empty">Loading your '+label+' certificates…</div></div>'+
+    '<p class="yyc-certificate-help">Certificates appear after YYC administration finalizes attendance for a completed event. A failed email does not remove an issued certificate; download remains available here.</p>'+
+  '</section>';
+}
+function yycCertificateEndpoint(){
+  return String(YYC_CONFIG.supabaseUrl||'').replace(/\/$/,'')+'/functions/v1/yyc-certificate-delivery';
+}
+async function yycCertificateRequest(payload){
+  var response=await fetch(yycCertificateEndpoint(),{
+    method:'POST',
+    cache:'no-store',
+    credentials:'omit',
+    headers:{'apikey':YYC_CONFIG.supabaseKey,'Content-Type':'application/json','Accept':'application/json','Cache-Control':'no-cache'},
+    body:JSON.stringify(payload)
+  });
+  var raw=await response.text(),data=null;
+  try{data=raw?JSON.parse(raw):null;}catch(_){}
+  if(!response.ok||!data||data.ok!==true) throw new Error(data&&data.error||'Certificate service is temporarily unavailable.');
+  return data;
+}
+function yycCertificateStatusLabel(status){
+  var value=String(status||'queued').toLowerCase();
+  if(value==='sent')return {label:'EMAIL SENT',css:'sent'};
+  if(value==='failed')return {label:'EMAIL FAILED · RETRY AVAILABLE',css:'failed'};
+  if(value==='skipped')return {label:'NO VALID EMAIL · DOWNLOAD READY',css:'failed'};
+  if(value==='sending')return {label:'EMAIL SENDING',css:''};
+  return {label:'EMAIL QUEUED',css:''};
+}
+async function yycLoadCertificates(kind){
+  kind=kind==='leader'?'leader':'member';
+  var host=$('#yycCertificatesList');
+  var token=kind==='leader'?leaderToken:memberToken;
+  if(!host||!token)return;
+  host.dataset.kind=kind;
+  host.innerHTML='<div class="yyc-certificate-empty">Loading your certificates…</div>';
+  try{
+    var payload={action:'list',target_kind:kind};
+    payload[kind==='leader'?'leader_token':'member_token']=token;
+    var result=await yycCertificateRequest(payload);
+    if(!$('#yycCertificatesList')||$('#yycCertificatesList').dataset.kind!==kind)return;
+    var certificates=Array.isArray(result.certificates)?result.certificates:[];
+    if(!certificates.length){
+      host.innerHTML='<div class="yyc-certificate-empty"><strong>No certificates issued yet.</strong><br>When attendance is confirmed and the event is finalized by YYC Admin, your certificate will appear here.</div>';
+      return;
+    }
+    host.innerHTML=certificates.map(function(c){
+      var state=yycCertificateStatusLabel(c.email_status);
+      var type=String(c.certificate_type||'participation').replace(/_/g,' ').replace(/\b\w/g,function(x){return x.toUpperCase();});
+      var date=c.event_date?yycDashboardDate(c.event_date,false):'Date not specified';
+      var verify=String(c.verify_url||'');
+      var safeVerify=/^https:\/\/www\.yuvakesariyouthclub\.in\//.test(verify)?verify:'';
+      var error=(c.email_status==='failed'||c.email_status==='skipped')&&c.email_error?'<small style="display:block;margin-top:8px;color:#d7a49d;font-size:10px;line-height:1.5">'+esc(c.email_error)+'</small>':'';
+      return '<article class="yyc-certificate-card">'+
+        '<div class="yyc-certificate-card-head"><div><strong>'+esc(c.event_title||'YYC event')+'</strong><small class="yyc-certificate-id">'+esc(c.certificate_number||'YYC certificate')+'</small></div><span class="yyc-certificate-state '+state.css+'">'+state.label+'</span></div>'+
+        '<div class="yyc-certificate-meta"><span>'+esc(type)+'</span><span>'+esc(date)+'</span>'+(c.event_location?'<span>'+esc(c.event_location)+'</span>':'')+'</div>'+
+        error+
+        '<div class="yyc-certificate-actions"><button type="button" data-yyc-cert-download="'+esc(c.id)+'" data-yyc-cert-kind="'+kind+'" data-yyc-cert-number="'+esc(c.certificate_number||'YYC-certificate')+'">DOWNLOAD PDF ↓</button>'+
+        (safeVerify?'<a href="'+esc(safeVerify)+'" target="_blank" rel="noopener noreferrer">VERIFY ↗</a>':'')+'</div>'+
+      '</article>';
+    }).join('');
+  }catch(err){
+    if(host)host.innerHTML='<div class="yyc-certificate-empty">Certificates could not load. <button type="button" class="mini-btn" id="yycCertificatesRetryInline" data-kind="'+kind+'">TRY AGAIN ↻</button><small style="display:block;margin-top:7px">'+esc(err.message||'Please check your connection.')+'</small></div>';
+    var retry=$('#yycCertificatesRetryInline');
+    if(retry)retry.addEventListener('click',function(){yycLoadCertificates(kind);});
+  }
+}
+function yycBindCertificateActions(){
+  if(window.__yycCertificateActionsBound)return;
+  window.__yycCertificateActionsBound=true;
+  document.addEventListener('click',async function(e){
+    var refresh=e.target&&e.target.closest?e.target.closest('#yycCertificatesRefresh'):null;
+    if(refresh){e.preventDefault();yycLoadCertificates(refresh.getAttribute('data-kind'));return;}
+    var download=e.target&&e.target.closest?e.target.closest('[data-yyc-cert-download]'):null;
+    if(!download)return;
+    e.preventDefault();
+    if(download.disabled)return;
+    var kind=download.getAttribute('data-yyc-cert-kind')==='leader'?'leader':'member';
+    var token=kind==='leader'?leaderToken:memberToken;
+    if(!token){toast('Please log in again to download your certificate.');return;}
+    var original=download.textContent;
+    download.disabled=true;download.textContent='PREPARING PDF…';
+    try{
+      var response=await fetch(yycCertificateEndpoint(),{
+        method:'POST',cache:'no-store',credentials:'omit',
+        headers:{'apikey':YYC_CONFIG.supabaseKey,'Content-Type':'application/json','Accept':'application/pdf','Cache-Control':'no-cache'},
+        body:JSON.stringify({action:'download',target_kind:kind,certificate_id:download.getAttribute('data-yyc-cert-download'),member_token:kind==='member'?token:undefined,leader_token:kind==='leader'?token:undefined})
+      });
+      var blob=await response.blob();
+      if(!response.ok||!String(response.headers.get('content-type')||'').toLowerCase().includes('application/pdf')){
+        var parsed=null;
+        try{parsed=JSON.parse(await blob.text());}catch(_){}
+        throw new Error(parsed&&parsed.error||'Certificate PDF could not be prepared.');
+      }
+      var objectUrl=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=objectUrl;
+      a.download=(download.getAttribute('data-yyc-cert-number')||'YYC-certificate').replace(/[^a-z0-9._-]/gi,'_')+'.pdf';
+      document.body.appendChild(a);a.click();a.remove();
+      window.setTimeout(function(){URL.revokeObjectURL(objectUrl);},30000);
+      toast('Certificate PDF downloaded ✓');
+    }catch(err){toast(err.message||'Certificate download failed');}
+    finally{download.disabled=false;download.textContent=original||'DOWNLOAD PDF ↓';}
+  });
+}
+
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
     (data.__adminView?'':yycMemberOverviewHTML('member'))+
     yycActionCenterHTML('member',data)+
+    (data.__adminView?'':yycCertificatesCenterHTML('member'))+
     yycDigitalCard(data,'member')+
     '<div class="yyc-card-download-bar"><div><b>YOUR CURRENT YYC ID CARD</b><span>Refresh the latest official details before reissuing · QR included</span></div><div class="yyc-member-card-actions"><button type="button" class="btn outline" id="memberNotificationsBtn">NOTIFICATIONS</button>'+(data.__adminView?'':'<button type="button" class="btn outline" id="memberReissueBtn">REFRESH / REISSUE ID ↻</button>')+'<button type="button" class="btn gold" id="memberDownloadBtn">DOWNLOAD ID CARD ↓</button></div></div>'+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>MEMBER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Your digital ID is linked to the official YYC database.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="memberEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="memberVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="memberLogout">LOGOUT</button></div></div>'+
@@ -2436,7 +2548,7 @@ function memberDashboard(data){
     closeModal();
     window.setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},150);
   });
-  if(!data.__adminView){yycLoadMemberDashboard();yycLoadMemberPortalExtras();}
+  if(!data.__adminView){yycLoadMemberDashboard();yycLoadMemberPortalExtras();yycLoadCertificates('member');yycBindCertificateActions();}
   bindPortalAccountMenu('member',data);
   var editProfile=$('#memberEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){memberEditSubmission(data);});
   var verify=$('#memberVerifyBtn');
@@ -2672,6 +2784,7 @@ function leaderDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
     (data.__adminView?'':yycMemberOverviewHTML('leader'))+
+    (data.__adminView?'':yycCertificatesCenterHTML('leader'))+
     yycDigitalCard(data,'leader')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
     
@@ -2688,7 +2801,7 @@ function leaderDashboard(data){
     closeModal();
     window.setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},150);
   });
-  if(!data.__adminView)yycLoadMemberDashboard('leader');
+  if(!data.__adminView){yycLoadMemberDashboard('leader');yycLoadCertificates('leader');yycBindCertificateActions();}
   bindPortalAccountMenu('leader',data);
   var editProfile=$('#leaderEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){leaderEditProfile(data);});
   var verify=$('#leaderVerifyBtn');
