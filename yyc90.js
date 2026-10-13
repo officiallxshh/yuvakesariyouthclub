@@ -854,7 +854,7 @@
         return '<div class="yyc90-cert-row"><div><strong style="font-size:11px;color:#e7e0d2">'+esc90(item.recipient_name||'Participant')+'</strong><span class="yyc90-cert-muted">'+esc90(item.certificate_number||'Certificate')+' · '+esc90(item.recipient_kind||'member').toUpperCase()+' · '+esc90(Number(item.attempt_count)||0)+' attempt(s)</span>'+detail+'</div><span class="yyc90-cert-state '+esc90(state)+'">'+esc90(state.replace(/_/g,' ').toUpperCase())+'</span></div>';
       }).join(''):'<div class="yyc90-cert-muted">No certificates have been issued for this event.</div>')+
       '<div class="yyc90-cert-action-buttons">'+
-        (Number(c.failed||0)+Number(c.skipped||0)>0?'<button type="button" class="mini-btn gold" data-yyc-cert-admin-action="retry" data-event-id="'+esc90(eventId)+'">RETRY FAILED / SKIPPED EMAILS</button>':'')+
+        (Number(c.failed||0)+Number(c.skipped||0)+Number(c.sending||0)>0?'<button type="button" class="mini-btn gold" data-yyc-cert-admin-action="retry" data-event-id="'+esc90(eventId)+'">RETRY FAILED / STALLED EMAILS</button>':'')+
         (Number(c.queued||0)>0?'<button type="button" class="mini-btn" data-yyc-cert-admin-action="process" data-event-id="'+esc90(eventId)+'">RESUME QUEUE</button>':'')+
         '<button type="button" class="mini-btn" data-yyc-cert-admin-action="status" data-event-id="'+esc90(eventId)+'">REFRESH STATUS ↻</button>'+
       '</div>';
@@ -929,7 +929,7 @@
         var queueEvent=String(queueBtn.getAttribute('data-event-id')||'');
         var action=String(queueBtn.getAttribute('data-yyc-cert-admin-action')||'status');
         if(queueEvent!==yycCertificateSelectedEvent90()){toast90('Event changed. Refresh delivery status again.');return;}
-        if(action==='retry'&&!window.confirm('Retry failed and skipped certificate email delivery for this event?'))return;
+        if(action==='retry'&&!window.confirm('Retry failed/skipped certificate emails and reclaim jobs that have been stuck in sending for over 10 minutes?'))return;
         queueBtn.disabled=true;var original=queueBtn.textContent;queueBtn.textContent=action==='retry'?'RETRYING…':action==='process'?'RESUMING…':'REFRESHING…';
         var payload={action:action,admin_token:window.adminToken,event_id:queueEvent};
         yycCertificateWorkflowRequest90(payload).then(function(data){
