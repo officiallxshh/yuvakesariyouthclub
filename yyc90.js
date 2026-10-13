@@ -782,6 +782,165 @@
     });
   }
 
+  function yycCertificateWorkflowRequest90(payload){
+    var cfg=window.YYC_CONFIG||{};
+    var base=String(cfg.supabaseUrl||'').replace(/\/$/,'');
+    if(!base||!cfg.supabaseKey) return Promise.reject(new Error('Certificate service configuration is missing.'));
+    return fetch(base+'/functions/v1/yyc-certificate-delivery',{
+      method:'POST',cache:'no-store',credentials:'omit',
+      headers:{'apikey':cfg.supabaseKey,'Content-Type':'application/json','Accept':'application/json','Cache-Control':'no-cache'},
+      body:JSON.stringify(payload)
+    }).then(function(response){
+      return response.text().then(function(raw){
+        var data=null;try{data=raw?JSON.parse(raw):null;}catch(_){}
+        if(!response.ok)throw new Error(data&&data.error||'Certificate service is temporarily unavailable.');
+        return data||{ok:false,error:'Certificate service returned an unreadable response.'};
+      });
+    });
+  }
+  function yycCertificateSelectedEvent90(){
+    return q('#at90Event')?String(q('#at90Event').value||''):'';
+  }
+  function renderYYCCertificatePreview90(data,eventId){
+    var host=q('#yyc90CertificatePreviewHost');if(!host)return;
+    if(!data||data.ok!==true){
+      host.innerHTML='<div class="notice">'+esc90(data&&data.error||'Certificate preview is unavailable.')+'</div>';
+      return;
+    }
+    var ev=data.event||{};
+    var recipients=Array.isArray(data.recipients)?data.recipients:[];
+    var status=data.email_status||{};
+    var summary=
+      '<div class="yyc90-cert-note"><strong style="color:#e7cf94">'+esc90(ev.title||'Selected event')+'</strong><br>'+
+        'Event date: '+esc90(ev.event_date||'Not specified')+(ev.location?' · '+esc90(ev.location):'')+'<br>'+
+        (data.already_finalized?'Attendance has already been finalized. Existing certificates are preserved; use delivery status below for retries.':'Please verify this list and certificate type before issuing. This action cannot create a second certificate for the same person and event.')+
+      '</div>'+
+      '<div class="yyc90-cert-summary">'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(data.eligible_count||0)+'</b><span>ELIGIBLE PRESENT</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(data.member_count||0)+'</b><span>MEMBERS</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(data.leader_count||0)+'</b><span>LEADERS</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(data.missing_email_count||0)+'</b><span>NO VALID EMAIL</span></div>'+
+      '</div>'+
+      '<div class="yyc90-cert-muted">'+esc90(data.existing_certificate_count||0)+' certificate record(s) already exist for this event. Email state: '+esc90(status.queued||0)+' queued · '+esc90(status.sent||0)+' sent · '+esc90(status.failed||0)+' failed · '+esc90(status.skipped||0)+' skipped.</div>'+
+      (recipients.length?recipients.slice(0,12).map(function(p){
+        return '<div class="yyc90-cert-row"><div><strong style="font-size:11px;color:#e7e0d2">'+esc90(p.name||'Unnamed')+'</strong><span class="yyc90-cert-muted">'+esc90(p.kind==='leader'?'LEADER':'MEMBER')+' · '+esc90(p.role_number||'No role number')+'</span></div><span class="yyc90-cert-state '+(p.email_valid?'sent':'skipped')+'">'+(p.email_valid?'EMAIL READY':'NO VALID EMAIL')+'</span></div>';
+      }).join(''):'<div class="empty" style="margin-top:10px">No eligible people marked PRESENT yet. Save attendance before finalizing.</div>')+
+      (recipients.length>12?'<div class="yyc90-cert-muted">Showing first 12 of '+recipients.length+' eligible recipients.</div>':'')+
+      (data.already_finalized
+        ? '<div class="yyc90-cert-action-buttons"><button type="button" class="mini-btn" id="yyc90CertificateStatus">REFRESH DELIVERY STATUS ↻</button></div>'
+        : recipients.length
+          ? '<div class="yyc90-cert-action-buttons"><button type="button" class="btn gold" id="yyc90CertificateFinalize" data-event-id="'+esc90(eventId)+'">FINALIZE ATTENDANCE & ISSUE CERTIFICATES</button></div>'
+          : '')+
+      '<div class="yyc90-cert-muted">Email delivery runs in the background. A failed email never reverses saved attendance or removes an issued certificate; the admin can retry delivery.</div>';
+    host.innerHTML=summary;
+  }
+  function renderYYCCertificateStatus90(data,eventId){
+    var host=q('#yyc90CertificateStatusHost');if(!host)return;
+    if(!data||data.ok!==true){
+      host.innerHTML='<div class="notice">'+esc90(data&&data.error||'Delivery status could not load.')+'</div>';
+      return;
+    }
+    var c=data.counts||{},items=Array.isArray(data.items)?data.items:[];
+    host.innerHTML='<div class="yyc90-cert-head" style="margin-bottom:10px"><div><span class="modal-kicker">EMAIL QUEUE</span><h3 style="font-size:16px">Delivery status</h3></div><span class="yyc90-cert-state">'+esc90(c.sent||0)+' / '+esc90(c.total||0)+' SENT</span></div>'+
+      '<div class="yyc90-cert-summary">'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(c.queued||0)+'</b><span>QUEUED</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(c.sending||0)+'</b><span>SENDING</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90(c.sent||0)+'</b><span>SENT</span></div>'+
+        '<div class="yyc90-cert-stat"><b>'+esc90((Number(c.failed)||0)+(Number(c.skipped)||0))+'</b><span>NEEDS ATTENTION</span></div>'+
+      '</div>'+
+      (items.length?items.map(function(item){
+        var state=String(item.email_status||'queued').toLowerCase();
+        var detail=(state==='failed'||state==='skipped')&&item.email_error?'<span class="yyc90-cert-muted">'+esc90(item.email_error)+'</span>':'';
+        return '<div class="yyc90-cert-row"><div><strong style="font-size:11px;color:#e7e0d2">'+esc90(item.recipient_name||'Participant')+'</strong><span class="yyc90-cert-muted">'+esc90(item.certificate_number||'Certificate')+' · '+esc90(item.recipient_kind||'member').toUpperCase()+' · '+esc90(Number(item.attempt_count)||0)+' attempt(s)</span>'+detail+'</div><span class="yyc90-cert-state '+esc90(state)+'">'+esc90(state.replace(/_/g,' ').toUpperCase())+'</span></div>';
+      }).join(''):'<div class="yyc90-cert-muted">No certificates have been issued for this event.</div>')+
+      '<div class="yyc90-cert-action-buttons">'+
+        (Number(c.failed||0)+Number(c.skipped||0)>0?'<button type="button" class="mini-btn gold" data-yyc-cert-admin-action="retry" data-event-id="'+esc90(eventId)+'">RETRY FAILED / SKIPPED EMAILS</button>':'')+
+        (Number(c.queued||0)>0?'<button type="button" class="mini-btn" data-yyc-cert-admin-action="process" data-event-id="'+esc90(eventId)+'">RESUME QUEUE</button>':'')+
+        '<button type="button" class="mini-btn" data-yyc-cert-admin-action="status" data-event-id="'+esc90(eventId)+'">REFRESH STATUS ↻</button>'+
+      '</div>';
+  }
+  function loadYYCCertificateStatus90(eventId){
+    var host=q('#yyc90CertificateStatusHost');
+    if(!host||!eventId){if(host)host.innerHTML='<div class="yyc90-cert-muted">Select an event to view certificate delivery status.</div>';return Promise.resolve();}
+    host.innerHTML='<div class="yyc90-cert-muted">Loading certificate delivery status…</div>';
+    return yycCertificateWorkflowRequest90({action:'status',admin_token:window.adminToken,event_id:eventId}).then(function(data){
+      if(String(yycCertificateSelectedEvent90())!==String(eventId))return;
+      renderYYCCertificateStatus90(data,eventId);
+    }).catch(function(err){if(host)host.innerHTML='<div class="notice">'+esc90(err.message||'Delivery status could not load.')+'</div>';});
+  }
+  function bindCertificateWorkflow90(){
+    if(window.__yycCertificateAdminActionsBound)return;
+    window.__yycCertificateAdminActionsBound=true;
+    document.addEventListener('click',function(e){
+      var previewBtn=e.target&&e.target.closest?e.target.closest('#yyc90CertificatePreview'):null;
+      var statusBtn=e.target&&e.target.closest?e.target.closest('#yyc90CertificateStatus'):null;
+      var finalizeBtn=e.target&&e.target.closest?e.target.closest('#yyc90CertificateFinalize'):null;
+      var queueBtn=e.target&&e.target.closest?e.target.closest('[data-yyc-cert-admin-action]'):null;
+
+      if(previewBtn){
+        e.preventDefault();if(previewBtn.disabled)return;
+        var previewEvent=yycCertificateSelectedEvent90();
+        if(!previewEvent){toast90('Select an event first');return;}
+        previewBtn.disabled=true;var oldPreview=previewBtn.textContent;previewBtn.textContent='CHECKING ATTENDANCE…';
+        var previewHost=q('#yyc90CertificatePreviewHost');
+        if(previewHost)previewHost.innerHTML='<div class="yyc90-cert-muted">Checking saved attendance and certificate eligibility…</div>';
+        yycCertificateWorkflowRequest90({action:'preview',admin_token:window.adminToken,event_id:previewEvent}).then(function(data){
+          if(yycCertificateSelectedEvent90()!==previewEvent)return;
+          renderYYCCertificatePreview90(data,previewEvent);
+          if(data&&data.ok)loadYYCCertificateStatus90(previewEvent);
+        }).catch(function(err){if(previewHost)previewHost.innerHTML='<div class="notice">'+esc90(err.message||'Certificate preview failed.')+'</div>';}).finally(function(){
+          previewBtn.disabled=false;previewBtn.textContent=oldPreview||'PREVIEW ELIGIBLE PEOPLE';
+        });
+        return;
+      }
+
+      if(statusBtn){
+        e.preventDefault();if(statusBtn.disabled)return;
+        var statusEvent=yycCertificateSelectedEvent90();
+        if(!statusEvent){toast90('Select an event first');return;}
+        loadYYCCertificateStatus90(statusEvent);
+        return;
+      }
+
+      if(finalizeBtn){
+        e.preventDefault();if(finalizeBtn.disabled)return;
+        var finalizeEvent=String(finalizeBtn.getAttribute('data-event-id')||'');
+        if(!finalizeEvent||finalizeEvent!==yycCertificateSelectedEvent90()){toast90('Event changed. Preview the current event again.');return;}
+        if(!window.confirm('Finalize attendance and issue one certificate to each eligible person marked PRESENT? This action is one-time per event and each person.'))return;
+        finalizeBtn.disabled=true;var oldFinalize=finalizeBtn.textContent;finalizeBtn.textContent='ISSUING CERTIFICATES…';
+        yycCertificateWorkflowRequest90({
+          action:'finalize',admin_token:window.adminToken,event_id:finalizeEvent,
+          certificate_type:q('#yyc90CertificateType')?q('#yyc90CertificateType').value:'participation'
+        }).then(function(data){
+          if(!data||data.ok!==true)throw new Error(data&&data.error||'Could not issue certificates.');
+          var note=q('#yyc90CertificatePreviewHost');
+          if(note)note.innerHTML='<div class="yyc90-cert-note"><strong style="color:#9be0ad">Certificates issued ✓</strong><br>'+esc90(data.new_count||0)+' new certificate(s) created. '+esc90((data.email_status||{}).queued||0)+' email(s) queued; delivery runs in the background. Attendance records have not been changed by email delivery.</div>';
+          return loadYYCCertificateStatus90(finalizeEvent).then(function(){return data;});
+        }).then(function(data){
+          toast90((data.already_finalized?'Attendance was already finalized':'Certificates issued')+' · '+esc90(data.new_count||0)+' new');
+        }).catch(function(err){toast90(err.message||'Certificate issuance failed');}).finally(function(){
+          if(finalizeBtn.isConnected){finalizeBtn.disabled=false;finalizeBtn.textContent=oldFinalize||'FINALIZE ATTENDANCE & ISSUE CERTIFICATES';}
+        });
+        return;
+      }
+
+      if(queueBtn){
+        e.preventDefault();if(queueBtn.disabled)return;
+        var queueEvent=String(queueBtn.getAttribute('data-event-id')||'');
+        var action=String(queueBtn.getAttribute('data-yyc-cert-admin-action')||'status');
+        if(queueEvent!==yycCertificateSelectedEvent90()){toast90('Event changed. Refresh delivery status again.');return;}
+        if(action==='retry'&&!window.confirm('Retry failed and skipped certificate email delivery for this event?'))return;
+        queueBtn.disabled=true;var original=queueBtn.textContent;queueBtn.textContent=action==='retry'?'RETRYING…':action==='process'?'RESUMING…':'REFRESHING…';
+        var payload={action:action,admin_token:window.adminToken,event_id:queueEvent};
+        yycCertificateWorkflowRequest90(payload).then(function(data){
+          if(!data||data.ok!==true)throw new Error(data&&data.error||'Certificate queue action failed.');
+          toast90(action==='retry'?'Failed certificate emails queued for retry':action==='process'?'Certificate queue resumed':'Certificate status refreshed');
+          return loadYYCCertificateStatus90(queueEvent);
+        }).catch(function(err){toast90(err.message||'Certificate queue action failed');}).finally(function(){if(queueBtn.isConnected){queueBtn.disabled=false;queueBtn.textContent=original;}});
+      }
+    });
+  }
+
   function renderAttendanceRows90(d){
     var adminData=window.__yycAdminLastData||{};
     var events=adminData.events||[];
