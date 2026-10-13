@@ -99,6 +99,45 @@
   }
 }
 
+/* Standalone Leaders and Press/Media pages share this motion layer. */
+@media(prefers-reduced-motion:no-preference){
+  .wrap>.hero{
+    animation:yycCinematicPageIn .7s var(--yyc-cinema-ease) both;
+  }
+  .wrap>.grid>.person,
+  .wrap>.coverage,
+  .wrap>.official-links{
+    animation:yycCinematicCardIn .56s var(--yyc-cinema-ease) both;
+    transition:transform .28s var(--yyc-cinema-ease),border-color .26s ease,box-shadow .28s ease;
+  }
+  .wrap>.grid>.person:nth-child(2),
+  .wrap>.coverage:nth-of-type(3){animation-delay:45ms}
+  .wrap>.grid>.person:nth-child(3),
+  .wrap>.coverage:nth-of-type(4){animation-delay:90ms}
+  .wrap>.grid>.person:nth-child(4){animation-delay:135ms}
+  .wrap>.grid>.person:nth-child(5){animation-delay:180ms}
+  .wrap>.grid>.person:nth-child(6){animation-delay:225ms}
+  .wrap>.grid>.person:nth-child(7){animation-delay:270ms}
+  .wrap>.grid>.person:nth-child(8){animation-delay:315ms}
+  .wrap>.grid>.person:nth-child(9){animation-delay:360ms}
+}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .wrap>.grid>.person:hover,.wrap>.coverage:hover,.wrap>.official-links:hover{
+    transform:translateY(-2px);
+    border-color:rgba(229,191,107,.38);
+    box-shadow:0 14px 30px rgba(0,0,0,.2);
+  }
+}
+@keyframes yycCinematicPageIn{
+  from{opacity:.35;transform:translate3d(0,14px,0) scale(.994)}
+  to{opacity:1;transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .wrap>.hero,.wrap>.grid>.person,.wrap>.coverage,.wrap>.official-links{
+    animation:none!important;transform:none!important;filter:none!important;transition:none!important;
+  }
+}
+
 /* Keep the public nav's exclusive .active highlight as the only source of navigation state.
    This sheet intentionally does not target nav-link active/inactive styles. */
 
