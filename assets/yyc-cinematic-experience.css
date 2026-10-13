@@ -239,7 +239,7 @@ html.yyc-smooth-data body.yyc-low-data .swag-card.yyc-data-ready{
   .modal.open .modal-shell,
   #modalContent.yyc-panel-swap-in,
   .admin-workspace.yyc-admin-tab-enter,
-  .yyc-certificate-card{
+  .yyc-reel-card,.yyc-reel-event-cube,.yyc-certificate-card{
     animation:none!important;
     filter:none!important;
     transform:none!important;
