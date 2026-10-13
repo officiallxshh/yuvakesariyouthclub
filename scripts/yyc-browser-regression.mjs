@@ -199,13 +199,27 @@ try {
     sort_order: n,
     created_at: '2026-10-01T00:00:00.000Z'
   }));
+  const certificateEventId = '11111111-1111-4111-8111-111111111111';
+  const certificateMemberOne = '22222222-2222-4222-8222-222222222221';
+  const certificateMemberTwo = '22222222-2222-4222-8222-222222222222';
+  const certificateEvent = {
+    id: certificateEventId,
+    title: 'Browser Certificate Test Event',
+    event_date: '2026-10-01',
+    location: 'Subrahmanya',
+    status: 'published'
+  };
+  const certificateMembers = [
+    { id: certificateMemberOne, name: 'Test Member One', role_number: 'YYC-M-001', email: 'one@example.invalid', status: 'approved', approved: true, duplicate_of: null },
+    { id: certificateMemberTwo, name: 'Test Member Two', role_number: 'YYC-M-002', email: '', status: 'approved', approved: true, duplicate_of: null }
+  ];
   const testDashboard = {
     ok: true,
-    members: [],
+    members: certificateMembers,
     leaders: [],
     updates: [],
     gallery: testGallery,
-    events: [],
+    events: [certificateEvent],
     swags: [],
     settings: {},
     pending_updates: [],
@@ -283,11 +297,104 @@ try {
   }
   console.log('ADMIN REEL CUBE PASS: 3 Reels grouped; Edit/Publish/Delete actions and add-to-event flow work');
 
+  /* Certificate workflow is mocked end-to-end; it never writes to production data or sends mail. */
+  await page.route('**/rest/v1/rpc/admin_feature_data', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      ok: true,
+      members: certificateMembers,
+      leaders: [],
+      events: [certificateEvent],
+      attendance: [
+        { id: '33333333-3333-4333-8333-333333333331', event_id: certificateEventId, member_id: certificateMemberOne, present: true, marked_at: '2026-10-01T10:00:00.000Z' },
+        { id: '33333333-3333-4333-8333-333333333332', event_id: certificateEventId, member_id: certificateMemberTwo, present: true, marked_at: '2026-10-01T10:05:00.000Z' }
+      ],
+      volunteers: [],
+      achievements: [],
+      history: [],
+      finance: []
+    })
+  }));
+  await page.route('**/functions/v1/yyc-certificate-delivery*', async (route) => {
+    const request = route.request();
+    const corsHeaders = {
+      'access-control-allow-origin': 'http://127.0.0.1:4173',
+      'access-control-allow-headers': 'apikey,content-type,accept,cache-control',
+      'access-control-allow-methods': 'GET,POST,OPTIONS',
+      'content-type': 'application/json'
+    };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders, body: '' });
+      return;
+    }
+    const body = request.postDataJSON();
+    if (body.action === 'preview') {
+      await route.fulfill({
+        status: 200, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true,
+          event: { id: certificateEventId, title: certificateEvent.title, event_date: certificateEvent.event_date, location: certificateEvent.location, certificates_finalized_at: null },
+          already_finalized: false, eligible_count: 2, member_count: 2, leader_count: 0, missing_email_count: 1, existing_certificate_count: 0,
+          email_status: { queued: 0, sent: 0, failed: 0, skipped: 0 },
+          recipients: [
+            { kind: 'member', id: certificateMemberOne, name: 'Test Member One', role_number: 'YYC-M-001', email_valid: true },
+            { kind: 'member', id: certificateMemberTwo, name: 'Test Member Two', role_number: 'YYC-M-002', email_valid: false }
+          ]
+        })
+      });
+      return;
+    }
+    if (body.action === 'finalize') {
+      await route.fulfill({
+        status: 202, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true, already_finalized: false, event_id: certificateEventId, issued_count: 2, new_count: 2,
+          email_status: { queued: 1, sending: 0, sent: 0, failed: 0, skipped: 1 }, worker_started: true, background: true
+        })
+      });
+      return;
+    }
+    if (body.action === 'status') {
+      await route.fulfill({
+        status: 200, headers: corsHeaders,
+        body: JSON.stringify({
+          ok: true,
+          event: { id: certificateEventId, title: certificateEvent.title, event_date: certificateEvent.event_date, certificates_finalized_at: '2026-10-13T08:00:00.000Z' },
+          counts: { total: 2, queued: 1, sending: 0, sent: 0, failed: 0, skipped: 1 },
+          items: [
+            { id: '44444444-4444-4444-8444-444444444441', certificate_number: 'YYC-CERT-2026-000001', recipient_kind: 'member', recipient_name: 'Test Member One', recipient_role_number: 'YYC-M-001', email_status: 'queued', attempt_count: 0 },
+            { id: '44444444-4444-4444-8444-444444444442', certificate_number: 'YYC-CERT-2026-000002', recipient_kind: 'member', recipient_name: 'Test Member Two', recipient_role_number: 'YYC-M-002', email_status: 'skipped', email_error: 'No valid email address', attempt_count: 0 }
+          ]
+        })
+      });
+      return;
+    }
+    await route.fulfill({ status: 400, headers: corsHeaders, body: JSON.stringify({ ok: false, error: 'Unexpected certificate action' }) });
+  });
+
+  await page.locator('[data-yyc90-tab="attendance"]').click();
+  await page.locator('#at90Event').selectOption(certificateEventId);
+  await page.locator('#yyc90CertificatePreview').click();
+  await page.getByText('Test Member One', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.getByText('Test Member Two', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  if (!(await page.locator('#yyc90CertificatePreviewHost').innerText()).includes('2')) {
+    throw new Error('Certificate preview should show both eligible Present recipients before issuing.');
+  }
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#yyc90CertificateFinalize').click();
+  await page.getByText('Certificates issued ✓', { exact: false }).waitFor({ state: 'visible', timeout: 6000 });
+  await page.getByText('YYC-CERT-2026-000001', { exact: true }).waitFor({ state: 'visible', timeout: 6000 });
+  if (!(await page.locator('#yyc90CertificateStatusHost').innerText()).includes('1 / 2 SENT')) {
+    throw new Error('Certificate queue status should show its delivery counts after finalization.');
+  }
+  console.log('CERTIFICATE WORKFLOW PASS: preview → one-time issue → background queue status with skipped-email visibility');
+
   if (failures.length) {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel admin cube workflows)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow)');
 } finally {
   await browser.close();
 }
