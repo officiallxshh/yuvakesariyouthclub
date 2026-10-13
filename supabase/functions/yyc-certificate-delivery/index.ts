@@ -15,6 +15,8 @@ const db = createClient(SUPABASE_URL, SERVICE_KEY, {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SITE_URL = "https://www.yuvakesariyouthclub.in";
 const VERIFY_PATH = "/certificate-verify.html";
+const MANUAL_CERTIFICATE_BUCKET = "yyc-certificates";
+const MAX_MANUAL_CERTIFICATE_BYTES = 10 * 1024 * 1024;
 const CERTIFICATE_TITLES: Record<string, string> = {
   participation: "CERTIFICATE OF PARTICIPATION",
   appreciation: "CERTIFICATE OF APPRECIATION",
@@ -263,6 +265,100 @@ async function sendCertificateEmail(issue: any): Promise<void> {
     await markDelivery(issue.id, "failed", {
       error: clean(error instanceof Error ? error.message : "Certificate delivery failed.", 1000)
     });
+  }
+}
+async function resolveAdminRecipient(kind: string, id: string): Promise<any | null> {
+  if (!id || !["member", "leader"].includes(kind)) return null;
+  if (kind === "member") {
+    const { data, error } = await db.from("members")
+      .select("id,name,email,role_number,status,approved,duplicate_of")
+      .eq("id", id).maybeSingle();
+    if (error || !data || data.approved !== true ||
+        String(data.status || "").toLowerCase() !== "approved" || data.duplicate_of) return null;
+    return data;
+  }
+  const { data, error } = await db.from("leaders")
+    .select("id,name,email,role_number,role,status")
+    .eq("id", id).maybeSingle();
+  if (error || !data || String(data.status || "active").toLowerCase() === "inactive") return null;
+  return data;
+}
+async function sendManualCertificateEmail(issue: any, recipient: any, pdfBytes: Uint8Array): Promise<{ status: string; reason?: string; id?: string }> {
+  const apiKey = Deno.env.get("RESEND_API_KEY") ?? "";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
+  const email = clean(recipient?.email, 320);
+  if (!EMAIL_PATTERN.test(email)) {
+    const reason = "No valid email address on record. The uploaded certificate remains available in the portal.";
+    await db.from("yyc_manual_certificates").update({
+      email_status: "skipped", email_error: reason, updated_at: new Date().toISOString()
+    }).eq("id", issue.id);
+    return { status: "skipped", reason };
+  }
+  if (!apiKey || !from) {
+    const reason = "Resend email is not configured in Supabase.";
+    await db.from("yyc_manual_certificates").update({
+      email_status: "failed", email_error: reason, updated_at: new Date().toISOString()
+    }).eq("id", issue.id);
+    return { status: "failed", reason };
+  }
+  const title = clean(issue.title, 160);
+  const eventTitle = clean(issue.event_title, 180);
+  const loginUrl = SITE_URL + "/";
+  const subject = "New YYC certificate available · " + title;
+  const html = `<!doctype html><html lang="en"><body style="margin:0;background:#05080b;color:#e9e1d2;font-family:Arial,Helvetica,sans-serif">
+    <main style="max-width:620px;margin:28px auto;padding:30px;background:#0a1015;border:1px solid #302b20;border-radius:20px">
+      <div style="font-size:10px;font-weight:800;letter-spacing:2.5px;color:#d7b66d">YUVAKESARI YOUTH CLUB 🚩</div>
+      <h1 style="margin:18px 0 10px;font-size:27px;line-height:1.2;color:#f0d18a">Your certificate is ready.</h1>
+      <p style="font-size:14px;line-height:1.7;color:#b3bcb7">Hello ${escapeHtml(recipient.name || "YYC participant")}, YYC administration uploaded a certificate for you. The PDF is attached to this email.</p>
+      <div style="margin:18px 0;padding:15px;background:#11191f;border:1px solid #252f32;border-radius:12px">
+        <div style="font-size:9px;letter-spacing:1.5px;color:#8e9a94">CERTIFICATE</div>
+        <strong style="display:block;margin-top:7px;font-size:18px;color:#e7c77f">${escapeHtml(title)}</strong>
+        ${eventTitle ? `<div style="margin-top:7px;font-size:11px;color:#a5b0aa">Event / occasion: ${escapeHtml(eventTitle)}</div>` : ""}
+      </div>
+      <p style="font-size:12px;line-height:1.7;color:#aab2ad">You can also sign in to your YYC ${issue.recipient_kind === "leader" ? "Leader" : "Member"} Panel and open <strong>My certificates</strong> to download it again.</p>
+      <p style="margin:24px 0"><a href="${loginUrl}" style="display:inline-block;padding:13px 18px;background:#d8b66e;color:#0a0c0d;text-decoration:none;font-size:11px;font-weight:800;letter-spacing:1px;border-radius:10px">OPEN YYC WEBSITE ↗</a></p>
+      <p style="font-size:10px;color:#7d8983">This is an official message from YYC administration. Keep your personal certificate private.</p>
+    </main></body></html>`;
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + apiKey,
+        "Content-Type": "application/json",
+        "Idempotency-Key": "yyc-manual-certificate-" + String(issue.id)
+      },
+      body: JSON.stringify({
+        from, to: [email], subject, html,
+        text: "Hello " + clean(recipient.name, 120) + ", YYC administration uploaded a certificate for you: " + title +
+          (eventTitle ? " · Event/occasion: " + eventTitle : "") +
+          ". The PDF is attached. You can also sign in at " + loginUrl + " and open My certificates.",
+        attachments: [{
+          filename: clean(issue.original_file_name, 180).replace(/[\\/\r\n"]/g, "_") || "YYC-certificate.pdf",
+          content: bytesToBase64(pdfBytes)
+        }]
+      })
+    });
+    const raw = await response.text();
+    let data: any = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch {}
+    if (!response.ok || !data?.id) {
+      const reason = clean(data?.message || data?.error?.message || "Email provider rejected the certificate notification.", 1000);
+      await db.from("yyc_manual_certificates").update({
+        email_status: "failed", email_error: reason, updated_at: new Date().toISOString()
+      }).eq("id", issue.id);
+      return { status: "failed", reason };
+    }
+    await db.from("yyc_manual_certificates").update({
+      email_status: "sent", email_provider_message_id: String(data.id),
+      email_sent_at: new Date().toISOString(), email_error: null, updated_at: new Date().toISOString()
+    }).eq("id", issue.id);
+    return { status: "sent", id: String(data.id) };
+  } catch (error) {
+    const reason = clean(error instanceof Error ? error.message : "Certificate notification could not be sent.", 1000);
+    await db.from("yyc_manual_certificates").update({
+      email_status: "failed", email_error: reason, updated_at: new Date().toISOString()
+    }).eq("id", issue.id);
+    return { status: "failed", reason };
   }
 }
 async function processQueued(eventId: string | null): Promise<void> {
