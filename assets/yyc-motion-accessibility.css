@@ -1,0 +1,170 @@
+/* YYC motion accessibility + responsive performance layer
+   Additive only: preserve existing layouts, authentication and data behavior. */
+
+:root {
+  --yyc-motion-fast: 140ms;
+  --yyc-motion-ui: 220ms;
+  --yyc-motion-enter: 420ms;
+  --yyc-motion-ease: cubic-bezier(.2,.75,.25,1);
+}
+
+/* Prefer compositor-friendly changes for common interactive elements. */
+button,
+a,
+.btn,
+.nav-link,
+.nav-admin,
+.mobile-panel,
+.modal-shell,
+.glimpse-card,
+.glimpse-feature,
+.leader-card,
+.gallery-card,
+.event-card,
+.update-card,
+.join-card {
+  transition-timing-function: var(--yyc-motion-ease);
+}
+
+button:active,
+.btn:active,
+.nav-admin:active,
+.mobile-panel a:active {
+  transition-duration: var(--yyc-motion-fast);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(245, 213, 143, .9);
+  outline-offset: 3px;
+}
+
+/* Avoid hover-only movement on touch screens. Taps must remain functional. */
+@media (hover: none), (pointer: coarse) {
+  .glimpse-card:hover,
+  .glimpse-feature:hover,
+  .leader-card:hover,
+  .gallery-card:hover,
+  .event-card:not(.event-skeleton):hover,
+  .update-card:hover,
+  .culture-orb:hover,
+  .hero-actions .btn:hover,
+  .social-row a:hover {
+    transform: none;
+  }
+
+  .glimpse-card:hover img,
+  .glimpse-feature:hover img,
+  .leader-card:hover img,
+  .gallery-card:hover img {
+    transform: none;
+    filter: none;
+  }
+
+  .hero-actions .btn::after,
+  .gallery-card::after {
+    display: none;
+  }
+}
+
+/* Phones: avoid expensive perpetual compositing and reduce hover/stagger costs. */
+@media (max-width: 620px) {
+  .hero-photo {
+    animation-duration: 30s;
+    will-change: auto;
+  }
+
+  .topbar,
+  .culture-panel,
+  .modal-shell,
+  .join-card {
+    -webkit-backdrop-filter: none;
+  }
+
+  .glimpse-card,
+  .glimpse-feature,
+  .leader-card,
+  .gallery-card,
+  .event-card,
+  .update-card,
+  .join-card {
+    transition-duration: 180ms;
+  }
+
+  .yyc-premium-progress span {
+    transition: none;
+  }
+}
+
+/* Tablets and compact laptops: keep motion short and layout stable. */
+@media (min-width: 621px) and (max-width: 1100px) {
+  .hero-photo {
+    animation-duration: 24s;
+    will-change: auto;
+  }
+
+  .glimpse-card,
+  .glimpse-feature,
+  .leader-card,
+  .gallery-card,
+  .event-card,
+  .update-card {
+    transition-duration: 240ms;
+  }
+}
+
+/* Large displays/TVs: no added scaling or aggressive movement. */
+@media (min-width: 1600px) {
+  .glimpse-card:hover,
+  .glimpse-feature:hover,
+  .leader-card:hover,
+  .gallery-card:hover,
+  .event-card:not(.event-skeleton):hover,
+  .update-card:hover {
+    transform: translateY(-3px);
+  }
+}
+
+/* Honor OS/browser accessibility settings globally, including hero zoom,
+   scroll behavior, modal motion, shimmer/sweep effects and card transitions. */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    caret-color: auto;
+  }
+
+  .hero-photo {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  .hero-actions .btn::after,
+  .gallery-card::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .glimpse-card:hover,
+  .glimpse-feature:hover,
+  .leader-card:hover,
+  .gallery-card:hover,
+  .event-card:not(.event-skeleton):hover,
+  .update-card:hover,
+  .culture-orb:hover,
+  .hero-actions .btn:hover,
+  .social-row a:hover {
+    transform: none !important;
+  }
+}
