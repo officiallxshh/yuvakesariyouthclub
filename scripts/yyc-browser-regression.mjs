@@ -478,6 +478,20 @@ try {
   if (!leadersMotion.noOverflow) throw new Error('Standalone leader-page motion caused mobile overflow.');
   console.log('LEADERS PAGE MOTION PASS: premium header/card entrance without mobile overflow');
 
+  await motionPage.goto(new URL('media.html', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , null, { timeout: 12000 });
+  const mediaMotion = await motionPage.evaluate(() => ({
+    hero: getComputedStyle(document.querySelector('.wrap>.hero')).animationName,
+    report: getComputedStyle(document.querySelector('.wrap>.coverage')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (mediaMotion.hero !== 'yycCinematicPageIn') throw new Error('Standalone media hero entrance is not active: ' + mediaMotion.hero);
+  if (mediaMotion.report !== 'yycCinematicCardIn') throw new Error('Standalone media-report entrance is not active: ' + mediaMotion.report);
+  if (!mediaMotion.noOverflow) throw new Error('Standalone media-page motion caused mobile overflow.');
+  console.log('MEDIA PAGE MOTION PASS: press/media content animates without mobile overflow');
+
   await motionPage.goto(new URL('events/', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await motionPage.waitForFunction(() => document.querySelector('link[href*="yyc-seo.css"]'), null, { timeout: 12000 });
   const directoryMotion = await motionPage.evaluate(() => ({
@@ -495,7 +509,7 @@ try {
     throw new Error('Uncaught browser errors:\n' + failures.join('\n'));
   }
 
-  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow + cinematic and reduced-motion checks)');
+  console.log('YYC BROWSER REGRESSION: PASS (' + targets.length + ' desktop targets + deep link/reload + three login close buttons + mobile Reel navigation + Gallery/Reel cubes + certificate issuance workflow + cinematic, reduced-motion and dedicated-page checks)');
 } finally {
   await browser.close();
 }
