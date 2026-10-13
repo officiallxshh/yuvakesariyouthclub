@@ -42,7 +42,7 @@ function cors(req: Request) {
     "content-type": "application/json; charset=utf-8",
     "access-control-allow-origin": allowed.includes(origin) ? origin : "https://www.yuvakesariyouthclub.in",
     "vary": "Origin",
-    "access-control-allow-headers": "authorization,apikey,content-type,x-yyc-session",
+    "access-control-allow-headers": "authorization,apikey,content-type,x-yyc-session,cache-control",
     "access-control-allow-methods": "GET,POST,OPTIONS"
   };
 }
