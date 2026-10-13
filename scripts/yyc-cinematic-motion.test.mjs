@@ -19,7 +19,7 @@ test('cinematic stylesheet loads before the exclusive active-nav stylesheet', ()
   assert.ok(nav > cinematic, 'exclusive nav active-state stylesheet remains after cinematic layer');
   const links = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
   assert.ok(links.at(-1)?.[0].includes('yyc-nav-active-state.css'), 'nav active-state stylesheet is still the final linked stylesheet');
-  assert.ok(index.includes('name="yyc-build" content="' + currentBuild + '"));
+  assert.ok(index.includes('name="yyc-build" content="' + currentBuild + '"'));
   assert.ok(app.includes("var YYC_APP_BUILD='" + currentBuild + "'"));
   assert.ok(audit.includes('const currentBuild = "' + currentBuild + '";'));
 });
