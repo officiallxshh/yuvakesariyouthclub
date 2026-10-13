@@ -39,7 +39,7 @@
     var raw=String(value||'').trim();
     if(!raw)throw new Error('Enter the phone number registered with YYC.');
     var digits=raw.replace(/[^0-9]/g,'');
-    if(/^\\d{10}$/.test(digits))digits='91'+digits;
+    if(/^\d{10}$/.test(digits))digits='91'+digits;
     if(digits.length<8||digits.length>15)throw new Error('Enter a valid phone number with country code.');
     return '+'+digits;
   }
