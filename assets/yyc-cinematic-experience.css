@@ -1,0 +1,190 @@
+/* YYC CINEMATIC EXPERIENCE — restrained motion that preserves the premium dark identity.
+   Visual-only layer: no JS event interception, layout changes, or data/auth edits. */
+
+:root{
+  --yyc-cinema-ease:cubic-bezier(.16,1,.3,1);
+  --yyc-cinema-ease-soft:cubic-bezier(.22,1,.36,1);
+  --yyc-cinema-fast:180ms;
+  --yyc-cinema-ui:280ms;
+}
+
+/* One calm, cinematic rise for content only when the existing observer says it is visible. */
+@media (prefers-reduced-motion:no-preference){
+  body.yyc-scroll-ready .section .reveal.yyc-scroll-in{
+    animation:yycCinematicReveal .68s var(--yyc-cinema-ease) both;
+    transform-origin:50% 85%;
+  }
+  body.yyc-scroll-ready .section .glimpse-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .leaders-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .events-grid .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .updates-list .reveal.yyc-scroll-in,
+  body.yyc-scroll-ready .section .gallery-grid .reveal.yyc-scroll-in{
+    animation-duration:.64s;
+  }
+
+  /* Data cards enter in short, restrained groups after the observer sees them. */
+  html.yyc-smooth-data .leader-card.yyc-data-ready,
+  html.yyc-smooth-data .update-card.yyc-data-ready,
+  html.yyc-smooth-data .event-card.yyc-data-ready,
+  html.yyc-smooth-data .gallery-card.yyc-data-ready,
+  html.yyc-smooth-data .swag-card.yyc-data-ready{
+    animation:yycCinematicCardIn .62s var(--yyc-cinema-ease) var(--yyc-data-delay,0ms) both;
+    backface-visibility:hidden;
+  }
+
+  /* Section jumps animate their heading/content, never the section box or active-state controller. */
+  .section.yyc-section-navigate .section-head{
+    animation:yycCinematicSectionHead .56s var(--yyc-cinema-ease) both;
+  }
+  .section.yyc-section-navigate .section-head .section-kicker,
+  .section.yyc-section-navigate .section-head .counter{
+    animation:yycCinematicDetailIn .42s var(--yyc-cinema-ease) .08s both;
+  }
+
+  /* Modals retain the existing open/close lifecycle, with a cleaner single entrance animation. */
+  .modal.open .modal-shell{
+    animation:yycCinematicModalIn .46s var(--yyc-cinema-ease) both !important;
+  }
+  #modalContent.yyc-panel-swap-in{
+    animation:yycCinematicPanelIn .48s var(--yyc-cinema-ease) both;
+    transform-origin:50% 8%;
+  }
+  .admin-workspace.yyc-admin-tab-enter{
+    animation:yycCinematicAdminIn .38s var(--yyc-cinema-ease) both !important;
+  }
+
+  /* Certificate panels get a little motion feedback without shifting surrounding layout. */
+  .yyc-certificate-card,
+  .yyc90-cert-row,
+  .yyc90-cert-stat{
+    transition:border-color .26s ease,background-color .26s ease,box-shadow .3s ease,transform .3s var(--yyc-cinema-ease);
+  }
+  .yyc-certificate-card{
+    animation:yycCinematicCardIn .54s var(--yyc-cinema-ease) both;
+  }
+  .yyc-certificate-card:nth-child(2){animation-delay:35ms}
+  .yyc-certificate-card:nth-child(3){animation-delay:70ms}
+  .yyc-certificate-card:nth-child(4){animation-delay:105ms}
+  .yyc-certificate-card:nth-child(5){animation-delay:140ms}
+  .yyc-certificate-card:nth-child(6){animation-delay:175ms}
+  .yyc-certificate-actions button,
+  .yyc90-cert-actions button,
+  .yyc90-cert-action-buttons button{
+    transition:transform .2s var(--yyc-cinema-ease),border-color .2s ease,background-color .2s ease,box-shadow .2s ease;
+  }
+}
+
+/* True hover devices only: a soft gold edge and a 2px lift, never giant scaling or tilt. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .leader-card:hover,.gallery-card:hover,.event-card:not(.event-skeleton):hover,
+  .update-card:hover,.swag-card:hover,.glimpse-card:hover{
+    border-color:rgba(224,190,111,.38);
+    box-shadow:0 18px 38px rgba(0,0,0,.22),0 0 0 1px rgba(224,190,111,.045);
+  }
+  .yyc-certificate-card:hover{
+    transform:translateY(-2px);
+    border-color:rgba(224,190,111,.38);
+    box-shadow:0 14px 30px rgba(0,0,0,.2);
+  }
+  .yyc-certificate-actions button:hover,
+  .yyc90-cert-actions button:hover:not(:disabled),
+  .yyc90-cert-action-buttons button:hover:not(:disabled){
+    transform:translateY(-1px);
+    border-color:rgba(236,201,127,.6);
+    box-shadow:0 7px 18px rgba(0,0,0,.16);
+  }
+  .yyc90-cert-row:hover{
+    border-color:rgba(224,190,111,.25);
+    background:rgba(218,184,112,.035);
+  }
+}
+
+/* Keep the public nav's exclusive .active highlight as the only source of navigation state.
+   This sheet intentionally does not target nav-link active/inactive styles. */
+
+@keyframes yycCinematicReveal{
+  from{opacity:.42;transform:translate3d(0,20px,0) scale(.992)}
+  68%{opacity:1;transform:translate3d(0,-1px,0) scale(1)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicCardIn{
+  from{opacity:.4;transform:translate3d(0,15px,0) scale(.99)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicSectionHead{
+  from{opacity:.55;transform:translate3d(0,10px,0)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicDetailIn{
+  from{opacity:0;transform:translate3d(0,5px,0)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicModalIn{
+  from{opacity:0;transform:translate3d(0,13px,0) scale(.988)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicPanelIn{
+  from{opacity:0;transform:translate3d(0,9px,0) scale(.995)}
+  70%{opacity:1;transform:translate3d(0,-1px,0) scale(1)}
+  to{opacity:1;transform:none}
+}
+@keyframes yycCinematicAdminIn{
+  from{opacity:.35;transform:translate3d(0,8px,0)}
+  to{opacity:1;transform:none}
+}
+
+/* Lower-cost network / low-data mode: remove blur/complex movement and shorten entrances. */
+body.yyc-low-data .section.yyc-section-navigate .section-head,
+body.yyc-low-data #modalContent.yyc-panel-swap-in,
+body.yyc-low-data .modal.open .modal-shell,
+body.yyc-low-data .admin-workspace.yyc-admin-tab-enter{
+  filter:none!important;
+  animation-duration:.22s!important;
+}
+body.yyc-low-data .yyc-certificate-card,
+body.yyc-low-data .yyc90-cert-row,
+body.yyc-low-data .yyc90-cert-stat{
+  animation:none!important;
+  transition-duration:.12s!important;
+}
+@media(max-width:700px){
+  .section.yyc-section-navigate .section-head{animation-duration:.32s}
+  body.yyc-scroll-ready .section .reveal.yyc-scroll-in{animation-duration:.48s}
+  html.yyc-smooth-data .leader-card.yyc-data-ready,
+  html.yyc-smooth-data .update-card.yyc-data-ready,
+  html.yyc-smooth-data .event-card.yyc-data-ready,
+  html.yyc-smooth-data .gallery-card.yyc-data-ready,
+  html.yyc-smooth-data .swag-card.yyc-data-ready{animation-duration:.42s}
+  .yyc-certificate-card:hover{transform:none}
+  #modalContent.yyc-panel-swap-in{animation-duration:.32s}
+}
+
+/* Accessibility is authoritative over every decorative motion rule above. */
+@media(prefers-reduced-motion:reduce){
+  body.yyc-scroll-ready .section .reveal.yyc-scroll-in,
+  html.yyc-smooth-data .leader-card.yyc-data-ready,
+  html.yyc-smooth-data .update-card.yyc-data-ready,
+  html.yyc-smooth-data .event-card.yyc-data-ready,
+  html.yyc-smooth-data .gallery-card.yyc-data-ready,
+  html.yyc-smooth-data .swag-card.yyc-data-ready,
+  .section.yyc-section-navigate .section-head,
+  .section.yyc-section-navigate .section-head .section-kicker,
+  .section.yyc-section-navigate .section-head .counter,
+  .modal.open .modal-shell,
+  #modalContent.yyc-panel-swap-in,
+  .admin-workspace.yyc-admin-tab-enter,
+  .yyc-certificate-card{
+    animation:none!important;
+    filter:none!important;
+    transform:none!important;
+  }
+  .yyc-certificate-card,.yyc90-cert-row,.yyc90-cert-stat,
+  .yyc-certificate-actions button,.yyc90-cert-actions button,
+  .yyc90-cert-action-buttons button{
+    transition:none!important;
+  }
+  .yyc-certificate-card:hover,.yyc90-cert-row:hover{
+    transform:none!important;
+    box-shadow:none!important;
+  }
+}
