@@ -50,7 +50,7 @@ test('admin UI includes create/edit/archive/restore and task filtering', () => {
 test('leader UI only exposes assigned-task progress updates', () => {
   assert.match(app, /rpc\('leader_tasks_list'/);
   assert.match(app, /rpc\('leader_task_update'/);
-  assert.match(app, /Assigned work/);
+  assert.match(app, /ASSIGNED WORK/i);
   assert.match(app, /p_note:form\.elements\.note\.value\.trim\(\)/);
 });
 
