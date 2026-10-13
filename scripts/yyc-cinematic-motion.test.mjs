@@ -33,6 +33,7 @@ test('section reveal, dynamic cards, modal and admin tab animations reuse existi
   assert.match(css, /@keyframes yycCinematicReveal/);
   assert.match(css, /@keyframes yycCinematicCardIn/);
   assert.match(css, /@keyframes yycCinematicModalIn/);
+  assert.match(css, /\.yyc-reel-card,.yyc-reel-event-cube/);
 });
 
 test('hover polish does not depend on hover-capable desktops only, and active-nav state is left alone', () => {
