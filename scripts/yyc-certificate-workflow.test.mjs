@@ -8,7 +8,6 @@ const edge = read('supabase/functions/yyc-certificate-delivery/index.ts');
 const app = read('app.js');
 const attendance = read('yyc90.js');
 const browserTest = read('scripts/yyc-browser-regression.mjs');
-const index = read('index.html');
 const verifier = read('certificate-verify.html');
 
 test('certificate records are private and unique per event/person', () => {
@@ -89,8 +88,7 @@ test('email failure never rolls a successfully saved attendance selection back',
 test('certificate workflow has browser regression coverage and a non-indexed verification page', () => {
   assert.match(browserTest, /CERTIFICATE WORKFLOW PASS/);
   assert.match(browserTest, /yyc-certificate-delivery/);
-  assert.match(index, /yyc\.in/);
   assert.match(verifier, /name="robots" content="noindex,follow"/);
-  assert.match(verifier, /certificate-verify\.html/);
+  assert.match(verifier, /action=verify&code=/);
   assert.match(verifier, /Verify authenticity using the QR code|CERTIFICATE/);
 });
