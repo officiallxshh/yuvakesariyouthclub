@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261013-45-cinematic-experience';
+var YYC_APP_BUILD='20261013-46-manual-certificate-upload';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
