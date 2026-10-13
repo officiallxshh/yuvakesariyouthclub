@@ -1,0 +1,45 @@
+/* YYC performance stability: cut expensive paint work on small/slow devices
+   without changing layout, data behavior, navigation, or access controls. */
+
+@media (max-width: 620px) {
+  /* Full-screen backdrop blur is costly on many mobile GPUs; keep the dim layer. */
+  .modal-backdrop {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Hero still uses its locally preloaded image; skip the extra pixel filter pass. */
+  .hero-photo {
+    filter: none !important;
+  }
+}
+
+/* Save-Data / slow-network mode is enabled by the existing adaptive-motion controller. */
+body.yyc-low-data .hero-photo {
+  filter: none !important;
+  will-change: auto !important;
+}
+
+body.yyc-low-data .modal-backdrop,
+body.yyc-low-data .topbar,
+body.yyc-low-data .culture-panel,
+body.yyc-low-data .yycp-notice,
+body.yyc-low-data .yycp-update {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Reduced-motion is a useful low-paint mode too; never blur the entire page behind a modal. */
+body.yyc-reduced-motion .modal-backdrop {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Keep feedback transitions snappy on constrained devices while preserving hover/focus behavior. */
+body.yyc-low-data button,
+body.yyc-low-data a,
+body.yyc-low-data .btn,
+body.yyc-low-data .mini-btn,
+body.yyc-low-data .admin-tab {
+  transition-duration: 120ms !important;
+}
