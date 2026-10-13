@@ -13,7 +13,7 @@ const verifier = read('certificate-verify.html');
 test('certificate records are private and unique per event/person', () => {
   assert.match(migration, /create table if not exists public\.yyc_certificates/);
   assert.match(migration, /unique \(event_id, recipient_kind, recipient_id\)/);
-  assert.match(migration, /unique \(verification_code\)/);
+  assert.match(migration, /verification_code uuid not null unique/);
   assert.match(migration, /alter table public\.yyc_certificates enable row level security/);
   assert.match(migration, /revoke all on table public\.yyc_certificates from public, anon, authenticated/);
   assert.match(migration, /grant all on table public\.yyc_certificates to service_role/);
@@ -26,7 +26,7 @@ test('preview and issuing are admin-authorized and based on saved Present attend
   assert.match(migration, /if not public\._admin_ok\(p_token\) then/);
   assert.match(migration, /where a\.event_id=p_event_id and a\.present=true/);
   assert.match(migration, /m\.approved=true and lower\(coalesce\(m\.status,'pending'\)\)='approved'/);
-  assert.match(migration, /lower\(coalesce\(l\.status,'active'\)\) <> 'inactive'/);
+  assert.match(migration, /lower\(coalesce\(l\.status,'active'\)\) = 'active'/);
   assert.match(migration, /on conflict \(event_id,recipient_kind,recipient_id\) do nothing/);
   assert.match(migration, /certificates_finalized_at is null/);
   assert.match(migration, /unique \(event_id, recipient_kind, recipient_id\)/);
@@ -80,7 +80,7 @@ test('email failure never rolls a successfully saved attendance selection back',
   assert.match(attendance, /certificate remains available after event finalization/);
   assert.match(attendance, /function bindCertificateWorkflow90\(\)/);
   assert.match(attendance, /FINALIZE ATTENDANCE & ISSUE CERTIFICATES/);
-  assert.match(attendance, /RETRY FAILED \/ SKIPPED EMAILS/);
+  assert.match(attendance, /RETRY FAILED \/ STALLED EMAILS/);
   assert.match(attendance, /RESUME QUEUE/);
   assert.match(attendance, /window\.confirm\('Finalize attendance and issue one certificate/);
 });
