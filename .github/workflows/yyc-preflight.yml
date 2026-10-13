@@ -45,10 +45,14 @@ jobs:
           node --check scripts/validate-backup.mjs
           node --check scripts/yyc-browser-regression.mjs
           node --check scripts/yyc-task-workflow.test.mjs
+          node --check scripts/yyc-certificate-workflow.test.mjs
           node --check scripts/production-monitor.mjs
 
       - name: Volunteer task workflow checks
         run: npm run test:task-workflow
+
+      - name: Certificate issuance and delivery checks
+        run: npm run test:certificate-workflow
 
       - name: Full repository audit
         run: node scripts/yyc-full-audit.mjs
