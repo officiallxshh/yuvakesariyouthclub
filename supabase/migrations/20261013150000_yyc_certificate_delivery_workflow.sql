@@ -102,7 +102,7 @@ begin
     from (
       select distinct on (member_id,event_id) member_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by member_id,event_id,marked_at desc
     ) a
     join public.members m on m.id=a.member_id
@@ -115,7 +115,7 @@ begin
     from (
       select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by leader_id,event_id,marked_at desc
     ) a
     join public.leaders l on l.id=a.leader_id
@@ -217,7 +217,7 @@ begin
     from (
       select distinct on (member_id,event_id) member_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by member_id,event_id,marked_at desc
     ) a
     join public.members m on m.id=a.member_id
@@ -229,7 +229,7 @@ begin
     from (
       select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by leader_id,event_id,marked_at desc
     ) a
     join public.leaders l on l.id=a.leader_id
@@ -256,7 +256,7 @@ begin
     from (
       select distinct on (member_id,event_id) member_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by member_id,event_id,marked_at desc
     ) a
     join public.members m on m.id=a.member_id
@@ -269,7 +269,7 @@ begin
     from (
       select distinct on (leader_id,event_id) leader_id,event_id,present,marked_at
       from public.attendance
-      where event_id=p_event_id and present=true
+      where event_id=p_event_id
       order by leader_id,event_id,marked_at desc
     ) a
     join public.leaders l on l.id=a.leader_id
