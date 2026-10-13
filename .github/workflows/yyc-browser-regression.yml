@@ -47,3 +47,6 @@ jobs:
 
       - name: Test desktop and mobile section navigation
         run: node scripts/yyc-browser-regression.mjs
+
+      - name: Test performance and responsive layouts
+        run: node scripts/yyc-performance-browser-regression.mjs
