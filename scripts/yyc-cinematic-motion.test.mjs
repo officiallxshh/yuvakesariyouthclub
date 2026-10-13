@@ -7,6 +7,9 @@ const css = read('assets/yyc-cinematic-experience.css');
 const index = read('index.html');
 const app = read('app.js');
 const audit = read('scripts/yyc-full-audit.mjs');
+const seoCss = read('yyc-seo.css');
+const leadersPage = read('leaders.html');
+const mediaPage = read('media.html');
 
 test('cinematic stylesheet loads before the exclusive active-nav stylesheet', () => {
   const cinematic = index.indexOf('assets/yyc-cinematic-experience.css?v=20261013-45-cinematic-experience');
@@ -52,4 +55,16 @@ test('low-data and mobile fallbacks shorten or remove decorative motion', () => 
   assert.match(css, /body\.yyc-low-data/);
   assert.match(css, /@media\(max-width:700px\)/);
   assert.match(css, /yyc-cinema/);
+});
+
+test('generated listing/detail pages and standalone leadership/media pages receive motion polish', () => {
+  assert.match(seoCss, /YYC GENERATED PAGE MOTION LAYER/);
+  assert.match(seoCss, /\.wrap>\.card/);
+  assert.match(seoCss, /\.listing>\.item/);
+  assert.match(seoCss, /@keyframes yycSeoPageIn/);
+  assert.match(seoCss, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(leadersPage, /assets\/yyc-cinematic-experience\.css\?v=20261013-45-cinematic-experience/);
+  assert.match(mediaPage, /assets\/yyc-cinematic-experience\.css\?v=20261013-45-cinematic-experience/);
+  assert.match(css, /\.wrap>\.grid>\.person/);
+  assert.match(css, /\.wrap>\.coverage/);
 });
