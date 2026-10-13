@@ -347,7 +347,6 @@ begin
     'recipient_kind',c.recipient_kind,
     'recipient_name',c.recipient_name,
     'recipient_role_number',c.recipient_role_number,
-    'recipient_email',c.recipient_email,
     'email_status',c.email_status,
     'email_error',c.email_error,
     'attempt_count',c.attempt_count,
