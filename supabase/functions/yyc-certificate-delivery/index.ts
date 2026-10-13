@@ -280,7 +280,7 @@ async function resolveAdminRecipient(kind: string, id: string): Promise<any | nu
   const { data, error } = await db.from("leaders")
     .select("id,name,email,role_number,role,status")
     .eq("id", id).maybeSingle();
-  if (error || !data || String(data.status || "active").toLowerCase() === "inactive") return null;
+  if (error || !data || String(data.status || "active").trim().toLowerCase() !== "active") return null;
   return data;
 }
 async function sendManualCertificateEmail(issue: any, recipient: any, pdfBytes: Uint8Array): Promise<{ status: string; reason?: string; id?: string }> {
@@ -432,9 +432,25 @@ Deno.serve(async (req: Request) => {
     if (!SUPABASE_URL || !SERVICE_KEY) return json(req, { ok: false, error: "Certificate service is not configured" }, 503);
 
     const requestContentType = (req.headers.get("content-type") || "").toLowerCase();
+    const isMultipart = requestContentType.includes("multipart/form-data");
+    const headerSessionToken = clean(req.headers.get("x-yyc-session"), 500);
+    let multipartAdminAuthorized = false;
     let body: Record<string, any> = {};
     let manualFile: File | null = null;
-    if (requestContentType.includes("multipart/form-data")) {
+    if (isMultipart) {
+      /* Authenticate before parsing/allocating the uploaded body. Multipart is reserved for Admin PDF uploads. */
+      const contentLengthHeader = req.headers.get("content-length");
+      if (contentLengthHeader !== null) {
+        const requestLength = Number(contentLengthHeader);
+        if (!Number.isFinite(requestLength) || requestLength < 0 ||
+            requestLength > MAX_MANUAL_CERTIFICATE_BYTES + 1024 * 1024) {
+          return json(req, { ok: false, error: "Certificate upload request is too large." }, 413);
+        }
+      }
+      if (!headerSessionToken || !(await adminOK(headerSessionToken))) {
+        return json(req, { ok: false, error: "Unauthorized" }, 401);
+      }
+      multipartAdminAuthorized = true;
       const form = await req.formData();
       for (const [key, value] of form.entries()) {
         if (key === "file" && value instanceof File) manualFile = value;
@@ -444,10 +460,12 @@ Deno.serve(async (req: Request) => {
       body = await readBody(req);
     }
     const action = clean(body.action, 40);
-    const adminToken = clean(body.admin_token, 500);
+    const adminToken = headerSessionToken || clean(body.admin_token, 500);
 
     if (action === "upload_manual") {
-      if (!(await adminOK(adminToken))) return json(req, { ok: false, error: "Unauthorized" }, 401);
+      if (!multipartAdminAuthorized && !(await adminOK(adminToken))) {
+        return json(req, { ok: false, error: "Unauthorized" }, 401);
+      }
       const kind = clean(body.target_kind, 20);
       const targetId = clean(body.target_id, 80);
       const title = clean(body.title, 160);
