@@ -37,7 +37,7 @@ test('hover polish does not depend on hover-capable desktops only, and active-na
   assert.match(css, /\.yyc-certificate-card:hover/);
   assert.match(css, /yyc-certificate-actions button:hover/);
   assert.doesNotMatch(css, /\.desktop-nav > a\.nav-link\.active/);
-  assert.match(css, /Visual-only: no JS event interception, layout changes, or data\/auth edits/);
+  assert.match(css, /Visual-only layer: no JS event interception, layout changes, or data\/auth edits/);
 });
 
 test('reduced motion disables decorative entrances and transitions', () => {
