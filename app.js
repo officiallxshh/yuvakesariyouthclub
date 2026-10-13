@@ -2833,7 +2833,11 @@ function memberLegacyPasswordSetup(prefillEmail){
         '<div class="access-form-field"><label for="mlConfirmPass">Confirm new password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mlConfirmPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>✓ Approved member accounts only</span><span>One-time migration recovery</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">SET PASSWORD <span>✓</span></button><button type="button" class="btn outline access-secondary" id="backToMemberLogin">BACK TO LOGIN</button></div>'+
-        '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+        '<div class="access-login-divider"><span>OR SIGN IN WITH</span></div>'+
+      '<button type="button" class="btn outline access-secondary yyc-provider-button" id="yycGoogleMemberSignIn">CONTINUE WITH GOOGLE</button>'+
+      '<div class="access-form-field yyc-phone-login"><label for="yycMemberPhone">Phone sign-in</label><div class="access-input-wrap"><span class="access-input-icon">☎</span><input id="yycMemberPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91 98765 43210"></div><button type="button" class="btn outline access-secondary" id="yycSendMemberPhoneCode">SEND SMS CODE</button></div>'+
+      '<div class="access-form-field yyc-phone-login" id="yycMemberOtpStep" hidden><label for="yycMemberPhoneCode">SMS verification code</label><div class="access-input-wrap"><span class="access-input-icon">#</span><input id="yycMemberPhoneCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Enter the code"></div><button type="button" class="btn gold access-submit" id="yycVerifyMemberPhoneCode">VERIFY &amp; SIGN IN</button></div>'+
+      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
       '</form>'+
     '</div>'
   );
@@ -2871,7 +2875,28 @@ function memberLegacyPasswordSetup(prefillEmail){
   });
 }
 
+function yycFinishProviderMemberLogin(result){
+  if(!result||!result.token||!result.member) throw new Error('YYC could not verify this approved member account.');
+  memberToken=result.token;
+  yycSafeSet(localStorage,MEMBER_TOKEN_KEY,memberToken);
+  yycSafeSet(localStorage,'yyc_member_profile_v1',JSON.stringify(result.member));
+  closeModal();
+  memberDashboard(result.member);
+  yycSendExternalAlert({event:'login',kind:'member',session_token:memberToken,device_name:yycDeviceLabel(),channels:['email','sms']});
+}
 function memberLogin(){
+  if(window.YYCMemberAuth&&window.YYCMemberAuth.isOAuthCallback()){
+    return window.YYCMemberAuth.completeOAuth().then(function(result){
+      window.YYCMemberAuth.clearCallback();
+      if(!result) throw new Error('Google sign-in could not be completed.');
+      yycFinishProviderMemberLogin(result);
+      return result;
+    }).catch(function(err){
+      window.YYCMemberAuth.clearCallback();
+      toast(err.message||'Google sign-in failed.');
+      return memberLogin();
+    });
+  }
   if(memberToken){
     var cachedMember=null;
     try{cachedMember=JSON.parse(yycSafeGet(localStorage,'yyc_member_profile_v1')||'null');}catch(e){}
@@ -2922,6 +2947,31 @@ function memberLogin(){
   yycEnhanceLogin('memberLoginForm','mPass');
   $('#openRegisterFromLogin').addEventListener('click',memberRegister);
   $('#openLegacyPasswordSetup').addEventListener('click',function(){memberLegacyPasswordSetup($('#mIdent').value.trim().includes('@')?$('#mIdent').value.trim():'');});
+  $('#yycGoogleMemberSignIn').addEventListener('click',async function(){
+    var button=this, original=button.textContent;
+    button.disabled=true; button.textContent='CONNECTING TO GOOGLE…';
+    try{await window.YYCMemberAuth.startGoogle();}
+    catch(err){setLoginStatus('memberLoginForm',err.message||'Google sign-in failed.',true);button.disabled=false;button.textContent=original;}
+  });
+  $('#yycSendMemberPhoneCode').addEventListener('click',async function(){
+    var button=this, original=button.textContent;
+    button.disabled=true; button.textContent='SENDING…';
+    try{
+      await window.YYCMemberAuth.requestPhoneOtp($('#yycMemberPhone').value);
+      $('#yycMemberOtpStep').hidden=false;
+      setLoginStatus('memberLoginForm','Verification code sent. Check your SMS messages.',false);
+      $('#yycMemberPhoneCode').focus();
+    }catch(err){setLoginStatus('memberLoginForm',err.message||'Could not send SMS code.',true);}
+    finally{button.disabled=false;button.textContent=original;}
+  });
+  $('#yycVerifyMemberPhoneCode').addEventListener('click',async function(){
+    var button=this, original=button.textContent;
+    button.disabled=true;button.textContent='VERIFYING…';
+    try{
+      var result=await window.YYCMemberAuth.verifyPhoneOtp($('#yycMemberPhone').value,$('#yycMemberPhoneCode').value);
+      yycFinishProviderMemberLogin(result);
+    }catch(err){setLoginStatus('memberLoginForm',err.message||'Phone sign-in failed.',true);button.disabled=false;button.textContent=original;}
+  });
   $('#memberLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
