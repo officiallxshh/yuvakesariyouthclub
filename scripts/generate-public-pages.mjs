@@ -320,6 +320,9 @@ function categoryIndexPage(title, description, route, entries) {
     '<a class="back" href="../index.html">← Back to YYC</a><article class="card">' +
     '<img class="logo" src="../assets/yyc-logo-clean.webp" alt="Yuvakesari Youth Club logo"><div class="k">YUVAKESARI YOUTH CLUB</div>' +
     '<h1 class="title">' + esc(title) + '</h1><div class="body">' + esc(description) + '</div>' +
+    '<nav class="seo-directory" aria-label="Explore YYC public pages" style="display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px;padding:12px;border:1px solid rgba(229,191,107,.18);border-radius:12px">' +
+      routeDefs.map(([navType, navRoute]) => '<a href="' + BASE + '/' + navRoute + '/" style="color:#f1d58f;font-size:12px;text-decoration:underline;text-underline-offset:3px">' + ({events:'Events',updates:'News & Updates',gallery:'Community Gallery',reels:'Reels & Videos',swags:'Merchandise',leaders:'Leaders',achievements:'Achievements'}[navRoute] || navRoute) + '</a>').join('') +
+    '</nav>' +
     (entries.length ? '<section class="listing" aria-label="' + esc(title) + '">' + rows + '</section>' : '<p class="empty">New public items will appear here after they are published.</p>') +
     '</article></main></body></html>';
 }
