@@ -431,9 +431,100 @@ Deno.serve(async (req: Request) => {
     if (req.method !== "POST") return json(req, { ok: false, error: "Use GET or POST" }, 405);
     if (!SUPABASE_URL || !SERVICE_KEY) return json(req, { ok: false, error: "Certificate service is not configured" }, 503);
 
-    const body = await readBody(req);
+    const requestContentType = (req.headers.get("content-type") || "").toLowerCase();
+    let body: Record<string, any> = {};
+    let manualFile: File | null = null;
+    if (requestContentType.includes("multipart/form-data")) {
+      const form = await req.formData();
+      for (const [key, value] of form.entries()) {
+        if (key === "file" && value instanceof File) manualFile = value;
+        else if (typeof value === "string") body[key] = value;
+      }
+    } else {
+      body = await readBody(req);
+    }
     const action = clean(body.action, 40);
     const adminToken = clean(body.admin_token, 500);
+
+    if (action === "upload_manual") {
+      if (!(await adminOK(adminToken))) return json(req, { ok: false, error: "Unauthorized" }, 401);
+      const kind = clean(body.target_kind, 20);
+      const targetId = clean(body.target_id, 80);
+      const title = clean(body.title, 160);
+      const eventTitle = clean(body.event_title, 180);
+      if (!title || title.length < 2) return json(req, { ok: false, error: "Enter a certificate title." }, 400);
+      if (!manualFile) return json(req, { ok: false, error: "Choose a PDF certificate to upload." }, 400);
+      if (manualFile.size < 1 || manualFile.size > MAX_MANUAL_CERTIFICATE_BYTES) {
+        return json(req, { ok: false, error: "Certificate PDF must be smaller than 10 MB." }, 413);
+      }
+      const originalName = clean(manualFile.name, 180).replace(/[\\/\r\n"]/g, "_") || "YYC-certificate.pdf";
+      if (!/\.pdf$/i.test(originalName)) return json(req, { ok: false, error: "Only PDF certificates are supported." }, 415);
+      if (manualFile.type && manualFile.type.toLowerCase() !== "application/pdf") {
+        return json(req, { ok: false, error: "The selected file must be a PDF." }, 415);
+      }
+      const recipient = await resolveAdminRecipient(kind, targetId);
+      if (!recipient) return json(req, { ok: false, error: "Choose an approved member or active leader." }, 404);
+      const pdfBytes = new Uint8Array(await manualFile.arrayBuffer());
+      if (pdfBytes.byteLength < 5 || String.fromCharCode(...pdfBytes.slice(0, 5)) !== "%PDF-") {
+        return json(req, { ok: false, error: "The uploaded file does not contain a valid PDF header." }, 415);
+      }
+
+      const certificateId = crypto.randomUUID();
+      const storagePath = "manual/" + kind + "/" + recipient.id + "/" + certificateId + ".pdf";
+      const { error: storageError } = await db.storage.from(MANUAL_CERTIFICATE_BUCKET).upload(
+        storagePath, pdfBytes, { contentType: "application/pdf", upsert: false, cacheControl: "3600" }
+      );
+      if (storageError) return json(req, { ok: false, error: "Private certificate storage is unavailable. Please contact the administrator." }, 503);
+
+      const initialEmailStatus = EMAIL_PATTERN.test(clean(recipient.email, 320)) ? "queued" : "skipped";
+      const { data: issue, error: insertError } = await db.from("yyc_manual_certificates").insert({
+        id: certificateId,
+        recipient_kind: kind,
+        recipient_id: recipient.id,
+        title,
+        event_title: eventTitle,
+        original_file_name: originalName,
+        storage_path: storagePath,
+        content_type: "application/pdf",
+        file_size: pdfBytes.byteLength,
+        email_status: initialEmailStatus,
+        email_error: initialEmailStatus === "skipped" ? "No valid email address on record. Certificate remains available in My certificates." : null,
+        uploaded_by: "Admin"
+      }).select("*").single();
+
+      if (insertError || !issue) {
+        await db.storage.from(MANUAL_CERTIFICATE_BUCKET).remove([storagePath]);
+        console.error("Could not record uploaded YYC certificate", insertError?.message || "No row returned");
+        return json(req, { ok: false, error: "The certificate could not be recorded. Please try again." }, 500);
+      }
+
+      let inAppNotification = false;
+      if (kind === "member") {
+        const { error: notificationError } = await db.from("member_notifications").insert({
+          member_id: recipient.id,
+          title: "New YYC certificate available",
+          body: "YYC administration uploaded “" + title + "”. Open My certificates in your Member Panel to view or download it.",
+          type: "system",
+          link: SITE_URL + "/"
+        });
+        inAppNotification = !notificationError;
+        if (notificationError) console.error("Member certificate prompt could not be added", notificationError.message);
+      }
+
+      const delivery = await sendManualCertificateEmail(issue, recipient, pdfBytes);
+      return json(req, {
+        ok: true,
+        portal_prompt: true,
+        in_app_notification: inAppNotification,
+        email_status: delivery.status,
+        email_reason: delivery.reason || null,
+        certificate: {
+          id: issue.id, title: issue.title, event_title: issue.event_title,
+          recipient_kind: kind, recipient_name: clean(recipient.name, 120),
+          file_name: issue.original_file_name, created_at: issue.created_at
+        }
+      }, 201);
+    }
 
     if (action === "preview") {
       if (!(await adminOK(adminToken))) return json(req, { ok: false, error: "Unauthorized" }, 401);
