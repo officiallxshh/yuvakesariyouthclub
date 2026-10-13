@@ -1123,10 +1123,17 @@
           });
         });
 
+        var attendanceBatchSaved=false;
         Promise.all(promises).then(function(rs){
           var bad=rs.find(function(r){return !r||r.ok===false;});
           if(bad)throw new Error(bad.error||'Unable to save attendance');
+          attendanceBatchSaved=true;
 
+          /* Batch notifications run after the database writes and can never undo them. */
+          if(typeof window.yycSendExternalAlert!=='function'){
+            toast90('Attendance saved ✓ · '+(activeKind==='leader'?'leader':'member')+' email service unavailable');
+            return;
+          }
           return window.yycSendExternalAlert({
             event:'attendance_batch',
             admin_token:window.adminToken,
@@ -1136,27 +1143,32 @@
               return {target_id:x.id,attendance_status:x.status};
             }),
             channels:['email']
+          }).then(function(batchResult){
+            var who=activeKind==='leader'?'leader':'member';
+            if(!batchResult||!batchResult.ok){
+              toast90('Attendance saved ✓ · '+who+' email batch could not be sent');
+            }else{
+              var delivery=batchResult.delivery||{};
+              var total=Number(delivery.total)||changes.length;
+              var sent=Number(delivery.sent)||0;
+              var failed=Number(delivery.failed)||0;
+              var skipped=Number(delivery.skipped)||0;
+              var message='Attendance saved ✓ · '+sent+'/'+total+' '+who+' emails accepted by provider';
+              if(failed) message+=' · '+failed+' failed';
+              if(skipped) message+=' · '+skipped+' skipped';
+              if(sent===total&&!failed&&!skipped) message+=' ✓';
+              toast90(message);
+            }
+          }).catch(function(){
+            toast90('Attendance saved ✓ · email delivery failed; certificate workflow remains available after event finalization');
           });
-        }).then(function(batchResult){
-          var who=activeKind==='leader'?'leader':'member';
-          if(!batchResult||!batchResult.ok){
-            toast90('Attendance saved · '+who+' email batch could not be sent');
-          }else{
-            var delivery=batchResult.delivery||{};
-            var total=Number(delivery.total)||changes.length;
-            var sent=Number(delivery.sent)||0;
-            var failed=Number(delivery.failed)||0;
-            var skipped=Number(delivery.skipped)||0;
-            var message='Attendance saved · '+sent+'/'+total+' '+who+' emails accepted by provider';
-            if(failed) message+=' · '+failed+' failed';
-            if(skipped) message+=' · '+skipped+' skipped';
-            if(sent===total&&!failed&&!skipped) message+=' ✓';
-            toast90(message);
-          }
+        }).then(function(){
           return admin90Data(true);
         }).then(function(){
           renderCustomAdminTab90('attendance');
-        }).catch(function(e){toast90(e.message||'Attendance update failed');});
+        }).catch(function(e){
+          toast90(attendanceBatchSaved?'Attendance saved ✓ · refresh failed: '+(e.message||'please refresh the panel'):e.message||'Attendance update failed');
+        });
       };
       q('#at90Rows').parentNode.appendChild(b);
     }
