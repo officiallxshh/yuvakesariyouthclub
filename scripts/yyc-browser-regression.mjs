@@ -428,6 +428,10 @@ try {
     card.className = 'leader-card yyc-data-ready';
     card.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
     document.body.appendChild(card);
+    const reelCard = document.createElement('article');
+    reelCard.className = 'yyc-reel-card';
+    reelCard.style.cssText = 'position:fixed;left:-10000px;top:0;width:10px;height:10px';
+    document.body.appendChild(reelCard);
 
     const modal = document.querySelector('#modalContent');
     if (modal) modal.classList.add('yyc-panel-swap-in');
@@ -444,6 +448,7 @@ try {
     const result = {
       reveal: getComputedStyle(reveal).animationName,
       card: getComputedStyle(card).animationName,
+      reel: getComputedStyle(reelCard).animationName,
       modal: modal ? getComputedStyle(modal).animationName : 'missing',
       admin: getComputedStyle(workspace).animationName,
       noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
@@ -451,6 +456,7 @@ try {
     };
     reveal.parentNode.remove();
     card.remove();
+    reelCard.remove();
     if (modal) modal.classList.remove('yyc-panel-swap-in');
     workspace.classList.remove('yyc-admin-tab-enter');
     if (madeWorkspace) workspace.remove();
@@ -459,10 +465,11 @@ try {
   if (motionResult.reduced) throw new Error('No-preference browser context unexpectedly requests reduced motion.');
   if (motionResult.reveal !== 'yycCinematicReveal') throw new Error('Cinematic section reveal is not active: ' + motionResult.reveal);
   if (motionResult.card !== 'yycCinematicCardIn') throw new Error('Cinematic dynamic-card entrance is not active: ' + motionResult.card);
+  if (motionResult.reel !== 'yycCinematicCardIn') throw new Error('Cinematic Reel entrance is not active: ' + motionResult.reel);
   if (motionResult.modal !== 'yycCinematicPanelIn') throw new Error('Cinematic panel transition is not active: ' + motionResult.modal);
   if (motionResult.admin !== 'yycCinematicAdminIn') throw new Error('Cinematic admin tab transition is not active: ' + motionResult.admin);
   if (!motionResult.noOverflow) throw new Error('Cinematic motion caused horizontal overflow on a 390px viewport.');
-  console.log('CINEMATIC MOTION PASS: section, dynamic card, modal panel and admin-tab transitions animate without mobile overflow');
+  console.log('CINEMATIC MOTION PASS: section, dynamic card, Reel, modal panel and admin-tab transitions animate without mobile overflow');
 
   await motionPage.goto(new URL('leaders.html', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await motionPage.waitForFunction(() =>
