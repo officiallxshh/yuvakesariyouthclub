@@ -463,6 +463,32 @@ try {
   if (motionResult.admin !== 'yycCinematicAdminIn') throw new Error('Cinematic admin tab transition is not active: ' + motionResult.admin);
   if (!motionResult.noOverflow) throw new Error('Cinematic motion caused horizontal overflow on a 390px viewport.');
   console.log('CINEMATIC MOTION PASS: section, dynamic card, modal panel and admin-tab transitions animate without mobile overflow');
+
+  await motionPage.goto(new URL('leaders.html', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(link => link.href.includes('yyc-cinematic-experience.css'))
+  , null, { timeout: 12000 });
+  const leadersMotion = await motionPage.evaluate(() => ({
+    hero: getComputedStyle(document.querySelector('.wrap>.hero')).animationName,
+    person: getComputedStyle(document.querySelector('.wrap>.grid>.person')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (leadersMotion.hero !== 'yycCinematicPageIn') throw new Error('Standalone leaders hero entrance is not active: ' + leadersMotion.hero);
+  if (leadersMotion.person !== 'yycCinematicCardIn') throw new Error('Standalone leader-card entrance is not active: ' + leadersMotion.person);
+  if (!leadersMotion.noOverflow) throw new Error('Standalone leader-page motion caused mobile overflow.');
+  console.log('LEADERS PAGE MOTION PASS: premium header/card entrance without mobile overflow');
+
+  await motionPage.goto(new URL('events/', baseURL).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await motionPage.waitForFunction(() => document.querySelector('link[href*="yyc-seo.css"]'), null, { timeout: 12000 });
+  const directoryMotion = await motionPage.evaluate(() => ({
+    page: getComputedStyle(document.querySelector('.wrap>.card')).animationName,
+    item: getComputedStyle(document.querySelector('.listing>.item')).animationName,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth
+  }));
+  if (directoryMotion.page !== 'yycSeoPageIn') throw new Error('Generated event-page entrance is not active: ' + directoryMotion.page);
+  if (directoryMotion.item !== 'yycSeoItemIn') throw new Error('Generated event-list item entrance is not active: ' + directoryMotion.item);
+  if (!directoryMotion.noOverflow) throw new Error('Generated event-page motion caused mobile overflow.');
+  console.log('GENERATED PAGE MOTION PASS: event listing and event card animate without mobile overflow');
   await motionPage.close();
 
   if (failures.length) {
