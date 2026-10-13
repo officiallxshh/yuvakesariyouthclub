@@ -2833,11 +2833,7 @@ function memberLegacyPasswordSetup(prefillEmail){
         '<div class="access-form-field"><label for="mlConfirmPass">Confirm new password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="mlConfirmPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>✓ Approved member accounts only</span><span>One-time migration recovery</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">SET PASSWORD <span>✓</span></button><button type="button" class="btn outline access-secondary" id="backToMemberLogin">BACK TO LOGIN</button></div>'+
-        '<div class="access-login-divider"><span>OR SIGN IN WITH</span></div>'+
-      '<button type="button" class="btn outline access-secondary yyc-provider-button" id="yycGoogleMemberSignIn">CONTINUE WITH GOOGLE</button>'+
-      '<div class="access-form-field yyc-phone-login"><label for="yycMemberPhone">Phone sign-in</label><div class="access-input-wrap"><span class="access-input-icon">☎</span><input id="yycMemberPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91 98765 43210"></div><button type="button" class="btn outline access-secondary" id="yycSendMemberPhoneCode">SEND SMS CODE</button></div>'+
-      '<div class="access-form-field yyc-phone-login" id="yycMemberOtpStep" hidden><label for="yycMemberPhoneCode">SMS verification code</label><div class="access-input-wrap"><span class="access-input-icon">#</span><input id="yycMemberPhoneCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Enter the code"></div><button type="button" class="btn gold access-submit" id="yycVerifyMemberPhoneCode">VERIFY &amp; SIGN IN</button></div>'+
-      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+        '<div class="access-login-status" role="status" aria-live="polite"></div>'+
       '</form>'+
     '</div>'
   );
@@ -2939,6 +2935,10 @@ function memberLogin(){
         '<div class="access-login-meta"><span>✓ Approved members only</span><span>Secure YYC access</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN <span>→</span></button><button type="button" class="btn outline access-secondary" id="openRegisterFromLogin">NEW MEMBER</button></div>'+
         '<button type="button" class="yyc-legacy-password-link" id="openLegacyPasswordSetup">FIRST LOGIN / SET PASSWORD</button>'+
+      '<div class="access-login-divider"><span>OR SIGN IN WITH</span></div>'+
+      '<button type="button" class="btn outline access-secondary yyc-provider-button" id="yycGoogleMemberSignIn">CONTINUE WITH GOOGLE</button>'+
+      '<div class="access-form-field yyc-phone-login"><label for="yycMemberPhone">Phone sign-in</label><div class="access-input-wrap"><span class="access-input-icon">☎</span><input id="yycMemberPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91 98765 43210"></div><button type="button" class="btn outline access-secondary" id="yycSendMemberPhoneCode">SEND SMS CODE</button></div>'+
+      '<div class="access-form-field yyc-phone-login" id="yycMemberOtpStep" hidden><label for="yycMemberPhoneCode">SMS verification code</label><div class="access-input-wrap"><span class="access-input-icon">#</span><input id="yycMemberPhoneCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Enter the code"></div><button type="button" class="btn gold access-submit" id="yycVerifyMemberPhoneCode">VERIFY &amp; SIGN IN</button></div>'+
       '<div class="access-login-status" role="status" aria-live="polite"></div>'+
        '</form>'+
       '<div class="access-login-footer">Don’t have an account? Apply for membership and wait for admin approval.</div>'+
