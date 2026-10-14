@@ -81,10 +81,10 @@
   window.YYCMemberAuth={
     isOAuthCallback:isOAuthCallback,
     clearCallback:clearCallback,
-    startGoogle:async function(){
+    startGoogle:async function(role){
       var auth=await authClient();
       var redirectTo=location.origin+location.pathname;
-      var role=arguments[0]==='leader'?'leader':'member';
+      role=role==='leader'?'leader':'member';
       try{sessionStorage.setItem('yyc_google_signin_role_v1',role);}catch(_){}
       var result=await auth.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirectTo,queryParams:{prompt:'select_account'}}});
       if(result.error){try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){}throw result.error;}
