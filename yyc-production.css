@@ -821,3 +821,44 @@ button:disabled,
 @media(max-width:980px){
   .section-head h2::after{bottom:-8px}
 }
+
+/* Member attendance QR: actions are opt-in and the QR generator loads only on demand. */
+.yyc-attendance-qr-panel{margin-top:18px;padding:18px;border:1px solid rgba(218,184,112,.24);border-radius:18px;background:linear-gradient(135deg,rgba(218,184,112,.06),rgba(8,13,17,.55));color:#e8e1d4}
+.yyc-attendance-qr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.yyc-attendance-qr-head h3{margin:5px 0 0;color:#f0d18a;font:600 22px Georgia,serif}
+.yyc-attendance-qr-head p{max-width:540px;margin:7px 0 0;color:#9ba69f;font-size:11px;line-height:1.7}
+.yyc-attendance-qr-badge{display:inline-flex;padding:7px 10px;border:1px solid rgba(218,184,112,.3);border-radius:999px;color:#e0c67f;font-size:9px;font-weight:900;letter-spacing:.1em}
+.yyc-attendance-qr-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:end;margin-top:15px}
+.yyc-attendance-qr-controls label{grid-column:1/-1;color:#aab2aa;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.yyc-attendance-qr-controls select{min-width:0;min-height:42px;padding:9px 12px;border:1px solid rgba(255,255,255,.13);border-radius:11px;background:#11191c;color:#eee;font:inherit;font-size:12px}
+.yyc-attendance-qr-controls button{min-height:42px;white-space:nowrap}
+.yyc-attendance-qr-status{margin-top:11px;padding:10px 12px;border:1px solid rgba(255,255,255,.07);border-radius:10px;color:#9ca69e;font-size:10px;line-height:1.6}
+.yyc-attendance-qr-status.is-error{border-color:rgba(230,130,130,.25);color:#efaaa0}
+.yyc-attendance-qr-live{display:grid;grid-template-columns:minmax(190px,250px) minmax(0,1fr);gap:16px;align-items:center;margin-top:15px;padding:14px;border:1px solid rgba(218,184,112,.18);border-radius:15px;background:rgba(0,0,0,.18)}
+.yyc-attendance-qr-live[hidden]{display:none!important}
+.yyc-attendance-qr-image{display:grid;place-items:center;min-height:210px;padding:10px;border-radius:12px;background:#fff}
+.yyc-attendance-qr-image img{display:block;width:min(100%,230px);height:auto;image-rendering:pixelated}
+.yyc-attendance-qr-live-copy{display:grid;gap:9px;min-width:0}
+.yyc-attendance-qr-live-copy strong{color:#f0d18a;font-size:15px}
+.yyc-attendance-qr-live-copy span,.yyc-attendance-qr-live-copy small{color:#a3ada5;font-size:10px;line-height:1.7}
+.yyc-attendance-qr-live-copy small{color:#7f8b82}
+.yyc-attendance-qr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.yyc-attendance-qr-actions button{min-height:36px;padding:8px 11px;font-size:9px}
+.yyc-attendance-qr-footnote{margin:12px 0 0;color:#77837b;font-size:10px;line-height:1.6}
+.yyc-attendance-checkin-notice{position:fixed;z-index:10050;left:50%;bottom:18px;display:flex;align-items:center;gap:12px;width:min(680px,calc(100vw - 28px));padding:14px 16px;border:1px solid rgba(218,184,112,.4);border-radius:15px;background:rgba(10,15,18,.97);box-shadow:0 18px 55px rgba(0,0,0,.48);color:#eee7d8;transform:translateX(-50%)}
+.yyc-attendance-checkin-mark{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid rgba(218,184,112,.4);border-radius:50%;color:#e2c477;font-weight:900}
+.yyc-attendance-checkin-notice.success .yyc-attendance-checkin-mark{border-color:rgba(110,205,137,.45);color:#9be0ad}
+.yyc-attendance-checkin-notice.error .yyc-attendance-checkin-mark{border-color:rgba(230,130,130,.4);color:#efaaa0}
+.yyc-attendance-checkin-copy{display:grid;gap:4px;flex:1;min-width:0}
+.yyc-attendance-checkin-copy strong{font-size:12px;color:#f0d18a}
+.yyc-attendance-checkin-copy span{color:#aab3ab;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.yyc-attendance-checkin-action{min-height:36px;padding:8px 11px;border:1px solid rgba(218,184,112,.4);border-radius:9px;background:rgba(218,184,112,.1);color:#e7cd8a;font-size:9px;font-weight:900;letter-spacing:.07em;cursor:pointer}
+@media(max-width:600px){
+  .yyc-attendance-qr-panel{padding:14px}
+  .yyc-attendance-qr-controls{grid-template-columns:1fr}
+  .yyc-attendance-qr-controls button{width:100%}
+  .yyc-attendance-qr-live{grid-template-columns:1fr}
+  .yyc-attendance-qr-image{min-height:190px}
+  .yyc-attendance-checkin-notice{bottom:10px;padding:12px;gap:9px}
+  .yyc-attendance-checkin-action{padding:8px;font-size:8px}
+}

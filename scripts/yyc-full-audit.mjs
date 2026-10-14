@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const CURRENT_PRODUCTION_JS_VERSION = "20261008-02";
-const CURRENT_PRODUCTION_CSS_VERSION = "20261006-01";
+const CURRENT_PRODUCTION_CSS_VERSION = "20261014-02-qr-attendance";
 const ignored = new Set([".git", "node_modules"]);
 
 function walk(dir) {
@@ -27,12 +27,12 @@ function normalizeTarget(from, ref) {
   if (!raw || /^(https?:|data:|mailto:|tel:|javascript:)/i.test(raw) || raw.startsWith("#")) return null;
   const joined = raw.startsWith("/") ? raw.slice(1) : path.join(path.dirname(from), raw);
   const parts = [];
-  for (const part of joined.replaceAll("\\\\", "/").split("/")) {
+  for (const part of String(joined).replace(/[\\/]+/g, "/").split("/")) {
     if (!part || part === ".") continue;
     if (part === "..") parts.pop();
     else parts.push(part);
   }
-  return parts.join("/");
+  return parts.join("/") || "index.html";
 }
 
 const files = walk(ROOT);
@@ -285,11 +285,13 @@ if (/function\s+syncYYCNavHighlight\s*\(/.test(app) ||
     /id=["']yycNavHighlight["']/.test(index)) {
   issues.push("Legacy moving navigation highlight was reintroduced.");
 }
-const currentBuild = "20261013-46-manual-certificate-upload";
+const currentBuild = "20261014-02-qr-attendance";
 if (!index.includes('name="yyc-build" content="' + currentBuild + '"') ||
     !index.includes('styles.css?v=' + currentBuild) ||
     !index.includes('app.js?v=' + currentBuild) ||
     !index.includes('yyc-nav-active-state.css?v=' + currentBuild) ||
+    !index.includes('yyc-production.css?v=' + currentBuild) ||
+    !index.includes("sc.src='app.js?v=" + currentBuild + "&cachebust='+Date.now();") ||
     !app.includes("var YYC_APP_BUILD='" + currentBuild + "'")) {
   issues.push("Navigation fix cache-busting/build identifiers are inconsistent.");
 }
