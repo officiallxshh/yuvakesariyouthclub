@@ -2937,8 +2937,8 @@ function memberLogin(){
         '<button type="button" class="yyc-legacy-password-link" id="openLegacyPasswordSetup">FIRST LOGIN / SET PASSWORD</button>'+
       '<div class="access-login-divider"><span>OR SIGN IN WITH</span></div>'+
       '<button type="button" class="btn outline access-secondary yyc-provider-button" id="yycGoogleMemberSignIn">CONTINUE WITH GOOGLE</button>'+
-      '<div class="access-form-field yyc-phone-login"><label for="yycMemberPhone">Phone sign-in</label><div class="access-input-wrap"><span class="access-input-icon">☎</span><input id="yycMemberPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91 98765 43210"></div><button type="button" class="btn outline access-secondary" id="yycSendMemberPhoneCode">SEND SMS CODE</button></div>'+
-      '<div class="access-form-field yyc-phone-login" id="yycMemberOtpStep" hidden><label for="yycMemberPhoneCode">SMS verification code</label><div class="access-input-wrap"><span class="access-input-icon">#</span><input id="yycMemberPhoneCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Enter the code"></div><button type="button" class="btn gold access-submit" id="yycVerifyMemberPhoneCode">VERIFY &amp; SIGN IN</button></div>'+
+
+
       '<div class="access-login-status" role="status" aria-live="polite"></div>'+
        '</form>'+
       '<div class="access-login-footer">Don’t have an account? Apply for membership and wait for admin approval.</div>'+
@@ -2952,25 +2952,6 @@ function memberLogin(){
     button.disabled=true; button.textContent='CONNECTING TO GOOGLE…';
     try{await window.YYCMemberAuth.startGoogle();}
     catch(err){setLoginStatus('memberLoginForm',err.message||'Google sign-in failed.',true);button.disabled=false;button.textContent=original;}
-  });
-  $('#yycSendMemberPhoneCode').addEventListener('click',async function(){
-    var button=this, original=button.textContent;
-    button.disabled=true; button.textContent='SENDING…';
-    try{
-      await window.YYCMemberAuth.requestPhoneOtp($('#yycMemberPhone').value);
-      $('#yycMemberOtpStep').hidden=false;
-      setLoginStatus('memberLoginForm','Verification code sent. Check your SMS messages.',false);
-      $('#yycMemberPhoneCode').focus();
-    }catch(err){setLoginStatus('memberLoginForm',err.message||'Could not send SMS code.',true);}
-    finally{button.disabled=false;button.textContent=original;}
-  });
-  $('#yycVerifyMemberPhoneCode').addEventListener('click',async function(){
-    var button=this, original=button.textContent;
-    button.disabled=true;button.textContent='VERIFYING…';
-    try{
-      var result=await window.YYCMemberAuth.verifyPhoneOtp($('#yycMemberPhone').value,$('#yycMemberPhoneCode').value);
-      yycFinishProviderMemberLogin(result);
-    }catch(err){setLoginStatus('memberLoginForm',err.message||'Phone sign-in failed.',true);button.disabled=false;button.textContent=original;}
   });
   $('#memberLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
