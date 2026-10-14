@@ -12,7 +12,7 @@ const leadersPage = read('leaders.html');
 const mediaPage = read('media.html');
 
 test('cinematic stylesheet loads before the exclusive active-nav stylesheet', () => {
-  const currentBuild = '20261013-46-manual-certificate-upload';
+  const currentBuild = '20261014-02-qr-attendance';
   const cinematic = index.indexOf('assets/yyc-cinematic-experience.css?v=' + currentBuild);
   const nav = index.indexOf('assets/yyc-nav-active-state.css?v=' + currentBuild);
   assert.ok(cinematic >= 0, 'cinematic stylesheet is linked');
