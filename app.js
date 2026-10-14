@@ -2525,6 +2525,72 @@ function yycBindCertificateActions(){
   });
 }
 
+function yycAttendanceQrPayload(){
+  var match=/^#yyc-checkin=([0-9a-f-]{36})\.([0-9a-f]{64})$/i.exec(String(window.location.hash||''));
+  return match?{sessionId:match[1],code:match[2]}:null;
+}
+function yycClearAttendanceQrPayload(){
+  try{window.history.replaceState(null,document.title,window.location.pathname+window.location.search);}catch(e){window.location.hash='';}
+}
+function yycShowAttendanceQrNotice(state,message,action){
+  var box=document.getElementById('yycAttendanceQrNotice');
+  if(!box){
+    box=document.createElement('section');
+    box.id='yycAttendanceQrNotice';
+    box.className='yyc-attendance-checkin-notice';
+    box.setAttribute('role','status');
+    box.setAttribute('aria-live','polite');
+    document.body.appendChild(box);
+  }
+  box.className='yyc-attendance-checkin-notice '+(state||'');
+  box.replaceChildren();
+  var mark=document.createElement('span');mark.className='yyc-attendance-checkin-mark';mark.setAttribute('aria-hidden','true');mark.textContent=state==='success'?'✓':state==='loading'?'◷':'!';
+  var copy=document.createElement('div');copy.className='yyc-attendance-checkin-copy';
+  var title=document.createElement('strong');title.textContent=state==='success'?'Check-in complete':state==='loading'?'Checking attendance':'YYC event check-in';
+  var detail=document.createElement('span');detail.textContent=message||'';
+  copy.appendChild(title);copy.appendChild(detail);box.appendChild(mark);box.appendChild(copy);
+  if(action){
+    var button=document.createElement('button');button.type='button';button.className='yyc-attendance-checkin-action';
+    button.textContent=action==='login'?'MEMBER LOGIN':action==='retry'?'TRY AGAIN':'CLOSE';
+    button.addEventListener('click',function(){if(action==='login')memberLogin();else if(action==='retry')yycProcessAttendanceQr();else box.remove();});
+    box.appendChild(button);
+  }else if(state==='success'){
+    window.setTimeout(function(){if(box.isConnected)box.remove();},12000);
+  }
+}
+async function yycProcessAttendanceQr(){
+  var payload=yycAttendanceQrPayload();
+  if(!payload)return;
+  if(!memberToken){
+    yycShowAttendanceQrNotice('needs-login','Sign in as a YYC member to record your attendance.', 'login');
+    return;
+  }
+  var key=payload.sessionId+'.'+payload.code;
+  if(window.__yycAttendanceQrInFlight===key)return;
+  window.__yycAttendanceQrInFlight=key;
+  yycShowAttendanceQrNotice('loading','Verifying your member session and the live event QR…');
+  try{
+    var result=await rpc('member_mark_attendance_qr',{p_token:memberToken,p_session_id:payload.sessionId,p_qr_token:payload.code},{timeoutMs:15000,retries:0});
+    if(!result||!result.ok){
+      if(result&&result.error_code==='MEMBER_SESSION_EXPIRED'){
+        yycShowAttendanceQrNotice('needs-login',result.error||'Your member login expired. Sign in, then scan the QR again.','login');
+        return;
+      }
+      yycClearAttendanceQrPayload();
+      yycShowAttendanceQrNotice('error',result&&result.error||'This QR has expired. Ask a leader to show a fresh one.');
+      return;
+    }
+    yycClearAttendanceQrPayload();
+    var title=String(result.event_title||'YYC event');
+    yycShowAttendanceQrNotice('success',result.already_marked?'You were already marked present for '+title+'.':'Attendance marked for '+title+'.');
+    if(document.getElementById('yycMemberOverview'))yycLoadMemberDashboard('member');
+  }catch(err){
+    yycShowAttendanceQrNotice('error',err&&err.message||'Could not reach YYC. Try again while the QR is still live.','retry');
+  }finally{
+    window.__yycAttendanceQrInFlight='';
+  }
+}
+
 function memberDashboard(data){
   data=data||{};
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · MEMBER CARD</span></div>':'')+yycPortalHeader('member',data)+yycPortalSummary(data,'member')+
@@ -2552,7 +2618,7 @@ function memberDashboard(data){
     closeModal();
     window.setTimeout(function(){var target=$('#events');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},150);
   });
-  if(!data.__adminView){yycLoadMemberDashboard();yycLoadMemberPortalExtras();yycLoadCertificates('member');yycBindCertificateActions();}
+  if(!data.__adminView){yycLoadMemberDashboard();yycLoadMemberPortalExtras();yycLoadCertificates('member');yycBindCertificateActions();yycProcessAttendanceQr();}
   bindPortalAccountMenu('member',data);
   var editProfile=$('#memberEditProfileBtn'); if(editProfile) editProfile.addEventListener('click',function(){memberEditSubmission(data);});
   var verify=$('#memberVerifyBtn');
@@ -2784,13 +2850,127 @@ function yycLoadLeaderTasks(){
   });
 }
 
+function yycLeaderAttendanceQrHTML(){
+  return '<section class="yyc-attendance-qr-panel" id="yycLeaderAttendanceQr">'+
+    '<div class="yyc-attendance-qr-head"><div><span class="portal-profile-kicker">LIVE EVENT CHECK-IN</span><h3>Member attendance QR</h3><p>Start check-in for an upcoming event. Members scan this code with their phone camera; attendance is recorded to their YYC account.</p></div><span class="yyc-attendance-qr-badge">MEMBERS ONLY</span></div>'+
+    '<div class="yyc-attendance-qr-controls"><label for="yycAttendanceQrEvent">Event</label><select id="yycAttendanceQrEvent"><option value="">Loading upcoming events…</option></select><button type="button" class="btn gold" id="yycAttendanceQrStart">START QR CHECK-IN</button></div>'+
+    '<div class="yyc-attendance-qr-status" id="yycAttendanceQrStatus" role="status" aria-live="polite">Choose an event and start check-in. The QR refreshes every 45 seconds; each code is valid for 2 minutes. Check-in closes after 15 minutes without a leader refresh.</div>'+
+    '<div class="yyc-attendance-qr-live" id="yycAttendanceQrLive" hidden><div class="yyc-attendance-qr-image" id="yycAttendanceQrImage" aria-label="Live event check-in QR"></div><div class="yyc-attendance-qr-live-copy"><strong id="yycAttendanceQrTitle">Event attendance</strong><span>Ask members to scan with their phone camera. If asked, they can sign in as a member and the check-in will finish automatically.</span><small id="yycAttendanceQrRefreshTime">QR ready.</small><div class="yyc-attendance-qr-actions"><button type="button" class="btn outline" id="yycAttendanceQrRefresh">REFRESH QR ↻</button><button type="button" class="btn outline" id="yycAttendanceQrEnd">END CHECK-IN</button></div></div></div>'+
+    '<p class="yyc-attendance-qr-footnote">YYC Admin can still mark or correct attendance manually in Admin → Attendance.</p>'+
+  '</section>';
+}
+function yycStopLeaderAttendanceQrTimer(){
+  if(window.__yycLeaderAttendanceQrTimer){window.clearInterval(window.__yycLeaderAttendanceQrTimer);window.__yycLeaderAttendanceQrTimer=null;}
+}
+function yycLeaderAttendanceQrStatus(message,isError){
+  var node=document.getElementById('yycAttendanceQrStatus');
+  if(!node)return;
+  node.textContent=message||'';
+  node.classList.toggle('is-error',!!isError);
+}
+function yycLoadLeaderAttendanceQrEvents(){
+  var select=document.getElementById('yycAttendanceQrEvent');
+  var start=document.getElementById('yycAttendanceQrStart');
+  if(!select||!leaderToken)return;
+  select.disabled=true;if(start)start.disabled=true;
+  rpc('leader_dashboard_data',{p_token:leaderToken},{timeoutMs:15000,retries:1}).then(function(result){
+    if(!result||!result.ok)throw new Error(result&&result.error||'Could not load events');
+    select.replaceChildren();
+    var events=Array.isArray(result.upcoming_events)?result.upcoming_events:[];
+    if(!events.length){var empty=document.createElement('option');empty.value='';empty.textContent='No published upcoming events';select.appendChild(empty);yycLeaderAttendanceQrStatus('There are no published upcoming events available for check-in.');return;}
+    var prompt=document.createElement('option');prompt.value='';prompt.textContent='Select an event';select.appendChild(prompt);
+    events.forEach(function(event){var option=document.createElement('option');option.value=event.event_id||event.id||'';option.textContent=(event.title||'YYC event')+(event.event_date?' · '+event.event_date:'');select.appendChild(option);});
+    select.disabled=false;if(start)start.disabled=false;
+    yycLeaderAttendanceQrStatus('Choose an event and start check-in. QR codes refresh every 45 seconds and remain valid for 2 minutes; check-in closes after 15 minutes without a leader refresh.');
+  }).catch(function(err){
+    select.replaceChildren();var failed=document.createElement('option');failed.value='';failed.textContent='Could not load events';select.appendChild(failed);
+    yycLeaderAttendanceQrStatus(err.message||'Could not load events. Close and reopen the leader portal to retry.',true);
+  });
+}
+async function yycRenderLeaderAttendanceQr(sessionId,code){
+  var host=document.getElementById('yycAttendanceQrImage');
+  var live=document.getElementById('yycAttendanceQrLive');
+  if(!host||!live)return;
+  var makeQr=await yycLoadQrGenerator();
+  var checkinUrl=new URL('/',window.location.href);
+  checkinUrl.hash='yyc-checkin='+encodeURIComponent(sessionId)+'.'+encodeURIComponent(code);
+  var qr=makeQr(0,'M');qr.addData(checkinUrl.toString());qr.make();
+  host.innerHTML=qr.createImgTag(5,0);
+  var image=host.querySelector('img');if(image){image.alt='Scan to mark YYC event attendance';image.decoding='async';image.loading='eager';}
+  live.hidden=false;
+  var refreshed=document.getElementById('yycAttendanceQrRefreshTime');
+  if(refreshed)refreshed.textContent='QR refreshed at '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+async function yycRefreshLeaderAttendanceQr(){
+  var state=window.__yycLeaderAttendanceQrState;
+  if(!state||!document.getElementById('yycLeaderAttendanceQr')){yycStopLeaderAttendanceQrTimer();return;}
+  if(state.refreshing)return;
+  state.refreshing=true;
+  var refresh=document.getElementById('yycAttendanceQrRefresh');if(refresh)refresh.disabled=true;
+  try{
+    var result=await rpc('leader_refresh_attendance_qr',{p_token:leaderToken,p_session_id:state.sessionId},{timeoutMs:15000,retries:0});
+    if(result&&result.error_code==='CHECKIN_SESSION_CLOSED'){
+      yycStopLeaderAttendanceQrTimer();window.__yycLeaderAttendanceQrState=null;
+      var live=document.getElementById('yycAttendanceQrLive');if(live)live.hidden=true;
+      var image=document.getElementById('yycAttendanceQrImage');if(image)image.replaceChildren();
+      var select=document.getElementById('yycAttendanceQrEvent');if(select)select.disabled=false;
+      var start=document.getElementById('yycAttendanceQrStart');if(start){start.hidden=false;start.disabled=false;}
+      yycLeaderAttendanceQrStatus('This check-in expired after inactivity. Start a new QR check-in.');
+      return;
+    }
+    if(!result||!result.ok)throw new Error(result&&result.error||'Could not refresh the attendance QR');
+    await yycRenderLeaderAttendanceQr(state.sessionId,result.qr_token);
+    yycLeaderAttendanceQrStatus('Live for '+state.eventTitle+'. QR refreshes automatically every 45 seconds.');
+  }catch(err){yycLeaderAttendanceQrStatus(err.message||'QR refresh failed. Tap Refresh QR to retry.',true);}
+  finally{state.refreshing=false;if(refresh)refresh.disabled=false;}
+}
+function yycBindLeaderAttendanceQr(){
+  var start=document.getElementById('yycAttendanceQrStart');
+  var refresh=document.getElementById('yycAttendanceQrRefresh');
+  var end=document.getElementById('yycAttendanceQrEnd');
+  if(start)start.addEventListener('click',async function(){
+    var select=document.getElementById('yycAttendanceQrEvent');
+    if(!select||!select.value){yycLeaderAttendanceQrStatus('Select an event first.',true);return;}
+    start.disabled=true;start.textContent='STARTING…';
+    try{
+      var result=await rpc('leader_start_attendance_qr',{p_token:leaderToken,p_event_id:select.value},{timeoutMs:15000,retries:0});
+      if(!result||!result.ok)throw new Error(result&&result.error||'Could not start event check-in');
+      window.__yycLeaderAttendanceQrState={sessionId:result.session_id,eventTitle:result.event_title||select.options[select.selectedIndex].text,refreshing:false};
+      var title=document.getElementById('yycAttendanceQrTitle');if(title)title.textContent=window.__yycLeaderAttendanceQrState.eventTitle;
+      await yycRenderLeaderAttendanceQr(result.session_id,result.qr_token);
+      yycLeaderAttendanceQrStatus('Live for '+window.__yycLeaderAttendanceQrState.eventTitle+'. QR refreshes automatically every 45 seconds.');
+      select.disabled=true;start.hidden=true;
+      yycStopLeaderAttendanceQrTimer();window.__yycLeaderAttendanceQrTimer=window.setInterval(yycRefreshLeaderAttendanceQr,45000);
+    }catch(err){yycLeaderAttendanceQrStatus(err.message||'Could not start check-in.',true);start.disabled=false;}
+    finally{start.textContent='START QR CHECK-IN';}
+  });
+  if(refresh)refresh.addEventListener('click',yycRefreshLeaderAttendanceQr);
+  if(end)end.addEventListener('click',async function(){
+    var state=window.__yycLeaderAttendanceQrState;if(!state)return;
+    end.disabled=true;end.textContent='ENDING…';
+    try{
+      var result=await rpc('leader_close_attendance_qr',{p_token:leaderToken,p_session_id:state.sessionId},{timeoutMs:15000,retries:0});
+      if(!result||!result.ok)throw new Error(result&&result.error||'Could not end check-in');
+      yycStopLeaderAttendanceQrTimer();window.__yycLeaderAttendanceQrState=null;
+      var live=document.getElementById('yycAttendanceQrLive');if(live)live.hidden=true;
+      var image=document.getElementById('yycAttendanceQrImage');if(image)image.replaceChildren();
+      var select=document.getElementById('yycAttendanceQrEvent');if(select)select.disabled=false;
+      if(start){start.hidden=false;start.disabled=false;}
+      yycLeaderAttendanceQrStatus('Check-in ended. Existing scans can no longer use this QR.');
+    }catch(err){yycLeaderAttendanceQrStatus(err.message||'Could not end check-in.',true);}
+    finally{end.disabled=false;end.textContent='END CHECK-IN';}
+  });
+}
+
 function leaderDashboard(data){
   data=data||{};
+  yycStopLeaderAttendanceQrTimer();
   openModal('<div class="premium-member-dashboard">'+(data.__adminView?'<div class="portal-admin-backbar"><button type="button" class="mini-btn" id="backToAdmin">← BACK TO ADMIN</button><span>ADMIN PREVIEW · LEADER CARD</span></div>':'')+yycPortalHeader('leader',data)+yycPortalSummary(data,'leader')+
     (data.__adminView?'':yycMemberOverviewHTML('leader'))+
     (data.__adminView?'':yycCertificatesCenterHTML('leader'))+
     yycDigitalCard(data,'leader')+
     '<div class="yyc-card-download-bar"><div><b>DOWNLOAD YYC ID CARD</b><span>Front on top · Back below · QR included</span></div><button type="button" class="btn gold" id="leaderDownloadBtn">DOWNLOAD ID CARD ↓</button></div>'+
+    (data.__adminView?'':yycLeaderAttendanceQrHTML())+
     
     (data.__adminView?'':'<section class="yyc-leader-task-section" style="margin-top:18px;padding:16px;border:1px solid rgba(218,184,112,.18);border-radius:17px;background:rgba(218,184,112,.025)"><style>.yyc-leader-task form{grid-template-columns:minmax(0,.65fr) minmax(0,1fr) auto!important}@media(max-width:600px){.yyc-leader-task form{grid-template-columns:1fr!important}}</style><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div class="modal-kicker">ASSIGNED WORK</div><h2 style="margin:4px 0 0;font-size:18px">Your task board.</h2><p class="modal-sub" style="margin:6px 0 0">Update progress on tasks assigned by YYC Admin.</p></div><button type="button" class="mini-btn" id="yycLeaderTaskRefresh">REFRESH ↻</button></div><div id="yycLeaderTaskList"><div class="storage-loading"><strong>Loading assigned tasks…</strong></div></div></section>')+
     '<div class="portal-action-row" style="margin-top:15px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>LEADER ACCESS</b><span style="display:block;color:#7d8784;margin-top:5px;font-size:9px">Read-only leadership space. Contact YYC administration for account changes.</span></div><div class="form-actions" style="margin:0;display:flex;flex-wrap:wrap"><button type="button" class="btn outline" id="leaderEditProfileBtn">EDIT PROFILE</button><button type="button" class="btn outline" id="leaderVerifyBtn">VERIFY ID ↗</button><button type="button" class="btn gold" id="leaderLogout">LOGOUT</button></div></div>'+
@@ -2798,6 +2978,7 @@ function leaderDashboard(data){
     yycSessionSection('leader',[])+
   '</div>');
   var back=$('#backToAdmin'); if(back) back.addEventListener('click',function(){adminPanel(data.__adminTab||'leaders');});
+  if(!data.__adminView){yycBindLeaderAttendanceQr();yycLoadLeaderAttendanceQrEvents();}
   var dashboardRefresh=$('#yycDashboardRefresh');
   if(dashboardRefresh)dashboardRefresh.addEventListener('click',function(){yycLoadMemberDashboard('leader');});
   var dashboardEvents=$('#yycDashboardViewEvents');
@@ -2816,6 +2997,10 @@ function leaderDashboard(data){
   var logout=$('#leaderLogout');
   if(logout) logout.addEventListener('click',async function(){
     logout.disabled=true;
+    yycStopLeaderAttendanceQrTimer();
+    var qrState=window.__yycLeaderAttendanceQrState;
+    window.__yycLeaderAttendanceQrState=null;
+    if(qrState&&leaderToken){try{await rpc('leader_close_attendance_qr',{p_token:leaderToken,p_session_id:qrState.sessionId},{timeoutMs:8000,retries:0});}catch(e){}}
     try{if(leaderToken) await rpc('leader_logout',{p_token:leaderToken});}catch(e){}
     yycSafeRemove(localStorage,LEADER_TOKEN_KEY);yycSafeRemove(localStorage,'yyc_leader_profile_v1');leaderToken='';closeModal();toast('Leader logged out');
   });
@@ -4784,6 +4969,7 @@ function initYYCApp(){
   bindUI();
   loadPublic();
   restorePersistentPortals();
+  yycProcessAttendanceQr();
   verifyFromUrl();
   if($('#year')) $('#year').textContent=new Date().getFullYear();
 }
