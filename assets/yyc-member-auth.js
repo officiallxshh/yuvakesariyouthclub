@@ -35,22 +35,29 @@
     return client;
   }
 
-  async function exchangeIdentity(session){
+  function getOAuthRole(){
+    try{return sessionStorage.getItem('yyc_google_signin_role_v1')==='leader'?'leader':'member';}
+    catch(_){return 'member';}
+  }
+
+  async function exchangeIdentity(session,role){
     if(!session||!session.access_token)throw new Error('Verified sign-in did not return a session.');
-    var response=await fetch(URL+'/rest/v1/rpc/member_login_verified_identity',{
+    role=role==='leader'?'leader':'member';
+    var rpcName=role==='leader'?'leader_login_verified_identity':'member_login_verified_identity';
+    var response=await fetch(URL+'/rest/v1/rpc/'+rpcName,{
       method:'POST',cache:'no-store',credentials:'omit',
       headers:{'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({p_device_name:'Google sign-in'})
+      body:JSON.stringify({p_device_name:'Google '+role+' sign-in'})
     });
     var result=null;
     try{result=await response.json();}catch(_){}
-    if(!response.ok||!result||result.ok!==true)throw new Error(result&&result.error||'This identity is not linked to an approved YYC member.');
+    if(!response.ok||!result||result.ok!==true)throw new Error(result&&result.error||'This Google account is not linked to an active YYC '+role+' account.');
     return result;
   }
 
-  async function finishWithSession(session){
+  async function finishWithSession(session,role){
     var auth=await authClient();
-    try{return await exchangeIdentity(session);}
+    try{return await exchangeIdentity(session,role);}
     finally{try{await auth.auth.signOut({scope:'local'});}catch(_){}}
   }
 
@@ -67,31 +74,36 @@
       ['code','error','error_description','error_code','state'].forEach(function(key){url.searchParams.delete(key);});
       url.hash='';
       history.replaceState({},document.title,url.pathname+url.search);
+      try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){};
     }catch(_){}
   }
 
   window.YYCMemberAuth={
     isOAuthCallback:isOAuthCallback,
     clearCallback:clearCallback,
-    startGoogle:async function(){
+    startGoogle:async function(role){
       var auth=await authClient();
       var redirectTo=location.origin+location.pathname;
+      role=role==='leader'?'leader':'member';
+      try{sessionStorage.setItem('yyc_google_signin_role_v1',role);}catch(_){}
       var result=await auth.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirectTo,queryParams:{prompt:'select_account'}}});
-      if(result.error)throw result.error;
+      if(result.error){try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){}throw result.error;}
     },
     completeOAuth:async function(){
       var auth=await authClient();
       var result=await auth.auth.getSession();
       if(result.error)throw result.error;
       if(!result.data||!result.data.session)return null;
-      return finishWithSession(result.data.session);
+      return finishWithSession(result.data.session,getOAuthRole());
     }
   };
 
   if(isOAuthCallback()){
     var open= function(){
-      if(window.YYC&&typeof window.YYC.memberLogin==='function'){
-        window.YYC.memberLogin();
+      var role=getOAuthRole();
+      var method=role==='leader'?'leaderLogin':'memberLogin';
+      if(window.YYC&&typeof window.YYC[method]==='function'){
+        window.YYC[method]();
         return;
       }
       window.setTimeout(open,100);
