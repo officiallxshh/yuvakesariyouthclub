@@ -2880,6 +2880,15 @@ function yycFinishProviderMemberLogin(result){
   memberDashboard(result.member);
   yycSendExternalAlert({event:'login',kind:'member',session_token:memberToken,device_name:yycDeviceLabel(),channels:['email','sms']});
 }
+function yycFinishProviderLeaderLogin(result){
+  if(!result||!result.token||!result.leader) throw new Error('YYC could not verify this active leader account.');
+  leaderToken=result.token;
+  yycSafeSet(localStorage,LEADER_TOKEN_KEY,leaderToken);
+  yycSafeSet(localStorage,'yyc_leader_profile_v1',JSON.stringify(result.leader));
+  closeModal();
+  leaderDashboard(result.leader);
+  yycSendExternalAlert({event:'login',kind:'leader',session_token:leaderToken,device_name:yycDeviceLabel(),channels:['email','sms']});
+}
 function memberLogin(){
   if(window.YYCMemberAuth&&window.YYCMemberAuth.isOAuthCallback()){
     return window.YYCMemberAuth.completeOAuth().then(function(result){
@@ -2989,6 +2998,18 @@ function memberLogin(){
 }
 
 function leaderLogin(){
+  if(window.YYCMemberAuth&&window.YYCMemberAuth.isOAuthCallback()){
+    return window.YYCMemberAuth.completeOAuth().then(function(result){
+      window.YYCMemberAuth.clearCallback();
+      if(!result||!result.leader) throw new Error('Google sign-in could not be matched to an active YYC leader.');
+      yycFinishProviderLeaderLogin(result);
+      return result;
+    }).catch(function(err){
+      window.YYCMemberAuth.clearCallback();
+      toast(err.message||'Google sign-in failed.');
+      return leaderLogin();
+    });
+  }
   if(leaderToken){
     var cachedLeader=null;
     try{cachedLeader=JSON.parse(yycSafeGet(localStorage,'yyc_leader_profile_v1')||'null');}catch(e){}
@@ -3015,12 +3036,20 @@ function leaderLogin(){
         '<div class="access-form-field"><label for="lPass">Password</label><div class="access-password-field"><span class="access-input-icon">⌑</span><input id="lPass" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="access-password-toggle" aria-label="Show password">SHOW</button></div></div>'+
         '<div class="access-login-meta"><span>♛ Read-only leadership space</span><span>Protected access</span></div>'+
         '<div class="form-actions access-login-actions"><button type="submit" class="btn gold access-submit">LOGIN AS LEADER <span>→</span></button></div>'+
+      '<div class="access-login-divider"><span>OR SIGN IN WITH</span></div>'+
+      '<button type="button" class="btn outline access-secondary yyc-provider-button" id="yycGoogleLeaderSignIn">CONTINUE WITH GOOGLE</button>'+
       '<div class="access-login-status" role="status" aria-live="polite"></div>'+
        '</form>'+
       '<div class="access-login-footer">Leadership accounts are created and managed by YYC administration.</div>'+
     '</div>'
   );
   yycEnhanceLogin('leaderLoginForm','lPass');
+  $('#yycGoogleLeaderSignIn').addEventListener('click',async function(){
+    var button=this, original=button.textContent;
+    button.disabled=true;button.textContent='CONNECTING TO GOOGLE…';
+    try{await window.YYCMemberAuth.startGoogle('leader');}
+    catch(err){setLoginStatus('leaderLoginForm',err.message||'Google sign-in failed.',true);button.disabled=false;button.textContent=original;}
+  });
   $('#leaderLoginForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var form=this, btn=form.querySelector('button[type="submit"]');
