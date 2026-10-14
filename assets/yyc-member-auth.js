@@ -35,21 +35,12 @@
     return client;
   }
 
-  function normalizePhone(value){
-    var raw=String(value||'').trim();
-    if(!raw)throw new Error('Enter the phone number registered with YYC.');
-    var digits=raw.replace(/[^0-9]/g,'');
-    if(/^\d{10}$/.test(digits))digits='91'+digits;
-    if(digits.length<8||digits.length>15)throw new Error('Enter a valid phone number with country code.');
-    return '+'+digits;
-  }
-
   async function exchangeIdentity(session){
     if(!session||!session.access_token)throw new Error('Verified sign-in did not return a session.');
     var response=await fetch(URL+'/rest/v1/rpc/member_login_verified_identity',{
       method:'POST',cache:'no-store',credentials:'omit',
       headers:{'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({p_device_name:'Google / phone sign-in'})
+      body:JSON.stringify({p_device_name:'Google sign-in'})
     });
     var result=null;
     try{result=await response.json();}catch(_){}
@@ -87,18 +78,6 @@
       var redirectTo=location.origin+location.pathname;
       var result=await auth.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirectTo,queryParams:{prompt:'select_account'}}});
       if(result.error)throw result.error;
-    },
-    requestPhoneOtp:async function(phone){
-      var auth=await authClient();
-      var result=await auth.auth.signInWithOtp({phone:normalizePhone(phone),options:{shouldCreateUser:true}});
-      if(result.error)throw result.error;
-      return true;
-    },
-    verifyPhoneOtp:async function(phone,token){
-      var auth=await authClient();
-      var result=await auth.auth.verifyOtp({phone:normalizePhone(phone),token:String(token||'').trim(),type:'sms'});
-      if(result.error)throw result.error;
-      return finishWithSession(result.data&&result.data.session);
     },
     completeOAuth:async function(){
       var auth=await authClient();
