@@ -36,8 +36,17 @@
   }
 
   function getOAuthRole(){
-    try{return sessionStorage.getItem('yyc_google_signin_role_v1')==='leader'?'leader':'member';}
-    catch(_){return 'member';}
+    var role='';
+    try{role=sessionStorage.getItem('yyc_google_signin_role_v1')||'';}catch(_){}
+    if(role!=='leader'&&role!=='member'){
+      try{role=localStorage.getItem('yyc_google_signin_role_v1')||'';}catch(_){}
+    }
+    return role==='leader'?'leader':'member';
+  }
+
+  function clearOAuthRole(){
+    try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){}
+    try{localStorage.removeItem('yyc_google_signin_role_v1');}catch(_){}
   }
 
   async function exchangeIdentity(session,role){
@@ -74,7 +83,7 @@
       ['code','error','error_description','error_code','state'].forEach(function(key){url.searchParams.delete(key);});
       url.hash='';
       history.replaceState({},document.title,url.pathname+url.search);
-      try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){};
+      clearOAuthRole();
     }catch(_){}
   }
 
@@ -86,14 +95,15 @@
       var redirectTo=location.origin+location.pathname;
       role=role==='leader'?'leader':'member';
       try{sessionStorage.setItem('yyc_google_signin_role_v1',role);}catch(_){}
+      try{localStorage.setItem('yyc_google_signin_role_v1',role);}catch(_){}
       var result=await auth.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirectTo,queryParams:{prompt:'select_account'}}});
-      if(result.error){try{sessionStorage.removeItem('yyc_google_signin_role_v1');}catch(_){}throw result.error;}
+      if(result.error){clearOAuthRole();throw result.error;}
     },
     completeOAuth:async function(){
       var auth=await authClient();
       var result=await auth.auth.getSession();
       if(result.error)throw result.error;
-      if(!result.data||!result.data.session)return null;
+      if(!result.data||!result.data.session)throw new Error('Google returned without a YYC sign-in session. Please retry from the Leader Login button.');
       return finishWithSession(result.data.session,getOAuthRole());
     }
   };
