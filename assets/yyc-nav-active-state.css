@@ -262,7 +262,7 @@
   background-image:
     radial-gradient(ellipse at 24% 18%, rgba(204, 151, 55, .16), transparent 36%),
     linear-gradient(180deg, rgba(4, 9, 13, .08), rgba(4, 9, 13, .22)),
-    url('./assets/hero-tulunad.webp') !important;
+    url('../assets/hero-tulunad.webp') !important;
   background-position: center, center, center 42% !important;
   background-size: cover, cover, cover !important;
   background-repeat: no-repeat !important;
@@ -273,7 +273,7 @@
   background-color: #071015 !important;
   background-image:
     radial-gradient(ellipse at 20% 20%, rgba(204, 151, 55, .12), transparent 42%),
-    url('./assets/hero-tulunad.webp') !important;
+    url('../assets/hero-tulunad.webp') !important;
   background-position: center, center 42% !important;
   background-size: cover, cover !important;
   background-repeat: no-repeat !important;
