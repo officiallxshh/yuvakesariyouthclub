@@ -60,7 +60,7 @@ begin
     from (
       select m.id, m.title, m.description, m.invite_code, m.starts_at, m.duration_minutes,
         m.status, m.visibility, m.waiting_room, m.host_kind, m.host_name, m.host_id,
-        m.created_at, m.updated_at,
+        m.created_at, m.updated_at
       from public.yyc_meetings m
       where m.status <> 'cancelled'
         and (m.starts_at >= now() - interval '7 days' or m.status = 'live')
@@ -73,7 +73,7 @@ begin
 
   if p_action in ('create', 'start', 'end', 'cancel') and not v_admin then
     return jsonb_build_object('ok', false, 'error', 'ADMIN_REQUIRED',
-      'message', 'Only a YYC Admin can create, start, end, cancel, or report on meetings.');
+      'message', 'Only a YYC Admin can create, start, end, or cancel meetings.');
   end if;
 
   if p_action = 'create' then
