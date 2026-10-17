@@ -118,6 +118,7 @@
 
   function setProfile(session) {
     var name = session && session.actor && session.actor.name ? session.actor.name : 'Welcome to YYC Meet';
+    if (session && session.actor && session.actor.name && !$('participantName').value.trim()) $('participantName').value = session.actor.name;
     $('profileName').textContent = name;
     $('profileAvatar').textContent = name.trim().charAt(0).toUpperCase() || 'Y';
     $('profileRole').textContent = session && session.actor ? session.actor.kind + ' account' : 'Invite guests can join without an account';
@@ -287,7 +288,7 @@
 
     return loadJitsiScript().then(function () {
       if (state.leaving || !state.activeMeeting) return;
-      var displayName = (state.session && state.session.actor && state.session.actor.name) || 'YYC Guest';
+      var displayName = meetingDisplayName();
       var api = new window.JitsiMeetExternalAPI('meet.jit.si', {
         roomName: meeting.room_name,
         parentNode: mount,
@@ -362,13 +363,20 @@
     });
   }
 
+  function meetingDisplayName() {
+    var value = String($('participantName').value || '').trim();
+    if (!value && state.session && state.session.actor) value = String(state.session.actor.name || '').trim();
+    value = value.slice(0, 80);
+    return value || 'YYC Guest';
+  }
+
   function recordAttendance(action) {
     if (!state.activeMeeting || !state.activeMeeting.invite_code || !state.attendeeKey) return Promise.resolve();
     return rpc('yyc_meet_attendance', {
       p_invite_code: state.activeMeeting.invite_code,
       p_action: action,
       p_participant_key: state.attendeeKey,
-      p_display_name: (state.session && state.session.actor && state.session.actor.name) || 'YYC Guest',
+      p_display_name: meetingDisplayName(),
       p_token: (state.session && state.session.token) || null
     }).catch(function () {});
   }
