@@ -711,13 +711,22 @@
         notify('Meeting cancelled.');
         return loadMeetings();
       }).catch(function (err) { notify((err && err.message) || 'Could not cancel the meeting.'); });
-    } else if (action === 'manage-start' || action === 'manage-end') {
-      var command = action === 'manage-start' ? 'start' : 'end';
-      portal(command, { id: id }).then(function (data) {
-        if (!data || !data.ok) throw new Error((data && data.message) || 'Only the host or a YYC admin can manage this meeting.');
-        notify(command === 'start' ? 'Meeting marked live.' : 'Meeting ended.');
+    } else if (action === 'manage-start') {
+      var scheduledMeeting = state.meetings.find(function (item) { return item.id === id; });
+      if (!scheduledMeeting) { notify('Refresh the meeting list and try again.'); return; }
+      portal('start', { id: id }).then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can start this meeting.');
+        notify('Meeting is live. Opening the host room…');
+        return callLookup(scheduledMeeting.invite_code).then(function (fullMeeting) {
+          return loadMeetings().then(function () { startConference(fullMeeting); });
+        });
+      }).catch(function (err) { notify((err && err.message) || 'Could not start the meeting.'); });
+    } else if (action === 'manage-end') {
+      portal('end', { id: id }).then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can end this meeting.');
+        notify('Meeting ended.');
         return loadMeetings();
-      }).catch(function (err) { notify((err && err.message) || 'Could not update the meeting.'); });
+      }).catch(function (err) { notify((err && err.message) || 'Could not end the meeting.'); });
     }
   });
 
