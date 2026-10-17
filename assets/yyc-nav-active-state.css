@@ -104,84 +104,150 @@
 }
 
 
-/* ===== YYC RESPONSIVE HEADER FIT ===== */
-/* YYC header fit — prevent brand and first navigation tab from colliding.
-   Wide desktops keep the full navigation on one row. Compact desktop widths use
-   the existing hamburger menu instead of forcing all tabs into an undersized row. */
-
-@media (min-width: 1800px) {
-  .topbar { height: 76px; padding: 0 22px 0 28px; gap: 0; }
+/* ===== YYC ALL-CONTROLS INLINE HEADER =====
+   At desktop widths keep every primary tab and all four utility/login buttons visible.
+   Only the real mobile breakpoint uses the hamburger menu.
+*/
+@media (min-width: 981px) {
+  .topbar {
+    display: flex !important;
+    align-items: center;
+    gap: 0 !important;
+    overflow: visible;
+  }
   .topbar > .brand {
-    box-sizing: border-box; width: 340px !important; min-width: 340px !important;
-    max-width: 340px; flex: 0 0 340px !important; gap: 10px; margin-right: 8px;
+    box-sizing: border-box;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    margin-right: clamp(4px, .45vw, 10px);
+    gap: clamp(5px, .55vw, 10px);
+    overflow: visible;
   }
-  .topbar > .brand .brand-mark { width: 50px; height: 50px; flex: 0 0 50px; }
-  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
-  .topbar > .brand .brand-type { min-width: 0; overflow: visible; }
-  .topbar > .brand .brand-type b {
-    display: block; font-size: 27px !important; letter-spacing: .12em !important;
-    line-height: 1; white-space: nowrap;
-  }
-  .topbar > .brand .brand-type small {
-    display: block; font-size: 8.5px !important; letter-spacing: .38em !important;
-    margin-top: 6px !important; white-space: nowrap;
-  }
+  .topbar > .brand .brand-mark { flex: 0 0 auto; }
+  .topbar > .brand .brand-type { flex: 0 1 auto; min-width: 0; }
+  .topbar > .brand .brand-type b,
+  .topbar > .brand .brand-type small { white-space: nowrap; }
   .topbar > .desktop-nav {
-    min-width: 0; flex: 1 1 auto; justify-content: space-between; gap: 0; overflow: visible;
+    display: flex !important;
+    visibility: visible !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 !important;
+    overflow: visible !important;
   }
   .topbar > .desktop-nav > a.nav-link {
-    box-sizing: border-box; flex: 0 1 auto; min-width: 0; height: 42px;
-    padding-left: 5px !important; padding-right: 5px !important; gap: 4px;
-    font-size: 10.5px !important; white-space: nowrap;
+    display: inline-flex !important;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    white-space: nowrap;
+    box-sizing: border-box;
+    height: 40px;
+  }
+  .topbar > .desktop-nav > .nav-admin {
+    display: inline-flex !important;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    white-space: nowrap;
+    box-sizing: border-box;
+    height: 40px;
+    margin-left: clamp(1px, .15vw, 3px) !important;
+    border-radius: 999px;
+  }
+  .topbar > .menu-btn { display: none !important; }
+}
+
+@media (min-width: 1800px) {
+  .topbar { height: 76px; padding: 0 22px 0 28px; }
+  .topbar > .brand {
+    width: 270px !important;
+    min-width: 270px !important;
+    max-width: 270px;
+    flex: 0 0 270px !important;
+    margin-right: 8px;
+  }
+  .topbar > .brand .brand-mark { width: 50px; height: 50px; }
+  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
+  .topbar > .brand .brand-type b {
+    font-size: 25px !important;
+    letter-spacing: .08em !important;
+    line-height: 1;
+  }
+  .topbar > .brand .brand-type small {
+    font-size: 8px !important;
+    letter-spacing: .34em !important;
+    margin-top: 6px !important;
+  }
+  .topbar > .desktop-nav > a.nav-link {
+    padding: 0 clamp(3px, .25vw, 5px) !important;
+    gap: 4px;
+    font-size: clamp(9.5px, .56vw, 10.7px) !important;
   }
   .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 12px; flex: 0 0 auto; }
   .topbar > .desktop-nav > .nav-admin {
-    flex: 0 1 auto; min-width: 0; height: 42px;
-    padding-left: 9px !important; padding-right: 9px !important;
-    margin-left: 1px !important; gap: 4px; font-size: 9.5px !important; white-space: nowrap;
+    padding: 0 clamp(6px, .5vw, 9px) !important;
+    font-size: clamp(8px, .48vw, 9.2px) !important;
+    gap: 4px;
   }
-  .topbar > .desktop-nav > .nav-admin span { flex: 0 0 auto; }
 }
 
-@media (min-width: 981px) and (max-width: 1799px) {
-  .topbar { height: 76px; padding: 0 24px; gap: 12px; }
-  .topbar > .brand {
-    min-width: 0 !important; width: auto !important; max-width: calc(100% - 64px);
-    flex: 0 1 auto !important; gap: 10px;
-  }
-  .topbar > .brand .brand-mark { width: 50px; height: 50px; flex: 0 0 50px; }
-  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
-  .topbar > .brand .brand-type { min-width: 0; }
-  .topbar > .brand .brand-type b {
-    font-size: clamp(21px, 1.55vw, 27px) !important;
-    letter-spacing: .1em !important; white-space: nowrap;
-  }
-  .topbar > .brand .brand-type small {
-    font-size: 8px !important; letter-spacing: .32em !important; white-space: nowrap;
-  }
+@media (min-width: 1441px) and (max-width: 1799px) {
+  .topbar { height: 76px; padding: 0 18px; }
+  .topbar > .brand { width: 245px; min-width: 245px !important; max-width: 245px; flex: 0 0 245px !important; }
+  .topbar > .brand .brand-mark { width: 46px; height: 46px; }
+  .topbar > .brand .brand-mark img { width: 42px; height: 42px; }
+  .topbar > .brand .brand-type b { font-size: 22px !important; letter-spacing: .07em !important; }
+  .topbar > .brand .brand-type small { font-size: 7.5px !important; letter-spacing: .3em !important; }
+  .topbar > .desktop-nav > a.nav-link { padding: 0 4px !important; gap: 3px; font-size: 9.3px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 11px; }
+  .topbar > .desktop-nav > .nav-admin { padding: 0 6px !important; font-size: 8px !important; gap: 3px; }
+}
+
+@media (min-width: 1201px) and (max-width: 1440px) {
+  .topbar { height: 74px; padding: 0 12px; }
+  .topbar > .brand { width: 215px; min-width: 215px !important; max-width: 215px; flex: 0 0 215px !important; }
+  .topbar > .brand .brand-mark { width: 43px; height: 43px; }
+  .topbar > .brand .brand-mark img { width: 39px; height: 39px; }
+  .topbar > .brand .brand-type b { font-size: 20px !important; letter-spacing: .055em !important; }
+  .topbar > .brand .brand-type small { font-size: 7px !important; letter-spacing: .26em !important; }
+  .topbar > .desktop-nav > a.nav-link { padding: 0 3px !important; gap: 2px; font-size: 8.5px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 10px; }
+  .topbar > .desktop-nav > .nav-admin { padding: 0 4px !important; font-size: 7.5px !important; gap: 2px; }
+}
+
+@media (min-width: 1101px) and (max-width: 1200px) {
+  .topbar { height: 72px; padding: 0 9px; }
+  .topbar > .brand { width: 180px; min-width: 180px !important; max-width: 180px; flex: 0 0 180px !important; }
+  .topbar > .brand .brand-mark { width: 40px; height: 40px; }
+  .topbar > .brand .brand-mark img { width: 36px; height: 36px; }
+  .topbar > .brand .brand-type b { font-size: 18px !important; letter-spacing: .04em !important; }
+  .topbar > .brand .brand-type small { font-size: 6.5px !important; letter-spacing: .22em !important; }
+  .topbar > .desktop-nav > a.nav-link { padding: 0 2.5px !important; gap: 2px; font-size: 7.7px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 9px; }
+  .topbar > .desktop-nav > .nav-admin { padding: 0 3.5px !important; font-size: 6.9px !important; gap: 2px; }
+}
+
+@media (min-width: 981px) and (max-width: 1100px) {
+  .topbar { height: 70px; padding: 0 8px; }
+  .topbar > .brand { width: 145px; min-width: 145px !important; max-width: 145px; flex: 0 0 145px !important; gap: 6px; }
+  .topbar > .brand .brand-mark { width: 36px; height: 36px; }
+  .topbar > .brand .brand-mark img { width: 32px; height: 32px; }
+  .topbar > .brand .brand-type b { font-size: 15px !important; letter-spacing: .025em !important; }
+  .topbar > .brand .brand-type small { font-size: 5.7px !important; letter-spacing: .17em !important; margin-top: 4px !important; }
+  .topbar > .desktop-nav > a.nav-link { padding: 0 2px !important; gap: 0; font-size: 7px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { display: none !important; }
+  .topbar > .desktop-nav > .nav-admin { padding: 0 3px !important; font-size: 6.4px !important; gap: 2px; }
+  .topbar > .desktop-nav > .nav-admin span { margin: 0; }
+}
+
+@media (max-width: 980px) {
   .topbar > .desktop-nav { display: none !important; }
-  .topbar > .menu-btn {
-    display: block !important; flex: 0 0 44px; margin-left: auto;
-    position: relative; z-index: 1002;
-  }
-  .mobile-panel {
-    display: flex !important; position: fixed; top: 76px; left: 12px; right: 12px;
-    z-index: 1001; flex-direction: column; gap: 5px; padding: 12px;
-    max-height: calc(100svh - 88px); overflow: auto; -webkit-overflow-scrolling: touch;
-    background: rgba(6, 10, 13, .97); border: 1px solid rgba(237, 195, 107, .2);
-    border-radius: 18px; backdrop-filter: blur(12px);
-    box-shadow: var(--shadow, 0 24px 80px rgba(0,0,0,.52));
-    transform: translateY(-12px); opacity: 0; visibility: hidden; pointer-events: none;
-    transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
-  }
-  .mobile-panel.open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; }
-  .mobile-panel a {
-    min-height: 44px; padding: 12px; display: flex; align-items: center; gap: 10px;
-    border-radius: 11px; color: #ddd3c0;
-  }
-  .mobile-panel a:hover, .mobile-panel a:focus-visible { background: rgba(237, 193, 104, .1); }
-  .mobile-panel .nav-admin.full {
-    width: 100%; min-height: 46px; margin: 0; justify-content: flex-start;
-  }
+  .topbar > .menu-btn { display: block !important; }
 }
 @media (prefers-reduced-motion: reduce) { .mobile-panel { transition: none; } }
