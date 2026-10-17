@@ -144,7 +144,15 @@
     </div>
   </main>
 
-  <div class="meet-toast" id="meetToast" role="status" aria-live="polite"></div>
+  <dialog class="attendance-dialog" id="attendanceDialog" aria-labelledby="attendanceDialogTitle">
+  <div class="attendance-dialog-head">
+    <div><div class="side-eyebrow">HOST REPORT</div><h2 id="attendanceDialogTitle">Meeting attendance</h2><p id="attendanceMeetingSubtitle">Attendance and join times</p></div>
+    <button type="button" class="attendance-close" id="closeAttendanceDialog" aria-label="Close attendance report">×</button>
+  </div>
+  <div class="attendance-list" id="attendanceList"><div class="empty-meetings"><b>No attendee data yet</b></div></div>
+  <div class="attendance-dialog-foot"><span id="attendanceSummary">0 attendees</span><button type="button" class="meet-btn meet-btn-gold" id="exportAttendanceBtn" disabled>Export CSV ↓</button></div>
+</dialog>
+<div class="meet-toast" id="meetToast" role="status" aria-live="polite"></div>
   <script src="./meet.js?v=20261017-01" defer></script>
 </body>
 </html>
