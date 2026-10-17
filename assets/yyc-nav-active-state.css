@@ -104,150 +104,241 @@
 }
 
 
-/* ===== YYC ALL-CONTROLS INLINE HEADER =====
-   At desktop widths keep every primary tab and all four utility/login buttons visible.
-   Only the real mobile breakpoint uses the hamburger menu.
+/* ===== YYC HEADER + HERO VISIBILITY REFINEMENT =====
+   Larger, readable navigation. Full tab row stays visible on desktop.
+   The hamburger is reserved for mobile widths only.
 */
 @media (min-width: 981px) {
   .topbar {
     display: flex !important;
-    align-items: center;
-    gap: 0 !important;
-    overflow: visible;
+    position: fixed !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 100vw !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: clamp(8px, .8vw, 18px) !important;
+    overflow: visible !important;
   }
   .topbar > .brand {
     box-sizing: border-box;
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
     min-width: 0 !important;
-    margin-right: clamp(4px, .45vw, 10px);
-    gap: clamp(5px, .55vw, 10px);
-    overflow: visible;
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    gap: clamp(7px, .55vw, 12px) !important;
+    overflow: visible !important;
   }
-  .topbar > .brand .brand-mark { flex: 0 0 auto; }
-  .topbar > .brand .brand-type { flex: 0 1 auto; min-width: 0; }
+  .topbar > .brand .brand-mark {
+    flex: 0 0 auto !important;
+    width: clamp(46px, 2.8vw, 56px) !important;
+    height: clamp(46px, 2.8vw, 56px) !important;
+  }
+  .topbar > .brand .brand-mark img {
+    width: calc(100% - 6px) !important;
+    height: calc(100% - 6px) !important;
+  }
+  .topbar > .brand .brand-type { flex: 0 0 auto !important; min-width: 0 !important; }
   .topbar > .brand .brand-type b,
-  .topbar > .brand .brand-type small { white-space: nowrap; }
+  .topbar > .brand .brand-type small { white-space: nowrap !important; }
   .topbar > .desktop-nav {
     display: flex !important;
     visibility: visible !important;
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
+    flex: 1 1 0% !important;
     width: auto !important;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: clamp(2px, .24vw, 6px) !important;
     overflow: visible !important;
+    margin: 0 !important;
   }
   .topbar > .desktop-nav > a.nav-link {
     display: inline-flex !important;
-    flex: 0 1 auto;
+    flex: 0 1 auto !important;
     align-items: center;
     justify-content: center;
     min-width: 0;
-    white-space: nowrap;
+    white-space: nowrap !important;
     box-sizing: border-box;
-    height: 40px;
+    height: clamp(40px, 2.35vw, 46px) !important;
+    padding: 0 clamp(4px, .38vw, 8px) !important;
+    gap: clamp(3px, .28vw, 6px) !important;
+    font-size: clamp(10px, .73vw, 13px) !important;
+    letter-spacing: 0 !important;
+  }
+  .topbar > .desktop-nav > a.nav-link .nav-icon {
+    display: inline-block !important;
+    flex: 0 0 auto !important;
+    font-size: clamp(11px, .82vw, 15px) !important;
+  }
+  .topbar > .desktop-nav > a.nav-link .nav-label {
+    display: inline !important;
+    white-space: nowrap !important;
   }
   .topbar > .desktop-nav > .nav-admin {
     display: inline-flex !important;
-    flex: 0 1 auto;
+    flex: 0 1 auto !important;
     align-items: center;
     justify-content: center;
     min-width: 0;
-    white-space: nowrap;
+    white-space: nowrap !important;
     box-sizing: border-box;
-    height: 40px;
-    margin-left: clamp(1px, .15vw, 3px) !important;
-    border-radius: 999px;
+    height: clamp(40px, 2.35vw, 46px) !important;
+    margin: 0 0 0 clamp(1px, .15vw, 4px) !important;
+    padding: 0 clamp(8px, .58vw, 13px) !important;
+    gap: clamp(3px, .25vw, 6px) !important;
+    font-size: clamp(9px, .66vw, 12px) !important;
+    letter-spacing: 0 !important;
   }
   .topbar > .menu-btn { display: none !important; }
 }
 
+/* A full-width desktop gets generous type without wasting the logo's space. */
 @media (min-width: 1800px) {
-  .topbar { height: 76px; padding: 0 22px 0 28px; }
-  .topbar > .brand {
-    width: 270px !important;
-    min-width: 270px !important;
-    max-width: 270px;
-    flex: 0 0 270px !important;
-    margin-right: 8px;
-  }
-  .topbar > .brand .brand-mark { width: 50px; height: 50px; }
-  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
+  .topbar { height: 82px !important; padding: 0 clamp(22px, 1.6vw, 34px) !important; }
+  .topbar > .brand { gap: 12px !important; }
+  .topbar > .brand .brand-mark { width: 56px !important; height: 56px !important; }
+  .topbar > .brand .brand-mark img { width: 50px !important; height: 50px !important; }
   .topbar > .brand .brand-type b {
-    font-size: 25px !important;
-    letter-spacing: .08em !important;
-    line-height: 1;
+    font-size: clamp(26px, 1.52vw, 31px) !important;
+    letter-spacing: .09em !important;
+    line-height: 1 !important;
   }
   .topbar > .brand .brand-type small {
-    font-size: 8px !important;
-    letter-spacing: .34em !important;
+    font-size: 9.5px !important;
+    letter-spacing: .38em !important;
     margin-top: 6px !important;
   }
-  .topbar > .desktop-nav > a.nav-link {
-    padding: 0 clamp(3px, .25vw, 5px) !important;
-    gap: 4px;
-    font-size: clamp(9.5px, .56vw, 10.7px) !important;
-  }
-  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 12px; flex: 0 0 auto; }
-  .topbar > .desktop-nav > .nav-admin {
-    padding: 0 clamp(6px, .5vw, 9px) !important;
-    font-size: clamp(8px, .48vw, 9.2px) !important;
-    gap: 4px;
-  }
 }
 
+/* Mid/wide desktop: keep every item inline, but protect the whole row from collision. */
 @media (min-width: 1441px) and (max-width: 1799px) {
-  .topbar { height: 76px; padding: 0 18px; }
-  .topbar > .brand { width: 245px; min-width: 245px !important; max-width: 245px; flex: 0 0 245px !important; }
-  .topbar > .brand .brand-mark { width: 46px; height: 46px; }
-  .topbar > .brand .brand-mark img { width: 42px; height: 42px; }
-  .topbar > .brand .brand-type b { font-size: 22px !important; letter-spacing: .07em !important; }
-  .topbar > .brand .brand-type small { font-size: 7.5px !important; letter-spacing: .3em !important; }
-  .topbar > .desktop-nav > a.nav-link { padding: 0 4px !important; gap: 3px; font-size: 9.3px !important; }
-  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 11px; }
-  .topbar > .desktop-nav > .nav-admin { padding: 0 6px !important; font-size: 8px !important; gap: 3px; }
+  .topbar { height: 78px !important; padding: 0 20px !important; gap: 10px !important; }
+  .topbar > .brand .brand-mark { width: 50px !important; height: 50px !important; }
+  .topbar > .brand .brand-type b { font-size: 25px !important; letter-spacing: .075em !important; }
+  .topbar > .brand .brand-type small { font-size: 8.5px !important; letter-spacing: .32em !important; }
+  .topbar > .desktop-nav > a.nav-link { font-size: 11.3px !important; padding: 0 5px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 12px !important; }
+  .topbar > .desktop-nav > .nav-admin { font-size: 9.9px !important; padding: 0 8px !important; }
 }
 
+/* Compact desktop/laptop: small-but-readable type, icons retained, no hamburger. */
 @media (min-width: 1201px) and (max-width: 1440px) {
-  .topbar { height: 74px; padding: 0 12px; }
-  .topbar > .brand { width: 215px; min-width: 215px !important; max-width: 215px; flex: 0 0 215px !important; }
-  .topbar > .brand .brand-mark { width: 43px; height: 43px; }
-  .topbar > .brand .brand-mark img { width: 39px; height: 39px; }
-  .topbar > .brand .brand-type b { font-size: 20px !important; letter-spacing: .055em !important; }
-  .topbar > .brand .brand-type small { font-size: 7px !important; letter-spacing: .26em !important; }
-  .topbar > .desktop-nav > a.nav-link { padding: 0 3px !important; gap: 2px; font-size: 8.5px !important; }
-  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 10px; }
-  .topbar > .desktop-nav > .nav-admin { padding: 0 4px !important; font-size: 7.5px !important; gap: 2px; }
+  .topbar { height: 76px !important; padding: 0 12px !important; gap: 7px !important; }
+  .topbar > .brand .brand-mark { width: 44px !important; height: 44px !important; }
+  .topbar > .brand .brand-type b { font-size: 20px !important; letter-spacing: .04em !important; }
+  .topbar > .brand .brand-type small { font-size: 7px !important; letter-spacing: .24em !important; }
+  .topbar > .desktop-nav > a.nav-link { font-size: 9.7px !important; padding: 0 3px !important; gap: 2px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 10px !important; }
+  .topbar > .desktop-nav > .nav-admin { font-size: 8.7px !important; padding: 0 4px !important; gap: 2px !important; }
 }
 
-@media (min-width: 1101px) and (max-width: 1200px) {
-  .topbar { height: 72px; padding: 0 9px; }
-  .topbar > .brand { width: 180px; min-width: 180px !important; max-width: 180px; flex: 0 0 180px !important; }
-  .topbar > .brand .brand-mark { width: 40px; height: 40px; }
-  .topbar > .brand .brand-mark img { width: 36px; height: 36px; }
-  .topbar > .brand .brand-type b { font-size: 18px !important; letter-spacing: .04em !important; }
-  .topbar > .brand .brand-type small { font-size: 6.5px !important; letter-spacing: .22em !important; }
-  .topbar > .desktop-nav > a.nav-link { padding: 0 2.5px !important; gap: 2px; font-size: 7.7px !important; }
-  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 9px; }
-  .topbar > .desktop-nav > .nav-admin { padding: 0 3.5px !important; font-size: 6.9px !important; gap: 2px; }
-}
-
-@media (min-width: 981px) and (max-width: 1100px) {
-  .topbar { height: 70px; padding: 0 8px; }
-  .topbar > .brand { width: 145px; min-width: 145px !important; max-width: 145px; flex: 0 0 145px !important; gap: 6px; }
-  .topbar > .brand .brand-mark { width: 36px; height: 36px; }
-  .topbar > .brand .brand-mark img { width: 32px; height: 32px; }
-  .topbar > .brand .brand-type b { font-size: 15px !important; letter-spacing: .025em !important; }
-  .topbar > .brand .brand-type small { font-size: 5.7px !important; letter-spacing: .17em !important; margin-top: 4px !important; }
-  .topbar > .desktop-nav > a.nav-link { padding: 0 2px !important; gap: 0; font-size: 7px !important; }
-  .topbar > .desktop-nav > a.nav-link .nav-icon { display: none !important; }
-  .topbar > .desktop-nav > .nav-admin { padding: 0 3px !important; font-size: 6.4px !important; gap: 2px; }
-  .topbar > .desktop-nav > .nav-admin span { margin: 0; }
+@media (min-width: 981px) and (max-width: 1200px) {
+  .topbar { height: 72px !important; padding: 0 8px !important; gap: 5px !important; }
+  .topbar > .brand { gap: 5px !important; }
+  .topbar > .brand .brand-mark { width: 36px !important; height: 36px !important; }
+  .topbar > .brand .brand-type b { font-size: 14px !important; letter-spacing: .015em !important; }
+  .topbar > .brand .brand-type small { font-size: 5.5px !important; letter-spacing: .15em !important; margin-top: 3px !important; }
+  .topbar > .desktop-nav > a.nav-link { font-size: 7.5px !important; padding: 0 2px !important; gap: 1px !important; }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 8px !important; }
+  .topbar > .desktop-nav > .nav-admin { font-size: 6.7px !important; padding: 0 2.5px !important; gap: 1px !important; }
 }
 
 @media (max-width: 980px) {
   .topbar > .desktop-nav { display: none !important; }
   .topbar > .menu-btn { display: block !important; }
 }
-@media (prefers-reduced-motion: reduce) { .mobile-panel { transition: none; } }
+
+/* ===== HERO: MAKE THE BACKDROP RELIABLY VISIBLE UNDER THE NAV ===== */
+.hero {
+  isolation: isolate !important;
+  position: relative !important;
+  background-color: #071015 !important;
+  background-image:
+    radial-gradient(ellipse at 24% 18%, rgba(204, 151, 55, .16), transparent 36%),
+    linear-gradient(180deg, rgba(4, 9, 13, .08), rgba(4, 9, 13, .22)),
+    url('../assets/hero-tulunad.webp') !important;
+  background-position: center, center, center 42% !important;
+  background-size: cover, cover, cover !important;
+  background-repeat: no-repeat !important;
+}
+.hero-photo {
+  z-index: 0 !important;
+  opacity: 1 !important;
+  background-color: #071015 !important;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(204, 151, 55, .12), transparent 42%),
+    url('../assets/hero-tulunad.webp') !important;
+  background-position: center, center 42% !important;
+  background-size: cover, cover !important;
+  background-repeat: no-repeat !important;
+  filter: saturate(1.15) contrast(1.06) brightness(1.12) !important;
+}
+.hero-vignette {
+  z-index: 1 !important;
+  opacity: 1 !important;
+  background:
+    linear-gradient(90deg, rgba(2, 4, 7, .45) 0%, rgba(3, 5, 8, .20) 42%, rgba(3, 5, 8, .16) 68%, rgba(3, 5, 8, .55) 100%),
+    linear-gradient(180deg, rgba(2, 4, 7, .24) 0%, rgba(2, 4, 7, .04) 42%, rgba(2, 5, 8, .35) 100%) !important;
+}
+.hero-glow,
+.hero-grid-line { z-index: 2 !important; pointer-events: none !important; }
+.hero > .hero-main,
+.hero > .culture-panel,
+.hero > .hero-bottom {
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+/* On ultra-wide but short windows, bring the main hero content up into view. */
+@media (min-width: 981px) and (max-height: 720px) {
+  .hero {
+    min-height: calc(100svh - 82px) !important;
+    padding: 38px 34px 44px !important;
+    align-items: start !important;
+    gap: 22px !important;
+  }
+  .hero-main { max-width: 720px !important; padding: 0 10px !important; }
+  .hero-logo { width: clamp(76px, 12vh, 108px) !important; height: clamp(76px, 12vh, 108px) !important; margin-bottom: 8px !important; }
+  .brand-lockup h1 { font-size: clamp(42px, 6.7vh, 66px) !important; line-height: .92 !important; }
+  .lockup-line { margin-top: 9px !important; gap: 10px !important; }
+  .lockup-line i { width: 48px !important; }
+  .lockup-line span { font-size: 12px !important; letter-spacing: .28em !important; }
+  .hero-establishment { font-size: 8px !important; margin-top: 8px !important; }
+  .association-wrap { min-height: 28px !important; margin: 7px auto 0 !important; gap: 7px !important; }
+  .association-wrap img { width: 29px !important; height: 29px !important; }
+  .association-wrap span { font-size: 6.5px !important; }
+  .association-wrap strong { font-size: 10px !important; margin-top: 2px !important; }
+  .slogan { font-size: 17px !important; margin: 7px 0 3px !important; }
+  .slogan span { font-size: 16px !important; }
+  .gold-quote { font-size: 22px !important; margin-top: 2px !important; }
+  .gold-quote strong { font-size: 25px !important; margin-top: 1px !important; }
+  .social-row { min-height: 30px !important; gap: 6px !important; margin: 8px 0 7px !important; }
+  .social-row a { width: 30px !important; height: 30px !important; }
+  .social-row a img { width: 23px !important; height: 23px !important; }
+  .hero-actions { gap: 7px !important; }
+  .hero-actions .btn { min-height: 34px !important; padding: 0 12px !important; font-size: 9px !important; }
+  .culture-panel { min-height: 0 !important; padding: 0 8px 12px !important; }
+  .culture-overline em { font-size: clamp(22px, 4.5vh, 31px) !important; }
+  .culture-copy { font-size: 10px !important; line-height: 1.45 !important; }
+  .culture-orbs { gap: 7px !important; }
+  .orb-image, .orb-dharma .orb-image, .orb-aati .orb-image, .orb-yak .orb-image { width: 70px !important; height: 70px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-photo { animation: none !important; transition: none !important; }
+  .topbar > .desktop-nav > a.nav-link::before { transition: none !important; transform: none !important; }
+}
+
+
+/* ===== LOW-DATA / REDUCED-MOTION OVERRIDE ===== */
+/* Preserve the site's adaptive performance safeguards over the cosmetic hero lift. */
+body.yyc-low-data .hero-photo,
+body.yyc-reduced-motion .hero-photo {
+  filter: none !important;
+  will-change: auto !important;
+}
