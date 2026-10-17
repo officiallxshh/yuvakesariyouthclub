@@ -6,14 +6,14 @@ create table public.yyc_meetings (
   id uuid primary key default gen_random_uuid(),
   title text not null check (char_length(btrim(title)) between 3 and 120),
   description text not null default '' check (char_length(description) <= 2000),
-  invite_code text not null unique check (invite_code ~ '^[A-F0-9]{16}$'),
+  invite_code text not null unique check (invite_code ~ '^[A-F0-9]{32}$'),
   room_name text not null unique check (room_name ~ '^yyc-[a-f0-9]{32}$'),
   starts_at timestamptz not null,
   duration_minutes integer not null default 60 check (duration_minutes between 15 and 480),
   status text not null default 'scheduled' check (status in ('scheduled','live','ended','cancelled')),
-  visibility text not null default 'club' check (visibility in ('club','invite')),
+  visibility text not null default 'invite' check (visibility in ('invite')),
   waiting_room boolean not null default false,
-  host_kind text not null check (host_kind in ('admin','leader','member')),
+  host_kind text not null check (host_kind in ('admin')),
   host_id uuid,
   host_name text not null default 'YYC Host' check (char_length(host_name) between 1 and 100),
   created_at timestamptz not null default now(),
@@ -88,6 +88,11 @@ begin
     return jsonb_build_object('ok', true, 'actor', jsonb_build_object('kind', v_role, 'id', v_actor_id, 'name', v_actor_name));
   end if;
 
+  if p_action = 'list' and not v_admin then
+    return jsonb_build_object('ok', true, 'meetings', '[]'::jsonb,
+      'actor', jsonb_build_object('kind', v_role, 'id', v_actor_id, 'name', v_actor_name));
+  end if;
+
   if p_action = 'list' then
     select coalesce(jsonb_agg(to_jsonb(q) order by q.starts_at asc), '[]'::jsonb) into v_data
     from (
@@ -103,6 +108,11 @@ begin
     ) q;
     return jsonb_build_object('ok', true, 'meetings', v_data,
       'actor', jsonb_build_object('kind', v_role, 'id', v_actor_id, 'name', v_actor_name));
+  end if;
+
+  if p_action in ('create', 'start', 'end', 'cancel', 'attendance') and not v_admin then
+    return jsonb_build_object('ok', false, 'error', 'ADMIN_REQUIRED',
+      'message', 'Only a YYC Admin can create, start, end, cancel, or report on meetings.');
   end if;
 
   if p_action = 'create' then
@@ -128,10 +138,10 @@ begin
     if v_duration < 15 or v_duration > 480 then
       return jsonb_build_object('ok', false, 'error', 'INVALID_DURATION', 'message', 'Choose a duration from 15 minutes to 8 hours.');
     end if;
-    v_visibility := case when p_payload->>'visibility' = 'invite' then 'invite' else 'club' end;
+    v_visibility := 'invite';
     v_waiting := lower(coalesce(p_payload->>'waiting_room', 'false')) = 'true';
     insert into public.yyc_meetings (title, description, invite_code, room_name, starts_at, duration_minutes, visibility, waiting_room, host_kind, host_id, host_name)
-    values (v_title, v_description, upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 16)),
+    values (v_title, v_description, upper(replace(gen_random_uuid()::text, '-', '')),
       'yyc-' || replace(gen_random_uuid()::text, '-', ''), v_starts_at, v_duration, v_visibility, v_waiting, v_role, v_actor_id, v_actor_name)
     returning * into v_meeting;
     return jsonb_build_object('ok', true, 'meeting', jsonb_build_object(
@@ -184,12 +194,16 @@ declare
   v_meeting public.yyc_meetings%rowtype;
 begin
   v_code := upper(regexp_replace(coalesce(p_invite_code, ''), '[^A-F0-9]', '', 'g'));
-  if char_length(v_code) <> 16 then
-    return jsonb_build_object('ok', false, 'error', 'INVALID_CODE', 'message', 'Enter the full 16-character YYC Meet code.');
+  if char_length(v_code) <> 32 then
+    return jsonb_build_object('ok', false, 'error', 'INVALID_CODE', 'message', 'Enter the full 32-character private YYC Meet code.');
   end if;
   select * into v_meeting from public.yyc_meetings where invite_code = v_code;
-  if not found or v_meeting.status = 'cancelled' then
-    return jsonb_build_object('ok', false, 'error', 'NOT_FOUND', 'message', 'This meeting invite is invalid or has been cancelled.');
+  if not found or v_meeting.status in ('cancelled', 'ended') then
+    return jsonb_build_object('ok', false, 'error', 'NOT_FOUND', 'message', 'This meeting invite is invalid, ended, or cancelled.');
+  end if;
+  if v_meeting.status <> 'live' then
+    return jsonb_build_object('ok', false, 'error', 'NOT_STARTED',
+      'message', 'The YYC Admin has not started this meeting yet. Please try again after it goes live.');
   end if;
   return jsonb_build_object('ok', true, 'meeting', jsonb_build_object(
     'id', v_meeting.id, 'title', v_meeting.title, 'description', v_meeting.description, 'invite_code', v_meeting.invite_code,
@@ -214,12 +228,16 @@ declare
   v_member uuid;
 begin
   v_code := upper(regexp_replace(coalesce(p_invite_code, ''), '[^A-F0-9]', '', 'g'));
-  if char_length(v_code) <> 16 or p_participant_key is null then
+  if char_length(v_code) <> 32 or p_participant_key is null then
     return jsonb_build_object('ok', false, 'error', 'INVALID_REQUEST', 'message', 'Meeting attendance data is invalid.');
   end if;
   select * into v_meeting from public.yyc_meetings where invite_code = v_code;
   if not found or (v_meeting.status in ('cancelled','ended') and p_action <> 'leave') then
     return jsonb_build_object('ok', false, 'error', 'MEETING_CLOSED', 'message', 'This meeting is no longer active.');
+  end if;
+  if p_action = 'join' and v_meeting.status <> 'live' then
+    return jsonb_build_object('ok', false, 'error', 'NOT_STARTED',
+      'message', 'Only meetings already started by the YYC Admin can be joined.');
   end if;
   v_name := left(btrim(coalesce(p_display_name, 'Guest')), 80);
   if v_name = '' then v_name := 'Guest'; end if;
