@@ -218,7 +218,7 @@ begin
     return jsonb_build_object('ok', false, 'error', 'INVALID_REQUEST', 'message', 'Meeting attendance data is invalid.');
   end if;
   select * into v_meeting from public.yyc_meetings where invite_code = v_code;
-  if not found or v_meeting.status in ('cancelled','ended') then
+  if not found or (v_meeting.status in ('cancelled','ended') and p_action <> 'leave') then
     return jsonb_build_object('ok', false, 'error', 'MEETING_CLOSED', 'message', 'This meeting is no longer active.');
   end if;
   v_name := left(btrim(coalesce(p_display_name, 'Guest')), 80);
