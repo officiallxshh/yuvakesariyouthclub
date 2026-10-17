@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080b0e">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="YYC Meet — meetings for Yuvakesari Youth Club.">
+  <title>YYC Meet | Yuvakesari Youth Club</title>
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./meet.css?v=20261017-01">
+</head>
+<body>
+  <div class="meet-ambient meet-ambient-one"></div>
+  <div class="meet-ambient meet-ambient-two"></div>
+  <header class="meet-topbar">
+    <a class="meet-brand" href="../" aria-label="Back to Yuvakesari Youth Club homepage">
+      <span class="meet-logo"><img src="../assets/yyc-logo-clean.webp" alt="YYC emblem"></span>
+      <span><strong>YUVAKESARI</strong><small>YOUTH CLUB</small></span>
+    </a>
+    <div class="meet-top-actions">
+      <span class="secure-mark"><span></span> YYC MEET</span>
+      <a class="back-home" href="../">← Back to YYC</a>
+    </div>
+  </header>
+
+  <main class="meet-shell" id="dashboardView">
+    <section class="meet-hero">
+      <div class="hero-kicker"><span class="pulse-dot"></span> CONNECT · COLLABORATE · BUILD</div>
+      <div class="hero-copy">
+        <div>
+          <h1>Meet together.<br><em>Move forward.</em></h1>
+          <p>Video meetings made for the YYC team — planning, volunteering, team check-ins and community projects, all in one place.</p>
+        </div>
+        <div class="hero-emblem" aria-hidden="true"><div class="emblem-orbit orbit-a"></div><div class="emblem-orbit orbit-b"></div><div class="emblem-core">YYC<span>MEET</span></div></div>
+      </div>
+      <div class="hero-traits"><span>HD video*</span><span>Screen sharing*</span><span>In-call chat*</span><span>Works on mobile</span></div>
+      <small class="engine-note">*Conference tools are provided by the embedded meeting service and depend on its availability and room permissions.</small>
+    </section>
+
+    <div class="meet-alert" id="meetAlert" role="status" aria-live="polite" hidden></div>
+
+    <section class="meet-content-grid">
+      <div class="meet-main-column">
+        <section class="meet-panel quick-panel">
+          <div class="panel-eyebrow">START OR JOIN</div>
+          <h2>Your next conversation starts here.</h2>
+          <p class="panel-intro">Start a quick session or enter the invite code shared by your host.</p>
+          <div class="quick-actions">
+            <button class="meet-btn meet-btn-gold" id="instantMeetBtn" type="button"><span class="btn-symbol">↗</span><span><b>Start instant meeting</b><small>Create a private room now</small></span></button>
+            <form class="join-code-form" id="joinCodeForm">
+              <label for="joinCode">Have a meeting code?</label>
+              <div class="code-entry"><input id="joinCode" name="joinCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Paste your YYC invite code" aria-describedby="joinCodeHelp" required><button type="submit" class="meet-btn meet-btn-dark">Join <span>→</span></button></div>
+              <small id="joinCodeHelp">You can also open a meeting invite link directly.</small>
+            </form>
+          </div>
+        </section>
+
+        <section class="meet-panel schedule-panel">
+          <div class="panel-head">
+            <div><div class="panel-eyebrow">PLAN AHEAD</div><h2>Schedule a meeting</h2><p class="panel-intro">Create a shareable room for a future YYC discussion.</p></div>
+            <div class="panel-icon" aria-hidden="true">◷</div>
+          </div>
+          <div class="login-needed" id="loginNeeded">
+            <div class="login-lock">⌑</div>
+            <div><b>YYC account required</b><p>Sign in as an approved member, leader or administrator to create and manage meetings. People with an invite can join as guests.</p><a href="../?yyc_access=member-login">Member sign in ↗</a><span> · </span><a href="../">Leader / Admin sign in ↗</a></div>
+          </div>
+          <form id="scheduleForm" class="schedule-form" hidden>
+            <div class="field-row">
+              <label class="field-label">Meeting title<input type="text" id="meetingTitle" name="title" maxlength="120" placeholder="e.g. Clean-up drive planning" required minlength="3"></label>
+              <label class="field-label">Duration<select id="meetingDuration" name="duration"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 hour</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="240">4 hours</option><option value="480">8 hours</option></select></label>
+            </div>
+            <label class="field-label">Notes / agenda <span class="optional-label">OPTIONAL</span><textarea id="meetingDescription" name="description" rows="3" maxlength="2000" placeholder="Add the main points, preparation or links for the team."></textarea></label>
+            <div class="field-row">
+              <label class="field-label">Date and time<input id="meetingStartsAt" name="startsAt" type="datetime-local" required></label>
+              <label class="field-label">Who can see it?<select id="meetingVisibility" name="visibility"><option value="club">YYC members — visible in the meeting list</option><option value="invite">Invite link only — private listing</option></select></label>
+            </div>
+            <label class="toggle-row"><input id="meetingWaitingRoom" type="checkbox"><span class="toggle-track"></span><span><b>Waiting-room preference</b><small>Request a waiting room where the conference host/server supports it.</small></span></label>
+            <div class="form-foot"><span id="actorBadge">Signed in to YYC</span><button class="meet-btn meet-btn-gold" type="submit" id="scheduleSubmit">Schedule meeting <span>↗</span></button></div>
+          </form>
+        </section>
+
+        <section class="meet-panel meetings-panel">
+          <div class="panel-head list-head">
+            <div><div class="panel-eyebrow">YOUR TEAM SPACE</div><h2>Upcoming meetings</h2><p class="panel-intro">Club-visible meetings and the invite-only rooms you host.</p></div>
+            <button type="button" class="icon-refresh" id="refreshMeetingsBtn" aria-label="Refresh meeting list" title="Refresh">↻</button>
+          </div>
+          <div id="meetingList" class="meeting-list"><div class="empty-meetings"><span class="empty-orbit">◷</span><b>Checking your YYC session</b><p>Meeting details will appear here.</p></div></div>
+        </section>
+      </div>
+
+      <aside class="meet-side-column">
+        <section class="side-card profile-card">
+          <div class="side-eyebrow">SESSION</div>
+          <div class="profile-top"><span class="profile-avatar" id="profileAvatar">Y</span><div><b id="profileName">Welcome to YYC Meet</b><small id="profileRole">Invite guests can join without an account</small></div></div>
+          <div class="profile-divider"></div>
+          <div class="profile-stat"><span>Account status</span><b id="profileStatus">Checking</b></div>
+          <div class="profile-stat"><span>Conference room</span><b>Jitsi Meet</b></div>
+          <p class="profile-foot">Your YYC account is used only for meeting scheduling and host controls. Video and audio are handled by the embedded conference service.</p>
+        </section>
+
+        <section class="side-card feature-card">
+          <div class="side-eyebrow">IN THE CALL</div>
+          <h3>Tools for real teamwork.</h3>
+          <div class="feature-list">
+            <div class="feature-line"><span class="feature-icon">◉</span><div><b>Camera & microphone</b><small>Choose devices and mute whenever you need.</small></div></div>
+            <div class="feature-line"><span class="feature-icon">▣</span><div><b>Present your screen</b><small>Share a tab, window or screen where supported.</small></div></div>
+            <div class="feature-line"><span class="feature-icon">☷</span><div><b>Chat & participants</b><small>Keep the conversation and attendee list nearby.</small></div></div>
+            <div class="feature-line"><span class="feature-icon">✦</span><div><b>Collaboration controls</b><small>Captions, raise hand, reactions and backgrounds where enabled.</small></div></div>
+          </div>
+          <div class="feature-foot">Recording, live streaming, capacity, host permissions and some premium controls depend on the conference service plan/configuration.</div>
+        </section>
+
+        <section class="side-card safety-card">
+          <div class="side-eyebrow">MEETING HYGIENE</div>
+          <h3>Keep the room respectful.</h3>
+          <p>Share invite links only with the intended participants. Check your mic and camera before speaking, and never display private member details or passwords during screen sharing.</p>
+        </section>
+      </aside>
+    </section>
+    <footer class="meet-footer"><span>© <span id="meetYear"></span> Yuvakesari Youth Club</span><span>ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</span><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></footer>
+  </main>
+
+  <main class="call-shell" id="callView" hidden>
+    <header class="call-topbar">
+      <div class="call-title-wrap"><span class="call-live-indicator"></span><div><span class="call-kicker">YYC MEET ROOM</span><h1 id="callTitle">Meeting room</h1><p id="callMeetingMeta">Secure invite session</p></div></div>
+      <div class="call-top-actions"><button type="button" class="call-action" id="copyInviteBtn">Copy invite</button><button type="button" class="call-action" id="fullscreenBtn">Fullscreen ⤢</button><button type="button" class="call-action call-leave" id="leaveMeetBtn">Leave meeting ↗</button></div>
+    </header>
+    <div class="call-layout">
+      <section class="video-stage">
+        <div class="video-status"><span id="videoStatusDot"></span><span id="videoStatusText">Connecting to conference…</span></div>
+        <div class="jitsi-mount" id="jitsiMount"></div>
+        <div class="call-error" id="callError" hidden><div class="error-icon">!</div><h2>Conference service unavailable</h2><p id="callErrorText">The embedded video service could not be loaded.</p><a class="meet-btn meet-btn-gold" id="openExternalMeeting" href="#" target="_blank" rel="noopener noreferrer">Open meeting directly ↗</a><button class="meet-btn meet-btn-dark" id="backToDashboardBtn" type="button">Back to YYC Meet</button></div>
+        <div class="call-bottom-note">Your camera and microphone start muted where supported. Use the in-call controls to turn them on.</div>
+      </section>
+      <aside class="call-info-rail">
+        <div class="call-info-card"><div class="side-eyebrow">MEETING DETAILS</div><h2 id="railTitle">Meeting</h2><p id="railDescription">Welcome to the meeting.</p><div class="rail-meta"><span>Host</span><b id="railHost">YYC Host</b></div><div class="rail-meta"><span>Duration</span><b id="railDuration">60 minutes</b></div><div class="rail-meta"><span>Invite code</span><b id="railCode" class="rail-code">—</b></div><button type="button" class="copy-full-btn" id="copyCodeBtn">Copy meeting code</button></div>
+        <div class="call-info-card call-tip-card"><div class="side-eyebrow">QUICK TIP</div><h3>Good to see you.</h3><p>Open the in-call chat to share links and notes. When presenting, share only the tab or window you need.</p></div>
+      </aside>
+    </div>
+  </main>
+
+  <div class="meet-toast" id="meetToast" role="status" aria-live="polite"></div>
+  <script src="./meet.js?v=20261017-01" defer></script>
+</body>
+</html>
