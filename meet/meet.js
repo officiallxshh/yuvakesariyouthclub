@@ -17,7 +17,7 @@
     meetings: [],
     activeMeeting: null,
     api: null,
-attendance state    leaving: false,
+    leaving: false,
     toastTimer: null,
     qualityMode: 'auto',
     qualityTimer: null,
