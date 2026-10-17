@@ -33,3 +33,9 @@
 .attendance-dialog-foot>span{font-size:10px;color:#9ba8a5}
 .meeting-actions .text-action[data-action="attendance"]{border-color:rgba(226,189,112,.25);color:#e8cd90}
 @media(max-width:480px){.attendance-dialog-head,.attendance-list,.attendance-dialog-foot{padding-left:14px;padding-right:14px}.attendance-row{grid-template-columns:1fr}.attendance-time{text-align:left;padding-left:44px}}
+
+.quality-label{display:block;margin:12px 0 7px;font-size:11px;font-weight:800;color:#e7d6ac}
+.quality-select{display:block;width:100%;border:1px solid rgba(226,189,112,.28);border-radius:9px;background:#0a1013;color:#f2f3ed;padding:10px;font:600 11px Inter,system-ui,sans-serif}
+.quality-help{font-size:10px!important;line-height:1.65!important;color:#92a09e!important;margin:10px 0 0!important}
+.call-quality-card .copy-full-btn{white-space:normal;line-height:1.4}
+@media(max-width:760px){.call-quality-card{min-width:0}.quality-select{font-size:12px}}
