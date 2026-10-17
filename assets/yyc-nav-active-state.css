@@ -277,7 +277,7 @@
   background-position: center, center 42% !important;
   background-size: cover, cover !important;
   background-repeat: no-repeat !important;
-  filter: saturate(1.15) contrast(1.06) brightness(1.12) !important;
+  /* Keep the original performance-aware filter from styles.css; no forced compositing here. */
 }
 .hero-vignette {
   z-index: 1 !important;
