@@ -110,6 +110,10 @@
     return String(value || '').toUpperCase().replace(/[^A-F0-9]/g, '');
   }
 
+  function isAdminSession(session) {
+    return !!(session && session.actor && session.actor.kind === 'admin' && session.token);
+  }
+
   function inviteUrl(code) {
     var u = new URL('./', window.location.href);
     u.searchParams.set('join', code);
@@ -142,8 +146,8 @@
 
   function renderMeetings() {
     var root = $('meetingList');
-    if (!state.session) {
-      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">⌑</span><b>Sign in to view your meeting list</b><p>Invite links still work for guest participants.</p></div>';
+    if (!isAdminSession(state.session)) {
+      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">⌑</span><b>Private meetings are not listed here</b><p>Open the exact invite link shared by the YYC administrator.</p></div>';
       return;
     }
     if (!state.meetings.length) {
@@ -175,7 +179,7 @@
   }
 
   function loadMeetings() {
-    if (!state.session) {
+    if (!isAdminSession(state.session)) {
       state.meetings = [];
       renderMeetings();
       return Promise.resolve();
@@ -209,16 +213,21 @@
     return chain.then(function (session) {
       state.session = session;
       setProfile(session);
-      $('loginNeeded').hidden = !!session;
-      $('scheduleForm').hidden = !session;
+      var admin = isAdminSession(session);
+      $('loginNeeded').hidden = admin;
+      $('scheduleForm').hidden = !admin;
+      $('instantMeetBtn').hidden = !admin;
+      $('meetingsPanel').hidden = !admin;
+      $('profileRole').textContent = admin ? 'YYC administrator' : 'Invite-only access · no meeting list';
+      $('profileStatus').textContent = admin ? 'Admin session' : 'Invite access';
       return loadMeetings();
     });
   }
 
   function callLookup(code) {
     var cleaned = cleanCode(code);
-    if (cleaned.length !== 16) {
-      showAlert('A YYC meeting code has 16 characters. Paste the full invite link or enter the complete code.');
+    if (cleaned.length !== 32) {
+      showAlert('A YYC private meeting code has 32 hexadecimal characters. Paste the full invite link or enter the complete code.');
       return Promise.reject(new Error('Invalid meeting code.'));
     }
     return rpc('yyc_meet_lookup', { p_invite_code: cleaned }).then(function (data) {
@@ -282,10 +291,6 @@
     mount.innerHTML = '';
     setCallVisible(true);
     markStatus('Connecting to conference…', false);
-
-    if (state.session) {
-      portal('start', { id: meeting.id }).catch(function () {});
-    }
 
     return loadJitsiScript().then(function () {
       if (state.leaving || !state.activeMeeting) return;
@@ -498,8 +503,12 @@
 
   function goToMeeting(code) {
     return callLookup(code).then(function (meeting) {
-      if (meeting.status === 'ended' || meeting.status === 'cancelled' || !meeting.room_name) {
-        notify('This meeting is no longer active.');
+      if (meeting.status === 'scheduled' || !meeting.room_name) {
+        notify('This meeting has not been started by the YYC Admin yet. Open the same invite after it goes live.');
+        return;
+      }
+      if (meeting.status === 'ended' || meeting.status === 'cancelled') {
+        notify('This meeting has ended or was cancelled.');
         return;
       }
       return startConference(meeting);
@@ -518,14 +527,13 @@
     event.preventDefault();
     var value = $('joinCode').value.trim();
     if (!value) return;
-    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{16})/);
+    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{32})/);
     goToMeeting(fromLink ? fromLink[1] : value);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
-    if (!state.session) {
-      notify('Sign in to YYC first to start a meeting.');
-      window.location.href = '../?yyc_access=member-login';
+    if (!isAdminSession(state.session)) {
+      notify('Only a YYC Admin can start an instant meeting from Admin Panel.');
       return;
     }
     var now = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -550,7 +558,7 @@
 
   $('scheduleForm').addEventListener('submit', function (event) {
     event.preventDefault();
-    if (!state.session) { notify('Sign in to YYC first.'); return; }
+    if (!isAdminSession(state.session)) { notify('Only a YYC Admin can schedule meetings from Admin Panel.'); return; }
     var button = $('scheduleSubmit');
     button.disabled = true;
     button.textContent = 'Scheduling…';
