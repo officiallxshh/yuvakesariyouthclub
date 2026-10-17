@@ -168,7 +168,7 @@ begin
     return jsonb_build_object('ok', true, 'meeting', jsonb_build_object('id', v_meeting.id, 'status', v_meeting.status));
   elsif p_action = 'attendance' then
     select coalesce(jsonb_agg(jsonb_build_object('name', a.display_name, 'kind', a.user_kind, 'joined_at', a.joined_at, 'left_at', a.left_at,
-      'duration_seconds', greatest(0, extract(epoch from (coalesce(a.left_at, a.last_seen_at) - a.joined_at))::integer) order by a.joined_at), '[]'::jsonb)
+      'duration_seconds', greatest(0, extract(epoch from (coalesce(a.left_at, a.last_seen_at) - a.joined_at))::integer)) order by a.joined_at), '[]'::jsonb)
     into v_data from public.yyc_meeting_attendance a where a.meeting_id = v_id;
     return jsonb_build_object('ok', true, 'attendees', v_data);
   end if;
