@@ -12,3 +12,24 @@
 @media(max-width:1000px){.meet-content-grid{grid-template-columns:minmax(0,1fr) 260px;gap:14px}.quick-actions{grid-template-columns:1fr}.call-layout{grid-template-columns:minmax(0,1fr) 230px;padding:12px;gap:12px}.call-topbar{padding:12px 15px}.call-title-wrap h1{font-size:20px}}
 @media(max-width:760px){.meet-topbar{padding:11px 15px}.secure-mark{display:none}.meet-shell{width:calc(100% - 28px)}.meet-hero{padding:33px 0 22px}.meet-hero h1{font-size:clamp(39px,10vw,57px)}.meet-hero p{font-size:12px}.hero-emblem{width:100px;height:100px}.emblem-core{width:62px;height:62px;font-size:19px}.emblem-core span{font-size:6px}.emblem-orbit{inset:3px}.orbit-b{inset:16px}.meet-content-grid{grid-template-columns:1fr;padding-top:17px;gap:17px}.meet-side-column{display:grid;grid-template-columns:1fr 1fr;gap:12px}.profile-card{grid-column:1/-1}.side-card{padding:16px}.feature-card h3,.safety-card h3{font-size:19px}.field-row{grid-template-columns:1fr;gap:0}.meet-panel{padding:17px}.meet-panel h2{font-size:24px}.meeting-card{grid-template-columns:1fr}.meeting-actions{flex-direction:row;flex-wrap:wrap}.meeting-actions .meet-btn{flex:1}.form-foot{align-items:flex-start;flex-direction:column}.form-foot .meet-btn{width:100%}.call-topbar{align-items:flex-start;flex-direction:column}.call-top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr}.call-action{white-space:normal;padding:8px 5px;font-size:9px}.call-layout{display:flex;flex-direction:column;height:auto;min-height:0;padding:9px}.video-stage{height:min(68vh,690px);min-height:450px}.call-info-rail{display:grid;grid-template-columns:1fr 1fr;overflow:visible}.call-info-card{padding:14px}.call-title-wrap h1{max-width:85vw}.call-title-wrap p{max-width:90vw}.meet-footer{gap:11px}}
 @media(max-width:460px){.meet-brand strong{font-size:12px}.meet-brand small{font-size:8px}.back-home{font-size:10px}.hero-emblem{display:none}.hero-traits{gap:6px}.hero-traits span{font-size:9px;padding:5px 8px}.meet-side-column{grid-template-columns:1fr}.profile-card{grid-column:auto}.code-entry{flex-direction:column}.code-entry .meet-btn{width:100%}.login-needed{padding:12px}.meet-footer{font-size:8px}.call-top-actions{grid-template-columns:1fr 1fr}.call-leave{grid-column:1/-1}.video-stage{height:62vh;min-height:400px}.call-info-rail{grid-template-columns:1fr}.call-title-wrap h1{font-size:19px}}
+
+
+.attendance-dialog{width:min(640px,calc(100vw - 28px));max-height:min(82vh,760px);padding:0;border:1px solid rgba(226,189,112,.35);border-radius:16px;background:#0e1519;color:#f5f2eb;box-shadow:0 30px 100px rgba(0,0,0,.7)}
+.attendance-dialog::backdrop{background:rgba(1,4,6,.76);backdrop-filter:blur(6px)}
+.attendance-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:22px 22px 15px;border-bottom:1px solid rgba(255,255,255,.07)}
+.attendance-dialog-head h2{font:400 26px/1.15 "DM Serif Display",Georgia,serif;margin:7px 0 5px}
+.attendance-dialog-head p{font-size:10px;color:#93a09f;margin:0}
+.attendance-close{width:35px;height:35px;border:1px solid rgba(255,255,255,.1);background:#182125;border-radius:10px;color:#f2d69b;font-size:22px}
+.attendance-list{padding:12px 22px;overflow:auto;max-height:calc(82vh - 180px)}
+.attendance-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.attendance-row:last-child{border-bottom:0}
+.attendance-person{display:flex;gap:10px;align-items:center;min-width:0}
+.attendance-person-avatar{width:34px;height:34px;flex-shrink:0;border:1px solid rgba(226,189,112,.25);border-radius:50%;display:grid;place-items:center;background:rgba(226,189,112,.07);color:var(--gold);font-size:13px}
+.attendance-person b{display:block;font-size:11px;overflow-wrap:anywhere}
+.attendance-person small{display:block;font-size:9px;color:#849391;margin-top:3px;text-transform:capitalize}
+.attendance-time{text-align:right;font-size:9px;color:#99a5a3;line-height:1.7;white-space:nowrap}
+.attendance-time b{display:block;color:#d9e0db;font-size:10px}
+.attendance-dialog-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 22px;border-top:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
+.attendance-dialog-foot>span{font-size:10px;color:#9ba8a5}
+.meeting-actions .text-action[data-action="attendance"]{border-color:rgba(226,189,112,.25);color:#e8cd90}
+@media(max-width:480px){.attendance-dialog-head,.attendance-list,.attendance-dialog-foot{padding-left:14px;padding-right:14px}.attendance-row{grid-template-columns:1fr}.attendance-time{text-align:left;padding-left:44px}}
