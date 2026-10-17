@@ -129,7 +129,7 @@
     if (!state.session || !state.session.actor || !meeting) return false;
     var actor = state.session.actor;
     if (actor.kind === 'admin') return true;
-    return actor.kind === meeting.host_kind && actor.name && actor.name === meeting.host_name;
+    return actor.kind === meeting.host_kind && actor.id && meeting.host_id && actor.id === meeting.host_id;
   }
 
   function statusLabel(status) {
