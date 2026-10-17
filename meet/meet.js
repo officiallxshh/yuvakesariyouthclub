@@ -16,7 +16,12 @@
     attendeeKey: null,
     attendanceSent: false,
     leaving: false,
-    toastTimer: null
+    toastTimer: null,
+    qualityMode: 'auto',
+    qualityTimer: null,
+    qualityBadSamples: 0,
+    qualityGoodSamples: 0,
+    appliedQuality: 720
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -110,6 +115,10 @@
     return String(value || '').toUpperCase().replace(/[^A-F0-9]/g, '');
   }
 
+  function isAdminSession(session) {
+    return !!(session && session.actor && session.actor.kind === 'admin' && session.token);
+  }
+
   function inviteUrl(code) {
     var u = new URL('./', window.location.href);
     u.searchParams.set('join', code);
@@ -142,8 +151,8 @@
 
   function renderMeetings() {
     var root = $('meetingList');
-    if (!state.session) {
-      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">⌑</span><b>Sign in to view your meeting list</b><p>Invite links still work for guest participants.</p></div>';
+    if (!isAdminSession(state.session)) {
+      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">⌑</span><b>Private meetings are not listed here</b><p>Open the exact invite link shared by the YYC administrator.</p></div>';
       return;
     }
     if (!state.meetings.length) {
@@ -175,7 +184,7 @@
   }
 
   function loadMeetings() {
-    if (!state.session) {
+    if (!isAdminSession(state.session)) {
       state.meetings = [];
       renderMeetings();
       return Promise.resolve();
@@ -209,16 +218,21 @@
     return chain.then(function (session) {
       state.session = session;
       setProfile(session);
-      $('loginNeeded').hidden = !!session;
-      $('scheduleForm').hidden = !session;
+      var admin = isAdminSession(session);
+      $('loginNeeded').hidden = admin;
+      $('scheduleForm').hidden = !admin;
+      $('instantMeetBtn').hidden = !admin;
+      $('meetingsPanel').hidden = !admin;
+      $('profileRole').textContent = admin ? 'YYC administrator' : 'Invite-only access · no meeting list';
+      $('profileStatus').textContent = admin ? 'Admin session' : 'Invite access';
       return loadMeetings();
     });
   }
 
   function callLookup(code) {
     var cleaned = cleanCode(code);
-    if (cleaned.length !== 16) {
-      showAlert('A YYC meeting code has 16 characters. Paste the full invite link or enter the complete code.');
+    if (cleaned.length !== 32) {
+      showAlert('A YYC private meeting code has 32 hexadecimal characters. Paste the full invite link or enter the complete code.');
       return Promise.reject(new Error('Invalid meeting code.'));
     }
     return rpc('yyc_meet_lookup', { p_invite_code: cleaned }).then(function (data) {
@@ -257,6 +271,89 @@
     $('videoStatusDot').style.background = isLive ? '#8bcea8' : '#d9b770';
   }
 
+  function updateQualityStatus(text) {
+    var node = $('qualityStatus');
+    if (node) node.textContent = text;
+  }
+
+  function stopQualityMonitoring() {
+    if (state.qualityTimer) window.clearInterval(state.qualityTimer);
+    state.qualityTimer = null;
+    state.qualityBadSamples = 0;
+    state.qualityGoodSamples = 0;
+  }
+
+  function setConferenceQuality(height, reason) {
+    if (!state.api || typeof state.api.executeCommand !== 'function') return;
+    try {
+      state.api.executeCommand('setVideoQuality', Number(height));
+      state.appliedQuality = Number(height);
+      if (reason) updateQualityStatus(reason);
+    } catch (_) {
+      updateQualityStatus('Adaptive video is managed by the conference service. Camera-off can help when bandwidth is limited.');
+    }
+  }
+
+  function beginQualityMonitoring(api) {
+    stopQualityMonitoring();
+    state.qualityMode = 'auto';
+    state.appliedQuality = 720;
+    state.qualityBadSamples = 0;
+    state.qualityGoodSamples = 0;
+    if ($('videoQualitySelect')) $('videoQualitySelect').value = 'auto';
+    updateQualityStatus('Adaptive mode is active · checking connection quality…');
+
+    function sample() {
+      if (!api || state.api !== api || state.leaving || state.qualityMode !== 'auto') return;
+      if (typeof api.getConnectionStats !== 'function') {
+        updateQualityStatus('Adaptive video is active in the conference service. Choose 360p or 180p if video stutters.');
+        return;
+      }
+      Promise.resolve(api.getConnectionStats()).then(function (stats) {
+        if (state.api !== api || state.leaving || state.qualityMode !== 'auto' || !stats) return;
+        var quality = Number(stats.connectionQuality);
+        if (!Number.isFinite(quality)) {
+          updateQualityStatus('Adaptive video is active · live connection measurements are unavailable.');
+          return;
+        }
+        var target = state.appliedQuality || 720;
+        if (quality < 22) target = 180;
+        else if (quality < 48) target = 360;
+        else if (quality >= 72) target = 720;
+
+        if (target < (state.appliedQuality || 720)) {
+          state.qualityBadSamples += 1;
+          state.qualityGoodSamples = 0;
+          if (state.qualityBadSamples >= 2) {
+            setConferenceQuality(target, 'Weak connection (' + Math.round(quality) + '/100) · reducing video to ' + target + 'p to help preserve audio. Switch off the camera if audio also struggles.');
+            state.qualityBadSamples = 0;
+          } else {
+            updateQualityStatus('Connection is fluctuating (' + Math.round(quality) + '/100) · adaptive video is monitoring before changing resolution.');
+          }
+        } else if (target > (state.appliedQuality || 720)) {
+          state.qualityGoodSamples += 1;
+          state.qualityBadSamples = 0;
+          if (state.qualityGoodSamples >= 3) {
+            setConferenceQuality(720, 'Connection recovered (' + Math.round(quality) + '/100) · video quality has been raised to 720p adaptive mode.');
+            state.qualityGoodSamples = 0;
+          } else {
+            updateQualityStatus('Connection improving (' + Math.round(quality) + '/100) · waiting for stability before raising video quality.');
+          }
+        } else {
+          state.qualityBadSamples = 0;
+          state.qualityGoodSamples = 0;
+          updateQualityStatus('Connection quality ' + Math.round(quality) + '/100 · adaptive video target up to ' + (state.appliedQuality || 720) + 'p. Audio remains available if video is reduced.');
+        }
+      }).catch(function () {
+        if (state.api === api && state.qualityMode === 'auto') {
+          updateQualityStatus('Adaptive video is active in the conference service. Choose 360p or 180p if video stutters.');
+        }
+      });
+    }
+    sample();
+    state.qualityTimer = window.setInterval(sample, 12000);
+  }
+
   function startConference(meeting) {
     if (!meeting || !meeting.room_name) {
       notify('This meeting does not have an active room yet.');
@@ -283,10 +380,6 @@
     setCallVisible(true);
     markStatus('Connecting to conference…', false);
 
-    if (state.session) {
-      portal('start', { id: meeting.id }).catch(function () {});
-    }
-
     return loadJitsiScript().then(function () {
       if (state.leaving || !state.activeMeeting) return;
       var displayName = meetingDisplayName();
@@ -304,6 +397,14 @@
           startWithAudioMuted: true,
           startWithVideoMuted: true,
           requireDisplayName: true,
+          resolution: 720,
+          maxFullResolutionParticipants: 3,
+          disableSimulcast: false,
+          videoQuality: {
+            enableAdaptiveMode: true,
+            codecPreferenceOrder: ['VP8', 'H264', 'VP9'],
+            mobileCodecPreferenceOrder: ['VP8', 'H264']
+          },
           lobby: { enabled: !!meeting.waiting_room },
           toolbarButtons: [
             'microphone', 'camera', 'desktop', 'chat', 'raisehand',
@@ -323,6 +424,7 @@
         }
       });
       state.api = api;
+      beginQualityMonitoring(api);
       api.addListener('videoConferenceJoined', function (event) {
         markStatus('Connected · ' + (event && event.displayName ? event.displayName : 'You are in the room'), true);
         if (!state.attendanceSent) {
@@ -452,6 +554,7 @@
     if (state.leaving) return;
     state.leaving = true;
     if (state.activeMeeting) recordAttendance('leave');
+    stopQualityMonitoring();
     if (state.api) {
       try { state.api.dispose(); } catch (_) {}
     }
@@ -498,8 +601,12 @@
 
   function goToMeeting(code) {
     return callLookup(code).then(function (meeting) {
-      if (meeting.status === 'ended' || meeting.status === 'cancelled' || !meeting.room_name) {
-        notify('This meeting is no longer active.');
+      if (meeting.status === 'scheduled' || !meeting.room_name) {
+        notify('This meeting has not been started by the YYC Admin yet. Open the same invite after it goes live.');
+        return;
+      }
+      if (meeting.status === 'ended' || meeting.status === 'cancelled') {
+        notify('This meeting has ended or was cancelled.');
         return;
       }
       return startConference(meeting);
@@ -518,14 +625,13 @@
     event.preventDefault();
     var value = $('joinCode').value.trim();
     if (!value) return;
-    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{16})/);
+    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{32})/);
     goToMeeting(fromLink ? fromLink[1] : value);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
-    if (!state.session) {
-      notify('Sign in to YYC first to start a meeting.');
-      window.location.href = '../?yyc_access=member-login';
+    if (!isAdminSession(state.session)) {
+      notify('Only a YYC Admin can start an instant meeting from Admin Panel.');
       return;
     }
     var now = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -550,7 +656,7 @@
 
   $('scheduleForm').addEventListener('submit', function (event) {
     event.preventDefault();
-    if (!state.session) { notify('Sign in to YYC first.'); return; }
+    if (!isAdminSession(state.session)) { notify('Only a YYC Admin can schedule meetings from Admin Panel.'); return; }
     var button = $('scheduleSubmit');
     button.disabled = true;
     button.textContent = 'Scheduling…';
@@ -627,6 +733,27 @@
     if (event.target === $('attendanceDialog')) $('attendanceDialog').close();
   });
   $('exportAttendanceBtn').addEventListener('click', exportAttendanceCsv);
+
+  $('videoQualitySelect').addEventListener('change', function () {
+    var value = $('videoQualitySelect').value;
+    if (value === 'auto') {
+      beginQualityMonitoring(state.api);
+      return;
+    }
+    state.qualityMode = 'manual';
+    state.qualityBadSamples = 0;
+    state.qualityGoodSamples = 0;
+    if (state.qualityTimer) window.clearInterval(state.qualityTimer);
+    state.qualityTimer = null;
+    var height = Number(value);
+    var reason = height === 720
+      ? 'Manual 720p selected · if the connection struggles, return to Adaptive or choose 360p.'
+      : 'Manual ' + height + 'p selected · reduced video bandwidth may help preserve audio.';
+    setConferenceQuality(height, reason);
+  });
+  $('audioOnlyHintBtn').addEventListener('click', function () {
+    notify('Open the in-call toolbar and turn Camera off. Audio uses less bandwidth and may stay clearer on a very weak connection.');
+  });
 
   $('copyInviteBtn').addEventListener('click', function () {
     if (state.activeMeeting) copyText(inviteUrl(state.activeMeeting.invite_code), 'Meeting invite link copied.');
