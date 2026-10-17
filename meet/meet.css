@@ -39,3 +39,58 @@
 .quality-help{font-size:10px!important;line-height:1.65!important;color:#92a09e!important;margin:10px 0 0!important}
 .call-quality-card .copy-full-btn{white-space:normal;line-height:1.4}
 @media(max-width:760px){.call-quality-card{min-width:0}.quality-select{font-size:12px}}
+
+
+/* Build 17: the public homepage is the participant-facing Meet screen.
+   Admin Panel is the private room-creation and start/end console. */
+html.home-embedded,
+html.home-embedded body,
+html.admin-embedded,
+html.admin-embedded body{background:#080b0e;min-height:0}
+html.home-embedded body,
+html.admin-embedded body{overflow-x:hidden}
+html.home-embedded .meet-ambient,
+html.admin-embedded .meet-ambient{display:none}
+html.home-embedded .meet-topbar,
+html.home-embedded .meet-hero,
+html.home-embedded .meet-footer,
+html.home-embedded .meet-side-column,
+html.home-embedded #schedulePanel,
+html.home-embedded #meetingsPanel,
+html.admin-embedded .meet-topbar,
+html.admin-embedded .meet-hero,
+html.admin-embedded .meet-footer,
+html.admin-embedded .meet-side-column,
+html.admin-embedded .quick-panel{display:none!important}
+html.home-embedded .meet-shell,
+html.admin-embedded .meet-shell{width:100%;max-width:none;margin:0;padding:0}
+html.home-embedded .meet-content-grid,
+html.admin-embedded .meet-content-grid{display:block;padding:0;margin:0}
+html.home-embedded .meet-main-column,
+html.admin-embedded .meet-main-column{width:100%;gap:14px}
+html.home-embedded .quick-panel{margin:0;padding:clamp(16px,3vw,28px);border-radius:16px;box-shadow:none}
+html.home-embedded .quick-panel h2{font-size:clamp(22px,3.6vw,30px);margin:7px 0 8px}
+html.home-embedded .quick-panel .panel-intro{margin-bottom:16px}
+html.home-embedded .quick-actions{display:block}
+html.home-embedded #instantMeetBtn,
+html.home-embedded #schedulePanel,
+html.home-embedded #meetingsPanel{display:none!important}
+html.home-embedded .join-code-form{width:100%;max-width:none}
+html.home-embedded .join-code-form>label:first-child{display:block;color:var(--gold);font-weight:700;margin-bottom:8px}
+html.home-embedded .code-entry{grid-template-columns:minmax(0,1fr) auto}
+html.home-embedded .meet-alert{margin:0 0 12px}
+html.home-embedded .call-shell{min-height:720px}
+html.home-embedded .call-layout{min-height:630px}
+html.admin-embedded .schedule-panel{margin-top:0}
+html.admin-embedded #schedulePanel,
+html.admin-embedded #meetingsPanel{margin:0 0 14px}
+html.admin-embedded .schedule-form{max-width:none}
+html.admin-embedded .meet-alert{margin:0 0 12px}
+@media(max-width:700px){
+  html.home-embedded .call-shell{min-height:760px}
+  html.home-embedded .call-layout{min-height:680px}
+  html.home-embedded .call-topbar{align-items:flex-start;flex-wrap:wrap;padding:12px}
+  html.home-embedded .call-top-actions{display:flex;flex-wrap:wrap}
+  html.home-embedded .code-entry{grid-template-columns:minmax(0,1fr) auto}
+  html.admin-embedded .meet-shell{font-size:13px}
+}
