@@ -158,6 +158,7 @@
       var joinDisabled = status === 'ended' || status === 'cancelled';
       var actions = '<button type="button" class="meet-btn meet-btn-gold" data-action="join" data-code="' + safeText(m.invite_code) + '"' + (joinDisabled ? ' disabled' : '') + '>' + (status === 'live' ? 'Join live room ↗' : 'Join room ↗') + '</button>';
       if (m.invite_code) actions += '<button type="button" class="text-action" data-action="copy" data-code="' + safeText(m.invite_code) + '">Copy invite</button>';
+      if (canManage) actions += '<button type="button" class="text-action" data-action="attendance" data-id="' + safeText(m.id) + '">Attendance / CSV</button>';
       if (canManage && status !== 'cancelled' && status !== 'ended') {
         actions += '<button type="button" class="text-action" data-action="manage-start" data-id="' + safeText(m.id) + '">Mark live</button>';
         actions += '<button type="button" class="text-action" data-action="manage-end" data-id="' + safeText(m.id) + '">End</button>';
@@ -306,11 +307,12 @@
           lobby: { enabled: !!meeting.waiting_room },
           toolbarButtons: [
             'microphone', 'camera', 'desktop', 'chat', 'raisehand',
-            'participants-pane', 'tileview', 'select-background',
+            'participants-pane', 'tileview', 'videobackground',
             'closedcaptions', 'settings', 'hangup', 'fullscreen',
             'shortcuts', 'help', 'invite', 'videoquality', 'filmstrip',
-            'reactions', 'noisesuppression', 'audio-mode', 'security',
-            'mute-everyone', 'whiteboard', 'sharedvideo'
+            'reactions', 'noisesuppression', 'security', 'mute-everyone',
+            'whiteboard', 'sharedvideo', 'recording', 'livestreaming',
+            'etherpad', 'feedback', 'stats', 'download'
           ]
         },
         interfaceConfigOverwrite: {
@@ -368,6 +370,71 @@
     if (!value && state.session && state.session.actor) value = String(state.session.actor.name || '').trim();
     value = value.slice(0, 80);
     return value || 'YYC Guest';
+  }
+
+  function formatDuration(seconds) {
+    var total = Math.max(0, Number(seconds) || 0);
+    var hours = Math.floor(total / 3600);
+    var minutes = Math.floor((total % 3600) / 60);
+    var remainder = total % 60;
+    if (hours) return hours + 'h ' + minutes + 'm';
+    if (minutes) return minutes + 'm ' + remainder + 's';
+    return remainder + 's';
+  }
+
+  function showAttendanceReport(meeting, attendees) {
+    var dialog = $('attendanceDialog');
+    var root = $('attendanceList');
+    var list = Array.isArray(attendees) ? attendees : [];
+    dialog._yycMeetingTitle = String(meeting.title || 'YYC Meeting');
+    dialog._yycAttendanceRows = list.map(function (person) {
+      return {
+        name: String(person.name || 'Guest').slice(0, 80),
+        kind: String(person.kind || 'guest'),
+        joined_at: person.joined_at || '',
+        left_at: person.left_at || '',
+        duration_seconds: Math.max(0, Number(person.duration_seconds) || 0)
+      };
+    });
+    $('attendanceDialogTitle').textContent = meeting.title || 'Meeting attendance';
+    $('attendanceMeetingSubtitle').textContent = 'Join records and time in meeting · ' + formatDate(meeting.starts_at);
+    $('attendanceSummary').textContent = list.length + (list.length === 1 ? ' attendance record' : ' attendance records');
+    $('exportAttendanceBtn').disabled = list.length === 0;
+    if (!list.length) {
+      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">◷</span><b>No attendance records yet</b><p>Names will appear here after participants join the call.</p></div>';
+    } else {
+      root.innerHTML = dialog._yycAttendanceRows.map(function (person, index) {
+        return '<div class="attendance-row">' +
+          '<div class="attendance-person"><span class="attendance-person-avatar">' + safeText((person.name.trim().charAt(0) || 'G').toUpperCase()) + '</span><div><b>' + safeText(person.name) + '</b><small>' + safeText(person.kind) + '</small></div></div>' +
+          '<div class="attendance-time"><span>Joined · ' + safeText(person.joined_at ? formatDate(person.joined_at) : '—') + '</span><span>Left · ' + safeText(person.left_at ? formatDate(person.left_at) : 'Still in room / no leave signal') + '</span><b>Duration · ' + safeText(formatDuration(person.duration_seconds)) + '</b></div>' +
+        '</div>';
+      }).join('');
+    }
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else notify('Your browser does not support opening the attendance report. Please update the browser.');
+  }
+
+  function exportAttendanceCsv() {
+    var dialog = $('attendanceDialog');
+    var rows = dialog._yycAttendanceRows || [];
+    if (!rows.length) return;
+    var columns = ['name', 'kind', 'joined_at', 'left_at', 'duration_seconds'];
+    var csvCell = function (value) {
+      var v = String(value == null ? '' : value);
+      return '"' + v.replace(/"/g, '""') + '"';
+    };
+    var csv = [columns].concat(rows.map(function (row) { return columns.map(function (key) { return row[key]; }); }))
+      .map(function (row) { return row.map(csvCell).join(','); }).join('\r\n');
+    var blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'yyc-meet-attendance-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    notify('Attendance CSV exported.');
   }
 
   function recordAttendance(action) {
@@ -525,7 +592,13 @@
     var id = button.getAttribute('data-id');
     if (action === 'join') goToMeeting(code);
     else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
-    else if (action === 'cancel') {
+    else if (action === 'attendance') {
+      var selectedMeeting = state.meetings.find(function (item) { return item.id === id; });
+      portal('attendance', { id: id }).then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.message) || 'Attendance is available to the host and YYC administrators only.');
+        showAttendanceReport(selectedMeeting || { title: 'YYC Meeting' }, Array.isArray(data.attendees) ? data.attendees : []);
+      }).catch(function (err) { notify((err && err.message) || 'Could not load meeting attendance.'); });
+    } else if (action === 'cancel') {
       if (!window.confirm('Cancel this meeting? Its invite will no longer open the room.')) return;
       portal('cancel', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only the host or a YYC admin can cancel this meeting.');
@@ -548,6 +621,12 @@
       window.setTimeout(function () { $('refreshMeetingsBtn').style.transform = ''; }, 250);
     });
   });
+
+  $('closeAttendanceDialog').addEventListener('click', function () { $('attendanceDialog').close(); });
+  $('attendanceDialog').addEventListener('click', function (event) {
+    if (event.target === $('attendanceDialog')) $('attendanceDialog').close();
+  });
+  $('exportAttendanceBtn').addEventListener('click', exportAttendanceCsv);
 
   $('copyInviteBtn').addEventListener('click', function () {
     if (state.activeMeeting) copyText(inviteUrl(state.activeMeeting.invite_code), 'Meeting invite link copied.');
