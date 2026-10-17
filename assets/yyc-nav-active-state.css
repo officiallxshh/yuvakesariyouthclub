@@ -333,3 +333,12 @@
   .hero-photo { animation: none !important; transition: none !important; }
   .topbar > .desktop-nav > a.nav-link::before { transition: none !important; transform: none !important; }
 }
+
+
+/* ===== LOW-DATA / REDUCED-MOTION OVERRIDE =====
+/* Preserve the site's adaptive performance safeguards over the cosmetic hero lift. */
+body.yyc-low-data .hero-photo,
+body.yyc-reduced-motion .hero-photo {
+  filter: none !important;
+  will-change: auto !important;
+}
