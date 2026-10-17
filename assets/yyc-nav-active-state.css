@@ -335,7 +335,7 @@
 }
 
 
-/* ===== LOW-DATA / REDUCED-MOTION OVERRIDE =====
+/* ===== LOW-DATA / REDUCED-MOTION OVERRIDE ===== */
 /* Preserve the site's adaptive performance safeguards over the cosmetic hero lift. */
 body.yyc-low-data .hero-photo,
 body.yyc-reduced-motion .hero-photo {
