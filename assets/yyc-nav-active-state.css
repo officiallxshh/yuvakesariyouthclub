@@ -102,3 +102,86 @@
     transform: none !important;
   }
 }
+
+
+/* ===== YYC RESPONSIVE HEADER FIT ===== */
+/* YYC header fit — prevent brand and first navigation tab from colliding.
+   Wide desktops keep the full navigation on one row. Compact desktop widths use
+   the existing hamburger menu instead of forcing all tabs into an undersized row. */
+
+@media (min-width: 1800px) {
+  .topbar { height: 76px; padding: 0 22px 0 28px; gap: 0; }
+  .topbar > .brand {
+    box-sizing: border-box; width: 340px !important; min-width: 340px !important;
+    max-width: 340px; flex: 0 0 340px !important; gap: 10px; margin-right: 8px;
+  }
+  .topbar > .brand .brand-mark { width: 50px; height: 50px; flex: 0 0 50px; }
+  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
+  .topbar > .brand .brand-type { min-width: 0; overflow: visible; }
+  .topbar > .brand .brand-type b {
+    display: block; font-size: 27px !important; letter-spacing: .12em !important;
+    line-height: 1; white-space: nowrap;
+  }
+  .topbar > .brand .brand-type small {
+    display: block; font-size: 8.5px !important; letter-spacing: .38em !important;
+    margin-top: 6px !important; white-space: nowrap;
+  }
+  .topbar > .desktop-nav {
+    min-width: 0; flex: 1 1 auto; justify-content: space-between; gap: 0; overflow: visible;
+  }
+  .topbar > .desktop-nav > a.nav-link {
+    box-sizing: border-box; flex: 0 1 auto; min-width: 0; height: 42px;
+    padding-left: 5px !important; padding-right: 5px !important; gap: 4px;
+    font-size: 10.5px !important; white-space: nowrap;
+  }
+  .topbar > .desktop-nav > a.nav-link .nav-icon { font-size: 12px; flex: 0 0 auto; }
+  .topbar > .desktop-nav > .nav-admin {
+    flex: 0 1 auto; min-width: 0; height: 42px;
+    padding-left: 9px !important; padding-right: 9px !important;
+    margin-left: 1px !important; gap: 4px; font-size: 9.5px !important; white-space: nowrap;
+  }
+  .topbar > .desktop-nav > .nav-admin span { flex: 0 0 auto; }
+}
+
+@media (min-width: 981px) and (max-width: 1799px) {
+  .topbar { height: 76px; padding: 0 24px; gap: 12px; }
+  .topbar > .brand {
+    min-width: 0 !important; width: auto !important; max-width: calc(100% - 64px);
+    flex: 0 1 auto !important; gap: 10px;
+  }
+  .topbar > .brand .brand-mark { width: 50px; height: 50px; flex: 0 0 50px; }
+  .topbar > .brand .brand-mark img { width: 45px; height: 45px; }
+  .topbar > .brand .brand-type { min-width: 0; }
+  .topbar > .brand .brand-type b {
+    font-size: clamp(21px, 1.55vw, 27px) !important;
+    letter-spacing: .1em !important; white-space: nowrap;
+  }
+  .topbar > .brand .brand-type small {
+    font-size: 8px !important; letter-spacing: .32em !important; white-space: nowrap;
+  }
+  .topbar > .desktop-nav { display: none !important; }
+  .topbar > .menu-btn {
+    display: block !important; flex: 0 0 44px; margin-left: auto;
+    position: relative; z-index: 1002;
+  }
+  .mobile-panel {
+    display: flex !important; position: fixed; top: 76px; left: 12px; right: 12px;
+    z-index: 1001; flex-direction: column; gap: 5px; padding: 12px;
+    max-height: calc(100svh - 88px); overflow: auto; -webkit-overflow-scrolling: touch;
+    background: rgba(6, 10, 13, .97); border: 1px solid rgba(237, 195, 107, .2);
+    border-radius: 18px; backdrop-filter: blur(12px);
+    box-shadow: var(--shadow, 0 24px 80px rgba(0,0,0,.52));
+    transform: translateY(-12px); opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
+  }
+  .mobile-panel.open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; }
+  .mobile-panel a {
+    min-height: 44px; padding: 12px; display: flex; align-items: center; gap: 10px;
+    border-radius: 11px; color: #ddd3c0;
+  }
+  .mobile-panel a:hover, .mobile-panel a:focus-visible { background: rgba(237, 193, 104, .1); }
+  .mobile-panel .nav-admin.full {
+    width: 100%; min-height: 46px; margin: 0; justify-content: flex-start;
+  }
+}
+@media (prefers-reduced-motion: reduce) { .mobile-panel { transition: none; } }
