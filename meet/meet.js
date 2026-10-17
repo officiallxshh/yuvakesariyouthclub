@@ -1,6 +1,10 @@
 (function () {
   'use strict';
 
+  var routeParams = new URLSearchParams(window.location.search);
+  var homeEmbed = routeParams.get('home_embed') === '1';
+  var adminEmbed = routeParams.get('admin_embed') === '1';
+
   var SUPABASE_URL = 'https://vrllozfzheikjbhxvpkx.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_t8IqzrrcnMozqVPc252cjg_n5pBp_Pt';
   var TOKEN_KEYS = [
@@ -120,7 +124,8 @@
   }
 
   function inviteUrl(code) {
-    var u = new URL('./', window.location.href);
+    var u = new URL('../', window.location.href);
+    u.hash = 'meet';
     u.searchParams.set('join', code);
     return u.href;
   }
@@ -165,13 +170,13 @@
       var desc = String(m.description || '').trim();
       var codeText = m.invite_code ? 'Code ' + m.invite_code : '';
       var joinDisabled = status === 'ended' || status === 'cancelled';
-      var actions = '<button type="button" class="meet-btn meet-btn-gold" data-action="join" data-code="' + safeText(m.invite_code) + '"' + (joinDisabled ? ' disabled' : '') + '>' + (status === 'live' ? 'Join live room ↗' : 'Join room ↗') + '</button>';
+      var actions = adminEmbed ? '' : '<button type="button" class="meet-btn meet-btn-gold" data-action="join" data-code="' + safeText(m.invite_code) + '"' + (joinDisabled ? ' disabled' : '') + '>' + (status === 'live' ? 'Join live room ↗' : 'Join room ↗') + '</button>';
       if (m.invite_code) actions += '<button type="button" class="text-action" data-action="copy" data-code="' + safeText(m.invite_code) + '">Copy invite</button>';
-      if (canManage) actions += '<button type="button" class="text-action" data-action="attendance" data-id="' + safeText(m.id) + '">Attendance / CSV</button>';
+      if (canManage && !adminEmbed) actions += '<button type="button" class="text-action" data-action="attendance" data-id="' + safeText(m.id) + '">Attendance / CSV</button>';
       if (canManage && status !== 'cancelled' && status !== 'ended') {
-        actions += '<button type="button" class="text-action" data-action="manage-start" data-id="' + safeText(m.id) + '">Mark live</button>';
+        if (status !== 'live') actions += '<button type="button" class="text-action" data-action="manage-start" data-id="' + safeText(m.id) + '">Start</button>';
         actions += '<button type="button" class="text-action" data-action="manage-end" data-id="' + safeText(m.id) + '">End</button>';
-        actions += '<button type="button" class="text-action" data-action="cancel" data-id="' + safeText(m.id) + '">Cancel</button>';
+        if (!adminEmbed) actions += '<button type="button" class="text-action" data-action="cancel" data-id="' + safeText(m.id) + '">Cancel</button>';
       }
       return '<article class="meeting-card" style="animation-delay:' + Math.min(index * 40, 240) + 'ms">' +
         '<div class="meeting-card-content">' +
@@ -184,7 +189,7 @@
   }
 
   function loadMeetings() {
-    if (!isAdminSession(state.session)) {
+    if (homeEmbed || !isAdminSession(state.session)) {
       state.meetings = [];
       renderMeetings();
       return Promise.resolve();
@@ -219,13 +224,14 @@
       state.session = session;
       setProfile(session);
       var admin = isAdminSession(session);
-      $('loginNeeded').hidden = admin;
-      $('scheduleForm').hidden = !admin;
-      $('instantMeetBtn').hidden = !admin;
-      $('meetingsPanel').hidden = !admin;
+      $('loginNeeded').hidden = admin || homeEmbed;
+      $('scheduleForm').hidden = !admin || homeEmbed;
+      $('instantMeetBtn').hidden = !admin || homeEmbed;
+      $('schedulePanel').hidden = homeEmbed;
+      $('meetingsPanel').hidden = !admin || homeEmbed;
       $('profileRole').textContent = admin ? 'YYC administrator' : 'Invite-only access · no meeting list';
       $('profileStatus').textContent = admin ? 'Admin session' : 'Invite access';
-      return loadMeetings();
+      return loadMeetings().then(function () { notifyHomeFrameHeight(); });
     });
   }
 
@@ -259,11 +265,23 @@
     return window.__yycMeetJitsiPromise;
   }
 
+  function notifyHomeFrameHeight() {
+    if (!homeEmbed || window.parent === window) return;
+    var height;
+    if (callView && !callView.hidden) {
+      height = Math.max(760, Math.ceil(window.innerHeight * 1.08));
+    } else {
+      height = Math.max(420, Math.ceil((dashboard ? dashboard.scrollHeight : 420) + 20));
+    }
+    try { window.parent.postMessage({ type: 'yyc-meet-frame-height', height: height }, window.location.origin); } catch (_) {}
+  }
+
   function setCallVisible(isVisible) {
     dashboard.hidden = !!isVisible;
     callView.hidden = !isVisible;
     document.body.classList.toggle('in-call', !!isVisible);
     window.scrollTo({ top: 0, behavior: 'instant' });
+    window.setTimeout(notifyHomeFrameHeight, 80);
   }
 
   function markStatus(text, isLive) {
@@ -716,6 +734,10 @@
       if (!scheduledMeeting) { notify('Refresh the meeting list and try again.'); return; }
       portal('start', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can start this meeting.');
+        if (adminEmbed) {
+          notify('Meeting is live. Copy its private invite and join from the Meet section on the homepage.');
+          return loadMeetings();
+        }
         notify('Meeting is live. Opening the host room…');
         return callLookup(scheduledMeeting.invite_code).then(function (fullMeeting) {
           return loadMeetings().then(function () { startConference(fullMeeting); });
@@ -774,6 +796,11 @@
     if (window.confirm('Leave this meeting now?')) leaveConference(true);
   });
   $('backToDashboardBtn').addEventListener('click', function () { leaveConference(false); });
+
+  window.addEventListener('resize', notifyHomeFrameHeight);
+  window.addEventListener('message', function (event) {
+    if (event.origin === window.location.origin && event.source === window.parent && event.data && event.data.type === 'yyc-meet-request-height') notifyHomeFrameHeight();
+  });
 
   window.addEventListener('pagehide', function () {
     if (state.activeMeeting && state.attendeeKey && state.api) {
