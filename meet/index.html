@@ -53,6 +53,7 @@
             <button class="meet-btn meet-btn-gold" id="instantMeetBtn" type="button"><span class="btn-symbol">↗</span><span><b>Start instant meeting</b><small>Create a private room now</small></span></button>
             <form class="join-code-form" id="joinCodeForm">
               <label for="joinCode">Have a meeting code?</label>
+              <label class="join-name-field" for="participantName">Your display name <span class="optional-label">OPTIONAL</span><input id="participantName" type="text" maxlength="80" autocomplete="name" placeholder="Name shown to other participants"></label>
               <div class="code-entry"><input id="joinCode" name="joinCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Paste your YYC invite code" aria-describedby="joinCodeHelp" required><button type="submit" class="meet-btn meet-btn-dark">Join <span>→</span></button></div>
               <small id="joinCodeHelp">You can also open a meeting invite link directly.</small>
             </form>
