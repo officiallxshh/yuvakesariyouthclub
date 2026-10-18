@@ -589,34 +589,39 @@
     node.remove();
   }
 
-  function goToMeeting(code) {
-    // Avoid starting Jitsi inside homepage -> Meet -> Jitsi nested iframes.
-    // The full-page Meet view opens in this same tab so the conference UI can render normally.
-    if (homeEmbed && window.parent !== window) {
-      var fullCode = extractInviteCode(code);
-      if (!fullCode) {
-        showAlert('Paste the full invite link or its 32-character private invite code.');
-        return Promise.resolve();
-      }
-      var standaloneUrl = new URL('./', window.location.href);
-      standaloneUrl.hash = '';
-      standaloneUrl.searchParams.set('join', fullCode);
-      window.top.location.assign(standaloneUrl.href);
-      return Promise.resolve();
+  function closeJoinWindow(joinWindow) {
+    if (joinWindow && !joinWindow.closed) {
+      try { joinWindow.close(); } catch (_) {}
     }
+  }
+
+  function openDirectConference(meeting, joinWindow) {
+    var directUrl = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
+    if (joinWindow && !joinWindow.closed) {
+      try { joinWindow.opener = null; } catch (_) {}
+      joinWindow.location.replace(directUrl);
+      return;
+    }
+    // A copied invite opened directly has no click event to open a new tab.
+    // Validate it first, then navigate to Jitsi's native meeting interface.
+    if (homeEmbed && window.parent !== window) window.top.location.assign(directUrl);
+    else window.location.replace(directUrl);
+  }
+
+  function goToMeeting(code, joinWindow) {
     return callLookup(code).then(function (meeting) {
-      if (meeting.status === 'scheduled' || !meeting.room_name) {
-        notify('This meeting has not been started by the YYC Admin yet. Open the same invite after it goes live.');
+      if (meeting.status !== 'live' || !meeting.room_name) {
+        closeJoinWindow(joinWindow);
+        notify('The YYC Admin must start this meeting before anyone can join. Please try the same invite after it goes live.');
         return;
       }
-      if (meeting.status === 'ended' || meeting.status === 'cancelled') {
-        notify('This meeting has ended or was cancelled.');
-        return;
-      }
-      return startConference(meeting);
+      // Use Jitsi's native page instead of nesting its conference iframe inside YYC.
+      // This gives participants the complete pre-join screen and the normal call toolbar.
+      openDirectConference(meeting, joinWindow);
     }).catch(function (err) {
+      closeJoinWindow(joinWindow);
       if (err && err.message !== 'Invalid meeting code.') {
-        showAlert(err.message || 'Could not open the meeting invite.');
+        showAlert((err && err.message) || 'Could not validate this meeting invite.');
       }
     });
   }
@@ -637,7 +642,8 @@
         : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
       return;
     }
-    goToMeeting(code);
+    var joinWindow = window.open('about:blank', '_blank');
+    goToMeeting(code, joinWindow);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
@@ -707,8 +713,10 @@
     var action = button.getAttribute('data-action');
     var code = button.getAttribute('data-code');
     var id = button.getAttribute('data-id');
-    if (action === 'join') goToMeeting(code);
-    else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
+    if (action === 'join') {
+      var joinWindow = window.open('about:blank', '_blank');
+      goToMeeting(code, joinWindow);
+    } else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
     else if (action === 'cancel') {
       if (!window.confirm('Cancel this meeting? Its invite will no longer open the room.')) return;
       portal('cancel', { id: id }).then(function (data) {
@@ -800,7 +808,7 @@
     var code = params.get('join');
     if (code) {
       $('joinCode').value = code;
-      window.setTimeout(function () { goToMeeting(code); }, 250);
+      window.setTimeout(function () { goToMeeting(code, null); }, 250);
     }
   } catch (_) {}
 })();
