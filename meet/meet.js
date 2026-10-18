@@ -160,6 +160,7 @@
   function inviteUrl(code) {
     // Private invite links open the full-page YYC Meet view rather than the nested homepage iframe.
     var u = new URL('./', window.location.href);
+    u.search = '';
     u.hash = '';
     u.searchParams.set('join', code);
     return u.href;
@@ -282,18 +283,20 @@
     });
   }
 
-  function loadJitsiScript() {
-    if (window.JitsiMeetExternalAPI) return Promise.resolve();
-    if (window.__yycMeetJitsiPromise) return window.__yycMeetJitsiPromise;
+  function loadJitsiScript(appId) {
+    if (!appId) return Promise.reject(new Error('The YYC JaaS application is not configured.'));
+    if (window.JitsiMeetExternalAPI && window.__yycMeetJaasAppId === appId) return Promise.resolve();
+    if (window.__yycMeetJitsiPromise && window.__yycMeetJaasAppId === appId) return window.__yycMeetJitsiPromise;
+    window.__yycMeetJaasAppId = appId;
     window.__yycMeetJitsiPromise = new Promise(function (resolve, reject) {
       var script = document.createElement('script');
-      script.src = 'https://meet.jit.si/external_api.js';
+      script.src = 'https://8x8.vc/' + encodeURIComponent(appId) + '/external_api.js';
       script.async = true;
       script.onload = function () {
         if (window.JitsiMeetExternalAPI) resolve();
-        else reject(new Error('Jitsi Meet loaded, but its conference API was unavailable.'));
+        else reject(new Error('JaaS loaded, but its conference API was unavailable.'));
       };
-      script.onerror = function () { reject(new Error('Could not load the video-meeting service. Check your internet connection or open the meeting directly.')); };
+      script.onerror = function () { reject(new Error('Could not load the secure meeting service. Check your internet connection or the JaaS App ID.')); };
       document.head.appendChild(script);
     });
     return window.__yycMeetJitsiPromise;
@@ -406,6 +409,30 @@
     state.qualityTimer = window.setInterval(sample, 12000);
   }
 
+  function requestJaasToken(meeting) {
+    return fetch(SUPABASE_URL + '/functions/v1/yyc-jaas-token', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        invite_code: meeting.invite_code,
+        yyc_token: state.session && state.session.token ? state.session.token : '',
+        display_name: meetingDisplayName()
+      })
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (data) {
+        if (!response.ok || !data || !data.ok) {
+          throw new Error((data && data.message) || 'YYC could not authorize this meeting. Please check the JaaS setup and try again.');
+        }
+        return data;
+      });
+    });
+  }
+
   function startConference(meeting) {
     if (!meeting || !meeting.room_name) {
       notify('This meeting does not have an active room yet.');
@@ -421,108 +448,114 @@
     if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
     state.callStartupTimer = window.setTimeout(function () {
       if (!state.activeMeeting || state.leaving || state.jitsiReady) return;
-      $('callErrorText').textContent = 'The video conference is taking too long to appear in this page. Try the direct meeting link below, or return and join again.';
+      $('callErrorText').textContent = 'The video conference is taking too long to appear. Try again or check the YYC JaaS setup.';
       $('callError').hidden = false;
       markStatus('Conference did not load', false);
-    }, 20000);
+    }, 30000);
     $('callTitle').textContent = meeting.title || 'YYC Meeting';
-    $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Invite-only access link';
+    $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Secure invite-only session';
     $('railTitle').textContent = meeting.title || 'YYC Meeting';
     $('railDescription').textContent = meeting.description || 'Welcome to the YYC meeting. Use the in-call controls to collaborate.';
     $('railHost').textContent = meeting.host_name || 'YYC Host';
     $('railDuration').textContent = String(meeting.duration_minutes || 60) + ' minutes';
     $('railCode').textContent = meeting.invite_code || '—';
-    $('openExternalMeeting').href = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
     $('callError').hidden = true;
     mount.innerHTML = '';
     setCallVisible(true);
-    markStatus('Connecting to conference…', false);
+    markStatus('Verifying YYC access…', false);
 
-    return loadJitsiScript().then(function () {
+    return requestJaasToken(meeting).then(function (auth) {
       if (state.leaving || !state.activeMeeting) return;
-      var displayName = meetingDisplayName();
-      var api = new window.JitsiMeetExternalAPI('meet.jit.si', {
-        roomName: meeting.room_name,
-        parentNode: mount,
-        width: '100%',
-        height: '100%',
-        lang: 'en',
-        userInfo: { displayName: displayName },
-        configOverwrite: {
-          prejoinPageEnabled: true,
-          disableDeepLinking: true,
-          enableWelcomePage: false,
-          startWithAudioMuted: true,
-          startWithVideoMuted: true,
-          requireDisplayName: true,
-          resolution: 720,
-          maxFullResolutionParticipants: 3,
-          disableSimulcast: false,
-          videoQuality: {
-            enableAdaptiveMode: true,
-            codecPreferenceOrder: ['VP8', 'H264', 'VP9'],
-            mobileCodecPreferenceOrder: ['VP8', 'H264']
+      var directUrl = new URL('https://8x8.vc/' + auth.room_name);
+      directUrl.searchParams.set('jwt', auth.jwt);
+      $('openExternalMeeting').href = directUrl.href;
+      markStatus(auth.moderator ? 'Moderator access verified · connecting…' : 'Guest access verified · connecting…', false);
+      return loadJitsiScript(auth.app_id).then(function () {
+        if (state.leaving || !state.activeMeeting) return;
+        var api = new window.JitsiMeetExternalAPI('8x8.vc', {
+          roomName: auth.room_name,
+          jwt: auth.jwt,
+          parentNode: mount,
+          width: '100%',
+          height: '100%',
+          lang: 'en',
+          userInfo: { displayName: auth.display_name || meetingDisplayName() },
+          configOverwrite: {
+            prejoinPageEnabled: true,
+            disableDeepLinking: true,
+            enableWelcomePage: false,
+            startWithAudioMuted: true,
+            startWithVideoMuted: true,
+            requireDisplayName: true,
+            resolution: 720,
+            maxFullResolutionParticipants: 3,
+            disableSimulcast: false,
+            videoQuality: {
+              enableAdaptiveMode: true,
+              codecPreferenceOrder: ['VP8', 'H264', 'VP9'],
+              mobileCodecPreferenceOrder: ['VP8', 'H264']
+            },
+            lobby: { enabled: !!meeting.waiting_room },
+            toolbarButtons: [
+              'microphone', 'camera', 'desktop', 'chat', 'raisehand',
+              'participants-pane', 'tileview', 'videobackground',
+              'closedcaptions', 'settings', 'hangup', 'fullscreen',
+              'shortcuts', 'help', 'invite', 'videoquality', 'filmstrip',
+              'reactions', 'noisesuppression', 'security', 'mute-everyone',
+              'whiteboard', 'sharedvideo', 'recording', 'livestreaming',
+              'etherpad', 'feedback', 'stats', 'download'
+            ]
           },
-          lobby: { enabled: !!meeting.waiting_room },
-          toolbarButtons: [
-            'microphone', 'camera', 'desktop', 'chat', 'raisehand',
-            'participants-pane', 'tileview', 'videobackground',
-            'closedcaptions', 'settings', 'hangup', 'fullscreen',
-            'shortcuts', 'help', 'invite', 'videoquality', 'filmstrip',
-            'reactions', 'noisesuppression', 'security', 'mute-everyone',
-            'whiteboard', 'sharedvideo', 'recording', 'livestreaming',
-            'etherpad', 'feedback', 'stats', 'download'
-          ]
-        },
-        interfaceConfigOverwrite: {
-          APP_NAME: 'YYC Meet',
-          MOBILE_APP_PROMO: false,
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false
-        }
+          interfaceConfigOverwrite: {
+            APP_NAME: 'YYC Meet',
+            MOBILE_APP_PROMO: false,
+            SHOW_JITSI_WATERMARK: false,
+            SHOW_WATERMARK_FOR_GUESTS: false
+          }
+        });
+        state.api = api;
+        api.addListener('ready', function () {
+          state.jitsiReady = true;
+          if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
+          state.callStartupTimer = null;
+          $('callError').hidden = true;
+          markStatus(auth.moderator ? 'Moderator connected · finish the device check below' : 'Conference loaded · finish the join screen below', false);
+          notifyHomeFrameHeight();
+        });
+        beginQualityMonitoring(api);
+        api.addListener('videoConferenceJoined', function (event) {
+          state.jitsiReady = true;
+          if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
+          state.callStartupTimer = null;
+          $('callError').hidden = true;
+          markStatus('Connected · ' + (event && event.displayName ? event.displayName : 'You are in the room'), true);
+        });
+        api.addListener('videoConferenceLeft', function () {
+          if (!state.leaving) notify('You left the meeting.');
+        });
+        api.addListener('readyToClose', function () {
+          leaveConference(false);
+        });
+        api.addListener('participantJoined', function () {
+          markStatus('In meeting · participant connected', true);
+        });
+        api.addListener('participantLeft', function () {
+          markStatus('Connected · waiting for participants', true);
+        });
+        api.addListener('errorOccurred', function (event) {
+          var details = event && (event.message || event.name);
+          $('callErrorText').textContent = details
+            ? 'The conference service reported: ' + String(details).slice(0, 220)
+            : 'The conference service reported an error. Check the JaaS App ID/key setup and retry.';
+          $('callError').hidden = false;
+          markStatus('Conference reported an issue', false);
+        });
+        $('fullscreenBtn').onclick = function () {
+          var stage = document.querySelector('.video-stage');
+          if (!document.fullscreenElement && stage && stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
+          else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+        };
       });
-      state.api = api;
-      api.addListener('ready', function () {
-        state.jitsiReady = true;
-        if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-        state.callStartupTimer = null;
-        $('callError').hidden = true;
-        markStatus('Conference loaded · finish the join screen below if prompted', false);
-        notifyHomeFrameHeight();
-      });
-      beginQualityMonitoring(api);
-      api.addListener('videoConferenceJoined', function (event) {
-        state.jitsiReady = true;
-        if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-        state.callStartupTimer = null;
-        $('callError').hidden = true;
-        markStatus('Connected · ' + (event && event.displayName ? event.displayName : 'You are in the room'), true);
-      });
-      api.addListener('videoConferenceLeft', function () {
-        if (!state.leaving) notify('You left the meeting.');
-      });
-      api.addListener('readyToClose', function () {
-        leaveConference(false);
-      });
-      api.addListener('participantJoined', function () {
-        markStatus('In meeting · participant connected', true);
-      });
-      api.addListener('participantLeft', function () {
-        markStatus('Connected · waiting for participants', true);
-      });
-      api.addListener('errorOccurred', function (event) {
-        var details = event && (event.message || event.name);
-        $('callErrorText').textContent = details
-          ? 'The conference service reported: ' + String(details).slice(0, 220)
-          : 'The conference service reported an error. Try the direct meeting link below.';
-        $('callError').hidden = false;
-        markStatus('Conference reported an issue', false);
-      });
-      $('fullscreenBtn').onclick = function () {
-        var stage = document.querySelector('.video-stage');
-        if (!document.fullscreenElement && stage && stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
-        else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
-      };
     }).catch(function (err) {
       if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
       state.callStartupTimer = null;
@@ -595,17 +628,15 @@
     }
   }
 
-  function openDirectConference(meeting, joinWindow) {
-    var directUrl = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
+  function openInvitePage(code, joinWindow) {
+    var targetUrl = inviteUrl(code);
     if (joinWindow && !joinWindow.closed) {
       try { joinWindow.opener = null; } catch (_) {}
-      joinWindow.location.replace(directUrl);
+      joinWindow.location.replace(targetUrl);
       return;
     }
-    // A copied invite opened directly has no click event to open a new tab.
-    // Validate it first, then navigate to Jitsi's native meeting interface.
-    if (homeEmbed && window.parent !== window) window.top.location.assign(directUrl);
-    else window.location.replace(directUrl);
+    if (window.parent !== window) window.top.location.assign(targetUrl);
+    else window.location.assign(targetUrl);
   }
 
   function goToMeeting(code, joinWindow) {
@@ -615,9 +646,12 @@
         notify('The YYC Admin must start this meeting before anyone can join. Please try the same invite after it goes live.');
         return;
       }
-      // Use Jitsi's native page instead of nesting its conference iframe inside YYC.
-      // This gives participants the complete pre-join screen and the normal call toolbar.
-      openDirectConference(meeting, joinWindow);
+      if ((homeEmbed || adminEmbed) && window.parent !== window) {
+        openInvitePage(code, joinWindow);
+        return;
+      }
+      closeJoinWindow(joinWindow);
+      return startConference(meeting);
     }).catch(function (err) {
       closeJoinWindow(joinWindow);
       if (err && err.message !== 'Invalid meeting code.') {
@@ -642,11 +676,12 @@
         : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
       return;
     }
-    var joinWindow = window.open('about:blank', '_blank');
+    var joinWindow = (homeEmbed || adminEmbed) ? window.open('about:blank', '_blank') : null;
     goToMeeting(code, joinWindow);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
+    var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
     if (!isAdminSession(state.session)) {
       notify('Only a YYC Admin can start an instant meeting from Admin Panel.');
       return;
@@ -660,13 +695,17 @@
       visibility: 'invite',
       waiting_room: false
     }).then(function (meeting) {
-      return portal('start', { id: meeting.id }).then(function () {
-        return callLookup(meeting.invite_code);
-      }).then(function (fullMeeting) {
-        loadMeetings();
-        startConference(fullMeeting);
+      return portal('start', { id: meeting.id }).then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.message) || 'Could not start the meeting.');
+        return callLookup(meeting.invite_code).then(function (fullMeeting) {
+          loadMeetings();
+          if (adminEmbed && hostWindow && !hostWindow.closed) {
+            hostWindow.location.replace(inviteUrl(meeting.invite_code));
+          } else startConference(fullMeeting);
+        });
       });
     }).catch(function (err) {
+      closeJoinWindow(hostWindow);
       notify((err && err.message) || 'Could not create an instant meeting.');
     });
   });
@@ -714,7 +753,7 @@
     var code = button.getAttribute('data-code');
     var id = button.getAttribute('data-id');
     if (action === 'join') {
-      var joinWindow = window.open('about:blank', '_blank');
+      var joinWindow = (homeEmbed || adminEmbed) ? window.open('about:blank', '_blank') : null;
       goToMeeting(code, joinWindow);
     } else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
     else if (action === 'cancel') {
@@ -725,19 +764,25 @@
         return loadMeetings();
       }).catch(function (err) { notify((err && err.message) || 'Could not cancel the meeting.'); });
     } else if (action === 'manage-start') {
+      var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
       var scheduledMeeting = state.meetings.find(function (item) { return item.id === id; });
-      if (!scheduledMeeting) { notify('Refresh the meeting list and try again.'); return; }
+      if (!scheduledMeeting) { closeJoinWindow(hostWindow); notify('Refresh the meeting list and try again.'); return; }
       portal('start', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can start this meeting.');
-        if (adminEmbed) {
-          notify('Meeting is live. Copy its private invite and join from the Meet section on the homepage.');
-          return loadMeetings();
-        }
-        notify('Meeting is live. Opening the host room…');
+        notify('Meeting is live. Opening the secure moderator room…');
         return callLookup(scheduledMeeting.invite_code).then(function (fullMeeting) {
-          return loadMeetings().then(function () { startConference(fullMeeting); });
+          return loadMeetings().then(function () {
+            if (adminEmbed && hostWindow && !hostWindow.closed) {
+              hostWindow.location.replace(inviteUrl(scheduledMeeting.invite_code));
+              return;
+            }
+            startConference(fullMeeting);
+          });
         });
-      }).catch(function (err) { notify((err && err.message) || 'Could not start the meeting.'); });
+      }).catch(function (err) {
+        closeJoinWindow(hostWindow);
+        notify((err && err.message) || 'Could not start the meeting.');
+      });
     } else if (action === 'manage-end') {
       portal('end', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can end this meeting.');
@@ -797,18 +842,19 @@
     }
   });
 
+  var autoJoinCode = '';
+  try {
+    var params = new URLSearchParams(window.location.search);
+    autoJoinCode = params.get('join') || '';
+    if (autoJoinCode) $('joinCode').value = autoJoinCode;
+  } catch (_) {}
+
+  // Finish discovering the YYC session before requesting a host/guest JaaS token.
   discoverSession().catch(function () {
     state.session = null;
     setProfile(null);
     renderMeetings();
+  }).finally(function () {
+    if (autoJoinCode) window.setTimeout(function () { goToMeeting(autoJoinCode, null); }, 150);
   });
-
-  try {
-    var params = new URLSearchParams(window.location.search);
-    var code = params.get('join');
-    if (code) {
-      $('joinCode').value = code;
-      window.setTimeout(function () { goToMeeting(code, null); }, 250);
-    }
-  } catch (_) {}
 })();
