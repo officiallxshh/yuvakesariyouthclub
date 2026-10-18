@@ -64,7 +64,7 @@
               <label for="joinCode">Have a meeting code?</label>
               <label class="join-name-field" for="participantName">Your display name <span class="optional-label">OPTIONAL</span><input id="participantName" type="text" maxlength="80" autocomplete="name" placeholder="Name shown to other participants"></label>
               <div class="code-entry"><input id="joinCode" name="joinCode" type="text" inputmode="text" autocomplete="off" maxlength="2048" placeholder="Paste invite link or 32-character code" aria-describedby="joinCodeHelp" required><button type="submit" class="meet-btn meet-btn-dark">Join <span>→</span></button></div>
-              <small id="joinCodeHelp">Paste the entire copied invite link or enter the 32-character invite code — not the meeting database ID. The YYC Admin must press Start before guests can join.</small>
+              <small id="joinCodeHelp">Paste the entire copied invite link or enter the 32-character invite code — not the meeting database ID. The YYC Admin must press Start before guests can join. On public Jitsi, the first person to start the room may need to sign in or wait for a moderator.</small>
             </form>
           </div>
         </section>
@@ -76,7 +76,7 @@
           </div>
           <div class="login-needed" id="loginNeeded">
             <div class="login-lock">⌑</div>
-            <div><b>Administrator controls are private</b><p>YYC Admin creates and starts each meeting from Admin Panel → YYC Meet. Only people with the private invite link can open the room after it goes live.</p><a href="../">Open the YYC website ↗</a><span> · </span><span>Use Admin Login to manage meetings.</span></div>
+            <div><b>Administrator controls are private</b><p>YYC Admin creates and starts each meeting from Admin Panel → YYC Meet. Use the private invite link to reach the room after it goes live.</p><a href="../">Open the YYC website ↗</a><span> · </span><span>Use Admin Login to manage meetings.</span></div>
           </div>
           <form id="scheduleForm" class="schedule-form" hidden>
             <div class="field-row">
@@ -105,7 +105,7 @@
       <aside class="meet-side-column">
         <section class="side-card profile-card">
           <div class="side-eyebrow">SESSION</div>
-          <div class="profile-top"><span class="profile-avatar" id="profileAvatar">Y</span><div><b id="profileName">Welcome to YYC Meet</b><small id="profileRole">Invite guests can join without an account</small></div></div>
+          <div class="profile-top"><span class="profile-avatar" id="profileAvatar">Y</span><div><b id="profileName">Welcome to YYC Meet</b><small id="profileRole">Guests do not need a YYC account</small></div></div>
           <div class="profile-divider"></div>
           <div class="profile-stat"><span>Account status</span><b id="profileStatus">Checking</b></div>
           <div class="profile-stat"><span>Conference room</span><b>Jitsi Meet</b></div>
