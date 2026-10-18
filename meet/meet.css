@@ -189,3 +189,32 @@ html.in-call-mode .call-error p{color:#bdc1c6}
   html.in-call-mode .rtc-controls{gap:4px;padding:5px}
   html.in-call-mode .rtc-control-button{padding:8px 3px;font-size:8px}
 }
+
+
+/* Match the compact icon-and-label controls familiar from modern meeting apps. */
+html.in-call-mode .rtc-controls{align-items:flex-end;gap:3px;padding:7px 10px 6px;border:1px solid #45484d;border-radius:18px;background:rgba(40,42,45,.97)}
+html.in-call-mode .rtc-control-button{display:flex;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:72px;min-height:64px;padding:3px 5px;border:0;border-radius:13px;background:transparent;color:#e8eaed;box-shadow:none;transform:none}
+html.in-call-mode .rtc-control-button:hover{background:rgba(255,255,255,.06);border-color:transparent;transform:none}
+html.in-call-mode .rtc-control-button:focus-visible{outline:2px solid #8ab4f8;outline-offset:1px}
+html.in-call-mode .rtc-control-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#3c4043;color:#f1f3f4;transition:background .16s ease,color .16s ease}
+html.in-call-mode .rtc-control-icon svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html.in-call-mode .rtc-control-label{display:block;max-width:100%;color:#e8eaed;font-size:9px;line-height:1.15;font-weight:600;text-align:center;white-space:nowrap}
+html.in-call-mode .rtc-control-button[aria-pressed="true"]{background:transparent;color:#e8eaed}
+html.in-call-mode #toggleMicBtn[aria-pressed="true"] .rtc-control-icon,
+html.in-call-mode #toggleCameraBtn[aria-pressed="true"] .rtc-control-icon{background:#ea4335;color:#fff}
+html.in-call-mode #shareScreenBtn[aria-pressed="true"] .rtc-control-icon,
+html.in-call-mode #toggleChatPanelBtn[aria-pressed="true"] .rtc-control-icon{background:#8ab4f8;color:#202124}
+html.in-call-mode .rtc-control-button[aria-pressed="true"] .rtc-control-label{color:#f1f3f4}
+html.in-call-mode .rtc-control-button[aria-pressed="true"]:hover{background:rgba(255,255,255,.06)}
+html.in-call-mode .rtc-control-button .rtc-control-icon{flex-shrink:0}
+@media(max-width:760px){
+  html.in-call-mode .rtc-controls{align-items:flex-end;gap:0;width:100%;max-width:100%;padding:5px 2px;border-radius:14px}
+  html.in-call-mode .rtc-control-button{flex:1 1 0;min-width:0;min-height:59px;padding:3px 1px;gap:4px;border-radius:10px}
+  html.in-call-mode .rtc-control-icon{width:35px;height:35px}
+  html.in-call-mode .rtc-control-label{font-size:8px;letter-spacing:-.01em}
+}
+@media(max-width:360px){
+  html.in-call-mode .rtc-control-icon{width:32px;height:32px}
+  html.in-call-mode .rtc-control-icon svg{width:17px;height:17px}
+  html.in-call-mode .rtc-control-label{font-size:7px}
+}
