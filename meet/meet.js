@@ -341,6 +341,12 @@
     dashboard.hidden = !!isVisible;
     callView.hidden = !isVisible;
     document.body.classList.toggle('in-call', !!isVisible);
+    document.documentElement.classList.toggle('in-call-mode', !!isVisible);
+    if (!isVisible) {
+      callView.classList.remove('panel-open');
+      $('toggleChatPanelBtn').textContent = 'Chat';
+      $('toggleChatPanelBtn').setAttribute('aria-pressed', 'false');
+    }
     window.scrollTo({ top: 0, behavior: 'instant' });
     window.setTimeout(notifyHomeFrameHeight, 80);
   }
@@ -1038,6 +1044,11 @@
   $('shareScreenBtn').addEventListener('click', function () {
     if (state.screenStream) stopScreenShare();
     else startScreenShare();
+  });
+  $('toggleChatPanelBtn').addEventListener('click', function () {
+    var open = callView.classList.toggle('panel-open');
+    $('toggleChatPanelBtn').textContent = open ? 'Close chat' : 'Chat';
+    $('toggleChatPanelBtn').setAttribute('aria-pressed', open ? 'true' : 'false');
   });
   $('chatForm').addEventListener('submit', function (event) {
     event.preventDefault();
