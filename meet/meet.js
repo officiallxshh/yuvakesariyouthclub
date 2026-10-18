@@ -17,8 +17,6 @@
     meetings: [],
     activeMeeting: null,
     api: null,
-    attendeeKey: null,
-    attendanceSent: false,
     leaving: false,
     toastTimer: null,
     qualityMode: 'auto',
@@ -119,6 +117,40 @@
     return String(value || '').toUpperCase().replace(/[^A-F0-9]/g, '');
   }
 
+  function extractInviteCode(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+
+    // Accept complete copied YYC links as well as direct invite codes.
+    var queryMatch = raw.match(/[?&](?:join|invite_code|inviteCode|code)=([A-Fa-f0-9]{32})(?=$|[#&\s])/i);
+    if (queryMatch) return queryMatch[1].toUpperCase();
+
+    try {
+      var parsed = new URL(raw, window.location.href);
+      var names = ['join', 'invite_code', 'inviteCode', 'code'];
+      for (var i = 0; i < names.length; i++) {
+        var fromSearch = parsed.searchParams.get(names[i]);
+        if (fromSearch && /^[A-Fa-f0-9]{32}$/.test(fromSearch)) return fromSearch.toUpperCase();
+      }
+      // Also tolerate invite links that put a query string after #meet.
+      var hashQueryAt = parsed.hash.indexOf('?');
+      if (hashQueryAt >= 0) {
+        var hashParams = new URLSearchParams(parsed.hash.slice(hashQueryAt + 1));
+        for (var h = 0; h < names.length; h++) {
+          var fromHash = hashParams.get(names[h]);
+          if (fromHash && /^[A-Fa-f0-9]{32}$/.test(fromHash)) return fromHash.toUpperCase();
+        }
+      }
+    } catch (_) {}
+
+    // Accept a raw 32-character code with optional spaces/hyphens for readability.
+    if (/^[A-Fa-f0-9\s-]+$/.test(raw)) {
+      var compact = raw.replace(/[\s-]/g, '').toUpperCase();
+      if (/^[A-F0-9]{32}$/.test(compact)) return compact;
+    }
+    return '';
+  }
+
   function isAdminSession(session) {
     return !!(session && session.actor && session.actor.kind === 'admin' && session.token);
   }
@@ -172,7 +204,6 @@
       var joinDisabled = status === 'ended' || status === 'cancelled';
       var actions = adminEmbed ? '' : '<button type="button" class="meet-btn meet-btn-gold" data-action="join" data-code="' + safeText(m.invite_code) + '"' + (joinDisabled ? ' disabled' : '') + '>' + (status === 'live' ? 'Join live room ↗' : 'Join room ↗') + '</button>';
       if (m.invite_code) actions += '<button type="button" class="text-action" data-action="copy" data-code="' + safeText(m.invite_code) + '">Copy invite</button>';
-      if (canManage && !adminEmbed) actions += '<button type="button" class="text-action" data-action="attendance" data-id="' + safeText(m.id) + '">Attendance / CSV</button>';
       if (canManage && status !== 'cancelled' && status !== 'ended') {
         if (status !== 'live') actions += '<button type="button" class="text-action" data-action="manage-start" data-id="' + safeText(m.id) + '">Start</button>';
         actions += '<button type="button" class="text-action" data-action="manage-end" data-id="' + safeText(m.id) + '">End</button>';
@@ -237,8 +268,8 @@
 
   function callLookup(code) {
     var cleaned = cleanCode(code);
-    if (cleaned.length !== 32) {
-      showAlert('A YYC private meeting code has 32 hexadecimal characters. Paste the full invite link or enter the complete code.');
+    if (!/^[A-F0-9]{32}$/.test(cleaned)) {
+      showAlert('Use the full private invite link or its 32-character invite code, not the meeting database ID.');
       return Promise.reject(new Error('Invalid meeting code.'));
     }
     return rpc('yyc_meet_lookup', { p_invite_code: cleaned }).then(function (data) {
@@ -382,8 +413,6 @@
       return Promise.resolve();
     }
     state.activeMeeting = meeting;
-    state.attendeeKey = (window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : fallbackUuid();
-    state.attendanceSent = false;
     state.leaving = false;
     $('callTitle').textContent = meeting.title || 'YYC Meeting';
     $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Invite-only access link';
@@ -445,13 +474,8 @@
       beginQualityMonitoring(api);
       api.addListener('videoConferenceJoined', function (event) {
         markStatus('Connected · ' + (event && event.displayName ? event.displayName : 'You are in the room'), true);
-        if (!state.attendanceSent) {
-          state.attendanceSent = true;
-          recordAttendance('join');
-        }
       });
       api.addListener('videoConferenceLeft', function () {
-        recordAttendance('leave');
         if (!state.leaving) notify('You left the meeting.');
       });
       api.addListener('readyToClose', function () {
@@ -478,13 +502,6 @@
     });
   }
 
-  function fallbackUuid() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
-    });
-  }
-
   function meetingDisplayName() {
     var value = String($('participantName').value || '').trim();
     if (!value && state.session && state.session.actor) value = String(state.session.actor.name || '').trim();
@@ -492,93 +509,15 @@
     return value || 'YYC Guest';
   }
 
-  function formatDuration(seconds) {
-    var total = Math.max(0, Number(seconds) || 0);
-    var hours = Math.floor(total / 3600);
-    var minutes = Math.floor((total % 3600) / 60);
-    var remainder = total % 60;
-    if (hours) return hours + 'h ' + minutes + 'm';
-    if (minutes) return minutes + 'm ' + remainder + 's';
-    return remainder + 's';
-  }
-
-  function showAttendanceReport(meeting, attendees) {
-    var dialog = $('attendanceDialog');
-    var root = $('attendanceList');
-    var list = Array.isArray(attendees) ? attendees : [];
-    dialog._yycMeetingTitle = String(meeting.title || 'YYC Meeting');
-    dialog._yycAttendanceRows = list.map(function (person) {
-      return {
-        name: String(person.name || 'Guest').slice(0, 80),
-        kind: String(person.kind || 'guest'),
-        joined_at: person.joined_at || '',
-        left_at: person.left_at || '',
-        duration_seconds: Math.max(0, Number(person.duration_seconds) || 0)
-      };
-    });
-    $('attendanceDialogTitle').textContent = meeting.title || 'Meeting attendance';
-    $('attendanceMeetingSubtitle').textContent = 'Join records and time in meeting · ' + formatDate(meeting.starts_at);
-    $('attendanceSummary').textContent = list.length + (list.length === 1 ? ' attendance record' : ' attendance records');
-    $('exportAttendanceBtn').disabled = list.length === 0;
-    if (!list.length) {
-      root.innerHTML = '<div class="empty-meetings"><span class="empty-orbit">◷</span><b>No attendance records yet</b><p>Names will appear here after participants join the call.</p></div>';
-    } else {
-      root.innerHTML = dialog._yycAttendanceRows.map(function (person, index) {
-        return '<div class="attendance-row">' +
-          '<div class="attendance-person"><span class="attendance-person-avatar">' + safeText((person.name.trim().charAt(0) || 'G').toUpperCase()) + '</span><div><b>' + safeText(person.name) + '</b><small>' + safeText(person.kind) + '</small></div></div>' +
-          '<div class="attendance-time"><span>Joined · ' + safeText(person.joined_at ? formatDate(person.joined_at) : '—') + '</span><span>Left · ' + safeText(person.left_at ? formatDate(person.left_at) : 'Still in room / no leave signal') + '</span><b>Duration · ' + safeText(formatDuration(person.duration_seconds)) + '</b></div>' +
-        '</div>';
-      }).join('');
-    }
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else notify('Your browser does not support opening the attendance report. Please update the browser.');
-  }
-
-  function exportAttendanceCsv() {
-    var dialog = $('attendanceDialog');
-    var rows = dialog._yycAttendanceRows || [];
-    if (!rows.length) return;
-    var columns = ['name', 'kind', 'joined_at', 'left_at', 'duration_seconds'];
-    var csvCell = function (value) {
-      var v = String(value == null ? '' : value);
-      return '"' + v.replace(/"/g, '""') + '"';
-    };
-    var csv = [columns].concat(rows.map(function (row) { return columns.map(function (key) { return row[key]; }); }))
-      .map(function (row) { return row.map(csvCell).join(','); }).join('\r\n');
-    var blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = 'yyc-meet-attendance-' + new Date().toISOString().slice(0, 10) + '.csv';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    notify('Attendance CSV exported.');
-  }
-
-  function recordAttendance(action) {
-    if (!state.activeMeeting || !state.activeMeeting.invite_code || !state.attendeeKey) return Promise.resolve();
-    return rpc('yyc_meet_attendance', {
-      p_invite_code: state.activeMeeting.invite_code,
-      p_action: action,
-      p_participant_key: state.attendeeKey,
-      p_display_name: meetingDisplayName(),
-      p_token: (state.session && state.session.token) || null
-    }).catch(function () {});
-  }
-
   function leaveConference(showToast) {
     if (state.leaving) return;
     state.leaving = true;
-    if (state.activeMeeting) recordAttendance('leave');
     stopQualityMonitoring();
     if (state.api) {
       try { state.api.dispose(); } catch (_) {}
     }
     state.api = null;
     state.activeMeeting = null;
-    state.attendeeKey = null;
     mount.innerHTML = '';
     setCallVisible(false);
     if (showToast !== false) notify('You have left YYC Meet.');
@@ -643,8 +582,15 @@
     event.preventDefault();
     var value = $('joinCode').value.trim();
     if (!value) return;
-    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{32})/);
-    goToMeeting(fromLink ? fromLink[1] : value);
+    var code = extractInviteCode(value);
+    if (!code) {
+      var looksLikeMeetingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+      showAlert(looksLikeMeetingId
+        ? 'That looks like a meeting database ID, not the private invite code. Use Copy invite in Admin Panel, then paste the full link here.'
+        : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
+      return;
+    }
+    goToMeeting(code);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
@@ -716,13 +662,7 @@
     var id = button.getAttribute('data-id');
     if (action === 'join') goToMeeting(code);
     else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
-    else if (action === 'attendance') {
-      var selectedMeeting = state.meetings.find(function (item) { return item.id === id; });
-      portal('attendance', { id: id }).then(function (data) {
-        if (!data || !data.ok) throw new Error((data && data.message) || 'Attendance is available to the host and YYC administrators only.');
-        showAttendanceReport(selectedMeeting || { title: 'YYC Meeting' }, Array.isArray(data.attendees) ? data.attendees : []);
-      }).catch(function (err) { notify((err && err.message) || 'Could not load meeting attendance.'); });
-    } else if (action === 'cancel') {
+    else if (action === 'cancel') {
       if (!window.confirm('Cancel this meeting? Its invite will no longer open the room.')) return;
       portal('cancel', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only the host or a YYC admin can cancel this meeting.');
@@ -758,12 +698,6 @@
       window.setTimeout(function () { $('refreshMeetingsBtn').style.transform = ''; }, 250);
     });
   });
-
-  $('closeAttendanceDialog').addEventListener('click', function () { $('attendanceDialog').close(); });
-  $('attendanceDialog').addEventListener('click', function (event) {
-    if (event.target === $('attendanceDialog')) $('attendanceDialog').close();
-  });
-  $('exportAttendanceBtn').addEventListener('click', exportAttendanceCsv);
 
   $('videoQualitySelect').addEventListener('change', function () {
     var value = $('videoQualitySelect').value;
@@ -803,7 +737,7 @@
   });
 
   window.addEventListener('pagehide', function () {
-    if (state.activeMeeting && state.attendeeKey && state.api) {
+    if (state.activeMeeting && state.api) {
       try { state.api.dispose(); } catch (_) {}
     }
   });
