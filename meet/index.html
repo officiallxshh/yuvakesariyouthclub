@@ -20,7 +20,7 @@
   } catch (_) {}
 })();
 </script>
-  <link rel="stylesheet" href="./meet.css?v=20261017-02">
+  <link rel="stylesheet" href="./meet.css?v=20261018-05">
 </head>
 <body>
   <div class="meet-ambient meet-ambient-one"></div>
@@ -147,6 +147,7 @@
           <button type="button" class="rtc-control-button" id="toggleMicBtn" aria-pressed="false">Mute mic</button>
           <button type="button" class="rtc-control-button" id="toggleCameraBtn" aria-pressed="false">Turn camera off</button>
           <button type="button" class="rtc-control-button" id="shareScreenBtn" aria-pressed="false">Share screen</button>
+          <button type="button" class="rtc-control-button" id="toggleChatPanelBtn" aria-label="Show or hide chat and meeting details" aria-pressed="false">Chat</button>
         </div>
         <div class="call-error" id="callError" hidden><div class="error-icon">!</div><h2>Conference service unavailable</h2><p id="callErrorText">YYC Meet could not finish connecting.</p><button class="meet-btn meet-btn-gold" id="retryConferenceBtn" type="button">Retry connection ↻</button><button class="meet-btn meet-btn-dark" id="backToDashboardBtn" type="button">Back to YYC Meet</button></div>
         <div class="call-bottom-note">Camera and microphone are requested from your browser. Calls use direct peer-to-peer connections; if a restricted network blocks the connection, a YYC-managed TURN relay may be needed.</div>
@@ -164,6 +165,6 @@
 
 
 <div class="meet-toast" id="meetToast" role="status" aria-live="polite"></div>
-  <script src="./meet.js?v=20261018-04" defer></script>
+  <script src="./meet.js?v=20261018-05" defer></script>
 </body>
 </html>
