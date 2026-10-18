@@ -33,14 +33,14 @@
     qualityGoodSamples: 0,
     appliedQuality: 720,
     callStartupTimer: null,
-    jitsiReady: false
+    rtcReady: false
   };
 
   var $ = function (id) { return document.getElementById(id); };
   var dashboard = $('dashboardView');
   var callView = $('callView');
   var alertBox = $('meetAlert');
-  var mount = $('jitsiMount');
+  var mount = $('rtcMount');
 
   function safeText(value) {
     return String(value == null ? '' : value).replace(/[&<>'"]/g, function (c) {
@@ -664,10 +664,10 @@
     cleanupRtcResources();
     state.activeMeeting = meeting;
     state.leaving = false;
-    state.jitsiReady = false;
+    state.rtcReady = false;
     if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
     state.callStartupTimer = window.setTimeout(function () {
-      if (!state.activeMeeting || state.leaving || state.jitsiReady) return;
+      if (!state.activeMeeting || state.leaving || state.rtcReady) return;
       $('callErrorText').textContent = 'YYC could not finish connecting. Allow camera/microphone access and check whether your network supports direct WebRTC calls.';
       $('callError').hidden = false;
       markStatus('Connection timed out', false);
@@ -768,7 +768,7 @@
           }
           syncRtcPeers();
           markStatus('Room ready · connecting directly to participants…', false);
-          state.jitsiReady = true;
+          state.rtcReady = true;
           if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
           state.callStartupTimer = null;
 
@@ -806,7 +806,7 @@
     cleanupRtcResources();
     state.api = null;
     state.activeMeeting = null;
-    state.jitsiReady = false;
+    state.rtcReady = false;
     if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
     state.callStartupTimer = null;
     setCallVisible(false);
