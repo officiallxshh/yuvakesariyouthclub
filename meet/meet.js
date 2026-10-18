@@ -652,145 +652,19 @@
     }
   }
 
-  function startConference(meeting) {
+  function startConference(meeting, joinWindow) {
     if (!meeting || !meeting.room_name || !meeting.invite_code) {
+      closeJoinWindow(joinWindow);
       notify('This meeting does not have an active private room yet.');
       return Promise.resolve();
     }
-    if (meeting.status === 'ended' || meeting.status === 'cancelled') {
-      notify('This meeting has ended or was cancelled.');
+    if (meeting.status !== 'live') {
+      closeJoinWindow(joinWindow);
+      notify('The YYC Admin must start this meeting before anyone can join.');
       return Promise.resolve();
     }
-    cleanupRtcResources();
-    state.activeMeeting = meeting;
-    state.leaving = false;
-    state.rtcReady = false;
-    if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-    state.callStartupTimer = window.setTimeout(function () {
-      if (!state.activeMeeting || state.leaving || state.rtcReady) return;
-      $('callErrorText').textContent = 'YYC could not finish connecting. Allow camera/microphone access and check whether your network supports direct WebRTC calls.';
-      $('callError').hidden = false;
-      markStatus('Connection timed out', false);
-    }, 30000);
-
-    $('callTitle').textContent = meeting.title || 'YYC Meeting';
-    $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Private peer-to-peer room';
-    $('railTitle').textContent = meeting.title || 'YYC Meeting';
-    $('railDescription').textContent = meeting.description || 'A private YYC conversation using direct browser connections.';
-    $('railHost').textContent = meeting.host_name || 'YYC Host';
-    $('railDuration').textContent = String(meeting.duration_minutes || 60) + ' minutes';
-    $('railCode').textContent = meeting.invite_code || '—';
-    $('callError').hidden = true;
-    $('chatMessages').innerHTML = '';
-    addRtcChatMessage('YYC Meet', 'Room chat is ready. Messages are shared only with people in this invite-only room.', false, Date.now());
-    mount.innerHTML = '';
-    setCallVisible(true);
-    markStatus('Starting your camera and microphone…', false);
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
-      $('callErrorText').textContent = 'This browser does not support the camera, microphone, or peer-to-peer features required by YYC Meet. Please use a current version of Chrome, Edge, Firefox, or Safari over HTTPS.';
-      $('callError').hidden = false;
-      if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-      state.callStartupTimer = null;
-      return Promise.resolve();
-    }
-
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24, max: 30 } }
-    }).then(function (stream) {
-      if (state.leaving || !state.activeMeeting) {
-        stream.getTracks().forEach(function (track) { track.stop(); });
-        return;
-      }
-      state.localStream = stream;
-      state.participantId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
-      renderRtcTile(state.participantId, meetingDisplayName(), true, stream);
-      $('rtcControls').hidden = false;
-
-      return ensureRealtimeClient().then(function (client) {
-        if (state.leaving || !state.activeMeeting) return;
-        var topic = 'yyc-rtc-' + String(meeting.room_name).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
-        var channel = client.channel(topic, {
-          config: { broadcast: { self: false }, presence: { key: state.participantId } }
-        });
-        state.roomChannel = channel;
-        channel.on('broadcast', { event: 'rtc-signal' }, function (event) { handleRtcSignal(event && event.payload); });
-        channel.on('broadcast', { event: 'rtc-chat' }, function (event) {
-          var message = event && event.payload;
-          if (!message || message.from === state.participantId || typeof message.message !== 'string') return;
-          addRtcChatMessage(String(message.name || 'YYC Guest').slice(0, 80), message.message, false, message.sentAt);
-        });
-        channel.on('broadcast', { event: 'rtc-room-ended' }, function () {
-          notify('The YYC meeting host has ended this room.');
-          leaveConference(false);
-        });
-        channel.on('presence', { event: 'sync' }, function () { syncRtcPeers(); });
-        channel.on('presence', { event: 'join' }, function () { window.setTimeout(syncRtcPeers, 150); });
-        channel.on('presence', { event: 'leave' }, function (event) {
-          (event && event.leftPresences ? event.leftPresences : []).forEach(function (presence) {
-            if (presence && presence.participantId) closeRtcPeer(presence.participantId);
-          });
-        });
-
-        return new Promise(function (resolve, reject) {
-          var settled = false;
-          var timeout = window.setTimeout(function () {
-            if (settled) return;
-            settled = true;
-            reject(new Error('YYC room signaling timed out. Refresh and try joining again.'));
-          }, 12000);
-          channel.subscribe(function (status) {
-            if (settled) return;
-            if (status === 'SUBSCRIBED') {
-              settled = true;
-              window.clearTimeout(timeout);
-              resolve();
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-              settled = true;
-              window.clearTimeout(timeout);
-              reject(new Error('YYC could not open the private room signaling channel. Please retry.'));
-            }
-          });
-        }).then(function () {
-          return channel.track({
-            participantId: state.participantId,
-            displayName: meetingDisplayName(),
-            joinedAt: new Date().toISOString()
-          });
-        }).then(function () {
-          return new Promise(function (resolve) { window.setTimeout(resolve, 700); });
-        }).then(function () {
-          if (state.leaving || !state.activeMeeting) return;
-          var allPresences = roomPresences();
-          if (allPresences.length > 4) {
-            throw new Error('This first YYC peer-to-peer version supports up to 4 people per room. A self-hosted media relay is needed for larger meetings.');
-          }
-          syncRtcPeers();
-          markStatus('Room ready · connecting directly to participants…', false);
-          state.rtcReady = true;
-          if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-          state.callStartupTimer = null;
-
-          state.meetingWatchTimer = window.setInterval(function () {
-            if (!state.activeMeeting || state.leaving) return;
-            rpc('yyc_meet_lookup', { p_invite_code: meeting.invite_code }).then(function (data) {
-              if (data && !data.ok && ['NOT_FOUND', 'NOT_STARTED'].indexOf(data.error) >= 0) {
-                notify('This YYC meeting has ended or is no longer live.');
-                leaveConference(false);
-              }
-            }).catch(function () {});
-          }, 15000);
-        });
-      });
-    }).catch(function (error) {
-      cleanupRtcResources();
-      if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-      state.callStartupTimer = null;
-      $('callErrorText').textContent = (error && error.message) || 'Could not start YYC Meet. Check camera/microphone permissions and try again.';
-      $('callError').hidden = false;
-      markStatus('Could not connect', false);
-    });
+    openDirectConference(meeting, joinWindow);
+    return Promise.resolve();
   }
 
   function meetingDisplayName() {
@@ -852,30 +726,37 @@
     }
   }
 
-  function openInvitePage(code, joinWindow) {
-    var targetUrl = inviteUrl(code);
-    if (joinWindow && !joinWindow.closed) {
-      try { joinWindow.opener = null; } catch (_) {}
-      joinWindow.location.replace(targetUrl);
+  function openDirectConference(meeting, joinWindow) {
+    var roomName = String(meeting && meeting.room_name || '').trim();
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(roomName)) {
+      closeJoinWindow(joinWindow);
+      notify('This meeting has an invalid Jitsi room name. Please ask the YYC Admin to recreate it.');
       return;
     }
-    if (window.parent !== window) window.top.location.assign(targetUrl);
-    else window.location.assign(targetUrl);
+    var directUrl = 'https://meet.jit.si/' + encodeURIComponent(roomName);
+    if (joinWindow && !joinWindow.closed) {
+      try { joinWindow.opener = null; } catch (_) {}
+      joinWindow.location.replace(directUrl);
+      return;
+    }
+    // Use Jitsi's native page, not a nested iframe, so its device-check screen
+    // and complete meeting toolbar render normally.
+    if ((homeEmbed || adminEmbed) && window.parent !== window) {
+      try { window.top.location.assign(directUrl); }
+      catch (_) { window.location.assign(directUrl); }
+    } else {
+      window.location.replace(directUrl);
+    }
   }
 
   function goToMeeting(code, joinWindow) {
     return callLookup(code).then(function (meeting) {
-      if (meeting.status !== 'live' || !meeting.room_name) {
+      if (!meeting || meeting.status !== 'live' || !meeting.room_name) {
         closeJoinWindow(joinWindow);
         notify('The YYC Admin must start this meeting before anyone can join. Please try the same invite after it goes live.');
         return;
       }
-      if ((homeEmbed || adminEmbed) && window.parent !== window) {
-        openInvitePage(code, joinWindow);
-        return;
-      }
-      closeJoinWindow(joinWindow);
-      return startConference(meeting);
+      openDirectConference(meeting, joinWindow);
     }).catch(function (err) {
       closeJoinWindow(joinWindow);
       if (err && err.message !== 'Invalid meeting code.') {
@@ -923,7 +804,7 @@
         if (!data || !data.ok) throw new Error((data && data.message) || 'Could not start the meeting.');
         return callLookup(meeting.invite_code).then(function (fullMeeting) {
           loadMeetings();
-          if (adminEmbed && hostWindow && !hostWindow.closed) hostWindow.location.replace(inviteUrl(meeting.invite_code));
+          if (adminEmbed && hostWindow && !hostWindow.closed) openDirectConference(fullMeeting, hostWindow);
           else startConference(fullMeeting);
         });
       });
@@ -992,10 +873,10 @@
       if (!scheduledMeeting) { if (hostWindow && !hostWindow.closed) hostWindow.close(); notify('Refresh the meeting list and try again.'); return; }
       portal('start', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can start this meeting.');
-        notify('Meeting is live. Opening the custom YYC room…');
+        notify('Meeting is live. Opening Jitsi Meet…');
         return callLookup(scheduledMeeting.invite_code).then(function (fullMeeting) {
           return loadMeetings().then(function () {
-            if (adminEmbed && hostWindow && !hostWindow.closed) hostWindow.location.replace(inviteUrl(scheduledMeeting.invite_code));
+            if (adminEmbed && hostWindow && !hostWindow.closed) openDirectConference(fullMeeting, hostWindow);
             else startConference(fullMeeting);
           });
         });
