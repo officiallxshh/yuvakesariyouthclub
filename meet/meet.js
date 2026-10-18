@@ -294,9 +294,17 @@
       script.async = true;
       script.onload = function () {
         if (window.JitsiMeetExternalAPI) resolve();
-        else reject(new Error('JaaS loaded, but its conference API was unavailable.'));
+        else {
+          window.__yycMeetJitsiPromise = null;
+          window.__yycMeetJaasAppId = null;
+          reject(new Error('JaaS loaded, but its conference API was unavailable.'));
+        }
       };
-      script.onerror = function () { reject(new Error('Could not load the secure meeting service. Check your internet connection or the JaaS App ID.')); };
+      script.onerror = function () {
+        window.__yycMeetJitsiPromise = null;
+        window.__yycMeetJaasAppId = null;
+        reject(new Error('Could not load the secure meeting service. Check your internet connection or the JaaS App ID.'));
+      };
       document.head.appendChild(script);
     });
     return window.__yycMeetJitsiPromise;
@@ -681,11 +689,11 @@
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
-    var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
     if (!isAdminSession(state.session)) {
       notify('Only a YYC Admin can start an instant meeting from Admin Panel.');
       return;
     }
+    var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
     var now = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     createMeeting({
       title: 'YYC Quick Meeting',
