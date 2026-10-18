@@ -121,7 +121,7 @@
             <div class="feature-line"><span class="feature-icon">☷</span><div><b>Chat & participants</b><small>Keep the conversation and attendee list nearby.</small></div></div>
             <div class="feature-line"><span class="feature-icon">✦</span><div><b>Collaboration controls</b><small>Captions, raise hand, reactions and backgrounds where enabled.</small></div></div>
           </div>
-          <div class="feature-foot">Recording, live streaming, capacity, host permissions and some premium controls depend on the conference service plan/configuration.</div>
+          <div class="feature-foot">This beta uses direct browser-to-browser calls and supports up to 4 participants per room. A self-hosted media relay is a separate next step for larger rooms and difficult networks.</div>
         </section>
 
         <section class="side-card safety-card">
@@ -143,8 +143,13 @@
       <section class="video-stage">
         <div class="video-status"><span id="videoStatusDot"></span><span id="videoStatusText">Connecting to conference…</span></div>
         <div class="rtc-mount" id="jitsiMount"></div>
-        <div class="call-error" id="callError" hidden><div class="error-icon">!</div><h2>Conference service unavailable</h2><p id="callErrorText">The embedded video service could not be loaded.</p><button class="meet-btn meet-btn-gold" id="retryConferenceBtn" type="button">Retry connection ↻</button><button class="meet-btn meet-btn-dark" id="backToDashboardBtn" type="button">Back to YYC Meet</button></div>
-        <div class="call-bottom-note">Camera and microphone begin muted where supported. Video adapts to available bandwidth; switch off your camera to prioritize audio on a very weak connection.</div>
+        <div class="rtc-controls" id="rtcControls" hidden>
+          <button type="button" class="rtc-control-button" id="toggleMicBtn" aria-pressed="false">Mute mic</button>
+          <button type="button" class="rtc-control-button" id="toggleCameraBtn" aria-pressed="false">Turn camera off</button>
+          <button type="button" class="rtc-control-button" id="shareScreenBtn" aria-pressed="false">Share screen</button>
+        </div>
+        <div class="call-error" id="callError" hidden><div class="error-icon">!</div><h2>Conference service unavailable</h2><p id="callErrorText">YYC Meet could not finish connecting.</p><button class="meet-btn meet-btn-gold" id="retryConferenceBtn" type="button">Retry connection ↻</button><button class="meet-btn meet-btn-dark" id="backToDashboardBtn" type="button">Back to YYC Meet</button></div>
+        <div class="call-bottom-note">Camera and microphone are requested from your browser. Calls use direct peer-to-peer connections; if a restricted network blocks the connection, a YYC-managed TURN relay may be needed.</div>
       </section>
       <aside class="call-info-rail">
         <div class="call-info-card"><div class="side-eyebrow">MEETING DETAILS</div><h2 id="railTitle">Meeting</h2><p id="railDescription">Welcome to the meeting.</p><div class="rail-meta"><span>Host</span><b id="railHost">YYC Host</b></div><div class="rail-meta"><span>Duration</span><b id="railDuration">60 minutes</b></div><div class="rail-meta"><span>Invite code</span><b id="railCode" class="rail-code">—</b></div><button type="button" class="copy-full-btn" id="copyCodeBtn">Copy meeting code</button></div>
