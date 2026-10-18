@@ -48,6 +48,19 @@
     });
   }
 
+  function setControlLabel(id, labelText, pressed, accessibleLabel) {
+    var button = $(id);
+    if (!button) return;
+    var label = button.querySelector('.rtc-control-label');
+    if (label) label.textContent = labelText;
+    else button.textContent = labelText;
+    if (typeof pressed === 'boolean') button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    if (accessibleLabel) {
+      button.setAttribute('aria-label', accessibleLabel);
+      button.title = accessibleLabel;
+    }
+  }
+
   function tokens() {
     var out = [];
     TOKEN_KEYS.forEach(function (item) {
@@ -342,11 +355,8 @@
     callView.hidden = !isVisible;
     document.body.classList.toggle('in-call', !!isVisible);
     document.documentElement.classList.toggle('in-call-mode', !!isVisible);
-    if (!isVisible) {
-      callView.classList.remove('panel-open');
-      $('toggleChatPanelBtn').textContent = 'Chat';
-      $('toggleChatPanelBtn').setAttribute('aria-pressed', 'false');
-    }
+    callView.classList.remove('panel-open');
+    setControlLabel('toggleChatPanelBtn', 'Chat', false, 'Show chat and meeting details');
     window.scrollTo({ top: 0, behavior: 'instant' });
     window.setTimeout(notifyHomeFrameHeight, 80);
   }
@@ -616,6 +626,9 @@
     state.screenStream = null;
     if (mount) mount.innerHTML = '';
     if ($('rtcControls')) $('rtcControls').hidden = true;
+    setControlLabel('toggleMicBtn', 'Mute', false, 'Mute microphone');
+    setControlLabel('toggleCameraBtn', 'Camera', false, 'Turn camera off');
+    setControlLabel('shareScreenBtn', 'Present', false, 'Share your screen');
   }
 
   function startScreenShare() {
@@ -632,8 +645,7 @@
         if (sender) sender.replaceTrack(screenTrack).catch(function () {});
       });
       if (state.localVideo) state.localVideo.srcObject = screen;
-      $('shareScreenBtn').textContent = 'Stop sharing';
-      $('shareScreenBtn').setAttribute('aria-pressed', 'true');
+      setControlLabel('shareScreenBtn', 'Stop sharing', true, 'Stop screen sharing');
       screenTrack.onended = function () { stopScreenShare(); };
     }).catch(function (error) {
       if (error && error.name !== 'NotAllowedError') notify(error.message || 'Could not start screen sharing.');
@@ -652,10 +664,7 @@
       });
     }
     if (state.localVideo && state.localStream) state.localVideo.srcObject = state.localStream;
-    if ($('shareScreenBtn')) {
-      $('shareScreenBtn').textContent = 'Share screen';
-      $('shareScreenBtn').setAttribute('aria-pressed', 'false');
-    }
+    if ($('shareScreenBtn')) setControlLabel('shareScreenBtn', 'Present', false, 'Share your screen');
   }
 
   function startConference(meeting) {
@@ -1030,16 +1039,14 @@
     var tracks = state.localStream.getAudioTracks();
     var enabled = tracks.some(function (track) { return !track.enabled; });
     tracks.forEach(function (track) { track.enabled = enabled; });
-    $('toggleMicBtn').textContent = enabled ? 'Mute mic' : 'Unmute mic';
-    $('toggleMicBtn').setAttribute('aria-pressed', enabled ? 'false' : 'true');
+    setControlLabel('toggleMicBtn', enabled ? 'Mute' : 'Unmute', !enabled, enabled ? 'Mute microphone' : 'Unmute microphone');
   });
   $('toggleCameraBtn').addEventListener('click', function () {
     if (!state.localStream) return;
     var tracks = state.localStream.getVideoTracks();
     var enabled = tracks.some(function (track) { return !track.enabled; });
     tracks.forEach(function (track) { track.enabled = enabled; });
-    $('toggleCameraBtn').textContent = enabled ? 'Turn camera off' : 'Turn camera on';
-    $('toggleCameraBtn').setAttribute('aria-pressed', enabled ? 'false' : 'true');
+    setControlLabel('toggleCameraBtn', enabled ? 'Camera' : 'Camera on', !enabled, enabled ? 'Turn camera off' : 'Turn camera on');
   });
   $('shareScreenBtn').addEventListener('click', function () {
     if (state.screenStream) stopScreenShare();
@@ -1047,8 +1054,13 @@
   });
   $('toggleChatPanelBtn').addEventListener('click', function () {
     var open = callView.classList.toggle('panel-open');
-    $('toggleChatPanelBtn').textContent = open ? 'Close chat' : 'Chat';
-    $('toggleChatPanelBtn').setAttribute('aria-pressed', open ? 'true' : 'false');
+    setControlLabel('toggleChatPanelBtn', open ? 'Close chat' : 'Chat', open, open ? 'Close chat and meeting details' : 'Show chat and meeting details');
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && callView.classList.contains('panel-open')) {
+      callView.classList.remove('panel-open');
+      setControlLabel('toggleChatPanelBtn', 'Chat', false, 'Show chat and meeting details');
+    }
   });
   $('chatForm').addEventListener('submit', function (event) {
     event.preventDefault();
@@ -1070,8 +1082,7 @@
   $('audioOnlyHintBtn').addEventListener('click', function () {
     if (state.localStream) {
       state.localStream.getVideoTracks().forEach(function (track) { track.enabled = false; });
-      $('toggleCameraBtn').textContent = 'Turn camera on';
-      $('toggleCameraBtn').setAttribute('aria-pressed', 'true');
+      setControlLabel('toggleCameraBtn', 'Camera on', true, 'Turn camera on');
       notify('Camera disabled to reduce upload bandwidth. Use the camera button to turn it back on.');
     } else notify('Turn off your camera during the call to reduce bandwidth.');
   });
@@ -1082,6 +1093,12 @@
     var stage = document.querySelector('.video-stage');
     if (!document.fullscreenElement && stage && stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
     else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  });
+  document.addEventListener('fullscreenchange', function () {
+    var active = !!document.fullscreenElement;
+    $('fullscreenBtn').textContent = active ? 'Exit fullscreen' : 'Fullscreen ⤢';
+    $('fullscreenBtn').setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+    $('fullscreenBtn').title = active ? 'Exit fullscreen' : 'Enter fullscreen';
   });
 
   $('copyInviteBtn').addEventListener('click', function () {
