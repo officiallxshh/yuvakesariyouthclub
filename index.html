@@ -772,7 +772,8 @@
     try {
       var code = new URLSearchParams(window.location.search).get('join');
       if (code && /^[A-Fa-f0-9]{32}$/.test(code)) {
-        frame.src = './meet/?home_embed=1&join=' + encodeURIComponent(code);
+        // Legacy homepage invite URLs should load the full-page Meet UI rather than nesting the call iframe.
+        window.location.replace('./meet/?join=' + encodeURIComponent(code));
       }
     } catch (_) {}
   }
