@@ -117,6 +117,40 @@
     return String(value || '').toUpperCase().replace(/[^A-F0-9]/g, '');
   }
 
+  function extractInviteCode(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+
+    // Accept complete copied YYC links as well as direct invite codes.
+    var queryMatch = raw.match(/[?&](?:join|invite_code|inviteCode|code)=([A-Fa-f0-9]{32})(?=$|[#&\\s])/i);
+    if (queryMatch) return queryMatch[1].toUpperCase();
+
+    try {
+      var parsed = new URL(raw, window.location.href);
+      var names = ['join', 'invite_code', 'inviteCode', 'code'];
+      for (var i = 0; i < names.length; i++) {
+        var fromSearch = parsed.searchParams.get(names[i]);
+        if (fromSearch && /^[A-Fa-f0-9]{32}$/.test(fromSearch)) return fromSearch.toUpperCase();
+      }
+      // Also tolerate invite links that put a query string after #meet.
+      var hashQueryAt = parsed.hash.indexOf('?');
+      if (hashQueryAt >= 0) {
+        var hashParams = new URLSearchParams(parsed.hash.slice(hashQueryAt + 1));
+        for (var h = 0; h < names.length; h++) {
+          var fromHash = hashParams.get(names[h]);
+          if (fromHash && /^[A-Fa-f0-9]{32}$/.test(fromHash)) return fromHash.toUpperCase();
+        }
+      }
+    } catch (_) {}
+
+    // Accept a raw 32-character code with optional spaces/hyphens for readability.
+    if (/^[A-Fa-f0-9\\s-]+$/.test(raw)) {
+      var compact = raw.replace(/[\\s-]/g, '').toUpperCase();
+      if (/^[A-F0-9]{32}$/.test(compact)) return compact;
+    }
+    return '';
+  }
+
   function isAdminSession(session) {
     return !!(session && session.actor && session.actor.kind === 'admin' && session.token);
   }
@@ -234,8 +268,8 @@
 
   function callLookup(code) {
     var cleaned = cleanCode(code);
-    if (cleaned.length !== 32) {
-      showAlert('A YYC private meeting code has 32 hexadecimal characters. Paste the full invite link or enter the complete code.');
+    if (!/^[A-F0-9]{32}$/.test(cleaned)) {
+      showAlert('Use the full private invite link or its 32-character invite code, not the meeting database ID.');
       return Promise.reject(new Error('Invalid meeting code.'));
     }
     return rpc('yyc_meet_lookup', { p_invite_code: cleaned }).then(function (data) {
@@ -548,8 +582,15 @@
     event.preventDefault();
     var value = $('joinCode').value.trim();
     if (!value) return;
-    var fromLink = value.match(/[?&]join=([A-Fa-f0-9]{32})/);
-    goToMeeting(fromLink ? fromLink[1] : value);
+    var code = extractInviteCode(value);
+    if (!code) {
+      var looksLikeMeetingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+      showAlert(looksLikeMeetingId
+        ? 'That looks like a meeting database ID, not the private invite code. Use Copy invite in Admin Panel, then paste the full link here.'
+        : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
+      return;
+    }
+    goToMeeting(code);
   });
 
   $('instantMeetBtn').addEventListener('click', function () {
