@@ -122,7 +122,7 @@
     if (!raw) return '';
 
     // Accept complete copied YYC links as well as direct invite codes.
-    var queryMatch = raw.match(/[?&](?:join|invite_code|inviteCode|code)=([A-Fa-f0-9]{32})(?=$|[#&\\s])/i);
+    var queryMatch = raw.match(/[?&](?:join|invite_code|inviteCode|code)=([A-Fa-f0-9]{32})(?=$|[#&\s])/i);
     if (queryMatch) return queryMatch[1].toUpperCase();
 
     try {
@@ -144,8 +144,8 @@
     } catch (_) {}
 
     // Accept a raw 32-character code with optional spaces/hyphens for readability.
-    if (/^[A-Fa-f0-9\\s-]+$/.test(raw)) {
-      var compact = raw.replace(/[\\s-]/g, '').toUpperCase();
+    if (/^[A-Fa-f0-9\s-]+$/.test(raw)) {
+      var compact = raw.replace(/[\s-]/g, '').toUpperCase();
       if (/^[A-F0-9]{32}$/.test(compact)) return compact;
     }
     return '';
