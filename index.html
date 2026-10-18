@@ -772,7 +772,9 @@
     try {
       var code = new URLSearchParams(window.location.search).get('join');
       if (code && /^[A-Fa-f0-9]{32}$/.test(code)) {
-        frame.src = './meet/?home_embed=1&join=' + encodeURIComponent(code);
+        // Legacy invite links that point at the homepage should open the full-page Meet view.
+        // This avoids starting Jitsi inside a nested iframe, which can leave the screen blank.
+        window.location.replace('./meet/?join=' + encodeURIComponent(code));
       }
     } catch (_) {}
   }
