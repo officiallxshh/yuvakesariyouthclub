@@ -42,7 +42,7 @@
       <div class="hero-copy">
         <div>
           <h1>Meet together.<br><em>Move forward.</em></h1>
-          <p>A private YYC video room built with browser-to-browser calling, club-controlled invites and custom meeting controls.</p>
+          <p>A YYC meeting lobby with private invite validation and Jitsi-powered video calls. Schedule meetings through YYC Admin and share invites only with your team.</p>
         </div>
         <div class="hero-emblem" aria-hidden="true"><div class="emblem-orbit orbit-a"></div><div class="emblem-orbit orbit-b"></div><div class="emblem-core">YYC<span>MEET</span></div></div>
       </div>
@@ -81,7 +81,7 @@
           <form id="scheduleForm" class="schedule-form" hidden>
             <div class="field-row">
               <label class="field-label">Meeting title<input type="text" id="meetingTitle" name="title" maxlength="120" placeholder="e.g. Clean-up drive planning" required minlength="3"></label>
-              <label class="field-label">Duration<select id="meetingDuration" name="duration"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 hour</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="240">4 hours</option><option value="480">8 hours</option></select></label>
+              <label class="field-label">Duration<select id="meetingDuration" name="duration"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 hour</option><option value="90">1 hour 30 minutes</option></select><small>Public Jitsi sessions may end after about 95 minutes; schedule up to 90 minutes per call.</small></label>
             </div>
             <label class="field-label">Notes / agenda <span class="optional-label">OPTIONAL</span><textarea id="meetingDescription" name="description" rows="3" maxlength="2000" placeholder="Add the main points, preparation or links for the team."></textarea></label>
             <div class="field-row">
@@ -108,8 +108,8 @@
           <div class="profile-top"><span class="profile-avatar" id="profileAvatar">Y</span><div><b id="profileName">Welcome to YYC Meet</b><small id="profileRole">Invite guests can join without an account</small></div></div>
           <div class="profile-divider"></div>
           <div class="profile-stat"><span>Account status</span><b id="profileStatus">Checking</b></div>
-          <div class="profile-stat"><span>Conference room</span><b>YYC WebRTC</b></div>
-          <p class="profile-foot">Your YYC account is used only for meeting scheduling and host controls. YYC manages invite validation and signaling; live audio/video is sent directly between participants.</p>
+          <div class="profile-stat"><span>Conference room</span><b>Jitsi Meet</b></div>
+          <p class="profile-foot">Your YYC account is used for meeting scheduling and host controls. YYC validates live meeting invites; Jitsi Meet handles the audio, video and in-call tools.</p>
         </section>
 
         <section class="side-card feature-card">
@@ -121,7 +121,7 @@
             <div class="feature-line"><span class="feature-icon">☷</span><div><b>Chat & participants</b><small>Keep the conversation and attendee list nearby.</small></div></div>
             <div class="feature-line"><span class="feature-icon">✦</span><div><b>Collaboration controls</b><small>Captions, raise hand, reactions and backgrounds where enabled.</small></div></div>
           </div>
-          <div class="feature-foot">This beta uses direct browser-to-browser calls and supports up to 4 participants per room. A self-hosted media relay is a separate next step for larger rooms and difficult networks.</div>
+          <div class="feature-foot">Jitsi Meet provides the in-call participant layout, chat and screen sharing. On the public meet.jit.si service, the first person to start the room may need to sign in or wait for a moderator.</div>
         </section>
 
         <section class="side-card safety-card">
@@ -149,11 +149,11 @@
           <button type="button" class="rtc-control-button" id="shareScreenBtn" aria-pressed="false">Share screen</button>
         </div>
         <div class="call-error" id="callError" hidden><div class="error-icon">!</div><h2>Conference service unavailable</h2><p id="callErrorText">YYC Meet could not finish connecting.</p><button class="meet-btn meet-btn-gold" id="retryConferenceBtn" type="button">Retry connection ↻</button><button class="meet-btn meet-btn-dark" id="backToDashboardBtn" type="button">Back to YYC Meet</button></div>
-        <div class="call-bottom-note">Camera and microphone are requested from your browser. Calls use direct peer-to-peer connections; if a restricted network blocks the connection, a YYC-managed TURN relay may be needed.</div>
+        <div class="call-bottom-note">After YYC validates your live invite, the room opens in Jitsi Meet’s native meeting page, with Jitsi’s device-check screen and meeting toolbar.</div>
       </section>
       <aside class="call-info-rail">
         <div class="call-info-card"><div class="side-eyebrow">MEETING DETAILS</div><h2 id="railTitle">Meeting</h2><p id="railDescription">Welcome to the meeting.</p><div class="rail-meta"><span>Host</span><b id="railHost">YYC Host</b></div><div class="rail-meta"><span>Duration</span><b id="railDuration">60 minutes</b></div><div class="rail-meta"><span>Invite code</span><b id="railCode" class="rail-code">—</b></div><button type="button" class="copy-full-btn" id="copyCodeBtn">Copy meeting code</button></div>
-        <div class="call-info-card call-quality-card"><div class="side-eyebrow">DIRECT CONNECTION</div><h3>Browser-to-browser media</h3><p class="quality-help">Audio and video travel directly between participants, not through a meeting provider. Some restricted networks may require a YYC-hosted TURN relay.</p><button type="button" class="copy-full-btn" id="audioOnlyHintBtn">Reduce upload bandwidth</button></div><div class="call-info-card call-chat-card">
+        <div class="call-info-card call-quality-card"><div class="side-eyebrow">VIDEO PROVIDER</div><h3>Jitsi Meet</h3><p class="quality-help">Jitsi handles the live call and its meeting controls. Sign-in and moderation prompts depend on the Jitsi service and its room state.</p><button type="button" class="copy-full-btn" id="audioOnlyHintBtn">Reduce upload bandwidth</button></div><div class="call-info-card call-chat-card">
           <div class="side-eyebrow">ROOM CHAT</div><h3>Team messages</h3>
           <div class="rtc-chat-messages" id="chatMessages" aria-live="polite"><p class="rtc-chat-empty">Join a room to chat with participants.</p></div>
           <form class="rtc-chat-form" id="chatForm"><input id="chatInput" type="text" maxlength="500" placeholder="Write a message…" autocomplete="off" aria-label="Chat message" required><button type="submit" class="meet-btn meet-btn-gold">Send</button></form>
@@ -164,6 +164,6 @@
 
 
 <div class="meet-toast" id="meetToast" role="status" aria-live="polite"></div>
-  <script src="./meet.js?v=20261018-04" defer></script>
+  <script src="./meet.js?v=20261018-07" defer></script>
 </body>
 </html>
