@@ -17,6 +17,14 @@
     meetings: [],
     activeMeeting: null,
     api: null,
+    rtcClient: null,
+    roomChannel: null,
+    localStream: null,
+    localVideo: null,
+    screenStream: null,
+    participantId: null,
+    peers: new Map(),
+    meetingWatchTimer: null,
     leaving: false,
     toastTimer: null,
     qualityMode: 'auto',
@@ -25,14 +33,14 @@
     qualityGoodSamples: 0,
     appliedQuality: 720,
     callStartupTimer: null,
-    jitsiReady: false
+    rtcReady: false
   };
 
   var $ = function (id) { return document.getElementById(id); };
   var dashboard = $('dashboardView');
   var callView = $('callView');
   var alertBox = $('meetAlert');
-  var mount = $('jitsiMount');
+  var mount = $('rtcMount');
 
   function safeText(value) {
     return String(value == null ? '' : value).replace(/[&<>'"]/g, function (c) {
@@ -160,6 +168,7 @@
   function inviteUrl(code) {
     // Private invite links open the full-page YYC Meet view rather than the nested homepage iframe.
     var u = new URL('./', window.location.href);
+    u.search = '';
     u.hash = '';
     u.searchParams.set('join', code);
     return u.href;
@@ -282,21 +291,39 @@
     });
   }
 
-  function loadJitsiScript() {
-    if (window.JitsiMeetExternalAPI) return Promise.resolve();
-    if (window.__yycMeetJitsiPromise) return window.__yycMeetJitsiPromise;
-    window.__yycMeetJitsiPromise = new Promise(function (resolve, reject) {
+  function loadRealtimeClient() {
+    if (window.supabase && typeof window.supabase.createClient === 'function') return Promise.resolve();
+    if (window.__yycSupabaseSdkPromise) return window.__yycSupabaseSdkPromise;
+    window.__yycSupabaseSdkPromise = new Promise(function (resolve, reject) {
       var script = document.createElement('script');
-      script.src = 'https://meet.jit.si/external_api.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.91.0/dist/umd/supabase.js';
       script.async = true;
       script.onload = function () {
-        if (window.JitsiMeetExternalAPI) resolve();
-        else reject(new Error('Jitsi Meet loaded, but its conference API was unavailable.'));
+        if (window.supabase && typeof window.supabase.createClient === 'function') resolve();
+        else {
+          window.__yycSupabaseSdkPromise = null;
+          reject(new Error('The YYC room-signaling client could not start.'));
+        }
       };
-      script.onerror = function () { reject(new Error('Could not load the video-meeting service. Check your internet connection or open the meeting directly.')); };
+      script.onerror = function () {
+        window.__yycSupabaseSdkPromise = null;
+        reject(new Error('Could not load YYC room signaling. Check your internet connection and retry.'));
+      };
       document.head.appendChild(script);
     });
-    return window.__yycMeetJitsiPromise;
+    return window.__yycSupabaseSdkPromise;
+  }
+
+  function ensureRealtimeClient() {
+    return loadRealtimeClient().then(function () {
+      if (!state.rtcClient) {
+        state.rtcClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          realtime: { params: { eventsPerSecond: 30 } }
+        });
+      }
+      return state.rtcClient;
+    });
   }
 
   function notifyHomeFrameHeight() {
@@ -323,210 +350,444 @@
     $('videoStatusDot').style.background = isLive ? '#8bcea8' : '#d9b770';
   }
 
-  function updateQualityStatus(text) {
-    var node = $('qualityStatus');
-    if (node) node.textContent = text;
+  function loadRealtimeClient() {
+    if (window.supabase && typeof window.supabase.createClient === 'function') return Promise.resolve();
+    if (window.__yycSupabaseSdkPromise) return window.__yycSupabaseSdkPromise;
+    window.__yycSupabaseSdkPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.91.0/dist/umd/supabase.js';
+      script.async = true;
+      script.onload = function () {
+        if (window.supabase && typeof window.supabase.createClient === 'function') resolve();
+        else {
+          window.__yycSupabaseSdkPromise = null;
+          reject(new Error('The YYC room-signaling client could not start.'));
+        }
+      };
+      script.onerror = function () {
+        window.__yycSupabaseSdkPromise = null;
+        reject(new Error('Could not load YYC room signaling. Check your internet connection and retry.'));
+      };
+      document.head.appendChild(script);
+    });
+    return window.__yycSupabaseSdkPromise;
   }
 
-  function stopQualityMonitoring() {
-    if (state.qualityTimer) window.clearInterval(state.qualityTimer);
-    state.qualityTimer = null;
-    state.qualityBadSamples = 0;
-    state.qualityGoodSamples = 0;
+  function ensureRealtimeClient() {
+    return loadRealtimeClient().then(function () {
+      if (!state.rtcClient) {
+        state.rtcClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          realtime: { params: { eventsPerSecond: 30 } }
+        });
+      }
+      return state.rtcClient;
+    });
   }
 
-  function setConferenceQuality(height, reason) {
-    if (!state.api || typeof state.api.executeCommand !== 'function') return;
-    try {
-      state.api.executeCommand('setVideoQuality', Number(height));
-      state.appliedQuality = Number(height);
-      if (reason) updateQualityStatus(reason);
-    } catch (_) {
-      updateQualityStatus('Adaptive video is managed by the conference service. Camera-off can help when bandwidth is limited.');
+  function roomPresences() {
+    if (!state.roomChannel) return [];
+    var presence = state.roomChannel.presenceState() || {};
+    return Object.keys(presence).reduce(function (all, key) {
+      return all.concat(Array.isArray(presence[key]) ? presence[key] : []);
+    }, []);
+  }
+
+  function renderRtcTile(participantId, displayName, isLocal, stream) {
+    var tile = document.createElement('article');
+    tile.className = 'rtc-video-tile' + (isLocal ? ' rtc-self-tile' : '');
+    tile.dataset.participantId = participantId;
+    var video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = !!isLocal;
+    video.srcObject = stream || null;
+    var label = document.createElement('div');
+    label.className = 'rtc-video-label';
+    label.textContent = (displayName || (isLocal ? 'You' : 'YYC Guest')) + (isLocal ? ' · You' : '');
+    tile.appendChild(video);
+    tile.appendChild(label);
+    mount.appendChild(tile);
+    if (isLocal) state.localVideo = video;
+    return { tile: tile, video: video, label: label };
+  }
+
+  function sendRtcSignal(to, kind, data) {
+    if (!state.roomChannel || !state.participantId) return Promise.resolve();
+    return Promise.resolve(state.roomChannel.send({
+      type: 'broadcast',
+      event: 'rtc-signal',
+      payload: {
+        from: state.participantId,
+        to: to,
+        kind: kind,
+        data: data,
+        displayName: meetingDisplayName()
+      }
+    })).catch(function () {});
+  }
+
+  function updateRtcStatus() {
+    if (!state.activeMeeting || state.leaving) return;
+    var connected = 1;
+    state.peers.forEach(function (peer) {
+      if (peer.pc.connectionState === 'connected') connected += 1;
+    });
+    if (connected > 1) markStatus('Direct peer-to-peer call · ' + connected + ' connected', true);
+    else markStatus('Waiting for participants to connect directly…', false);
+  }
+
+  function closeRtcPeer(participantId) {
+    var peer = state.peers.get(participantId);
+    if (!peer) return;
+    try { peer.pc.ontrack = null; peer.pc.onicecandidate = null; peer.pc.close(); } catch (_) {}
+    if (peer.tile && peer.tile.parentNode) peer.tile.parentNode.removeChild(peer.tile);
+    state.peers.delete(participantId);
+    updateRtcStatus();
+  }
+
+  function ensureRtcPeer(participantId, displayName) {
+    var existing = state.peers.get(participantId);
+    if (existing) {
+      if (displayName && existing.label) existing.label.textContent = displayName;
+      return existing;
+    }
+    if (!state.localStream) throw new Error('Your camera and microphone are not ready yet.');
+    var pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    });
+    var remoteStream = new MediaStream();
+    var view = renderRtcTile(participantId, displayName || 'YYC Guest', false, remoteStream);
+    var peer = {
+      pc: pc,
+      stream: remoteStream,
+      tile: view.tile,
+      video: view.video,
+      label: view.label,
+      displayName: displayName || 'YYC Guest',
+      pendingCandidates: [],
+      offerStarted: false
+    };
+    state.peers.set(participantId, peer);
+    state.localStream.getTracks().forEach(function (track) { pc.addTrack(track, state.localStream); });
+    pc.ontrack = function (event) {
+      var incoming = event.streams && event.streams[0];
+      if (incoming) {
+        peer.video.srcObject = incoming;
+      } else {
+        if (!peer.stream.getTracks().some(function (track) { return track.id === event.track.id; })) peer.stream.addTrack(event.track);
+        peer.video.srcObject = peer.stream;
+      }
+      peer.video.play().catch(function () {});
+    };
+    pc.onicecandidate = function (event) {
+      if (event.candidate) sendRtcSignal(participantId, 'candidate', event.candidate.toJSON ? event.candidate.toJSON() : event.candidate);
+    };
+    pc.onconnectionstatechange = updateRtcStatus;
+    pc.oniceconnectionstatechange = function () {
+      if (pc.iceConnectionState === 'failed') {
+        markStatus('Could not connect directly to a participant. Their network may require a YYC-managed TURN relay.', false);
+      }
+      updateRtcStatus();
+    };
+    updateRtcStatus();
+    return peer;
+  }
+
+  function flushRtcCandidates(peer) {
+    var queued = peer.pendingCandidates.splice(0);
+    return queued.reduce(function (chain, candidate) {
+      return chain.then(function () { return peer.pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(function () {}); });
+    }, Promise.resolve());
+  }
+
+  function createRtcOffer(participantId, displayName) {
+    var peer;
+    try { peer = ensureRtcPeer(participantId, displayName); }
+    catch (error) { return Promise.reject(error); }
+    if (peer.offerStarted || peer.pc.signalingState !== 'stable') return Promise.resolve();
+    peer.offerStarted = true;
+    return peer.pc.createOffer().then(function (offer) {
+      return peer.pc.setLocalDescription(offer);
+    }).then(function () {
+      return sendRtcSignal(participantId, 'offer', peer.pc.localDescription);
+    }).catch(function (error) {
+      peer.offerStarted = false;
+      throw error;
+    });
+  }
+
+  function syncRtcPeers() {
+    if (!state.roomChannel || !state.participantId || state.leaving) return;
+    var peers = roomPresences();
+    peers.forEach(function (presence) {
+      var id = presence && presence.participantId;
+      if (!id || id === state.participantId) return;
+      try { ensureRtcPeer(id, presence.displayName || 'YYC Guest'); } catch (_) {}
+      if (state.participantId < id) {
+        createRtcOffer(id, presence.displayName || 'YYC Guest').catch(function () {
+          markStatus('Could not establish a direct connection to a participant.', false);
+        });
+      }
+    });
+    updateRtcStatus();
+  }
+
+  function handleRtcSignal(payload) {
+    if (!payload || payload.to !== state.participantId || payload.from === state.participantId || !payload.from) return;
+    var peer;
+    try { peer = ensureRtcPeer(payload.from, payload.displayName || 'YYC Guest'); }
+    catch (_) { return; }
+
+    var pc = peer.pc;
+    if (payload.kind === 'offer') {
+      Promise.resolve().then(function () { return pc.setRemoteDescription(new RTCSessionDescription(payload.data)); })
+        .then(function () { return flushRtcCandidates(peer); })
+        .then(function () { return pc.createAnswer(); })
+        .then(function (answer) { return pc.setLocalDescription(answer); })
+        .then(function () { return sendRtcSignal(payload.from, 'answer', pc.localDescription); })
+        .catch(function () { markStatus('The incoming call handshake failed. Please leave and rejoin.', false); });
+    } else if (payload.kind === 'answer') {
+      if (pc.signalingState !== 'have-local-offer') return;
+      pc.setRemoteDescription(new RTCSessionDescription(payload.data))
+        .then(function () { return flushRtcCandidates(peer); })
+        .catch(function () { markStatus('The call answer could not be applied. Please rejoin the room.', false); });
+    } else if (payload.kind === 'candidate' && payload.data) {
+      if (pc.remoteDescription && pc.remoteDescription.type) {
+        pc.addIceCandidate(new RTCIceCandidate(payload.data)).catch(function () {});
+      } else {
+        peer.pendingCandidates.push(payload.data);
+      }
     }
   }
 
-  function beginQualityMonitoring(api) {
-    stopQualityMonitoring();
-    state.qualityMode = 'auto';
-    state.appliedQuality = 720;
-    state.qualityBadSamples = 0;
-    state.qualityGoodSamples = 0;
-    if ($('videoQualitySelect')) $('videoQualitySelect').value = 'auto';
-    updateQualityStatus('Adaptive mode is active · checking connection quality…');
+  function addRtcChatMessage(name, message, mine, timestamp) {
+    var list = $('chatMessages');
+    if (!list) return;
+    var row = document.createElement('div');
+    row.className = 'rtc-chat-message' + (mine ? ' mine' : '');
+    var author = document.createElement('b');
+    author.textContent = mine ? 'You' : (name || 'YYC Guest');
+    var body = document.createElement('p');
+    body.textContent = String(message || '').slice(0, 500);
+    var time = document.createElement('small');
+    time.textContent = new Date(timestamp || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    row.appendChild(author);
+    row.appendChild(body);
+    row.appendChild(time);
+    list.appendChild(row);
+    while (list.children.length > 80) list.removeChild(list.firstChild);
+    list.scrollTop = list.scrollHeight;
+  }
 
-    function sample() {
-      if (!api || state.api !== api || state.leaving || state.qualityMode !== 'auto') return;
-      if (typeof api.getConnectionStats !== 'function') {
-        updateQualityStatus('Adaptive video is active in the conference service. Choose 360p or 180p if video stutters.');
-        return;
+  function cleanupRtcResources() {
+    if (state.meetingWatchTimer) window.clearInterval(state.meetingWatchTimer);
+    state.meetingWatchTimer = null;
+    if (state.screenStream) {
+      state.screenStream.getTracks().forEach(function (track) { try { track.stop(); } catch (_) {} });
+      state.screenStream = null;
+    }
+    if (state.roomChannel) {
+      var channel = state.roomChannel;
+      state.roomChannel = null;
+      try { channel.untrack(); } catch (_) {}
+      if (state.rtcClient) {
+        Promise.resolve(state.rtcClient.removeChannel(channel)).catch(function () {});
+      } else {
+        try { channel.unsubscribe(); } catch (_) {}
       }
-      Promise.resolve(api.getConnectionStats()).then(function (stats) {
-        if (state.api !== api || state.leaving || state.qualityMode !== 'auto' || !stats) return;
-        var quality = Number(stats.connectionQuality);
-        if (!Number.isFinite(quality)) {
-          updateQualityStatus('Adaptive video is active · live connection measurements are unavailable.');
-          return;
-        }
-        var target = state.appliedQuality || 720;
-        if (quality < 22) target = 180;
-        else if (quality < 48) target = 360;
-        else if (quality >= 72) target = 720;
+    }
+    Array.from(state.peers.keys()).forEach(closeRtcPeer);
+    if (state.localStream) {
+      state.localStream.getTracks().forEach(function (track) { try { track.stop(); } catch (_) {} });
+      state.localStream = null;
+    }
+    state.localVideo = null;
+    state.participantId = null;
+    state.screenStream = null;
+    if (mount) mount.innerHTML = '';
+    if ($('rtcControls')) $('rtcControls').hidden = true;
+  }
 
-        if (target < (state.appliedQuality || 720)) {
-          state.qualityBadSamples += 1;
-          state.qualityGoodSamples = 0;
-          if (state.qualityBadSamples >= 2) {
-            setConferenceQuality(target, 'Weak connection (' + Math.round(quality) + '/100) · reducing video to ' + target + 'p to help preserve audio. Switch off the camera if audio also struggles.');
-            state.qualityBadSamples = 0;
-          } else {
-            updateQualityStatus('Connection is fluctuating (' + Math.round(quality) + '/100) · adaptive video is monitoring before changing resolution.');
-          }
-        } else if (target > (state.appliedQuality || 720)) {
-          state.qualityGoodSamples += 1;
-          state.qualityBadSamples = 0;
-          if (state.qualityGoodSamples >= 3) {
-            setConferenceQuality(720, 'Connection recovered (' + Math.round(quality) + '/100) · video quality has been raised to 720p adaptive mode.');
-            state.qualityGoodSamples = 0;
-          } else {
-            updateQualityStatus('Connection improving (' + Math.round(quality) + '/100) · waiting for stability before raising video quality.');
-          }
-        } else {
-          state.qualityBadSamples = 0;
-          state.qualityGoodSamples = 0;
-          updateQualityStatus('Connection quality ' + Math.round(quality) + '/100 · adaptive video target up to ' + (state.appliedQuality || 720) + 'p. Audio remains available if video is reduced.');
-        }
-      }).catch(function () {
-        if (state.api === api && state.qualityMode === 'auto') {
-          updateQualityStatus('Adaptive video is active in the conference service. Choose 360p or 180p if video stutters.');
-        }
+  function startScreenShare() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      notify('Screen sharing is not supported in this browser.');
+      return Promise.resolve();
+    }
+    return navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).then(function (screen) {
+      var screenTrack = screen.getVideoTracks()[0];
+      if (!screenTrack) throw new Error('No screen video was available to share.');
+      state.screenStream = screen;
+      state.peers.forEach(function (peer) {
+        var sender = peer.pc.getSenders().find(function (item) { return item.track && item.track.kind === 'video'; });
+        if (sender) sender.replaceTrack(screenTrack).catch(function () {});
+      });
+      if (state.localVideo) state.localVideo.srcObject = screen;
+      $('shareScreenBtn').textContent = 'Stop sharing';
+      $('shareScreenBtn').setAttribute('aria-pressed', 'true');
+      screenTrack.onended = function () { stopScreenShare(); };
+    }).catch(function (error) {
+      if (error && error.name !== 'NotAllowedError') notify(error.message || 'Could not start screen sharing.');
+    });
+  }
+
+  function stopScreenShare() {
+    var screen = state.screenStream;
+    state.screenStream = null;
+    var cameraTrack = state.localStream && state.localStream.getVideoTracks()[0];
+    if (screen) screen.getTracks().forEach(function (track) { try { track.stop(); } catch (_) {} });
+    if (cameraTrack) {
+      state.peers.forEach(function (peer) {
+        var sender = peer.pc.getSenders().find(function (item) { return item.track && item.track.kind === 'video'; });
+        if (sender) sender.replaceTrack(cameraTrack).catch(function () {});
       });
     }
-    sample();
-    state.qualityTimer = window.setInterval(sample, 12000);
+    if (state.localVideo && state.localStream) state.localVideo.srcObject = state.localStream;
+    if ($('shareScreenBtn')) {
+      $('shareScreenBtn').textContent = 'Share screen';
+      $('shareScreenBtn').setAttribute('aria-pressed', 'false');
+    }
   }
 
   function startConference(meeting) {
-    if (!meeting || !meeting.room_name) {
-      notify('This meeting does not have an active room yet.');
+    if (!meeting || !meeting.room_name || !meeting.invite_code) {
+      notify('This meeting does not have an active private room yet.');
       return Promise.resolve();
     }
     if (meeting.status === 'ended' || meeting.status === 'cancelled') {
       notify('This meeting has ended or was cancelled.');
       return Promise.resolve();
     }
+    cleanupRtcResources();
     state.activeMeeting = meeting;
     state.leaving = false;
-    state.jitsiReady = false;
+    state.rtcReady = false;
     if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
     state.callStartupTimer = window.setTimeout(function () {
-      if (!state.activeMeeting || state.leaving || state.jitsiReady) return;
-      $('callErrorText').textContent = 'The video conference is taking too long to appear in this page. Try the direct meeting link below, or return and join again.';
+      if (!state.activeMeeting || state.leaving || state.rtcReady) return;
+      $('callErrorText').textContent = 'YYC could not finish connecting. Allow camera/microphone access and check whether your network supports direct WebRTC calls.';
       $('callError').hidden = false;
-      markStatus('Conference did not load', false);
-    }, 20000);
+      markStatus('Connection timed out', false);
+    }, 30000);
+
     $('callTitle').textContent = meeting.title || 'YYC Meeting';
-    $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Invite-only access link';
+    $('callMeetingMeta').textContent = formatDate(meeting.starts_at) + ' · Private peer-to-peer room';
     $('railTitle').textContent = meeting.title || 'YYC Meeting';
-    $('railDescription').textContent = meeting.description || 'Welcome to the YYC meeting. Use the in-call controls to collaborate.';
+    $('railDescription').textContent = meeting.description || 'A private YYC conversation using direct browser connections.';
     $('railHost').textContent = meeting.host_name || 'YYC Host';
     $('railDuration').textContent = String(meeting.duration_minutes || 60) + ' minutes';
     $('railCode').textContent = meeting.invite_code || '—';
-    $('openExternalMeeting').href = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
     $('callError').hidden = true;
+    $('chatMessages').innerHTML = '';
+    addRtcChatMessage('YYC Meet', 'Room chat is ready. Messages are shared only with people in this invite-only room.', false, Date.now());
     mount.innerHTML = '';
     setCallVisible(true);
-    markStatus('Connecting to conference…', false);
+    markStatus('Starting your camera and microphone…', false);
 
-    return loadJitsiScript().then(function () {
-      if (state.leaving || !state.activeMeeting) return;
-      var displayName = meetingDisplayName();
-      var api = new window.JitsiMeetExternalAPI('meet.jit.si', {
-        roomName: meeting.room_name,
-        parentNode: mount,
-        width: '100%',
-        height: '100%',
-        lang: 'en',
-        userInfo: { displayName: displayName },
-        configOverwrite: {
-          prejoinPageEnabled: true,
-          disableDeepLinking: true,
-          enableWelcomePage: false,
-          startWithAudioMuted: true,
-          startWithVideoMuted: true,
-          requireDisplayName: true,
-          resolution: 720,
-          maxFullResolutionParticipants: 3,
-          disableSimulcast: false,
-          videoQuality: {
-            enableAdaptiveMode: true,
-            codecPreferenceOrder: ['VP8', 'H264', 'VP9'],
-            mobileCodecPreferenceOrder: ['VP8', 'H264']
-          },
-          lobby: { enabled: !!meeting.waiting_room },
-          toolbarButtons: [
-            'microphone', 'camera', 'desktop', 'chat', 'raisehand',
-            'participants-pane', 'tileview', 'videobackground',
-            'closedcaptions', 'settings', 'hangup', 'fullscreen',
-            'shortcuts', 'help', 'invite', 'videoquality', 'filmstrip',
-            'reactions', 'noisesuppression', 'security', 'mute-everyone',
-            'whiteboard', 'sharedvideo', 'recording', 'livestreaming',
-            'etherpad', 'feedback', 'stats', 'download'
-          ]
-        },
-        interfaceConfigOverwrite: {
-          APP_NAME: 'YYC Meet',
-          MOBILE_APP_PROMO: false,
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false
-        }
-      });
-      state.api = api;
-      api.addListener('ready', function () {
-        state.jitsiReady = true;
-        if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-        state.callStartupTimer = null;
-        $('callError').hidden = true;
-        markStatus('Conference loaded · finish the join screen below if prompted', false);
-        notifyHomeFrameHeight();
-      });
-      beginQualityMonitoring(api);
-      api.addListener('videoConferenceJoined', function (event) {
-        state.jitsiReady = true;
-        if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
-        state.callStartupTimer = null;
-        $('callError').hidden = true;
-        markStatus('Connected · ' + (event && event.displayName ? event.displayName : 'You are in the room'), true);
-      });
-      api.addListener('videoConferenceLeft', function () {
-        if (!state.leaving) notify('You left the meeting.');
-      });
-      api.addListener('readyToClose', function () {
-        leaveConference(false);
-      });
-      api.addListener('participantJoined', function () {
-        markStatus('In meeting · participant connected', true);
-      });
-      api.addListener('participantLeft', function () {
-        markStatus('Connected · waiting for participants', true);
-      });
-      api.addListener('errorOccurred', function (event) {
-        var details = event && (event.message || event.name);
-        $('callErrorText').textContent = details
-          ? 'The conference service reported: ' + String(details).slice(0, 220)
-          : 'The conference service reported an error. Try the direct meeting link below.';
-        $('callError').hidden = false;
-        markStatus('Conference reported an issue', false);
-      });
-      $('fullscreenBtn').onclick = function () {
-        var stage = document.querySelector('.video-stage');
-        if (!document.fullscreenElement && stage && stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
-        else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
-      };
-    }).catch(function (err) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
+      $('callErrorText').textContent = 'This browser does not support the camera, microphone, or peer-to-peer features required by YYC Meet. Please use a current version of Chrome, Edge, Firefox, or Safari over HTTPS.';
+      $('callError').hidden = false;
       if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
       state.callStartupTimer = null;
-      $('callErrorText').textContent = (err && err.message) || 'The conference service could not be loaded.';
+      return Promise.resolve();
+    }
+
+    return navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24, max: 30 } }
+    }).then(function (stream) {
+      if (state.leaving || !state.activeMeeting) {
+        stream.getTracks().forEach(function (track) { track.stop(); });
+        return;
+      }
+      state.localStream = stream;
+      state.participantId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+      renderRtcTile(state.participantId, meetingDisplayName(), true, stream);
+      $('rtcControls').hidden = false;
+
+      return ensureRealtimeClient().then(function (client) {
+        if (state.leaving || !state.activeMeeting) return;
+        var topic = 'yyc-rtc-' + String(meeting.room_name).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+        var channel = client.channel(topic, {
+          config: { broadcast: { self: false }, presence: { key: state.participantId } }
+        });
+        state.roomChannel = channel;
+        channel.on('broadcast', { event: 'rtc-signal' }, function (event) { handleRtcSignal(event && event.payload); });
+        channel.on('broadcast', { event: 'rtc-chat' }, function (event) {
+          var message = event && event.payload;
+          if (!message || message.from === state.participantId || typeof message.message !== 'string') return;
+          addRtcChatMessage(String(message.name || 'YYC Guest').slice(0, 80), message.message, false, message.sentAt);
+        });
+        channel.on('broadcast', { event: 'rtc-room-ended' }, function () {
+          notify('The YYC meeting host has ended this room.');
+          leaveConference(false);
+        });
+        channel.on('presence', { event: 'sync' }, function () { syncRtcPeers(); });
+        channel.on('presence', { event: 'join' }, function () { window.setTimeout(syncRtcPeers, 150); });
+        channel.on('presence', { event: 'leave' }, function (event) {
+          (event && event.leftPresences ? event.leftPresences : []).forEach(function (presence) {
+            if (presence && presence.participantId) closeRtcPeer(presence.participantId);
+          });
+        });
+
+        return new Promise(function (resolve, reject) {
+          var settled = false;
+          var timeout = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            reject(new Error('YYC room signaling timed out. Refresh and try joining again.'));
+          }, 12000);
+          channel.subscribe(function (status) {
+            if (settled) return;
+            if (status === 'SUBSCRIBED') {
+              settled = true;
+              window.clearTimeout(timeout);
+              resolve();
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              settled = true;
+              window.clearTimeout(timeout);
+              reject(new Error('YYC could not open the private room signaling channel. Please retry.'));
+            }
+          });
+        }).then(function () {
+          return channel.track({
+            participantId: state.participantId,
+            displayName: meetingDisplayName(),
+            joinedAt: new Date().toISOString()
+          });
+        }).then(function () {
+          return new Promise(function (resolve) { window.setTimeout(resolve, 700); });
+        }).then(function () {
+          if (state.leaving || !state.activeMeeting) return;
+          var allPresences = roomPresences();
+          if (allPresences.length > 4) {
+            throw new Error('This first YYC peer-to-peer version supports up to 4 people per room. A self-hosted media relay is needed for larger meetings.');
+          }
+          syncRtcPeers();
+          markStatus('Room ready · connecting directly to participants…', false);
+          state.rtcReady = true;
+          if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
+          state.callStartupTimer = null;
+
+          state.meetingWatchTimer = window.setInterval(function () {
+            if (!state.activeMeeting || state.leaving) return;
+            rpc('yyc_meet_lookup', { p_invite_code: meeting.invite_code }).then(function (data) {
+              if (data && !data.ok && ['NOT_FOUND', 'NOT_STARTED'].indexOf(data.error) >= 0) {
+                notify('This YYC meeting has ended or is no longer live.');
+                leaveConference(false);
+              }
+            }).catch(function () {});
+          }, 15000);
+        });
+      });
+    }).catch(function (error) {
+      cleanupRtcResources();
+      if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
+      state.callStartupTimer = null;
+      $('callErrorText').textContent = (error && error.message) || 'Could not start YYC Meet. Check camera/microphone permissions and try again.';
       $('callError').hidden = false;
       markStatus('Could not connect', false);
     });
@@ -542,16 +803,12 @@
   function leaveConference(showToast) {
     if (state.leaving) return;
     state.leaving = true;
-    stopQualityMonitoring();
-    if (state.api) {
-      try { state.api.dispose(); } catch (_) {}
-    }
+    cleanupRtcResources();
     state.api = null;
     state.activeMeeting = null;
-    state.jitsiReady = false;
+    state.rtcReady = false;
     if (state.callStartupTimer) window.clearTimeout(state.callStartupTimer);
     state.callStartupTimer = null;
-    mount.innerHTML = '';
     setCallVisible(false);
     if (showToast !== false) notify('You have left YYC Meet.');
     discoverSession();
@@ -595,17 +852,15 @@
     }
   }
 
-  function openDirectConference(meeting, joinWindow) {
-    var directUrl = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
+  function openInvitePage(code, joinWindow) {
+    var targetUrl = inviteUrl(code);
     if (joinWindow && !joinWindow.closed) {
       try { joinWindow.opener = null; } catch (_) {}
-      joinWindow.location.replace(directUrl);
+      joinWindow.location.replace(targetUrl);
       return;
     }
-    // A copied invite opened directly has no click event to open a new tab.
-    // Validate it first, then navigate to Jitsi's native meeting interface.
-    if (homeEmbed && window.parent !== window) window.top.location.assign(directUrl);
-    else window.location.replace(directUrl);
+    if (window.parent !== window) window.top.location.assign(targetUrl);
+    else window.location.assign(targetUrl);
   }
 
   function goToMeeting(code, joinWindow) {
@@ -615,9 +870,12 @@
         notify('The YYC Admin must start this meeting before anyone can join. Please try the same invite after it goes live.');
         return;
       }
-      // Use Jitsi's native page instead of nesting its conference iframe inside YYC.
-      // This gives participants the complete pre-join screen and the normal call toolbar.
-      openDirectConference(meeting, joinWindow);
+      if ((homeEmbed || adminEmbed) && window.parent !== window) {
+        openInvitePage(code, joinWindow);
+        return;
+      }
+      closeJoinWindow(joinWindow);
+      return startConference(meeting);
     }).catch(function (err) {
       closeJoinWindow(joinWindow);
       if (err && err.message !== 'Invalid meeting code.') {
@@ -642,7 +900,7 @@
         : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
       return;
     }
-    var joinWindow = window.open('about:blank', '_blank');
+    var joinWindow = (homeEmbed || adminEmbed) ? window.open('about:blank', '_blank') : null;
     goToMeeting(code, joinWindow);
   });
 
@@ -651,6 +909,7 @@
       notify('Only a YYC Admin can start an instant meeting from Admin Panel.');
       return;
     }
+    var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
     var now = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     createMeeting({
       title: 'YYC Quick Meeting',
@@ -660,13 +919,16 @@
       visibility: 'invite',
       waiting_room: false
     }).then(function (meeting) {
-      return portal('start', { id: meeting.id }).then(function () {
-        return callLookup(meeting.invite_code);
-      }).then(function (fullMeeting) {
-        loadMeetings();
-        startConference(fullMeeting);
+      return portal('start', { id: meeting.id }).then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.message) || 'Could not start the meeting.');
+        return callLookup(meeting.invite_code).then(function (fullMeeting) {
+          loadMeetings();
+          if (adminEmbed && hostWindow && !hostWindow.closed) hostWindow.location.replace(inviteUrl(meeting.invite_code));
+          else startConference(fullMeeting);
+        });
       });
     }).catch(function (err) {
+      if (hostWindow && !hostWindow.closed) hostWindow.close();
       notify((err && err.message) || 'Could not create an instant meeting.');
     });
   });
@@ -714,7 +976,7 @@
     var code = button.getAttribute('data-code');
     var id = button.getAttribute('data-id');
     if (action === 'join') {
-      var joinWindow = window.open('about:blank', '_blank');
+      var joinWindow = (homeEmbed || adminEmbed) ? window.open('about:blank', '_blank') : null;
       goToMeeting(code, joinWindow);
     } else if (action === 'copy') copyText(inviteUrl(code), 'Invite link copied.');
     else if (action === 'cancel') {
@@ -725,19 +987,22 @@
         return loadMeetings();
       }).catch(function (err) { notify((err && err.message) || 'Could not cancel the meeting.'); });
     } else if (action === 'manage-start') {
+      var hostWindow = adminEmbed ? window.open('about:blank', '_blank') : null;
       var scheduledMeeting = state.meetings.find(function (item) { return item.id === id; });
-      if (!scheduledMeeting) { notify('Refresh the meeting list and try again.'); return; }
+      if (!scheduledMeeting) { if (hostWindow && !hostWindow.closed) hostWindow.close(); notify('Refresh the meeting list and try again.'); return; }
       portal('start', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can start this meeting.');
-        if (adminEmbed) {
-          notify('Meeting is live. Copy its private invite and join from the Meet section on the homepage.');
-          return loadMeetings();
-        }
-        notify('Meeting is live. Opening the host room…');
+        notify('Meeting is live. Opening the custom YYC room…');
         return callLookup(scheduledMeeting.invite_code).then(function (fullMeeting) {
-          return loadMeetings().then(function () { startConference(fullMeeting); });
+          return loadMeetings().then(function () {
+            if (adminEmbed && hostWindow && !hostWindow.closed) hostWindow.location.replace(inviteUrl(scheduledMeeting.invite_code));
+            else startConference(fullMeeting);
+          });
         });
-      }).catch(function (err) { notify((err && err.message) || 'Could not start the meeting.'); });
+      }).catch(function (err) {
+        if (hostWindow && !hostWindow.closed) hostWindow.close();
+        notify((err && err.message) || 'Could not start the meeting.');
+      });
     } else if (action === 'manage-end') {
       portal('end', { id: id }).then(function (data) {
         if (!data || !data.ok) throw new Error((data && data.message) || 'Only a YYC Admin can end this meeting.');
@@ -754,25 +1019,58 @@
     });
   });
 
-  $('videoQualitySelect').addEventListener('change', function () {
-    var value = $('videoQualitySelect').value;
-    if (value === 'auto') {
-      beginQualityMonitoring(state.api);
-      return;
-    }
-    state.qualityMode = 'manual';
-    state.qualityBadSamples = 0;
-    state.qualityGoodSamples = 0;
-    if (state.qualityTimer) window.clearInterval(state.qualityTimer);
-    state.qualityTimer = null;
-    var height = Number(value);
-    var reason = height === 720
-      ? 'Manual 720p selected · if the connection struggles, return to Adaptive or choose 360p.'
-      : 'Manual ' + height + 'p selected · reduced video bandwidth may help preserve audio.';
-    setConferenceQuality(height, reason);
+  $('toggleMicBtn').addEventListener('click', function () {
+    if (!state.localStream) return;
+    var tracks = state.localStream.getAudioTracks();
+    var enabled = tracks.some(function (track) { return !track.enabled; });
+    tracks.forEach(function (track) { track.enabled = enabled; });
+    $('toggleMicBtn').textContent = enabled ? 'Mute mic' : 'Unmute mic';
+    $('toggleMicBtn').setAttribute('aria-pressed', enabled ? 'false' : 'true');
+  });
+  $('toggleCameraBtn').addEventListener('click', function () {
+    if (!state.localStream) return;
+    var tracks = state.localStream.getVideoTracks();
+    var enabled = tracks.some(function (track) { return !track.enabled; });
+    tracks.forEach(function (track) { track.enabled = enabled; });
+    $('toggleCameraBtn').textContent = enabled ? 'Turn camera off' : 'Turn camera on';
+    $('toggleCameraBtn').setAttribute('aria-pressed', enabled ? 'false' : 'true');
+  });
+  $('shareScreenBtn').addEventListener('click', function () {
+    if (state.screenStream) stopScreenShare();
+    else startScreenShare();
+  });
+  $('chatForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var input = $('chatInput');
+    var message = String(input.value || '').trim().slice(0, 500);
+    if (!message || !state.roomChannel || !state.participantId) return;
+    var payload = {
+      from: state.participantId,
+      name: meetingDisplayName(),
+      message: message,
+      sentAt: new Date().toISOString()
+    };
+    addRtcChatMessage(payload.name, payload.message, true, payload.sentAt);
+    input.value = '';
+    Promise.resolve(state.roomChannel.send({ type: 'broadcast', event: 'rtc-chat', payload: payload })).catch(function () {
+      notify('Chat message could not be sent. Check the room connection.');
+    });
   });
   $('audioOnlyHintBtn').addEventListener('click', function () {
-    notify('Open the in-call toolbar and turn Camera off. Audio uses less bandwidth and may stay clearer on a very weak connection.');
+    if (state.localStream) {
+      state.localStream.getVideoTracks().forEach(function (track) { track.enabled = false; });
+      $('toggleCameraBtn').textContent = 'Turn camera on';
+      $('toggleCameraBtn').setAttribute('aria-pressed', 'true');
+      notify('Camera disabled to reduce upload bandwidth. Use the camera button to turn it back on.');
+    } else notify('Turn off your camera during the call to reduce bandwidth.');
+  });
+  $('retryConferenceBtn').addEventListener('click', function () {
+    if (state.activeMeeting) startConference(state.activeMeeting);
+  });
+  $('fullscreenBtn').addEventListener('click', function () {
+    var stage = document.querySelector('.video-stage');
+    if (!document.fullscreenElement && stage && stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
+    else if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
   });
 
   $('copyInviteBtn').addEventListener('click', function () {
@@ -791,24 +1089,20 @@
     if (event.origin === window.location.origin && event.source === window.parent && event.data && event.data.type === 'yyc-meet-request-height') notifyHomeFrameHeight();
   });
 
-  window.addEventListener('pagehide', function () {
-    if (state.activeMeeting && state.api) {
-      try { state.api.dispose(); } catch (_) {}
-    }
-  });
+  window.addEventListener('pagehide', function () { cleanupRtcResources(); });
+
+  var autoJoinCode = '';
+  try {
+    var params = new URLSearchParams(window.location.search);
+    autoJoinCode = params.get('join') || '';
+    if (autoJoinCode) $('joinCode').value = autoJoinCode;
+  } catch (_) {}
 
   discoverSession().catch(function () {
     state.session = null;
     setProfile(null);
     renderMeetings();
+  }).finally(function () {
+    if (autoJoinCode) window.setTimeout(function () { goToMeeting(autoJoinCode, null); }, 150);
   });
-
-  try {
-    var params = new URLSearchParams(window.location.search);
-    var code = params.get('join');
-    if (code) {
-      $('joinCode').value = code;
-      window.setTimeout(function () { goToMeeting(code, null); }, 250);
-    }
-  } catch (_) {}
 })();
