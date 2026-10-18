@@ -168,6 +168,7 @@
   function inviteUrl(code) {
     // Private invite links open the full-page YYC Meet view rather than the nested homepage iframe.
     var u = new URL('./', window.location.href);
+    u.search = '';
     u.hash = '';
     u.searchParams.set('join', code);
     return u.href;
@@ -290,21 +291,39 @@
     });
   }
 
-  function loadJitsiScript() {
-    if (window.JitsiMeetExternalAPI) return Promise.resolve();
-    if (window.__yycMeetJitsiPromise) return window.__yycMeetJitsiPromise;
-    window.__yycMeetJitsiPromise = new Promise(function (resolve, reject) {
+  function loadRealtimeClient() {
+    if (window.supabase && typeof window.supabase.createClient === 'function') return Promise.resolve();
+    if (window.__yycSupabaseSdkPromise) return window.__yycSupabaseSdkPromise;
+    window.__yycSupabaseSdkPromise = new Promise(function (resolve, reject) {
       var script = document.createElement('script');
-      script.src = 'https://meet.jit.si/external_api.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.91.0/dist/umd/supabase.js';
       script.async = true;
       script.onload = function () {
-        if (window.JitsiMeetExternalAPI) resolve();
-        else reject(new Error('Jitsi Meet loaded, but its conference API was unavailable.'));
+        if (window.supabase && typeof window.supabase.createClient === 'function') resolve();
+        else {
+          window.__yycSupabaseSdkPromise = null;
+          reject(new Error('The YYC room-signaling client could not start.'));
+        }
       };
-      script.onerror = function () { reject(new Error('Could not load the video-meeting service. Check your internet connection or open the meeting directly.')); };
+      script.onerror = function () {
+        window.__yycSupabaseSdkPromise = null;
+        reject(new Error('Could not load YYC room signaling. Check your internet connection and retry.'));
+      };
       document.head.appendChild(script);
     });
-    return window.__yycMeetJitsiPromise;
+    return window.__yycSupabaseSdkPromise;
+  }
+
+  function ensureRealtimeClient() {
+    return loadRealtimeClient().then(function () {
+      if (!state.rtcClient) {
+        state.rtcClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          realtime: { params: { eventsPerSecond: 30 } }
+        });
+      }
+      return state.rtcClient;
+    });
   }
 
   function notifyHomeFrameHeight() {
@@ -833,17 +852,15 @@
     }
   }
 
-  function openDirectConference(meeting, joinWindow) {
-    var directUrl = 'https://meet.jit.si/' + encodeURIComponent(meeting.room_name);
+  function openInvitePage(code, joinWindow) {
+    var targetUrl = inviteUrl(code);
     if (joinWindow && !joinWindow.closed) {
       try { joinWindow.opener = null; } catch (_) {}
-      joinWindow.location.replace(directUrl);
+      joinWindow.location.replace(targetUrl);
       return;
     }
-    // A copied invite opened directly has no click event to open a new tab.
-    // Validate it first, then navigate to Jitsi's native meeting interface.
-    if (homeEmbed && window.parent !== window) window.top.location.assign(directUrl);
-    else window.location.replace(directUrl);
+    if (window.parent !== window) window.top.location.assign(targetUrl);
+    else window.location.assign(targetUrl);
   }
 
   function goToMeeting(code, joinWindow) {
@@ -853,9 +870,12 @@
         notify('The YYC Admin must start this meeting before anyone can join. Please try the same invite after it goes live.');
         return;
       }
-      // Use Jitsi's native page instead of nesting its conference iframe inside YYC.
-      // This gives participants the complete pre-join screen and the normal call toolbar.
-      openDirectConference(meeting, joinWindow);
+      if ((homeEmbed || adminEmbed) && window.parent !== window) {
+        openInvitePage(code, joinWindow);
+        return;
+      }
+      closeJoinWindow(joinWindow);
+      return startConference(meeting);
     }).catch(function (err) {
       closeJoinWindow(joinWindow);
       if (err && err.message !== 'Invalid meeting code.') {
@@ -880,7 +900,7 @@
         : 'Paste the full copied invite link or the 32-character private invite code. Admin must start the meeting before guests can join.');
       return;
     }
-    var joinWindow = window.open('about:blank', '_blank');
+    var joinWindow = (homeEmbed || adminEmbed) ? window.open('about:blank', '_blank') : null;
     goToMeeting(code, joinWindow);
   });
 
