@@ -8,6 +8,7 @@
   var callbackStarted = false;
 
   function roleFormId(role) {
+    if (role === 'member_register') return 'memberRegisterForm';
     return role === 'member' ? 'memberLoginForm' : 'leaderLoginForm';
   }
 
@@ -103,7 +104,7 @@
   }
 
   async function startGoogleSignIn(role, button) {
-    if (role !== 'member' && role !== 'leader') return;
+    if (role !== 'member' && role !== 'leader' && role !== 'member_register') return;
     if (button && button.disabled) return;
 
     if (button) {
@@ -174,6 +175,17 @@
   }
 
   function showCallbackError(role, message) {
+    if (role === 'member_register') {
+      if (window.YYC && typeof window.YYC.memberRegister === 'function') {
+        try {
+          window.YYC.memberRegister();
+          window.setTimeout(function () { setStatus(role, message, true); }, 120);
+          return;
+        } catch (_) {}
+      }
+      setStatus(role, message, true);
+      return;
+    }
     var openLogin = role === 'member' ? window.memberLogin : window.leaderLogin;
     if (typeof openLogin === 'function') {
       try {
@@ -190,7 +202,7 @@
     var params;
     try { params = new URLSearchParams(window.location.search); } catch (_) { return; }
     var role = params.get('yyc_google_auth');
-    if (role !== 'member' && role !== 'leader') return;
+    if (role !== 'member' && role !== 'leader' && role !== 'member_register') return;
 
     callbackStarted = true;
     var client = null;
@@ -204,6 +216,39 @@
       var session = sessionResult.data && sessionResult.data.session;
       if (!session || !session.user || !session.access_token) {
         throw new Error('Google did not return a verified sign-in session. Please try again.');
+      }
+
+      if (role === 'member_register') {
+        var googleUser = session.user;
+        var appMeta = googleUser.app_metadata || {};
+        var userMeta = googleUser.user_metadata || {};
+        var provider = String(appMeta.provider || '');
+        if (provider && provider !== 'google') {
+          throw new Error('Please continue with a Google account to register for YYC.');
+        }
+        if (!googleUser.email) {
+          throw new Error('Google did not share an email address. Allow email access and try again.');
+        }
+        if (googleUser.email_confirmed_at == null) {
+          throw new Error('YYC needs a verified Google email to submit a membership application.');
+        }
+        var profile = {
+          googleVerified: true,
+          name: String(userMeta.full_name || userMeta.name || ''),
+          email: String(googleUser.email),
+          picture: String(userMeta.avatar_url || userMeta.picture || '')
+        };
+        window.__yycGoogleRegistrationActive = true;
+        window.__yycGoogleRegistrationProfile = profile;
+        clearOAuthCallbackParams();
+        if (!window.YYC || typeof window.YYC.memberRegister !== 'function') {
+          throw new Error('The YYC registration form is not ready. Refresh the page and try again.');
+        }
+        window.YYC.memberRegister(profile);
+        if (typeof window.toast === 'function') {
+          window.toast('Google profile connected. Complete the remaining details to submit your application.');
+        }
+        return;
       }
 
       var rpcName = role === 'member' ? 'member_login_verified_identity' : 'leader_login_verified_identity';
@@ -239,6 +284,44 @@
       showCallbackError(role, message);
     }
   }
+
+  async function submitMemberRegistration(payload) {
+    if (!window.__yycGoogleRegistrationActive) {
+      throw new Error('Your Google registration session has expired. Continue with Google again.');
+    }
+    var client = await getAuthClient();
+    var sessionResult = await client.auth.getSession();
+    if (sessionResult.error) throw sessionResult.error;
+    var session = sessionResult.data && sessionResult.data.session;
+    if (!session || !session.user || !session.access_token) {
+      window.__yycGoogleRegistrationActive = false;
+      throw new Error('Your Google registration session has expired. Continue with Google again.');
+    }
+    var result = await client.rpc('member_register_verified_google', { p_payload: payload || {} });
+    if (result.error) throw result.error;
+    var data = result.data;
+    if (!data || data.ok !== true) {
+      throw new Error((data && data.error) || 'Could not submit the membership application.');
+    }
+    window.__yycGoogleRegistrationActive = false;
+    window.__yycGoogleRegistrationProfile = null;
+    try { await client.auth.signOut({ scope: 'local' }); } catch (_) {}
+    return data;
+  }
+
+  function cancelPendingRegistration() {
+    if (!window.__yycGoogleRegistrationActive) return;
+    window.__yycGoogleRegistrationActive = false;
+    window.__yycGoogleRegistrationProfile = null;
+    getAuthClient().then(function (client) {
+      return client.auth.signOut({ scope: 'local' });
+    }).catch(function () {});
+  }
+
+  window.YYCGoogleAuth = {
+    submitMemberRegistration: submitMemberRegistration,
+    cancelPendingRegistration: cancelPendingRegistration
+  };
 
   document.addEventListener('click', function (event) {
     var button = event.target && event.target.closest
