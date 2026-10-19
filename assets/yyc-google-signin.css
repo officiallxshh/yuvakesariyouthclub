@@ -56,3 +56,39 @@
 @media(prefers-reduced-motion:reduce){
   .yyc-google-signin-btn{transition:none}
 }
+
+.yyc-google-registration-help{
+  margin:10px 0 13px;
+  color:#8f969b;
+  font-size:11px;
+  line-height:1.6;
+}
+.yyc-google-profile-note{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin:2px 0 12px;
+  padding:12px;
+  border:1px solid rgba(38,166,91,.22);
+  border-radius:12px;
+  background:rgba(38,166,91,.06);
+  color:#eef5f0;
+}
+.yyc-google-profile-note>span:last-child{display:flex;min-width:0;flex-direction:column;gap:3px}
+.yyc-google-profile-note b{font-size:12px;letter-spacing:.02em}
+.yyc-google-profile-note small{color:#aab4ae;font-size:10px;line-height:1.45}
+.yyc-google-profile-avatar{
+  display:flex;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:50%;
+  background:#fff;
+  color:#4285f4;
+  font-size:20px;
+  font-weight:800;
+}
+.yyc-google-profile-avatar img{display:block;width:100%;height:100%;object-fit:cover}
