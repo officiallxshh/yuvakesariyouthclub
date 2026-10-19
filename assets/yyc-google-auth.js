@@ -77,6 +77,7 @@
           autoRefreshToken: true,
           detectSessionInUrl: true,
           flowType: 'pkce',
+          storage: window.sessionStorage,
           storageKey: AUTH_STORAGE_KEY
         }
       });
@@ -276,6 +277,10 @@
         }).catch(function () {});
       }
     } catch (error) {
+      if (role === 'member_register') {
+        window.__yycGoogleRegistrationActive = false;
+        window.__yycGoogleRegistrationProfile = null;
+      }
       if (client) {
         try { await client.auth.signOut({ scope: 'local' }); } catch (_) {}
       }
