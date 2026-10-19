@@ -160,7 +160,7 @@
 <link rel="stylesheet" href="styles.css?v=20261014-02-qr-attendance">
 <link rel="stylesheet" href="assets/yyc-site-background.css?v=20261008-01">
 <link rel="stylesheet" href="assets/yyc-access-portals.css?v=20260923-04">
-<link rel="stylesheet" href="assets/yyc-google-signin.css?v=20261019-01-google-signin">
+<link rel="stylesheet" href="assets/yyc-google-signin.css?v=20261019-02-member-registration">
 <link rel="stylesheet" href="assets/yyc-responsive.css?v=20261003-02">
 <link rel="stylesheet" href="yyc-production.css?v=20261014-02-qr-attendance">
 <link rel="stylesheet" href="assets/yyc-portal-redesign.css?v=20261002-10">
@@ -687,7 +687,7 @@
     var menu=e.target&&e.target.closest?e.target.closest('#menuBtn'):null;
     if(menu){e.preventDefault();e.stopImmediatePropagation();var p=document.getElementById('mobilePanel');if(p&&p.classList.contains('open'))closeMobile();else{if(p)p.classList.add('open');menu.classList.add('menu-open');menu.setAttribute('aria-expanded','true');menu.setAttribute('aria-label','Close navigation');}return;}
     var close=e.target&&e.target.closest?e.target.closest('[data-modal-close-only]'):null;
-    if(close){e.preventDefault();e.stopImmediatePropagation();var modal=document.getElementById('modal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}return;}
+    if(close){e.preventDefault();e.stopImmediatePropagation();if(window.YYCGoogleAuth&&typeof window.YYCGoogleAuth.cancelPendingRegistration==='function')window.YYCGoogleAuth.cancelPendingRegistration();var modal=document.getElementById('modal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}return;}
     var b=e.target&&e.target.closest?e.target.closest('button[id]'):null;
     if(b&&routes[b.id]){
       e.preventDefault();
