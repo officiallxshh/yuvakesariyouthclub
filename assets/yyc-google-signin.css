@@ -1,0 +1,58 @@
+.yyc-google-or{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  margin:15px 0 12px;
+  color:#8b9297;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.17em;
+}
+.yyc-google-or::before,.yyc-google-or::after{
+  content:"";
+  flex:1 1 auto;
+  height:1px;
+  background:rgba(122,133,141,.23);
+}
+.yyc-google-signin-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  width:100%;
+  min-height:46px;
+  margin:0;
+  padding:10px 15px;
+  border:1px solid #dadce0;
+  border-radius:11px;
+  background:#fff;
+  color:#3c4043;
+  font:600 13px/1.3 Inter,Arial,sans-serif;
+  text-align:center;
+  cursor:pointer;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.yyc-google-signin-btn:hover{
+  background:#f8faff;
+  border-color:#c5c9cf;
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+.yyc-google-signin-btn:active{transform:translateY(1px)}
+.yyc-google-signin-btn:focus-visible{
+  outline:3px solid rgba(138,180,248,.75);
+  outline-offset:3px;
+}
+.yyc-google-signin-btn:disabled{opacity:.72;cursor:wait}
+.yyc-google-signin-btn.is-loading .yyc-google-mark{opacity:.62}
+.yyc-google-mark{display:inline-flex;flex:0 0 20px;width:20px;height:20px;align-items:center;justify-content:center}
+.yyc-google-mark svg{display:block;width:20px;height:20px}
+.access-login-status.is-error{color:#ffd1cc!important}
+.access-login-status.is-success{color:#b7e3c5!important}
+@media(max-width:420px){
+  .yyc-google-signin-btn{min-height:44px;padding:9px 12px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .yyc-google-signin-btn{transition:none}
+}
