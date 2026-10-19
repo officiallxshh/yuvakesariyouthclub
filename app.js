@@ -1,6 +1,6 @@
 'use strict';
 
-var YYC_APP_BUILD='20261019-01-google-signin';
+var YYC_APP_BUILD='20261014-02-qr-attendance';
 try{window.__YYC_APP_BUILD=YYC_APP_BUILD;}catch(e){}
 
 var YYC_CONFIG = {
