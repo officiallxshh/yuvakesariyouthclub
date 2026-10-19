@@ -173,6 +173,18 @@
     return { kind: 'leader', profile: leader, open: function () { window.leaderDashboard(leader); } };
   }
 
+  function showCallbackError(role, message) {
+    var openLogin = role === 'member' ? window.memberLogin : window.leaderLogin;
+    if (typeof openLogin === 'function') {
+      try {
+        openLogin();
+        window.setTimeout(function () { setStatus(role, message, true); }, 120);
+        return;
+      } catch (_) {}
+    }
+    setStatus(role, message, true);
+  }
+
   async function handleOAuthCallback() {
     if (callbackStarted) return;
     var params;
@@ -224,7 +236,7 @@
       }
       clearOAuthCallbackParams();
       var message = friendlyError(error);
-      setStatus(role, message, true);
+      showCallbackError(role, message);
     }
   }
 
