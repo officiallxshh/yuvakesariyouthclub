@@ -63,7 +63,7 @@ var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAl
    non-essential startup enhancement fails later in this file. */
 window.YYC = {
   memberLogin: function(){ return memberLogin(); },
-  memberRegister: function(){ return memberRegister(); },
+  memberRegister: function(profile){ return memberRegister(profile); },
   leaderLogin: function(){ return leaderLogin(); },
   leaderDashboard: function(data){ return leaderDashboard(data); },
   adminLogin: function(){ return adminLogin(); },
@@ -253,6 +253,9 @@ function openModal(html){
   window.setTimeout(function(){content.classList.remove('yyc-panel-swap-in');},520);
 }
 function closeModal(){
+  if(window.YYCGoogleAuth && typeof window.YYCGoogleAuth.cancelPendingRegistration==='function'){
+    window.YYCGoogleAuth.cancelPendingRegistration();
+  }
   var modal=$('#modal');
   var content=$('#modalContent');
   if(!modal) return;
@@ -1790,26 +1793,53 @@ function submitGallery(){
     }
   });
 }
-function memberRegister(){
-  var obj={photo:'',scale:1,x:50,y:50};
-  openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. After approval you can log in and receive your digital membership card.</p><form id="memberRegisterForm"><div class="form-grid"><div class="field"><label>Full name</label><input id="rName" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" required></div><div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div><div class="field full"><label>Position</label><input id="rPosition" value="MEMBER" placeholder="MEMBER / VOLUNTEER / COORDINATOR"></div><div class="field full"><label>Member photo</label><input id="rPhoto" type="file" accept="image/*" required></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
+function memberRegister(googleProfile){
+  googleProfile=googleProfile&&googleProfile.googleVerified?googleProfile:null;
+  var usingGoogle=!!googleProfile;
+  var googlePhoto=usingGoogle?String(googleProfile.picture||''):'';
+  var obj={photo:googlePhoto,scale:1,x:50,y:50};
+  var googleRegisterOption=usingGoogle
+    ? '<div class="yyc-google-profile-note"><span class="yyc-google-profile-avatar">'+(googlePhoto?'<img src="'+esc(googlePhoto)+'" alt="">':'G')+'</span><span><b>Google account connected</b><small>Your verified email is filled in. Add the remaining required details below.</small></span></div><div class="access-login-status" role="status" aria-live="polite"></div>'
+    : '<div class="yyc-google-or" aria-hidden="true"><span>OR REGISTER WITH</span></div>'+
+      '<button type="button" class="yyc-google-signin-btn" data-yyc-google-role="member_register" aria-label="Continue with Google to register as a YYC member"><span class="yyc-google-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4H24v7.6h11a9.5 9.5 0 0 1-4.1 6.2v5h6.6c3.9-3.6 6.1-8.8 6.1-14.8z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.8l-6.6-5c-1.8 1.2-4.1 2-6.9 2-5.3 0-9.8-3.6-11.4-8.4H5.8v5.2A20 20 0 0 0 24 44z"/><path fill="#FBBC05" d="M12.6 27.8a12 12 0 0 1 0-7.6V15H5.8a20 20 0 0 0 0 18z"/><path fill="#EA4335" d="M24 12c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6 29.5 4 24 4A20 20 0 0 0 5.8 15l6.8 5.2C14.2 15.6 18.7 12 24 12z"/></svg></span><span>Continue with Google</span></button>'+
+      '<div class="access-login-status" role="status" aria-live="polite"></div>'+
+      '<p class="yyc-google-registration-help">Google can prefill your name, verified email and profile photo. Date of birth and phone number are not reliably shared by standard Google sign-in, so please enter them below.</p>'+
+      '<div class="yyc-google-or" aria-hidden="true"><span>OR FILL IN THE FORM</span></div>';
+  var photoRequired=usingGoogle&&googlePhoto?'':' required';
+  openModal('<div class="modal-kicker">JOIN YYC</div><h2 class="modal-title">Member Registration</h2><p class="modal-sub">Submit your details for admin approval. Your membership stays pending until YYC administration approves it.</p><form id="memberRegisterForm">'+googleRegisterOption+'<div class="form-grid"><div class="field"><label>Full name</label><input id="rName" value="'+esc(usingGoogle?googleProfile.name||'':'')+'" required></div><div class="field"><label>Date of birth</label><input id="rDob" type="date" required></div><div class="field"><label>Phone</label><input id="rPhone" type="tel" autocomplete="tel" required></div><div class="field"><label>Email</label><input id="rEmail" type="email" value="'+esc(usingGoogle?googleProfile.email||'':'')+'" '+(usingGoogle?'readonly aria-readonly="true"':'')+' required></div>'+(usingGoogle?'':'<div class="field full"><label>Password</label><input id="rPass" type="password" minlength="8" required placeholder="Minimum 8 characters"></div>')+'<div class="field full"><label>Position</label><input id="rPosition" value="MEMBER" placeholder="MEMBER / VOLUNTEER / COORDINATOR"></div><div class="field full"><label>Member photo'+(usingGoogle&&googlePhoto?' · Google profile photo prefilled':'')+'</label><input id="rPhoto" type="file" accept="image/*"'+photoRequired+'></div></div>'+imageEditor('regPhoto',obj.photo,obj.scale,obj.x,obj.y)+'<div class="form-actions"><button type="submit" class="btn gold">SUBMIT APPLICATION <span>↗</span></button></div></form>');
   wireEditor('regPhoto',obj,'rPhoto');
+  if(usingGoogle&&googlePhoto){
+    var adjustButton=$('#regPhotoAdjustCrop');
+    if(adjustButton)adjustButton.hidden=true;
+    $('#rPhoto').addEventListener('change',function(){
+      if(this.files&&this.files[0]&&adjustButton)adjustButton.hidden=false;
+    });
+  }
   $('#memberRegisterForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    var submitBtn=e.currentTarget.querySelector('button[type="submit"]');
     try{
       if(!obj.photo){toast('Please choose a photo');return;}
-      var btn=e.currentTarget.querySelector('button[type="submit"]');
-      if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='UPLOADING PHOTO…';}
-      var croppedPhoto=await yycManualSquareCrop(obj.photo,obj.scale,obj.x,obj.y,760);
-      var storedPhoto=await uploadYYCImage(croppedPhoto,'member-registration','', '', '');
+      if(submitBtn){submitBtn.disabled=true;submitBtn.dataset.originalText=submitBtn.textContent;submitBtn.textContent=String(obj.photo).indexOf('data:image/')===0?'UPLOADING PHOTO…':'SUBMITTING APPLICATION…';}
+      var storedPhoto=obj.photo;
+      if(String(obj.photo).indexOf('data:image/')===0){
+        var croppedPhoto=await yycManualSquareCrop(obj.photo,obj.scale,obj.x,obj.y,760);
+        storedPhoto=await uploadYYCImage(croppedPhoto,'member-registration','', '', '');
+      }
       var data={name:$('#rName').value.trim(),dob:$('#rDob').value,phone:$('#rPhone').value.trim(),email:$('#rEmail').value.trim(),club_name:'Yuvakesari Youth Club',position:$('#rPosition').value.trim()||'MEMBER',photo_data:storedPhoto,photo_scale:1,photo_pos_x:50,photo_pos_y:50};
-      var r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
-      if(!r.ok) throw new Error(r.error||'Registration failed');
-      closeModal(); toast('Application submitted — wait for admin approval');
+      var r;
+      if(usingGoogle){
+        if(!window.YYCGoogleAuth||typeof window.YYCGoogleAuth.submitMemberRegistration!=='function')throw new Error('Google registration is not ready. Refresh the page and try again.');
+        r=await window.YYCGoogleAuth.submitMemberRegistration(data);
+      }else{
+        r=await rpc('member_register',{p_password:$('#rPass').value,p_payload:data});
+      }
+      if(!r||!r.ok)throw new Error((r&&r.error)||'Registration failed');
+      closeModal();
+      toast('Application submitted — wait for admin approval');
     }catch(err){
-      var submitBtn=document.querySelector('#memberRegisterForm button[type="submit"]');
       if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='SUBMIT APPLICATION ↗';}
-      toast(err.message);
+      toast(err.message||'Registration failed');
     }
   });
 }
