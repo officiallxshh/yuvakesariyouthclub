@@ -30,6 +30,10 @@ assets/
 - Premium YYC visual identity with the club logo, regional culture imagery, mobile-responsive layouts and dark/gold styling.
 - Main sections include Home, Tulunad Glimpse, Leaders, Swags, Updates, Events, Gallery, Reel and Join YYC.
 - The primary navigation uses one active tab at a time and follows the section selected or currently viewed.
+- A searchable Community Help Centre answers common membership, event, account and club-activity questions, with topic filters, expand/collapse, share/copy links and a print-friendly guide.
+- The Events section can export every dated published future event into one `.ics` calendar file, in addition to saving an individual event.
+- The accessibility panel offers text-size controls, high-contrast mode and a user-controlled reduced-motion setting; preferences are stored locally in the current browser only.
+- Keyboard and mobile helpers include a skip-to-content link, mobile Help navigation, and `/` to focus the FAQ search.
 - Reel videos keep their media source detached until a visitor chooses to play, reducing unnecessary video downloads on mobile.
 - Respect for reduced-motion preferences is built into the interface.
 
