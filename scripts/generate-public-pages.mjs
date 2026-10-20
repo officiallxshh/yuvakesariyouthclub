@@ -47,7 +47,7 @@ function typeRoute(type) {
   return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reels', swag: 'swags', leader: 'leaders', achievement: 'achievements' })[type] || type;
 }
 function sectionAnchor(type) {
-  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', swag: 'swags', leader: 'leaders', achievement: 'impact' })[type] || 'glimpse';
+  return ({ event: 'events', update: 'updates', gallery: 'gallery', reel: 'reel', swag: 'swags', leader: 'leaders', achievement: 'achievements' })[type] || 'glimpse';
 }
 function itemTitle(type, item) {
   return String((type === 'leader' ? item.name : item.title) || item.name || item.title || '').trim();
