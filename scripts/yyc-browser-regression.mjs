@@ -55,6 +55,32 @@ try {
     console.log('DESKTOP NAV PASS:', target);
   }
 
+  // Verify the Community Help search, topic filters and browser accessibility preferences.
+  await page.locator('#communityHelp').waitFor({ state: 'attached', timeout: 8000 });
+  await page.locator('#yycHelpSearch').fill('membership');
+  const membershipHelpCount = await page.locator('.yyc-help-item:not([hidden])').count();
+  if (membershipHelpCount < 3) throw new Error('FAQ search should find multiple membership questions.');
+  await page.locator('#yycHelpSearch').fill('');
+  await page.locator('[data-help-filter="events"]').click();
+  const eventsHelpCount = await page.locator('.yyc-help-item:not([hidden])').count();
+  if (eventsHelpCount < 3) throw new Error('The Events help filter should show event-related questions.');
+  await page.locator('#yycHelpExpandAll').click();
+  if (!(await page.locator('.yyc-help-item:not([hidden])[open]').count())) throw new Error('Expand visible should open the filtered help answers.');
+  await page.locator('#yycHelpCollapseAll').click();
+  if (await page.locator('.yyc-help-item[open]').count()) throw new Error('Collapse all should close every help answer.');
+  await page.locator('#yycA11yToggle').click();
+  await page.locator('#yycTextIncrease').click();
+  if (!(await page.locator('body').evaluate(el => el.classList.contains('yyc-text-large')))) throw new Error('Text-size preference should update page styling.');
+  await page.locator('#yycHighContrastToggle').click();
+  if (!(await page.locator('body').evaluate(el => el.classList.contains('yyc-high-contrast')))) throw new Error('High-contrast preference should update page styling.');
+  await page.locator('#yycReduceMotionToggle').click();
+  if (!(await page.locator('body').evaluate(el => el.classList.contains('yyc-user-reduce-motion')))) throw new Error('Reduce-motion preference should update page styling.');
+  await page.locator('#yycAccessReset').click();
+  if (await page.locator('body').evaluate(el => el.classList.contains('yyc-text-large') || el.classList.contains('yyc-high-contrast') || el.classList.contains('yyc-user-reduce-motion'))) {
+    throw new Error('Reset accessibility preferences should restore standard display.');
+  }
+  console.log('COMMUNITY HELP PASS: searchable topics, expand/collapse, accessibility controls and reset');
+
   await page.goto(baseURL + '#events', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => {
     const active = Array.from(document.querySelectorAll('.desktop-nav > a.nav-link.active'));
