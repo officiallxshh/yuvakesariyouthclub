@@ -468,3 +468,7 @@
   min-height: 118px;
   font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
 }
+
+.yyc-achievement-cover-grid.count-2 {
+  grid-template-rows: 1fr;
+}
