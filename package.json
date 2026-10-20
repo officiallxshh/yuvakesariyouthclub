@@ -7,6 +7,7 @@
     "test:task-workflow": "node --test scripts/yyc-task-workflow.test.mjs",
     "test:certificate-workflow": "node --test scripts/yyc-certificate-workflow.test.mjs",
     "test:cinematic-motion": "node --test scripts/yyc-cinematic-motion.test.mjs",
-    "test:performance-stability": "node --test scripts/yyc-performance-stability.test.mjs"
+    "test:performance-stability": "node --test scripts/yyc-performance-stability.test.mjs",
+    "test:achievements": "node --test scripts/yyc-achievement-showcase.test.mjs"
   }
 }
