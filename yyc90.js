@@ -537,7 +537,7 @@
     if(id==='adminUpdateForm'){title=q('#auTitle')?.value||'Update preview';body=q('#auBody')?.value||'';img=(q('#auExternal')?.value||'');meta=q('#auDate')?.value||'';}
     if(id==='adminGalleryForm'){title=q('#agTitle')?.value||'Gallery preview';body=q('#agCaption')?.value||'';img=q('#agPrev')?.src||'';meta=q('#agAlbum')?.value||'GENERAL';}
     if(id==='adminSwagForm'){title=q('#swName')?.value||'Swag preview';body=q('#swDescription')?.value||'';img=q('#swPrev')?.src||'';meta=q('#swCategory')?.value||'';}
-    if(!title&&form.id==='adminAchievementForm'){title=q('#a90Title')?.value||'Achievement preview';body=q('#a90Description')?.value||'';img=q('#a90Image')?.value||'';meta=q('#a90Date')?.value||'';}
+    if(!title&&form.id==='adminAchievementForm'){title=q('#a90Title')?.value||'Achievement preview';body=q('#a90Description')?.value||'';img=((q('#a90Images')?.value||'').split(/\r?\n/).map(function(v){return v.trim();}).filter(Boolean)[0]||'');meta=(q('#a90Placement')?.selectedOptions[0]?.textContent||'')+' · '+(q('#a90Date')?.value||'');}
     if(!title&&form.id==='adminHistoryForm'){title=q('#h90Title')?.value||'History preview';body=q('#h90Body')?.value||'';meta=q('#h90Year')?.value||'';}
     open90('<div class="modal-kicker">ADMIN PREVIEW LAB</div><div class="yyc90-preview-toggle"><button type="button" class="yyc90-device active" data-dev="desktop">DESKTOP</button><button type="button" class="yyc90-device" data-dev="mobile">MOBILE</button></div>'+
       '<div id="yyc90PreviewFrame" class="yyc90-preview-frame"><article class="yyc90-content-preview"><div class="yyc90-preview-media">'+(img?'<img src="'+esc90(img)+'" alt="">':'<span>YYC</span>')+'</div><div class="yyc90-preview-copy"><span>'+esc90(meta)+'</span><h3>'+esc90(title)+'</h3><p>'+esc90(body)+'</p></div></article></div>');
@@ -616,7 +616,10 @@
 
   function renderAchievements90(d){
     var rows=d.achievements||[];
-    return adminHeader90('Achievements')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="a90Add">+ Add achievement</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(a){return '<div class="approval-card"><div class="meta"><strong>'+esc90(a.title)+'</strong><small>'+esc90(a.category||'GENERAL')+' · '+esc90(a.status||'published')+' · '+esc90(format90Date(a.achieved_on))+'</small><p>'+esc90(a.description||'')+'</p></div><div class="admin-actions"><button class="mini-btn gold" data-a90-edit="'+a.id+'">Edit</button><button class="mini-btn" data-a90-del="'+a.id+'">Delete</button></div></div>';}).join(''):'<div class="empty">No achievements yet.</div>')+'</div>';
+    return adminHeader90('Achievements')+'<div class="admin-top-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="mini-btn gold" id="a90Add">+ Add achievement</button></div><div class="admin-card-list">'+(rows.length?rows.map(function(a){
+      var photos=achievementImages90(a).length;
+      return '<div class="approval-card"><div class="meta"><strong>'+esc90(a.title)+'</strong><div style="margin:7px 0">'+achievementAward90(a)+'</div><small>'+esc90(a.category||'GENERAL')+' · '+esc90(a.status||'published')+' · '+esc90(format90Date(a.achieved_on))+' · '+photos+' photo'+(photos===1?'':'s')+'</small><p>'+esc90(a.description||'')+'</p></div><div class="admin-actions"><button class="mini-btn gold" data-a90-edit="'+a.id+'">Edit</button><button class="mini-btn" data-a90-del="'+a.id+'">Delete</button></div></div>';
+    }).join(''):'<div class="empty">No achievements yet.</div>')+'</div>';
   }
 
   function renderHistory90(d){
@@ -1610,11 +1613,52 @@
   }
 
   function achievementForm90(id){
-    var ex=(featureData.achievements||[]).find(function(x){return String(x.id)===String(id);})||{title:'',description:'',image_url:'',achieved_on:'',status:'published',featured:false,category:'GENERAL',publish_at:'',slug:'',sort_order:0};
-    open90('<div class="modal-kicker">ADMIN · ACHIEVEMENTS</div><div class="admin-form-top"><button type="button" class="mini-btn" id="a90Back">← Achievements</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Achievement</h2><form id="adminAchievementForm"><div class="form-grid"><div class="field"><label>Title</label><input id="a90Title" value="'+esc90(ex.title)+'" required></div><div class="field"><label>Achieved on</label><input id="a90Date" type="date" value="'+esc90(ex.achieved_on||'')+'"></div><div class="field"><label>Category</label><input id="a90Category" value="'+esc90(ex.category||'GENERAL')+'"></div><div class="field"><label>Status</label><select id="a90Status"><option>published</option><option>draft</option><option>hidden</option></select></div><div class="field"><label>Publish at</label><input id="a90Publish" type="datetime-local"></div><div class="field"><label>Display order</label><input id="a90Sort" type="number" value="'+esc90(ex.sort_order||0)+'"></div><div class="field"><label><input id="a90Featured" type="checkbox" '+(ex.featured?'checked':'')+'> Featured</label></div><div class="field"><label>Slug</label><input id="a90Slug" value="'+esc90(ex.slug||'')+'"></div><div class="field full"><label>Image URL</label><input id="a90Image" value="'+esc90(ex.image_url||'')+'"></div><div class="field full"><label>Description</label><textarea id="a90Description">'+esc90(ex.description||'')+'</textarea></div></div><div class="form-actions"><button type="submit" class="btn gold">SAVE ACHIEVEMENT</button></div></form>');
-    q('#a90Status').value=ex.status||'published';q('#a90Slug').value=ex.slug||slug90(ex.title);
+    var ex=(featureData.achievements||[]).find(function(x){return String(x.id)===String(id);})||{title:'',description:'',image_url:'',image_urls:[],placement:'participation',achieved_on:'',status:'published',featured:false,category:'GENERAL',publish_at:'',slug:'',sort_order:0};
+    var imageLines=achievementImages90(ex).join('\n');
+    open90('<div class="modal-kicker">ADMIN · ACHIEVEMENTS</div><div class="admin-form-top"><button type="button" class="mini-btn" id="a90Back">← Achievements</button></div><h2 class="modal-title">'+(id?'Edit':'Add')+' Achievement</h2><form id="adminAchievementForm"><div class="form-grid">'+
+      '<div class="field full"><label for="a90Title">Event / achievement title</label><input id="a90Title" maxlength="180" value="'+esc90(ex.title)+'" required></div>'+
+      '<div class="field"><label for="a90Placement">Award / result</label><select id="a90Placement"><option value="participation">Participated</option><option value="first">1st place · Gold</option><option value="second">2nd place · Silver</option><option value="third">3rd place · Bronze</option><option value="runner_up">Runner-up</option><option value="special">Special recognition</option></select></div>'+
+      '<div class="field"><label for="a90Date">Achieved on</label><input id="a90Date" type="date" value="'+esc90(ex.achieved_on||'')+'"></div>'+
+      '<div class="field"><label for="a90Category">Sport / category</label><input id="a90Category" maxlength="80" value="'+esc90(ex.category||'GENERAL')+'"></div>'+
+      '<div class="field"><label for="a90Status">Status</label><select id="a90Status"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div>'+
+      '<div class="field"><label for="a90Publish">Publish at</label><input id="a90Publish" type="datetime-local" value="'+esc90(ex.publish_at?String(ex.publish_at).slice(0,16):'')+'"></div>'+
+      '<div class="field"><label for="a90Sort">Display order</label><input id="a90Sort" type="number" value="'+esc90(ex.sort_order||0)+'"></div>'+
+      '<div class="field"><label><input id="a90Featured" type="checkbox" '+(ex.featured?'checked':'')+'> Featured achievement</label></div>'+
+      '<div class="field"><label for="a90Slug">Slug</label><input id="a90Slug" maxlength="220" value="'+esc90(ex.slug||'')+'"></div>'+
+      '<div class="field full"><label for="a90Images">Photos for this same event (one image URL per line, up to 12)</label><textarea id="a90Images" rows="5" maxlength="24000" placeholder="https://.../event-photo-1.jpg&#10;https://.../event-photo-2.jpg">'+esc90(imageLines)+'</textarea><small class="yyc-achievement-admin-help">Paste direct HTTPS image links. All photos listed here appear inside one achievement cube; the first image is used as its cover.</small></div>'+
+      '<div class="field full"><label for="a90Description">Description / competition details</label><textarea id="a90Description" maxlength="3000" placeholder="Competition name, team, location or result details">'+esc90(ex.description||'')+'</textarea></div>'+
+      '</div><div class="form-actions"><button type="submit" class="btn gold">SAVE ACHIEVEMENT</button></div></form>');
+    q('#a90Placement').value=ex.placement||'participation';
+    q('#a90Status').value=ex.status||'published';
+    q('#a90Slug').value=ex.slug||slug90(ex.title);
     q('#a90Back').onclick=function(){admin90Open('achievements',true);};
-    q('#adminAchievementForm').addEventListener('submit',async function(e){e.preventDefault();try{var r=await rpc90('admin_upsert_achievement',{p_token:window.adminToken,p_id:id||null,p_payload:{title:q('#a90Title').value.trim(),description:q('#a90Description').value.trim(),image_url:q('#a90Image').value.trim(),achieved_on:q('#a90Date').value,status:q('#a90Status').value,featured:q('#a90Featured').checked,category:q('#a90Category').value.trim(),publish_at:q('#a90Publish').value?new Date(q('#a90Publish').value).toISOString():null,slug:q('#a90Slug').value.trim()||slug90(q('#a90Title').value),sort_order:Number(q('#a90Sort').value||0)}});if(!r.ok)throw new Error(r.error||'Failed');featureData=null;toast90('Achievement saved');admin90Open('achievements',true);}catch(err){toast90(err.message);}});
+    q('#adminAchievementForm').addEventListener('submit',async function(e){
+      e.preventDefault();
+      try{
+        var enteredImages=String(q('#a90Images').value||'').split(/\r?\n/).map(function(url){return url.trim();}).filter(Boolean);
+        if(enteredImages.length>12)throw new Error('Add up to 12 photos per achievement.');
+        if(enteredImages.some(function(url){return !/^https?:\/\//i.test(url);}))throw new Error('Each photo must be a direct HTTP or HTTPS image URL.');
+        enteredImages=enteredImages.filter(function(url,i,arr){return arr.indexOf(url)===i;});
+        var r=await rpc90('admin_upsert_achievement',{p_token:window.adminToken,p_id:id||null,p_payload:{
+          title:q('#a90Title').value.trim(),
+          description:q('#a90Description').value.trim(),
+          image_url:enteredImages[0]||'',
+          image_urls:enteredImages,
+          placement:q('#a90Placement').value,
+          achieved_on:q('#a90Date').value,
+          status:q('#a90Status').value,
+          featured:q('#a90Featured').checked,
+          category:q('#a90Category').value.trim(),
+          publish_at:q('#a90Publish').value?new Date(q('#a90Publish').value).toISOString():null,
+          slug:q('#a90Slug').value.trim()||slug90(q('#a90Title').value),
+          sort_order:Number(q('#a90Sort').value||0)
+        }});
+        if(!r.ok)throw new Error(r.error||'Failed');
+        featureData=null;
+        toast90('Achievement saved');
+        admin90Open('achievements',true);
+      }catch(err){toast90(err.message);}
+    });
   }
 
   function historyForm90(id){
