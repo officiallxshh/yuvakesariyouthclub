@@ -31,7 +31,7 @@ jobs:
         run: npm install --no-save --no-package-lock playwright@1.56.1
 
       - name: Install Chromium
-        run: npx playwright install --with-deps --only-shell chromium
+        run: npx playwright install --only-shell chromium
 
       - name: Start local static site
         run: |
