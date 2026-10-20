@@ -1,4 +1,6 @@
 /* YYC Community Upgrades — help centre, share actions and independent accessibility preferences. */
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+
 .yyc-skip-link{
   position:fixed;z-index:10000;left:14px;top:10px;transform:translateY(-180%);
   padding:12px 16px;border:1px solid #f5d58f;border-radius:10px;
