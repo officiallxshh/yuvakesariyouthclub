@@ -61,6 +61,7 @@ jobs:
           node --check scripts/yyc-performance-stability.test.mjs
           node --check scripts/yyc-achievement-showcase.test.mjs
           node --check scripts/yyc-meet-retirement.test.mjs
+          node --check scripts/yyc-community-upgrades.test.mjs
           node --check scripts/yyc-performance-browser-regression.mjs
           node --check scripts/production-monitor.mjs
 
@@ -78,6 +79,9 @@ jobs:
 
       - name: Retired Meet feature checks
         run: npm run test:meet-retirement
+
+      - name: Community help and accessibility checks
+        run: npm run test:community-upgrades
 
       - name: Performance stability checks
         run: npm run test:performance-stability

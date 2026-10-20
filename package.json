@@ -9,6 +9,7 @@
     "test:cinematic-motion": "node --test scripts/yyc-cinematic-motion.test.mjs",
     "test:performance-stability": "node --test scripts/yyc-performance-stability.test.mjs",
     "test:achievements": "node --test scripts/yyc-achievement-showcase.test.mjs",
-    "test:meet-retirement": "node --test scripts/yyc-meet-retirement.test.mjs"
+    "test:meet-retirement": "node --test scripts/yyc-meet-retirement.test.mjs",
+    "test:community-upgrades": "node --test scripts/yyc-community-upgrades.test.mjs"
   }
 }
