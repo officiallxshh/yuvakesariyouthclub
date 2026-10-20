@@ -9,6 +9,7 @@ const css = read('assets/yyc-achievements.css');
 const migration = read('supabase/migrations/20261020094435_yyc_achievement_podium_multiphoto.sql');
 const publicPages = read('scripts/generate-public-pages.mjs');
 const smoothData = read('assets/yyc-smooth-data.js');
+const uploader = read('supabase/functions/yyc-image-upload/index.ts');
 
 test('Achievements is a dedicated desktop and mobile navigation section before Gallery', () => {
   const desktopNav = index.match(/<nav\b[^>]*class=["'][^"']*\bdesktop-nav\b[^"']*["'][^>]*>([\s\S]*?)<\/nav>/i);
@@ -76,6 +77,12 @@ test('Database migration preserves single-image compatibility and protects admin
   assert.match(migration, /limit 12/i, 'database enforces the same maximum photo count');
   assert.match(migration, /'image_urls',a\.image_urls,'placement',a\.placement/);
   assert.match(migration, /where a\.status='published' and \(a\.publish_at is null or a\.publish_at<=now\(\)\)/i, 'public RPC exposes only published, scheduled-ready achievements');
+});
+
+test('Achievement image uploads remain admin-token guarded and use a dedicated storage folder', () => {
+  assert.match(uploader, /new Set\(\["member","leader","announcement","gallery","event","swag","achievement"\]\)/);
+  assert.match(uploader, /else if\(!reg && !await adminOK\(t\)\)/, 'admin upload types require an existing valid admin session');
+  assert.match(uploader, /"achievement":"achievements"/, 'achievement photos are isolated in their own storage folder');
 });
 
 test('Achievement detail pages anchor to the new homepage showcase and use shared reveals', () => {
