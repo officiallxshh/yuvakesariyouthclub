@@ -303,7 +303,7 @@
     var hi=history.map(function(h){
       return '<article class="yyc90-history-item"><div class="yyc90-history-year">'+esc90(h.year_label)+'</div><div class="yyc90-history-line"></div><div><h3>'+esc90(h.title)+'</h3><p>'+esc90(h.body||'')+'</p></div></article>';
     }).join('');
-    old.innerHTML='<div class="section-kicker">10 / YYC STORY</div><div class="section-head tight"><div><h2>Our journey, year by year.</h2><p>'+(pd.settings&&pd.settings.history_intro?esc90(pd.settings.history_intro):'The milestones and moments that shaped Yuvakesari Youth Club.')+'</p></div></div>'+
+    old.innerHTML='<div class="section-kicker">09 / YYC STORY</div><div class="section-head tight"><div><h2>Our journey, year by year.</h2><p>'+(pd.settings&&pd.settings.history_intro?esc90(pd.settings.history_intro):'The milestones and moments that shaped Yuvakesari Youth Club.')+'</p></div></div>'+
       '<div class="yyc90-subhead">CLUB TIMELINE</div><div class="yyc90-history-list">'+hi+'</div>';
     if(window.YYCObserveReveals)window.YYCObserveReveals(old);
   }
