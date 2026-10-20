@@ -58,6 +58,9 @@ test('Admin can set competition result and enter up to 12 photos for one achieve
   assert.match(js, /value="third">3rd place/);
   assert.match(js, /value="runner_up">Runner-up/);
   assert.match(js, /id="a90Images"/);
+  assert.match(js, /id="a90Files" type="file"[^>]*multiple/);
+  assert.match(js, /window\.uploadYYCImage\(dataUrl,'achievement',window\.adminToken/);
+  assert.match(js, /enteredImages\.length\+imageFiles\.length>12/);
   assert.match(js, /enteredImages\.length>12/);
   assert.match(js, /image_urls:enteredImages/);
   assert.match(js, /image_url:enteredImages\[0\]\|\|''/);
