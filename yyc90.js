@@ -1628,19 +1628,39 @@
       '<div class="field"><label for="a90Sort">Display order</label><input id="a90Sort" type="number" value="'+esc90(ex.sort_order||0)+'"></div>'+
       '<div class="field"><label><input id="a90Featured" type="checkbox" '+(ex.featured?'checked':'')+'> Featured achievement</label></div>'+
       '<div class="field"><label for="a90Slug">Slug</label><input id="a90Slug" maxlength="220" value="'+esc90(ex.slug||'')+'"></div>'+
-      '<div class="field full"><label for="a90Images">Photos for this same event (one image URL per line, up to 12)</label><textarea id="a90Images" rows="5" maxlength="24000" placeholder="https://.../event-photo-1.jpg&#10;https://.../event-photo-2.jpg">'+esc90(imageLines)+'</textarea><small class="yyc-achievement-admin-help">Paste direct HTTPS image links. All photos listed here appear inside one achievement cube; the first image is used as its cover.</small></div>'+
+      '<div class="field full"><label for="a90Files">Upload photos for this event (select multiple)</label><input id="a90Files" type="file" accept="image/jpeg,image/png,image/webp" multiple><small class="yyc-achievement-admin-help" id="a90FileHelp">Choose up to 12 JPG, PNG or WebP photos, max 6 MB each. Existing URL photos below count toward the same 12-photo limit.</small></div><div class="field full"><label for="a90Images">Photo URLs already attached to this achievement (one URL per line)</label><textarea id="a90Images" rows="5" maxlength="24000" placeholder="https://.../event-photo-1.jpg&#10;https://.../event-photo-2.jpg">'+esc90(imageLines)+'</textarea><small class="yyc-achievement-admin-help">Remove any URL you no longer want. Selected files will be uploaded securely and appended after these URLs. The first photo is used as the cube cover.</small></div>'+
       '<div class="field full"><label for="a90Description">Description / competition details</label><textarea id="a90Description" maxlength="3000" placeholder="Competition name, team, location or result details">'+esc90(ex.description||'')+'</textarea></div>'+
       '</div><div class="form-actions"><button type="submit" class="btn gold">SAVE ACHIEVEMENT</button></div></form>');
     q('#a90Placement').value=ex.placement||'participation';
     q('#a90Status').value=ex.status||'published';
     q('#a90Slug').value=ex.slug||slug90(ex.title);
     q('#a90Back').onclick=function(){admin90Open('achievements',true);};
+    var uploadInput=q('#a90Files');
+    var fileHelp=q('#a90FileHelp');
+    if(uploadInput&&fileHelp){
+      uploadInput.addEventListener('change',function(){
+        var n=uploadInput.files?uploadInput.files.length:0;
+        fileHelp.textContent=n?n+' photo'+(n===1?'':'s')+' selected. They will upload when you save. Keep the combined total at 12 or fewer.':'Choose up to 12 JPG, PNG or WebP photos, max 6 MB each. Existing URL photos count toward the same 12-photo limit.';
+      });
+    }
     q('#adminAchievementForm').addEventListener('submit',async function(e){
       e.preventDefault();
+      var submitButton=q('#adminAchievementForm button[type="submit"]');
       try{
         var enteredImages=String(q('#a90Images').value||'').split(/\r?\n/).map(function(url){return url.trim();}).filter(Boolean);
-        if(enteredImages.length>12)throw new Error('Add up to 12 photos per achievement.');
-        if(enteredImages.some(function(url){return !/^https?:\/\//i.test(url);}))throw new Error('Each photo must be a direct HTTP or HTTPS image URL.');
+        var imageFiles=uploadInput&&uploadInput.files?Array.prototype.slice.call(uploadInput.files):[];
+        if(enteredImages.length+imageFiles.length>12)throw new Error('Add up to 12 photos in total per achievement.');
+        if(enteredImages.some(function(url){return !/^https?:\/\//i.test(url);}))throw new Error('Each photo URL must start with HTTP or HTTPS.');
+        enteredImages=enteredImages.filter(function(url,i,arr){return arr.indexOf(url)===i;});
+        if(imageFiles.length&&(!window.readFile||!window.uploadYYCImage))throw new Error('Image upload is not ready. Refresh the page and try again.');
+        if(submitButton){submitButton.disabled=true;submitButton.textContent=imageFiles.length?'UPLOADING PHOTOS…':'SAVING…';}
+        for(var fi=0;fi<imageFiles.length;fi++){
+          var dataUrl=await window.readFile(imageFiles[fi],1800);
+          var imageUrl=await window.uploadYYCImage(dataUrl,'achievement',window.adminToken,'','');
+          if(!imageUrl||!/^https?:\/\//i.test(imageUrl))throw new Error('One of the achievement photos could not be uploaded.');
+          enteredImages.push(imageUrl);
+          if(fileHelp)fileHelp.textContent='Uploaded '+(fi+1)+' of '+imageFiles.length+' selected photo'+(imageFiles.length===1?'':'s')+'…';
+        }
         enteredImages=enteredImages.filter(function(url,i,arr){return arr.indexOf(url)===i;});
         var r=await rpc90('admin_upsert_achievement',{p_token:window.adminToken,p_id:id||null,p_payload:{
           title:q('#a90Title').value.trim(),
@@ -1662,6 +1682,9 @@
         admin90Open('achievements',true);
         load90Public();
       }catch(err){toast90(err.message);}
+      finally{
+        if(submitButton){submitButton.disabled=false;submitButton.textContent='SAVE ACHIEVEMENT';}
+      }
     });
   }
 
