@@ -181,25 +181,128 @@
     document.body.prepend(a);
   }
 
+  function achievementImages90(a){
+    var urls=[];
+    if(a&&a.image_url)urls.push(a.image_url);
+    if(a&&Array.isArray(a.image_urls))urls=urls.concat(a.image_urls);
+    var seen=Object.create(null);
+    return urls.map(function(u){return String(u||'').trim();}).filter(function(u){
+      if(!/^https?:\/\//i.test(u)||seen[u])return false;
+      seen[u]=true;return true;
+    }).slice(0,12);
+  }
+
+  function achievementAward90(a){
+    var awards={
+      first:{label:'1ST PLACE',icon:'🥇',className:'is-first'},
+      second:{label:'2ND PLACE',icon:'🥈',className:'is-second'},
+      third:{label:'3RD PLACE',icon:'🥉',className:'is-third'},
+      runner_up:{label:'RUNNER-UP',icon:'🏅',className:'is-runner-up'},
+      participation:{label:'PARTICIPATED',icon:'✦',className:'is-participation'},
+      special:{label:'SPECIAL RECOGNITION',icon:'✧',className:'is-special'}
+    };
+    var award=awards[String(a&&a.placement||'participation')]||awards.participation;
+    return '<span class="yyc-achievement-award '+award.className+'"><span class="yyc-achievement-medal" aria-hidden="true">'+award.icon+'</span>'+award.label+'</span>';
+  }
+
+  function renderAchievementPhotoViewer90(id,photoIndex){
+    var pd=window.publicData||{};
+    var a=(pd.achievements||[]).find(function(item){return String(item.id)===String(id);});
+    if(!a)return;
+    var photos=achievementImages90(a);
+    photoIndex=Math.max(0,Math.min(Math.max(photos.length-1,0),Number(photoIndex)||0));
+    var current=photos[photoIndex]||'';
+    var title=String(a.title||'YYC achievement');
+    var date=a.achieved_on?format90Date(a.achieved_on):'Date not added';
+    var photoCount=photos.length;
+    var nav='<button type="button" class="yyc-achievement-viewer-nav" data-yyc-achievement-prev aria-label="Previous photo" '+(photoIndex===0||photoCount<2?'disabled':'')+'>‹</button>'+
+      (current?'<img class="yyc-achievement-viewer-image" src="'+esc90(current)+'" alt="'+esc90(title)+' — photo '+(photoIndex+1)+'" loading="eager" decoding="async">':'<div class="yyc-achievement-viewer-empty">✦<br><small>No photos added yet</small></div>')+
+      '<button type="button" class="yyc-achievement-viewer-nav" data-yyc-achievement-next aria-label="Next photo" '+(photoIndex>=photoCount-1||photoCount<2?'disabled':'')+'>›</button>';
+    var thumbs=photoCount>1?'<div class="yyc-achievement-thumbs" aria-label="Achievement photos">'+photos.map(function(src,i){
+      return '<button type="button" class="yyc-achievement-thumb '+(i===photoIndex?'active':'')+'" data-yyc-achievement-photo="'+i+'" aria-label="Show photo '+(i+1)+'" '+(i===photoIndex?'aria-current="true"':'')+'><img src="'+esc90(src)+'" alt="" loading="lazy" decoding="async"></button>';
+    }).join('')+'</div>':'';
+    open90('<div class="yyc-achievement-lightbox">'+
+      '<div class="yyc-achievement-lightbox-head"><div><div class="yyc-detail-kicker">YYC ACHIEVEMENT · '+esc90(String(a.category||'GENERAL').toUpperCase())+'</div><h2 class="modal-title">'+esc90(title)+'</h2><p class="yyc-achievement-lightbox-subtitle">'+esc90(date)+' · '+photoCount+' photo'+(photoCount===1?'':'s')+'</p></div>'+achievementAward90(a)+'</div>'+
+      '<div class="yyc-achievement-lightbox-stage">'+nav+'</div>'+
+      '<div class="yyc-achievement-viewer-count">'+(photoCount?(photoIndex+1)+' / '+photoCount:'NO PHOTOS YET')+'</div>'+
+      thumbs+
+      (a.description?'<p class="yyc-achievement-lightbox-description">'+esc90(a.description)+'</p>':'')+
+    '</div>');
+    var previous=q('#modalContent [data-yyc-achievement-prev]');
+    var next=q('#modalContent [data-yyc-achievement-next]');
+    if(previous)previous.onclick=function(){if(photoIndex>0)renderAchievementPhotoViewer90(id,photoIndex-1);};
+    if(next)next.onclick=function(){if(photoIndex<photoCount-1)renderAchievementPhotoViewer90(id,photoIndex+1);};
+    qa('#modalContent [data-yyc-achievement-photo]').forEach(function(btn){
+      btn.onclick=function(){renderAchievementPhotoViewer90(id,Number(btn.getAttribute('data-yyc-achievement-photo')));};
+    });
+  }
+
+  function renderAchievementsShowcase90(){
+    var pd=window.publicData||{};
+    var grid=q('#yycAchievementsGrid');
+    if(!grid)return;
+    var rows=(pd.achievements||[]).filter(function(a){
+      if(String(a&&a.status||'published').toLowerCase()!=='published')return false;
+      if(!a.publish_at)return true;
+      var publishAt=new Date(a.publish_at).getTime();
+      return !isNaN(publishAt)&&publishAt<=Date.now();
+    });
+    var count=q('#yycAchievementCount');
+    if(count)count.textContent=String(rows.length).padStart(2,'0');
+    if(!grid.hasAttribute('data-yyc-achievements-bound')){
+      grid.setAttribute('data-yyc-achievements-bound','1');
+      grid.addEventListener('click',function(e){
+        var card=e.target&&e.target.closest?e.target.closest('[data-yyc-achievement]'):null;
+        if(!card||!grid.contains(card))return;
+        renderAchievementPhotoViewer90(card.getAttribute('data-yyc-achievement'),0);
+      });
+      grid.addEventListener('keydown',function(e){
+        var card=e.target&&e.target.closest?e.target.closest('[data-yyc-achievement]'):null;
+        if(!card||!grid.contains(card)||(e.key!=='Enter'&&e.key!==' '))return;
+        e.preventDefault();
+        renderAchievementPhotoViewer90(card.getAttribute('data-yyc-achievement'),0);
+      });
+    }
+    if(!rows.length){
+      grid.innerHTML='<div class="yyc-achievements-empty"><span class="yyc-achievements-empty-mark" aria-hidden="true">✦</span><div><strong>Every milestone starts with a team.</strong><p>Competition results and club achievements will appear here after YYC Admin publishes them.</p></div></div>';
+      return;
+    }
+    grid.innerHTML=rows.map(function(a){
+      var photos=achievementImages90(a);
+      var countPhotos=photos.length;
+      var coverPhotos=photos.slice(0,4);
+      var cover=coverPhotos.length?coverPhotos.map(function(src){
+        return '<div class="yyc-achievement-cover-cell"><img src="'+esc90(src)+'" alt="'+esc90(a.title||'YYC achievement')+'" loading="lazy" decoding="async"></div>';
+      }).join(''):'<div class="yyc-achievement-cover-cell"><span class="yyc-achievement-cover-empty">YYC</span></div>';
+      var photoCountLabel=countPhotos?countPhotos+' PHOTO'+(countPhotos===1?'':'S'):'PHOTOS SOON';
+      return '<article class="yyc-achievement-cube reveal" role="button" tabindex="0" data-yyc-achievement="'+esc90(a.id)+'" aria-label="View '+esc90(a.title||'achievement')+' photos">'+
+        '<div class="yyc-achievement-cube-media"><div class="yyc-achievement-cover-grid count-'+Math.max(1,Math.min(coverPhotos.length||1,4))+'">'+cover+'</div>'+
+        '<span class="yyc-achievement-photo-total" aria-label="'+esc90(photoCountLabel)+'">▧ '+esc90(photoCountLabel)+'</span>'+
+        '</div><div class="yyc-achievement-cube-copy"><div class="yyc-achievement-topline"><span class="yyc-achievement-category">'+esc90(a.category||'GENERAL')+'</span><time class="yyc-achievement-date">'+esc90(format90Date(a.achieved_on))+'</time></div>'+
+        '<h3>'+esc90(a.title||'YYC Achievement')+'</h3>'+
+        (a.description?'<p class="yyc-achievement-description">'+esc90(a.description)+'</p>':'')+
+        '<div class="yyc-achievement-result-row">'+achievementAward90(a)+'</div>'+
+        '<div class="yyc-achievement-open"><span>VIEW ACHIEVEMENT PHOTOS</span><span aria-hidden="true">↗</span></div></div></article>';
+    }).join('');
+    if(window.YYCObserveReveals)window.YYCObserveReveals(grid);
+  }
+
   function renderImpact90(){
     var pd=window.publicData||{};
-    var achievements=pd.achievements||[], history=pd.history||[];
+    var history=pd.history||[];
     var host=q('#join');
     var old=q('#yyc90Impact');
-    if(!achievements.length && !history.length){if(old)old.remove();return;}
+    if(!history.length){if(old)old.remove();return;}
     if(!old){
       old=document.createElement('section');old.id='yyc90Impact';old.className='section yyc90-impact';
       (host?host.parentNode:document.querySelector('main')).insertBefore(old,host||null);
     }
-    var ai=achievements.length?achievements.map(function(a){
-      return '<article class="yyc90-achievement-card"><div class="yyc90-achievement-media">'+(a.image_url?'<img src="'+esc90(a.image_url)+'" alt="'+esc90(a.title)+'" loading="lazy">':'<span>✦</span>')+'</div><div><span>'+esc90(a.category||'GENERAL')+'</span><h3>'+esc90(a.title)+'</h3><small>'+esc90(format90Date(a.achieved_on))+'</small><p>'+esc90(a.description||'')+'</p></div></article>';
-    }).join(''):'<div class="yyc90-empty">No achievements published yet.</div>';
-    var hi=history.length?history.map(function(h){
+    var hi=history.map(function(h){
       return '<article class="yyc90-history-item"><div class="yyc90-history-year">'+esc90(h.year_label)+'</div><div class="yyc90-history-line"></div><div><h3>'+esc90(h.title)+'</h3><p>'+esc90(h.body||'')+'</p></div></article>';
-    }).join(''):'<div class="yyc90-empty">Club history will appear here.</div>';
-    old.innerHTML='<div class="section-kicker">07 / YYC IMPACT</div><div class="section-head tight"><div><h2>Our story. Our milestones.</h2><p>'+(pd.settings&&pd.settings.history_intro?esc90(pd.settings.history_intro):'Achievements and the journey of Yuvakesari Youth Club.')+'</p></div></div>'+
-      '<div class="yyc90-impact-grid"><div><div class="yyc90-subhead">ACHIEVEMENTS</div><div class="yyc90-achievement-grid">'+ai+'</div></div><div><div class="yyc90-subhead">TIMELINE</div><div class="yyc90-history-list">'+hi+'</div></div></div>';
-    if(window.YYCObserveReveals) window.YYCObserveReveals(old);
+    }).join('');
+    old.innerHTML='<div class="section-kicker">10 / YYC STORY</div><div class="section-head tight"><div><h2>Our journey, year by year.</h2><p>'+(pd.settings&&pd.settings.history_intro?esc90(pd.settings.history_intro):'The milestones and moments that shaped Yuvakesari Youth Club.')+'</p></div></div>'+
+      '<div class="yyc90-subhead">CLUB TIMELINE</div><div class="yyc90-history-list">'+hi+'</div>';
+    if(window.YYCObserveReveals)window.YYCObserveReveals(old);
   }
 
   function addVolunteerButton90(){
@@ -337,7 +440,7 @@
 
   function render90Public(){
     setMeta90();installStructuredData90();installAnnouncement90();installBackTop90();installSkipLink90();
-    renderImpact90();addVolunteerButton90();addContactButton90();addEventFilter90();decorateEvents90();addGalleryFilters90();
+    renderAchievementsShowcase90();renderImpact90();addVolunteerButton90();addContactButton90();addEventFilter90();decorateEvents90();addGalleryFilters90();
   }
 
   function recordView90(){
