@@ -10,6 +10,7 @@
     "test:performance-stability": "node --test scripts/yyc-performance-stability.test.mjs",
     "test:achievements": "node --test scripts/yyc-achievement-showcase.test.mjs",
     "test:meet-retirement": "node --test scripts/yyc-meet-retirement.test.mjs",
-    "test:community-upgrades": "node --test scripts/yyc-community-upgrades.test.mjs"
+    "test:community-upgrades": "node --test scripts/yyc-community-upgrades.test.mjs",
+    "test:design-quality": "node --test scripts/yyc-design-quality.test.mjs"
   }
 }
