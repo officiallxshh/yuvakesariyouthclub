@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const css = read('assets/yyc-cinematic-experience.css');
+const uxCss = read('assets/yyc-professional-ux.css');
 const index = read('index.html');
 const app = read('app.js');
 const audit = read('scripts/yyc-full-audit.mjs');
@@ -11,14 +12,17 @@ const seoCss = read('yyc-seo.css');
 const leadersPage = read('leaders.html');
 const mediaPage = read('media.html');
 
-test('cinematic stylesheet loads before the exclusive active-nav stylesheet', () => {
+test('cinematic, active-nav and professional UX layers preserve the intended cascade', () => {
   const currentBuild = '20261014-02-qr-attendance';
   const cinematic = index.indexOf('assets/yyc-cinematic-experience.css?v=' + currentBuild);
   const nav = index.indexOf('assets/yyc-nav-active-state.css?v=' + currentBuild);
+  const professionalUX = index.indexOf('assets/yyc-professional-ux.css?v=20261020-01-whitehat-quality');
   assert.ok(cinematic >= 0, 'cinematic stylesheet is linked');
-  assert.ok(nav > cinematic, 'exclusive nav active-state stylesheet remains after cinematic layer');
+  assert.ok(nav > cinematic, 'active-nav stylesheet remains after cinematic layer');
+  assert.ok(professionalUX > nav, 'professional UX finish is explicitly last');
   const links = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
-  assert.ok(links.at(-1)?.[0].includes('yyc-nav-active-state.css'), 'nav active-state stylesheet is still the final linked stylesheet');
+  assert.ok(links.at(-1)?.[0].includes('yyc-professional-ux.css'), 'professional UX stylesheet is the final linked stylesheet');
+  assert.doesNotMatch(uxCss, /\.desktop-nav\s*>\s*a\.nav-link\.active/, 'final polish must not replace active-nav state rules');
   assert.ok(index.includes('name="yyc-build" content="' + currentBuild + '"'));
   assert.ok(app.includes("var YYC_APP_BUILD='" + currentBuild + "'"));
   assert.ok(audit.includes('const currentBuild = "' + currentBuild + '";'));

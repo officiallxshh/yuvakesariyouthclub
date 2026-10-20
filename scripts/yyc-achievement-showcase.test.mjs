@@ -27,7 +27,8 @@ test('Achievements is a dedicated desktop and mobile navigation section before G
   assert.match(index, /yyc-achievements\.css\?v=20261020-01/);
 
   const stylesheets = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
-  assert.ok(stylesheets.at(-1)?.[0].includes('yyc-nav-active-state.css'), 'exclusive active-nav stylesheet remains last');
+  assert.ok(stylesheets.at(-1)?.[0].includes('yyc-professional-ux.css'), 'professional UX finish remains the final stylesheet');
+  assert.ok(index.indexOf('assets/yyc-nav-active-state.css') < index.indexOf('assets/yyc-professional-ux.css'), 'active-nav controller loads before final visual polish');
 });
 
 test('Each achievement renders as one cube with a podium badge and grouped photos', () => {

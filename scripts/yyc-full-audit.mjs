@@ -208,7 +208,7 @@ if (large.length) {
 
 
 /* Navigation regression guard: a section anchor has exactly one source of active
-   state, and the exclusive styling must be the final stylesheet in the page. */
+   state, and the exclusive styling must load before the final professional UX layer. */
 const desktopNavMatch = index.match(/<nav\b[^>]*class=["'][^"']*\bdesktop-nav\b[^"']*["'][^>]*>([\s\S]*?)<\/nav>/i);
 if (!desktopNavMatch) {
   issues.push("Desktop primary navigation is missing.");
@@ -254,8 +254,14 @@ if (!fileSet.has(navActiveCssPath)) {
 }
 const stylesheetLinks = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
 const finalStylesheetTag = stylesheetLinks.length ? stylesheetLinks[stylesheetLinks.length - 1][0] : "";
-if (!finalStylesheetTag.includes(navActiveCssPath)) {
-  issues.push("Exclusive navigation stylesheet must be the final linked stylesheet in index.html.");
+const professionalUxPath = "assets/yyc-professional-ux.css";
+const professionalUxTagIndex = index.indexOf(professionalUxPath);
+const navActiveTagIndex = index.indexOf(navActiveCssPath);
+if (!finalStylesheetTag.includes(professionalUxPath)) {
+  issues.push("Professional UX stylesheet must be the final linked stylesheet in index.html.");
+}
+if (professionalUxTagIndex < 0 || navActiveTagIndex < 0 || professionalUxTagIndex <= navActiveTagIndex) {
+  issues.push("Exclusive navigation stylesheet must load before the final professional UX stylesheet.");
 }
 if ((app.match(/function\s+setYYCNavActive\s*\(/g) || []).length !== 1) {
   issues.push("Navigation should have exactly one setYYCNavActive controller.");

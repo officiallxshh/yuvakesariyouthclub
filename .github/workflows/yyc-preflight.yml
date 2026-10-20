@@ -62,6 +62,7 @@ jobs:
           node --check scripts/yyc-achievement-showcase.test.mjs
           node --check scripts/yyc-meet-retirement.test.mjs
           node --check scripts/yyc-community-upgrades.test.mjs
+          node --check scripts/yyc-design-quality.test.mjs
           node --check scripts/yyc-performance-browser-regression.mjs
           node --check scripts/production-monitor.mjs
 
@@ -82,6 +83,9 @@ jobs:
 
       - name: Community help and accessibility checks
         run: npm run test:community-upgrades
+
+      - name: Design quality and accessibility safeguards
+        run: npm run test:design-quality
 
       - name: Performance stability checks
         run: npm run test:performance-stability
