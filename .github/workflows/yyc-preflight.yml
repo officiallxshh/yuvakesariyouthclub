@@ -56,6 +56,7 @@ jobs:
           node --check scripts/yyc-certificate-workflow.test.mjs
           node --check scripts/yyc-cinematic-motion.test.mjs
           node --check scripts/yyc-performance-stability.test.mjs
+          node --check scripts/yyc-achievement-showcase.test.mjs
           node --check scripts/yyc-performance-browser-regression.mjs
           node --check scripts/production-monitor.mjs
 
@@ -67,6 +68,9 @@ jobs:
 
       - name: Cinematic motion and accessibility checks
         run: npm run test:cinematic-motion
+
+      - name: Achievement podium and photo grouping checks
+        run: npm run test:achievements
 
       - name: Performance stability checks
         run: npm run test:performance-stability
