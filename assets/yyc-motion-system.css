@@ -1,0 +1,216 @@
+/* YYC PREMIUM MOTION SYSTEM — shared visual polish
+   Additive styling only. No app state, authentication, routing or data behavior changes. */
+
+:root {
+  --yyc-motion-ease: cubic-bezier(.2, .75, .25, 1);
+  --yyc-motion-out: cubic-bezier(.16, 1, .3, 1);
+  --yyc-motion-fast: 150ms;
+  --yyc-motion-ui: 240ms;
+  --yyc-motion-enter: 560ms;
+  --yyc-motion-gold: #e7bf70;
+  --yyc-motion-gold-soft: #f4d99d;
+  --yyc-motion-edge: rgba(231, 191, 112, .2);
+  --yyc-motion-halo: rgba(231, 191, 112, .075);
+}
+
+::selection {
+  color: #080c0f;
+  background: var(--yyc-motion-gold-soft);
+}
+
+:where(a[href], button, input, select, textarea, summary, [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  transition:
+    border-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    background-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    box-shadow var(--yyc-motion-ui) var(--yyc-motion-ease);
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):focus-visible {
+  border-color: rgba(231, 191, 112, .62);
+  box-shadow: 0 0 0 3px rgba(231, 191, 112, .11), 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+/* A shared, restrained tactile response for controls. */
+:where(.btn, .link-btn, .nav-admin, .mini-btn, .admin-tab, .access-submit,
+       .yycp-tools button, .yycp-update button, .yyc-admin-add-menu button,
+       .certificate-actions button, [role="button"]) {
+  transition:
+    color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    background-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    border-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    box-shadow var(--yyc-motion-ui) var(--yyc-motion-ease),
+    transform var(--yyc-motion-fast) var(--yyc-motion-out);
+  transform-origin: center;
+}
+
+:where(.btn, .link-btn, .nav-admin, .mini-btn, .admin-tab, .access-submit,
+       .yycp-tools button, .yycp-update button, .yyc-admin-add-menu button,
+       .certificate-actions button, [role="button"]):active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(0) scale(.985);
+}
+
+:where(button, input, select, textarea):disabled,
+:where([aria-disabled="true"]) {
+  cursor: not-allowed;
+}
+
+:where(.btn, .link-btn, .nav-admin, .mini-btn, .admin-tab, .access-submit,
+       .yycp-tools button, .yycp-update button, .yyc-admin-add-menu button):focus-visible {
+  outline-offset: 3px;
+}
+
+/* Shared edges and elevation: surface stays dark, warm gold is only an accent. */
+:where(.glimpse-card, .glimpse-feature, .leader-card, .gallery-card,
+       .event-card:not(.event-skeleton), .update-card, .join-card, .swag-card,
+       .item, .coverage, .person, .official-links, .portal-summary-card,
+       .yyc-certificate-card, .yyc90-cert-stat, .yyc-session-row,
+       .yycp-health-card, .yycp-file-item, .yyc-portal-menu-item,
+       .yyc-admin-quick-add, .yyc-admin-recent-row) {
+  transition:
+    border-color 260ms var(--yyc-motion-ease),
+    box-shadow 320ms var(--yyc-motion-ease),
+    background-color 260ms var(--yyc-motion-ease),
+    transform 320ms var(--yyc-motion-out);
+}
+
+/* Media treatments ease in instead of snapping or over-zooming. */
+:where(.glimpse-card img, .glimpse-feature img, .leader-photo img,
+       .gallery-card img, .media img, .item-image img, .yyc-reel-card img) {
+  transition:
+    transform 650ms var(--yyc-motion-out),
+    filter 420ms var(--yyc-motion-ease);
+}
+
+:where(.section-kicker, .k, .item-date, .date, .tag) {
+  text-wrap: pretty;
+}
+
+:where(.tag, .meta .tag, .counter, .yyc-session-count, .yyc-session-current) {
+  transition:
+    color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    background-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+    border-color var(--yyc-motion-ui) var(--yyc-motion-ease);
+}
+
+/* Consistent gold-tinted focus and open states for interactive disclosure. */
+:where(details, .faq-item, .accordion-item, .yyc-portal-menu-item, .yyc-admin-recent-row) {
+  transition: border-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+              background-color var(--yyc-motion-ui) var(--yyc-motion-ease);
+}
+
+:where(details[open], .faq-item[aria-expanded="true"], .accordion-item[aria-expanded="true"]) {
+  border-color: var(--yyc-motion-edge);
+}
+
+:where(.modal, .modal-shell, .access-login-screen, .premium-member-dashboard, .admin-shell) {
+  backface-visibility: hidden;
+}
+
+/* Search, upload and empty states feel deliberate without changing their behavior. */
+:where(.yycp-batch-drop, .yyc-gallery-search, .yyc-admin-global-search,
+       .yyc-admin-search-empty, .yyc-admin-recent-empty) {
+  transition: border-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+              background-color var(--yyc-motion-ui) var(--yyc-motion-ease),
+              box-shadow var(--yyc-motion-ui) var(--yyc-motion-ease);
+}
+
+.yycp-batch-drop.drag,
+.yycp-batch-drop:focus-within,
+.yyc-gallery-search:focus-within,
+.yyc-admin-global-search:focus-within {
+  border-color: rgba(231, 191, 112, .42);
+  box-shadow: 0 0 0 3px rgba(231, 191, 112, .055);
+}
+
+/* SEO/content pages: quiet title and media polish with existing card proportions. */
+.wrap > .card,
+.wrap > .hero,
+.wrap > .coverage,
+.wrap > .official-links {
+  isolation: isolate;
+}
+
+:where(.media, .item-image, .leader-photo, .glimpse-feature, .glimpse-card, .gallery-card) {
+  overflow: clip;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :where(.btn, .link-btn, .nav-admin, .mini-btn, .admin-tab, .access-submit,
+         .yycp-tools button, .yycp-update button, .yyc-admin-add-menu button):hover:not(:disabled):not([aria-disabled="true"]) {
+    border-color: rgba(231, 191, 112, .42);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .16), 0 0 0 1px rgba(231, 191, 112, .035);
+  }
+
+  :where(.item, .coverage, .person, .official-links, .portal-summary-card,
+         .yyc-certificate-card, .yyc90-cert-stat, .yyc-session-row,
+         .yycp-health-card, .yycp-file-item):hover {
+    border-color: rgba(231, 191, 112, .34);
+    box-shadow: 0 15px 34px rgba(0, 0, 0, .2), 0 0 0 1px rgba(231, 191, 112, .025);
+    transform: translateY(-2px);
+  }
+
+  :where(.glimpse-card, .glimpse-feature, .leader-card, .gallery-card,
+         .event-card:not(.event-skeleton), .update-card, .swag-card):hover {
+    border-color: rgba(231, 191, 112, .32);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .22), 0 0 0 1px rgba(231, 191, 112, .04);
+  }
+
+  :where(.media, .item-image, .leader-photo, .glimpse-feature, .glimpse-card, .gallery-card):hover img {
+    filter: saturate(1.035) contrast(1.02);
+  }
+
+  .back:hover,
+  .seo-directory a:hover {
+    color: var(--yyc-motion-gold-soft);
+  }
+}
+
+/* Avoid touch-device hover states that can stick after a tap. */
+@media (hover: none), (pointer: coarse) {
+  :where(.item, .coverage, .person, .official-links, .portal-summary-card,
+         .yyc-certificate-card, .yyc90-cert-stat, .yyc-session-row,
+         .yycp-health-card, .yycp-file-item):hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  :where(.media, .item-image, .leader-photo, .glimpse-feature, .glimpse-card, .gallery-card):hover img {
+    filter: none;
+  }
+}
+
+/* Save-Data / low-data mode: keep feedback immediate and lightweight. */
+body.yyc-low-data :where(.btn, .link-btn, .nav-admin, .mini-btn, .admin-tab,
+                         .yycp-tools button, .yyc-admin-add-menu button),
+body.yyc-low-data :where(.glimpse-card, .glimpse-feature, .leader-card,
+                         .gallery-card, .event-card, .update-card, .item,
+                         .coverage, .person, .portal-summary-card, .yyc-session-row) {
+  transition-duration: 120ms !important;
+}
+
+/* Honor reduced motion everywhere, including pages without the main-site scripts. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-delay: 0ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-delay: 0ms !important;
+    transition-duration: .01ms !important;
+  }
+
+  :where(.item, .coverage, .person, .official-links, .portal-summary-card,
+         .yyc-certificate-card, .yyc90-cert-stat, .yyc-session-row,
+         .yycp-health-card, .yycp-file-item):hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
