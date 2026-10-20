@@ -118,6 +118,8 @@ try {
     { name: 'admin', button: '#adminOpenBtn', form: '#adminLoginForm', close: '.modal-shell > .modal-close', field: '#aUser', value: 'browser-test-only' }
   ];
   for (const panel of loginPanels) {
+    // Clear the prior modal-close hover target before clicking a shifted fixed-header button.
+    await page.mouse.move(0, 0);
     await page.locator(panel.button).click();
     await page.locator(panel.form).waitFor({ state: 'visible', timeout: 6000 });
     await page.locator(panel.field).fill(panel.value);
