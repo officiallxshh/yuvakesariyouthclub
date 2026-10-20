@@ -61,7 +61,7 @@ test('Admin can set competition result and enter up to 12 photos for one achieve
   assert.match(js, /id="a90Files" type="file"[^>]*multiple/);
   assert.match(js, /window\.uploadYYCImage\(dataUrl,'achievement',window\.adminToken/);
   assert.match(js, /enteredImages\.length\+imageFiles\.length>12/);
-  assert.match(js, /imageFiles\.length>0/);
+  assert.match(js, /var imageFiles=uploadInput&&uploadInput\.files/);
   assert.match(js, /image_urls:enteredImages/);
   assert.match(js, /image_url:enteredImages\[0\]\|\|''/);
   assert.match(js, /load90Public\(\)/, 'saving or deleting an achievement refreshes public data');
