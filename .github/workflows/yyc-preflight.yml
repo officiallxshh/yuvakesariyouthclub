@@ -41,6 +41,9 @@ jobs:
       - name: Type-check YYC certificate Edge Function
         run: deno check --config supabase/functions/yyc-certificate-delivery/deno.json supabase/functions/yyc-certificate-delivery/index.ts
 
+      - name: Type-check YYC image upload Edge Function
+        run: deno check supabase/functions/yyc-image-upload/index.ts
+
       - name: Syntax checks
         run: |
           node --check app.js
