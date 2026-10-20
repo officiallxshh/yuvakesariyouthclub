@@ -6,7 +6,7 @@ const read = (path) => fs.readFileSync(new URL('../' + path, import.meta.url), '
 const index = read('index.html');
 const app = read('app.js');
 const legacyPath = read('meet/index.html');
-const migration = read('supabase/migrations/20261020115000_remove_yyc_meet.sql');
+const migration = read('supabase/migrations/20261020120155_remove_yyc_meet.sql');
 const sitemap = read('sitemap.xml');
 
 test('No homepage navigation, iframe, or invite relay points to the retired Meet feature', () => {
