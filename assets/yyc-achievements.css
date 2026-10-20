@@ -456,3 +456,15 @@
     transition: none !important;
   }
 }
+
+.yyc-achievement-admin-help {
+  display: block;
+  margin-top: 7px;
+  color: #89958e;
+  font-size: 10px;
+  line-height: 1.65;
+}
+#adminAchievementForm #a90Images {
+  min-height: 118px;
+  font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
