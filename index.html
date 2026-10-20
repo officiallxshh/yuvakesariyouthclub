@@ -185,10 +185,12 @@
   <link rel="stylesheet" href="assets/yyc-cinematic-experience.css?v=20261014-02-qr-attendance">
   <link rel="stylesheet" href="assets/yyc-motion-system.css?v=20261020-01">
   <link rel="stylesheet" href="assets/yyc-achievements.css?v=20261020-01">
+  <link rel="stylesheet" href="assets/yyc-community-upgrades.css?v=20261020-01">
   <link rel="stylesheet" href="assets/yyc-nav-active-state.css?v=20261014-02-qr-attendance&headerfit=20261017-08">
 
 </head>
 <body class="yyC-opening">
+<a class="yyc-skip-link" href="#mainContent">Skip to main content</a>
 <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 <header class="topbar" id="topbar">
   <a href="#home" class="brand">
@@ -221,10 +223,11 @@
   <a href="#achievements">🏆 <span>Achievements</span></a>
   <a href="#gallery">▧ <span>Gallery</span></a>
   <a href="#reel">▷ <span>Reel</span></a>
+  <a href="#communityHelp">ⓘ <span>Help &amp; FAQ</span></a>
   <a href="#join">✦ <span>Join</span></a>
 <button type="button" class="nav-admin full member-login-btn" id="memberLoginMobile">◉ Member Login</button><button type="button" class="nav-admin full leader-login-btn" id="leaderLoginMobile">♛ Leader Login</button><button type="button" class="nav-admin full" id="adminOpenMobile">⌑ Admin Login</button>
 </div>
-<main>
+<main id="mainContent" tabindex="-1">
 <section class="hero" id="home">
   <div class="hero-photo"></div>
   <div class="hero-vignette"></div>
@@ -315,7 +318,7 @@
 </section>
 <section class="section events-section type-modern" id="events">
   <div class="section-kicker">05 / EVENTS</div>
-  <div class="section-head tight reveal"><div><h2>What’s happening next.</h2><p>Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.</p></div><a class="link-btn" href="./events/">Browse all events ↗</a><span class="counter" id="eventCount">00</span></div>
+  <div class="section-head tight reveal"><div><h2>What’s happening next.</h2><p>Upcoming programmes, community activities and youth initiatives by Yuvakesari Youth Club.</p></div><a class="link-btn" href="./events/">Browse all events ↗</a><button class="link-btn" type="button" id="yycDownloadAllEvents">Add all events to calendar ↓</button><span class="counter" id="eventCount">00</span></div>
   <div class="events-grid" id="eventsGrid">
     <div class="event-card event-skeleton"><div class="event-skeleton-media"></div><div class="event-skeleton-body"><i></i><i></i><i></i></div></div>
     <div class="event-card event-skeleton"><div class="event-skeleton-media"></div><div class="event-skeleton-body"><i></i><i></i><i></i></div></div>
@@ -360,8 +363,62 @@
   </div>
 </section>
 
+
+<section class="section type-editorial yyc-community-help" id="communityHelp" aria-labelledby="communityHelpTitle">
+  <div class="section-kicker">10 / COMMUNITY HELP</div>
+  <div class="yyc-help-heading">
+    <div><h2 id="communityHelpTitle">Good questions. <span>Clear answers.</span></h2><p>Quick help for joining YYC, finding events, sharing club moments and using the website.</p></div>
+    <div class="yyc-help-actions">
+      <button class="yyc-help-action" type="button" id="yycShareSiteBtn">Share website ↗</button>
+      <button class="yyc-help-action" type="button" id="yycCopySiteLinkBtn">Copy website link</button>
+      <button class="yyc-help-action" type="button" id="yycCopyHelpLinkBtn">Copy help link</button>
+      <button class="yyc-help-action" type="button" id="yycPrintHelpBtn">Print help guide</button>
+    </div>
+  </div>
+  <div class="yyc-help-toolbar">
+    <label class="yyc-help-search" for="yycHelpSearch"><span aria-hidden="true">⌕</span><input id="yycHelpSearch" type="search" placeholder="Search questions, membership, events..." autocomplete="off" aria-controls="yycHelpList"><span class="sr-only">Search YYC help questions</span></label>
+    <div class="yyc-help-expand-wrap"><button class="yyc-help-expand" type="button" id="yycHelpExpandAll">Expand visible</button><button class="yyc-help-expand" type="button" id="yycHelpCollapseAll">Collapse all</button></div>
+  </div>
+  <div class="yyc-help-filters" role="group" aria-label="Filter help by topic">
+    <button class="yyc-help-filter" type="button" data-help-filter="all" aria-pressed="true">All topics</button>
+    <button class="yyc-help-filter" type="button" data-help-filter="membership" aria-pressed="false">Membership</button>
+    <button class="yyc-help-filter" type="button" data-help-filter="events" aria-pressed="false">Events</button>
+    <button class="yyc-help-filter" type="button" data-help-filter="community" aria-pressed="false">Club activities</button>
+    <button class="yyc-help-filter" type="button" data-help-filter="account" aria-pressed="false">Account help</button>
+    <button class="yyc-help-filter" type="button" data-help-filter="privacy" aria-pressed="false">Privacy &amp; contact</button>
+  </div>
+  <p class="yyc-help-result-count" id="yycHelpResultCount" aria-live="polite">Showing questions</p>
+  <div class="yyc-help-list" id="yycHelpList">
+    <details class="yyc-help-item" data-help-category="membership"><summary>How do I apply to become a YYC member?</summary><div class="yyc-help-answer"><p>Use the <strong>Member Registration</strong> button in the Join YYC section. Complete the requested details and submit your application for the admin team to review.</p></div></details>
+    <details class="yyc-help-item" data-help-category="membership"><summary>Why is my membership application still pending?</summary><div class="yyc-help-answer"><p>Applications stay pending until YYC administration reviews them. A submitted form does not automatically mean membership has been approved. Contact YYC if you need a status check.</p></div></details>
+    <details class="yyc-help-item" data-help-category="membership"><summary>When will I receive my digital membership card?</summary><div class="yyc-help-answer"><p>After approval, the club assigns your member role number and digital membership card. Sign in to the Member Portal to view your available membership details.</p></div></details>
+    <details class="yyc-help-item" data-help-category="account"><summary>I cannot sign in. What should I try first?</summary><div class="yyc-help-answer"><p>Check that you are using the correct Member or Leader login, verify the details you entered, and retry with a stable connection. If the problem continues, use the official Contact YYC page rather than sharing your password with anyone.</p></div></details>
+    <details class="yyc-help-item" data-help-category="events"><summary>How do I find upcoming club events?</summary><div class="yyc-help-answer"><p>Open the Events section or visit the <a href="./events/">full YYC Events directory</a>. Each published event shows its available date, location and details.</p></div></details>
+    <details class="yyc-help-item" data-help-category="events"><summary>Can I save one event to my phone calendar?</summary><div class="yyc-help-answer"><p>Yes. Select <strong>Add to Calendar</strong> on an event card to download a calendar file (.ics), then open it with your calendar app.</p></div></details>
+    <details class="yyc-help-item" data-help-category="events"><summary>Can I add all upcoming YYC events at once?</summary><div class="yyc-help-answer"><p>Use <strong>Add all events to calendar</strong> in the Events heading. It downloads one .ics file containing the published future events that have a valid date.</p></div></details>
+    <details class="yyc-help-item" data-help-category="events"><summary>How do member event responses and RSVPs work?</summary><div class="yyc-help-answer"><p>When an event supports member responses, sign in to the Member Portal and use the event/RSVP options shown there. Availability of response controls can vary by event.</p></div></details>
+    <details class="yyc-help-item" data-help-category="community"><summary>What kind of work does YYC share on this website?</summary><div class="yyc-help-answer"><p>The website highlights youth activities, community programmes, Tulunad culture, events, announcements, achievements, photographs, videos and official club merchandise.</p></div></details>
+    <details class="yyc-help-item" data-help-category="community"><summary>How can I suggest an achievement for the website?</summary><div class="yyc-help-answer"><p>Contact the club with the event name, date, result or participation level and suitable photos. The public achievements showcase is updated by the authorised YYC team.</p></div></details>
+    <details class="yyc-help-item" data-help-category="community"><summary>Can I submit photos or a club update?</summary><div class="yyc-help-answer"><p>Use the <strong>Submit gallery item</strong> or <strong>Submit update</strong> action when available on the homepage. Submissions may require administrator review before appearing publicly.</p></div></details>
+    <details class="yyc-help-item" data-help-category="community"><summary>How do I ask about volunteering?</summary><div class="yyc-help-answer"><p>Tell YYC about your interests, skills and availability through the official <a href="./contact.html">Contact YYC</a> page or the club's official WhatsApp community. The team can guide you to suitable opportunities.</p></div></details>
+    <details class="yyc-help-item" data-help-category="community"><summary>How can I enquire about jerseys or other YYC merchandise?</summary><div class="yyc-help-answer"><p>Open the Swags section or <a href="./swags/">merchandise directory</a>. Use the enquiry/order link on an item if one is provided; details may depend on current availability.</p></div></details>
+    <details class="yyc-help-item" data-help-category="privacy"><summary>How can I contact the club or find official links?</summary><div class="yyc-help-answer"><p>Start with the <a href="./contact.html">Contact YYC</a> page and the official links in the footer. Use the club's official channels for membership, activity and website questions.</p></div></details>
+    <details class="yyc-help-item" data-help-category="privacy"><summary>How should I keep my member account safe?</summary><div class="yyc-help-answer"><p>Keep your password and sign-in links private. Do not share membership credentials in public posts, and contact the club through an official channel if you suspect account misuse.</p></div></details>
+    <details class="yyc-help-item" data-help-category="privacy"><summary>What happens to my browser accessibility settings?</summary><div class="yyc-help-answer"><p>The accessibility controls on this page save only your display preferences in this browser/device. They do not send those preferences to YYC or change your membership account.</p></div></details>
+    <div class="yyc-help-empty" id="yycHelpEmpty" hidden>No matching questions. Try another keyword or choose “All topics”.</div>
+  </div>
+  <div class="yyc-help-ctas">
+    <span>Still need help? Start with the official club channels.</span>
+    <button class="yyc-help-cta primary" type="button" id="yycHelpRegisterBtn">Apply for membership</button>
+    <a class="yyc-help-cta secondary" href="./events/">Browse events ↗</a>
+    <a class="yyc-help-cta secondary" href="./contact.html">Contact YYC ↗</a>
+    <a class="yyc-help-cta secondary" href="https://chat.whatsapp.com/JY6SGuGI6FM9Cwr2iPz54b" target="_blank" rel="noopener noreferrer">WhatsApp community ↗</a>
+  </div>
+  <p class="yyc-help-status" id="yycHelpStatus" aria-live="polite"></p>
+</section>
+
 <section class="section join-section type-editorial" id="join">
-  <div class="join-card reveal"><div><div class="section-kicker">10 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
+  <div class="join-card reveal"><div><div class="section-kicker">11 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
 </section>
 </main>
 
@@ -371,11 +428,21 @@
   <div class="footer-message"><strong>ಯುವಕೇಸರಿ ಯೂತ್ ಕ್ಲಬ್ 🚩</strong><p>ತುಳುನಾಡ್‌ದ ಸಂಸ್ಕೃತಿ ನಮ ಪೆರ್ಮೆ, ಸಮಾಜ ಸೇವೆ ನಮ ಸಂಕಲ್ಪ, ಒಗ್ಗಟ್ಟು ನಮ ಶಕ್ತಿ. ❤️</p><p>ನಮ್ಮ ಮಣ್ಣ್‌ದ ಪರಂಪರೆನ್ ಕಾಪಾಡುಲೆ, ಯುವಶಕ್ತಿನ್ ಸಮಾಜ ಸೇವೆಗ್ ಸೇರಾವುಲೆ, ಒಂಜಿ ಕುಟುಂಬ ಆದ್ ಒಂಜಿ ಒಳ್ಳೆ ಬದಲಾವಣೆ ತರ್ಪುನ ಗುರಿ — <strong>ಯುವಕೇಸರಿ ಯೂತ್ ಕ್ಲಬ್.</strong></p><span>ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</span></div>
   <div class="footer-legal"><a href="./contact.html">Contact YYC</a><span>·</span><a href="./privacy.html">Privacy Policy</a><span>·</span><a href="./terms.html">Terms of Use</a></div>
   <nav class="footer-directory" aria-label="Explore YYC public pages" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;padding:14px 0;margin:10px 0;border-top:1px solid rgba(229,191,107,.16);font-size:12px">
-    <a href="./events/">Events</a><a href="./updates/">News &amp; Updates</a><a href="./gallery/">Community Gallery</a><a href="./reels/">Reels &amp; Videos</a><a href="./swags/">Merchandise</a><a href="./leaders/">Leaders</a><a href="./achievements/">Achievements</a>
+    <a href="./events/">Events</a><a href="#communityHelp">Help &amp; FAQ</a><a href="./updates/">News &amp; Updates</a><a href="./gallery/">Community Gallery</a><a href="./reels/">Reels &amp; Videos</a><a href="./swags/">Merchandise</a><a href="./leaders/">Leaders</a><a href="./achievements/">Achievements</a>
   </nav>
   <div class="footer-bottom"><span>© <span id="year"></span> Yuvakesari Youth Club</span><span>ಧರ್ಮೋ ರಕ್ಷತಿ ರಕ್ಷಿತಃ 🚩</span></div>
 </footer>
 
+<div class="yyc-a11y-tools" id="yycA11yTools">
+  <button class="yyc-a11y-toggle" type="button" id="yycA11yToggle" aria-expanded="false" aria-controls="yycA11yPanel"><strong aria-hidden="true">Aa</strong> Accessibility</button>
+  <section class="yyc-a11y-panel" id="yycA11yPanel" aria-label="Accessibility preferences" hidden>
+    <h2>Reading preferences</h2><p>These settings affect this browser only and can be reset any time.</p>
+    <div class="yyc-a11y-group"><span>Text size · <b id="yycTextSizeStatus">Standard</b></span><button type="button" id="yycTextDecrease" aria-label="Decrease text size">A−</button><button type="button" id="yycTextIncrease" aria-label="Increase text size">A+</button></div>
+    <div class="yyc-a11y-group"><span>Display</span><button type="button" id="yycHighContrastToggle" aria-pressed="false">High contrast</button><button type="button" id="yycReduceMotionToggle" aria-pressed="false">Reduce motion</button></div>
+    <div class="yyc-a11y-group"><button type="button" id="yycAccessReset">Reset preferences</button></div>
+    <div class="yyc-a11y-status" id="yycUtilityStatus" aria-live="polite"></div>
+  </section>
+</div>
 <div class="modal" id="modal" aria-hidden="true"><div class="modal-backdrop" data-close></div><section class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button type="button" class="modal-close" data-modal-close-only aria-label="Close">×</button><div id="modalContent"></div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -771,5 +838,6 @@
 
   <script src="assets/yyc-performance-pack.js?v=20261013-02-perf-batch"></script>
 <script src="assets/yyc-google-auth.js?v=20261019-02-member-registration"></script>
+<script src="assets/yyc-community-upgrades.js?v=20261020-01" defer></script>
 </body>
 </html>
