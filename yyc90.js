@@ -249,6 +249,9 @@
     });
     var count=q('#yycAchievementCount');
     if(count)count.textContent=String(rows.length).padStart(2,'0');
+    var signature=JSON.stringify(rows.map(function(a){return {id:a.id,title:a.title,description:a.description,achieved_on:a.achieved_on,category:a.category,placement:a.placement,featured:a.featured,images:achievementImages90(a)};}));
+    if(grid.getAttribute('data-yyc-achievements-version')===signature)return;
+    grid.setAttribute('data-yyc-achievements-version',signature);
     if(!grid.hasAttribute('data-yyc-achievements-bound')){
       grid.setAttribute('data-yyc-achievements-bound','1');
       grid.addEventListener('click',function(e){
