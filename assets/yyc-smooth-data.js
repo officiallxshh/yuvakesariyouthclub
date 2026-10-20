@@ -3,8 +3,8 @@
   if(window.__YYCSmoothDataInstalled) return;
   window.__YYCSmoothDataInstalled=true;
 
-  var gridSelectors=['#leadersGrid','#updatesGrid','#eventsGrid','#galleryGrid','#swagsGrid'];
-  var cardSelector='.leader-card,.update-card,.event-card,.gallery-card,.swag-card';
+  var gridSelectors=['#leadersGrid','#updatesGrid','#eventsGrid','#yycAchievementsGrid','#galleryGrid','#swagsGrid'];
+  var cardSelector='.leader-card,.update-card,.event-card,.yyc-achievement-cube,.gallery-card,.swag-card';
   var enterObserver=null;
 
   function reduced(){

@@ -184,6 +184,7 @@
   <link rel="stylesheet" href="assets/yyc-performance-stability.css?v=20261013-01">
   <link rel="stylesheet" href="assets/yyc-cinematic-experience.css?v=20261014-02-qr-attendance">
   <link rel="stylesheet" href="assets/yyc-motion-system.css?v=20261020-01">
+  <link rel="stylesheet" href="assets/yyc-achievements.css?v=20261020-01">
   <link rel="stylesheet" href="assets/yyc-nav-active-state.css?v=20261014-02-qr-attendance&headerfit=20261017-08">
 
 </head>
@@ -201,6 +202,7 @@
     <a href="#swags" class="nav-link"><span class="nav-icon">◇</span><span class="nav-label">Swags</span></a>
     <a href="#updates" class="nav-link"><span class="nav-icon">▤</span><span class="nav-label">Updates</span></a>
     <a href="#events" class="nav-link"><span class="nav-icon">◷</span><span class="nav-label">Events</span></a>
+    <a href="#achievements" class="nav-link"><span class="nav-icon">🏆</span><span class="nav-label">Achievements</span></a>
     <a href="#gallery" class="nav-link"><span class="nav-icon">▧</span><span class="nav-label">Gallery</span></a>
     <a href="#reel" class="nav-link"><span class="nav-icon">▷</span><span class="nav-label">Reel</span></a>
     <a href="#meet" class="nav-link"><span class="nav-icon">◉</span><span class="nav-label">Meet</span></a>
@@ -217,6 +219,7 @@
   <a href="#swags">◇ <span>Swags</span></a>
   <a href="#updates">▤ <span>Updates</span></a>
   <a href="#events">◷ <span>Events</span></a>
+  <a href="#achievements">🏆 <span>Achievements</span></a>
   <a href="#gallery">▧ <span>Gallery</span></a>
   <a href="#reel">▷ <span>Reel</span></a><a href="#meet">◉ <span>Meet</span></a>
   <a href="#join">✦ <span>Join</span></a>
@@ -320,8 +323,16 @@
   </div>
 </section>
 
+<section class="section type-editorial yyc-achievements-section" id="achievements">
+  <div class="section-kicker">06 / ACHIEVEMENTS</div>
+  <div class="section-head tight reveal"><div><h2>Earned together. <span>Remembered forever.</span></h2><p>Celebrating every podium finish, runner-up result and competition our club takes part in.</p></div><a class="link-btn" href="./achievements/">All achievements ↗</a><span class="yyc-achievements-count" id="yycAchievementCount">00</span></div>
+  <div class="yyc-achievements-grid" id="yycAchievementsGrid" aria-live="polite">
+    <div class="yyc-achievements-empty"><span class="yyc-achievements-empty-mark" aria-hidden="true">✦</span><div><strong>Our achievements</strong><p>Club milestones will appear here after they are published by YYC Admin.</p></div></div>
+  </div>
+</section>
+
 <section class="section type-gallery" id="gallery">
-  <div class="section-kicker">06 / GALLERY</div>
+  <div class="section-kicker">07 / GALLERY</div>
   <div class="section-head tight reveal"><div><h2>Moments that move us.</h2><p>Community photos, programmes and youth activities.</p></div><a class="link-btn" href="./gallery/">Browse gallery ↗</a><button class="link-btn" id="submitGalleryBtn">Submit gallery item +</button></div>
   <div class="yyc-gallery-toolbar" id="yycGalleryToolbar">
     <div class="yyc-gallery-search" role="search">
@@ -339,7 +350,7 @@
 </section>
 
 <section class="section yyc-reel-section" id="reel" aria-labelledby="reelTitle">
-  <div class="section-kicker">07 / Reel</div>
+  <div class="section-kicker">08 / Reel</div>
   <div class="yyc-reel-head reveal">
     <div><h2 id="reelTitle">YYC in motion.</h2><p>Real moments from Yuvakesari Youth Club — community service, events, culture, sports and memories, one reel at a time.</p></div>
     <span class="yyc-reel-stamp"><i aria-hidden="true"></i> OFFICIAL YYC CLIPS</span>
@@ -351,7 +362,7 @@
 </section>
 
 <section class="section type-editorial yyc-meet-home-section" id="meet">
-  <div class="section-kicker">08 / YYC MEET</div>
+  <div class="section-kicker">09 / YYC MEET</div>
   <div class="section-head tight reveal"><div><h2>Meet the team, face to face.</h2><p>Open the private invite shared by YYC Admin, or paste the complete invitation below. A room opens only after the administrator starts it.</p></div><span class="counter">LIVE</span></div>
   <div class="yyc-meet-home-frame-wrap" style="width:100%;max-width:100%;overflow:hidden;border:1px solid rgba(229,191,107,.18);border-radius:18px;background:#080b0e;box-shadow:0 24px 64px rgba(0,0,0,.18)">
     <iframe id="yycMeetHomeFrame" title="YYC Meet — join a private meeting" src="./meet/?home_embed=1" allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:520px;border:0;background:#080b0e"></iframe>
@@ -359,7 +370,7 @@
 </section>
 
 <section class="section join-section type-editorial" id="join">
-  <div class="join-card reveal"><div><div class="section-kicker">09 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
+  <div class="join-card reveal"><div><div class="section-kicker">11 / JOIN YYC</div><h2>Your role starts here.</h2><p>Register as a member. Applications are reviewed by the admin team; approved members receive a unique role number and a digital membership card.</p><div class="join-mini"><span>✓ Member application</span><span>✓ Photo positioning</span><span>✓ Digital card</span></div></div><button class="btn gold" id="memberRegisterBtn">MEMBER REGISTRATION <span>↗</span></button></div>
 </section>
 </main>
 
@@ -409,7 +420,7 @@
 <script src="app.js?v=20261014-02-qr-attendance&google-signin=20261019-02-member-registration"></script>
 <script src="assets/yyc-reels.js?v=20261012-12-admin-media-cubes"></script>
 <script src="assets/yyc-smooth-data.js?v=20261008-02"></script>
-<script src="yyc90.js?v=20261013-certificate-workflow"></script>
+<script src="yyc90.js?v=20261020-achievement-gallery-01"></script>
 <script src="yyc90-final.js?v=20261008-01"></script>
 <script src="yyc-production.js?v=20261008-02"></script>
 <script>
