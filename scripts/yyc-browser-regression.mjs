@@ -108,12 +108,18 @@ try {
   if (!reloadHashAligned) throw new Error('Reloaded #events link did not remain aligned below the fixed header.');
   console.log('DEEP LINK PASS: #events loads, aligns and survives a page reload');
 
+  // Return to the stable top-of-page header before exercising fixed-header login controls.
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+
   const loginPanels = [
     { name: 'member', button: '#memberLoginBtn', form: '#memberLoginForm', close: '.modal-shell > .modal-close', field: '#mIdent', value: 'browser-test@example.invalid' },
     { name: 'leader', button: '#leaderLoginBtn', form: '#leaderLoginForm', close: '.modal-shell > .modal-close', field: '#lIdent', value: 'browser-test@example.invalid' },
     { name: 'admin', button: '#adminOpenBtn', form: '#adminLoginForm', close: '.modal-shell > .modal-close', field: '#aUser', value: 'browser-test-only' }
   ];
   for (const panel of loginPanels) {
+    // Clear the prior modal-close hover target before clicking a shifted fixed-header button.
+    await page.mouse.move(0, 0);
     await page.locator(panel.button).click();
     await page.locator(panel.form).waitFor({ state: 'visible', timeout: 6000 });
     await page.locator(panel.field).fill(panel.value);

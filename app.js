@@ -3495,7 +3495,7 @@ function adminPanel(tab,forceRefresh){
     if(!d) return;
     window.__yycAdminLastData=d;
     tab=tab||'overview';
-    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['reels','Reel Studio'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['meet','YYC Meet'],['notifications','Messaging'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
+    var tabs=[['overview','Overview'],['members','Members'],['leaders','Leaders'],['updates','Updates'],['gallery','Gallery'],['reels','Reel Studio'],['swags','Swags'],['approvals','Approvals'],['events','Events'],['notifications','Messaging'],['activity','Activity'],['reports','Reports'],['storage','Data Storage'],['settings','Settings']];
     var nav=tabs.map(function(t){return '<button class="admin-tab '+(t[0]===tab?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('');
     var pending=(d.members||[]).filter(function(m){return (m.status||'pending')==='pending';}).length+(d.pending_updates||[]).length+(d.pending_gallery||[]).length+(d.pending_volunteers||[]).length;
     openModal('<div class="admin-shell"><div class="portal-ribbon admin-portal-ribbon"><span class="portal-icon">⌑</span><div><b>ADMIN CONTROL CENTER</b><small>ACCESS LEVEL · FULL MANAGEMENT</small></div><span class="portal-secure">PRIVATE</span></div><div class="admin-header"><div><div class="modal-kicker">YUVAKESARI YOUTH CLUB</div><h2 class="modal-title">Admin Control Center</h2><p class="modal-sub">Manage members, leaders, approvals, events, gallery, reports and site settings.</p></div><div class="yyc-admin-head-tools"><div class="yyc-admin-global-tools"><div class="yyc-admin-add-wrap"><button type="button" class="mini-btn gold yyc-admin-add-btn" id="yycAdminAddBtn" aria-expanded="false"><span class="yyc-admin-action-icon yyc-icon-add" aria-hidden="true">+</span><span>ADD</span></button><div class="yyc-admin-add-menu" id="yycAdminAddMenu" hidden><button type="button" data-admin-add="member">+ Member</button><button type="button" data-admin-add="leader">+ Leader</button><button type="button" data-admin-add="update">+ Update</button><button type="button" data-admin-add="gallery">+ Photo</button><button type="button" data-admin-add="event">+ Event</button><button type="button" data-admin-add="swag">+ Swag</button></div></div><div class="yyc-admin-global-search"><span aria-hidden="true">⌕</span><input id="yycAdminGlobalSearch" type="search" placeholder="Search all admin records" autocomplete="off"><div class="yyc-admin-search-results" id="yycAdminSearchResults" hidden></div></div></div><div class="yyc-admin-syncbar" aria-live="polite"><span class="yyc-admin-sync-dot" id="yycAdminSyncDot"></span><span id="yycAdminSyncText">LIVE SYNC · CONNECTING</span><button type="button" class="mini-btn" id="yycAdminRefresh">REFRESH NOW</button></div></div></div><div class="admin-tabs">'+nav+'</div><div class="admin-workspace" id="adminWorkspace"></div><div class="admin-session-footer"><span>YYC PRIVATE ADMIN SESSION</span><button class="mini-btn" id="adminLogout">LOGOUT</button></div></div>');
@@ -3541,13 +3541,6 @@ function adminPanel(tab,forceRefresh){
 }
 function renderAdminTab(tab,d){
   var a=$('#adminWorkspace'); if(!a) return;
-  if(tab==='meet'){
-    a.innerHTML=
-      '<div class="admin-top"><div><h2>YYC Meet</h2><p>Only the administrator can create, start, end or cancel meetings. Invitees join through the private link.</p></div><button type="button" class="mini-btn" data-admin-overview>← Back to Admin</button></div>'+
-      '<div class="notice"><strong>Private meeting control.</strong> Meetings are not listed to members or leaders. Create a room here, mark it live, then share its invite link with the intended participants.</div>'+
-      '<iframe class="yyc-admin-meet-frame" title="YYC Meet administrator console" src="./meet/?admin_embed=1" allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:calc(100vh - 280px);min-height:720px;margin-top:16px;border:1px solid rgba(229,191,107,.18);border-radius:14px;background:#080b0e"></iframe>';
-    return;
-  }
   if(tab==='reels'){
     if(window.YYCReels&&typeof window.YYCReels.adminPanel==='function') window.YYCReels.adminPanel(d);
     else a.innerHTML='<div class="empty">Reel Studio is still loading. Please close and reopen the Admin panel.</div>';
@@ -3590,7 +3583,7 @@ function renderAdminTab(tab,d){
       '<div class="yyc-admin-quick-grid">'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="members"><span>◉</span><b>Members</b><small>Manage member records</small></button>'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="events"><span>◷</span><b>Events & RSVP</b><small>Publish programmes and member responses</small></button>'+
-        '<button type="button" class="yyc-admin-quick" data-admin-tab="meet"><span>◉</span><b>YYC Meet</b><small>Create private meetings and manage invites</small></button>'+
+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="notifications"><span>🔔</span><b>Notifications</b><small>Send private member messages</small></button>'+
         '<button type="button" class="yyc-admin-quick" data-admin-tab="reports"><span>▤</span><b>Reports</b><small>Open detailed live reports</small></button>'+
       '</div>'+
