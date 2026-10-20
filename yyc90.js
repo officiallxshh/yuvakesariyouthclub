@@ -1606,7 +1606,7 @@
     if(tab==='achievements'){
       q('#a90Add').onclick=function(){achievementForm90(null);};
       qa('[data-a90-edit]').forEach(function(b){b.onclick=function(){achievementForm90(b.getAttribute('data-a90-edit'));};});
-      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);toast90('Achievement moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
+      qa('[data-a90-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete achievement?'))return;rpc90('admin_delete_achievement',{p_token:window.adminToken,p_id:b.getAttribute('data-a90-del')}).then(function(r){if(!r.ok)throw new Error(r.error||'Failed');featureData=null;admin90Open('achievements',true);load90Public();toast90('Achievement moved to Recycle Bin');}).catch(function(e){toast90(e.message);});};});
     }
     if(tab==='history'){
       q('#h90Add').onclick=function(){historyForm90(null);};
@@ -1660,6 +1660,7 @@
         featureData=null;
         toast90('Achievement saved');
         admin90Open('achievements',true);
+        load90Public();
       }catch(err){toast90(err.message);}
     });
   }
