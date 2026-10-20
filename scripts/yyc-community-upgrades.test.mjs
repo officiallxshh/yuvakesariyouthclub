@@ -54,10 +54,10 @@ test('Accessibility preferences are usable, independent and persisted locally', 
 test('Events support bulk export of dated published future events as one ICS file', () => {
   assert.match(index, /id="yycDownloadAllEvents"/);
   assert.match(app, /function yycDownloadUpcomingEventsCalendar\(\)/);
-  assert.match(app, /data\.event_date/); // Individual existing event export remains supported.
+  assert.match(app, /ev\.event_date/); // Individual existing event export remains supported.
   assert.match(app, /publicData&&publicData\.events/);
   assert.match(app, /yyc-upcoming-events-/);
-  assert.match(app, /METHOD,PUBLISH/);
+  assert.match(app, /METHOD:PUBLISH/);
   assert.match(app, /yycDownloadAllEvents'\)\.addEventListener\('click',yycDownloadUpcomingEventsCalendar/);
 });
 
