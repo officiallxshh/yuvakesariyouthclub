@@ -20,9 +20,9 @@ test('cinematic, active-nav and professional UX layers preserve the intended cas
   assert.ok(cinematic >= 0, 'cinematic stylesheet is linked');
   assert.ok(nav > cinematic, 'active-nav stylesheet remains after cinematic layer');
   assert.ok(professionalUX > nav, 'professional UX finish is explicitly last');
-  const links = [...index.matchAll(/<link\\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
+  const links = [...index.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
   assert.ok(links.at(-1)?.[0].includes('yyc-professional-ux.css'), 'professional UX stylesheet is the final linked stylesheet');
-  assert.doesNotMatch(uxCss, /\\.desktop-nav\\s*>\\s*a\\.nav-link\\.active/, 'final polish must not replace active-nav state rules');
+  assert.doesNotMatch(uxCss, /\.desktop-nav\s*>\s*a\.nav-link\.active/, 'final polish must not replace active-nav state rules');
   assert.ok(index.includes('name="yyc-build" content="' + currentBuild + '"'));
   assert.ok(app.includes("var YYC_APP_BUILD='" + currentBuild + "'"));
   assert.ok(audit.includes('const currentBuild = "' + currentBuild + '";'));
