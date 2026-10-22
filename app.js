@@ -828,7 +828,7 @@ function socialHTML(){
   if(s.whatsapp) arr.push('<a class="social-link" href="'+esc(s.whatsapp)+'" target="_blank" rel="noopener"><img src="assets/social-whatsapp.png" alt="WhatsApp" width="30" height="30"></a>');
   if(s.instagram) arr.push('<a class="social-link" href="'+esc(s.instagram)+'" target="_blank" rel="noopener"><img src="assets/social-instagram.png" alt="Instagram" width="30" height="30"></a>');
   if(s.x_url) arr.push('<a class="social-link" href="'+esc(s.x_url)+'" target="_blank" rel="noopener"><img src="assets/social-x.png" alt="X" width="30" height="30"></a>');
-  if(s.facebook) arr.push('<a class="social-link" href="'+esc(s.facebook)+'" target="_blank" rel="noopener"><img src="assets/social-facebook.png" alt="Facebook" width="30" height="30"></a>');
+  arr.push('<a class="social-link" href="https://www.facebook.com/profile.php?id=61595441857798" target="_blank" rel="me noopener noreferrer"><img src="assets/social-facebook.png" alt="Facebook" width="30" height="30"></a>');
   return arr.join('');
 }
 var yycCollectionExpanded={updates:false,events:false,gallery:false};
