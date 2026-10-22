@@ -11,6 +11,7 @@
     "test:achievements": "node --test scripts/yyc-achievement-showcase.test.mjs",
     "test:meet-retirement": "node --test scripts/yyc-meet-retirement.test.mjs",
     "test:community-upgrades": "node --test scripts/yyc-community-upgrades.test.mjs",
-    "test:design-quality": "node --test scripts/yyc-design-quality.test.mjs"
+    "test:design-quality": "node --test scripts/yyc-design-quality.test.mjs",
+    "test:facebook-discovery": "node --test scripts/yyc-facebook-discovery.test.mjs"
   }
 }
