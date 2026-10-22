@@ -42,7 +42,7 @@ test('About and Contact organization entities use the same official Facebook ide
 
 test('Homepage exposes crawlable official Facebook links in the footer and social icons', () => {
   assert.ok(index.includes('<a href="' + FACEBOOK + '" target="_blank" rel="me noopener noreferrer">YYC on Facebook ↗</a>'));
-  assert.ok(app.includes("href=\u0027" + FACEBOOK + "\u0027"));
+  assert.ok(app.includes('href="' + FACEBOOK + '"'));
   assert.ok(app.includes('assets/social-facebook.png'));
   assert.ok(app.includes('rel="me noopener noreferrer"'));
 });
